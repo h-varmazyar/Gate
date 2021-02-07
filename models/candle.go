@@ -6,4 +6,5 @@ type Candle struct {
 	Low   float64
 	Close float64
 	Vol   float64
+	Indicators
 }
