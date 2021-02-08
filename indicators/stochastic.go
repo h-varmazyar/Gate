@@ -53,7 +53,7 @@ func (conf *stochasticConfig) Calculate(candles []models.Candle, appendCandles b
 	highest := float64(0)
 	//todo: check indices
 	for i, candle := range conf.Candles[rangeCounter:] {
-		for _, innerCandle := range conf.Candles[i : conf.Length+i] {
+		for _, innerCandle := range conf.Candles[rangeCounter-conf.Length+i+1 : rangeCounter+i+1] {
 			if innerCandle.Low < lowest {
 				lowest = innerCandle.Low
 			}
