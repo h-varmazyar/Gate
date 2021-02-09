@@ -7,7 +7,6 @@ import (
 
 type stochasticConfig struct {
 	*basicConfig
-	Length  int
 	SmoothD int
 	SmoothK int
 }
@@ -17,7 +16,9 @@ type stochasticConfig struct {
 //todo calculate smoothK value in the soon
 func NewStochasticConfig(length, smoothD, smoothK int) *stochasticConfig {
 	return &stochasticConfig{
-		Length:  length,
+		basicConfig: &basicConfig{
+			Length: length,
+		},
 		SmoothD: smoothD,
 		SmoothK: smoothK,
 	}

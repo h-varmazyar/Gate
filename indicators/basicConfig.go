@@ -6,4 +6,5 @@ import (
 
 type basicConfig struct {
 	Candles []models.Candle
+	Length  int
 }

@@ -1,9 +1,10 @@
 package models
 
 type Indicators struct {
-	Stochastic    Stochastic
-	BollingerBand BollingerBand
-	RSI           RSI
+	Stochastic    *Stochastic
+	BollingerBand *BollingerBand
+	RSI           *RSI
+	ADX           *ADX
 }
 
 type Stochastic struct {
@@ -21,4 +22,14 @@ type RSI struct {
 	Gain float64
 	Loss float64
 	RSI  float64
+}
+
+type ADX struct {
+	DIPositive float64
+	DINegative float64
+	ADX        float64
+	DmPositive float64
+	DmNegative float64
+	TR         float64
+	DX         float64
 }

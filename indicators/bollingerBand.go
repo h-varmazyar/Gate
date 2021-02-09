@@ -9,13 +9,14 @@ import (
 type bollingerBandConfig struct {
 	*basicConfig
 	Deviation int
-	Length    int
 }
 
 func NewBollingerBandConfig(deviation, length int) *bollingerBandConfig {
 	return &bollingerBandConfig{
+		basicConfig: &basicConfig{
+			Length: length,
+		},
 		Deviation: deviation,
-		Length:    length,
 	}
 }
 
@@ -39,7 +40,7 @@ func (conf *bollingerBandConfig) CalculateBollingerBand(candles []models.Candle,
 			variance += math.Pow(ma-sum, 2)
 		}
 		variance /= float64(len(candles))
-		candle.BollingerBand = models.BollingerBand{
+		candle.BollingerBand = &models.BollingerBand{
 			UpperBond: ma + float64(conf.Deviation)*math.Sqrt(variance),
 			LowerBond: ma - float64(conf.Deviation)*math.Sqrt(variance),
 			MA:        ma,

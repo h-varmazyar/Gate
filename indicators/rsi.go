@@ -7,12 +7,13 @@ import (
 
 type RSIConfig struct {
 	*basicConfig
-	Length int
 }
 
-func NewRSIConfig(Length int) *RSIConfig {
+func NewRSIConfig(length int) *RSIConfig {
 	return &RSIConfig{
-		Length: Length,
+		basicConfig: &basicConfig{
+			Length: length,
+		},
 	}
 }
 
