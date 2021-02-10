@@ -21,7 +21,7 @@ func NewBollingerBandConfig(deviation, length int) *bollingerBandConfig {
 }
 
 func (conf *bollingerBandConfig) CalculateBollingerBand(candles []models.Candle, appendCandles bool) error {
-	rangeCounter := conf.Length - 1
+	rangeCounter := conf.Length
 	if appendCandles {
 		rangeCounter = len(conf.Candles)
 		conf.Candles = append(conf.Candles, candles...)
@@ -32,10 +32,16 @@ func (conf *bollingerBandConfig) CalculateBollingerBand(candles []models.Candle,
 		return err
 	}
 
-	for i, candle := range conf.Candles[rangeCounter:] {
+	mac := NewMovingAverageConfig(conf.Length, SourceHLC3)
+	err := mac.CalculateSimple(conf.Candles[rangeCounter-conf.Length:], false)
+	if err != nil {
+		return err
+	}
+	for i, candle := range conf.Candles[rangeCounter-1:] {
 		variance := float64(0)
-		ma := TypicalPriceMovingAverage(conf.Candles[rangeCounter-conf.Length+i+1 : rangeCounter+i+1])
-		for _, innerCandle := range conf.Candles[rangeCounter-conf.Length+i+1 : rangeCounter+i+1] {
+		//ma := TypicalPriceMovingAverage(conf.Candles[rangeCounter-conf.Length+i : rangeCounter+i])
+		ma := mac.Candles[rangeCounter+i].MovingAverage.Simple
+		for _, innerCandle := range conf.Candles[rangeCounter-conf.Length+i : rangeCounter+i] {
 			sum := (innerCandle.Close + innerCandle.High + innerCandle.Low) / 3
 			variance += math.Pow(ma-sum, 2)
 		}

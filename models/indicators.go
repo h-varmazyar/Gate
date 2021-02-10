@@ -8,6 +8,7 @@ type Indicators struct {
 	RSI           *RSI
 	ADX           *ADX
 	ParabolicSAR  *ParabolicSAR
+	MovingAverage *MovingAverage
 }
 
 type Stochastic struct {
@@ -41,4 +42,14 @@ type ParabolicSAR struct {
 	SAR          float64
 	Trend        indicators.Trend
 	TrendFlipped bool
+}
+
+type MACD struct {
+	MACD   float64
+	Signal float64
+}
+
+type MovingAverage struct {
+	Simple      float64
+	Exponential float64
 }
