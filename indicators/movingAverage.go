@@ -78,7 +78,7 @@ func (conf *movingAverageConfig) CalculateExponential(candles []models.Candle, a
 		return err
 	}
 	factor := 2 / float64(conf.Length+1)
-	for i, candle := range candles[rangeCounter:] {
+	for i, candle := range conf.Candles[rangeCounter:] {
 		price := float64(0)
 		switch conf.source {
 		case SourceClose:
@@ -96,14 +96,14 @@ func (conf *movingAverageConfig) CalculateExponential(candles []models.Candle, a
 		case SourceOHLC4:
 			price = (candle.Open + candle.Close + candle.High + candle.Low) / 4
 		}
-		candle.MovingAverage.Exponential = price*factor + candles[i-1].MovingAverage.Exponential*(1-factor)
+		candle.MovingAverage.Exponential = price*factor + conf.Candles[rangeCounter+i-1].MovingAverage.Exponential*(1-factor)
 	}
 	return nil
 }
 
 func (conf *movingAverageConfig) validate() error {
 	if len(conf.Candles) < conf.Length {
-		return errors.New(fmt.Sprintf("candles length must be grater than %d", conf.Length))
+		return errors.New(fmt.Sprintf("candles length must be grater or equal than %d", conf.Length))
 	}
 	return nil
 }

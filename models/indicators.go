@@ -9,6 +9,7 @@ type Indicators struct {
 	ADX           *ADX
 	ParabolicSAR  *ParabolicSAR
 	MovingAverage *MovingAverage
+	MACD          *MACD
 }
 
 type Stochastic struct {

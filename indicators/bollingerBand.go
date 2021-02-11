@@ -45,7 +45,7 @@ func (conf *bollingerBandConfig) CalculateBollingerBand(candles []models.Candle,
 			sum := (innerCandle.Close + innerCandle.High + innerCandle.Low) / 3
 			variance += math.Pow(ma-sum, 2)
 		}
-		variance /= float64(len(candles))
+		variance /= float64(conf.Length)
 		candle.BollingerBand = &models.BollingerBand{
 			UpperBond: ma + float64(conf.Deviation)*math.Sqrt(variance),
 			LowerBond: ma - float64(conf.Deviation)*math.Sqrt(variance),

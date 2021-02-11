@@ -31,20 +31,20 @@ func (conf *adxConfig) CalculateADX(candles []models.Candle, appendCandles bool)
 		return err
 	}
 	for i, candle := range conf.Candles[dmCounter:] {
-		candle.ADX.DmPositive = candle.High - candles[i-1].High
-		candle.ADX.DmNegative = candles[i-1].Low - candle.Low
+		candle.ADX.DmPositive = candle.High - conf.Candles[dmCounter-i-1].High
+		candle.ADX.DmNegative = conf.Candles[dmCounter-i-1].Low - candle.Low
 		if candle.ADX.DmPositive > candle.ADX.DmNegative {
 			candle.ADX.DmNegative = 0
 		} else {
 			candle.ADX.DmPositive = 0
 		}
-		candle.ADX.TR = math.Max(candle.High-candle.Low, math.Max(candle.High-candles[i-1].Close, candles[i-1].Close-candle.Low))
+		candle.ADX.TR = math.Max(candle.High-candle.Low, math.Max(candle.High-conf.Candles[dmCounter-i-1].Close, conf.Candles[dmCounter-i-1].Close-candle.Low))
 	}
 	for i, candle := range conf.Candles[rangeCounter:] {
 		smoothedDmPositive := float64(0)
 		smoothedDmNegative := float64(0)
 		smoothedTR := float64(0)
-		for _, innerCandle := range candles[rangeCounter+i+1-conf.Length : rangeCounter+i+1] {
+		for _, innerCandle := range conf.Candles[rangeCounter+i+1-conf.Length : rangeCounter+i+1] {
 			smoothedDmPositive += innerCandle.ADX.DmPositive
 			smoothedDmNegative += innerCandle.ADX.DmNegative
 			smoothedTR += innerCandle.ADX.TR
@@ -64,7 +64,7 @@ func (conf *adxConfig) CalculateADX(candles []models.Candle, appendCandles bool)
 		conf.Candles[adxCounter-1].ADX.ADX = sum / float64(adxCounter-rangeCounter)
 	}
 	for i, candle := range conf.Candles[adxCounter:] {
-		candle.ADX.ADX = (float64(conf.Length-1)*conf.Candles[i-1].ADX.ADX + candle.ADX.DX) / float64(conf.Length)
+		candle.ADX.ADX = (float64(conf.Length-1)*conf.Candles[adxCounter-i-1].ADX.ADX + candle.ADX.DX) / float64(conf.Length)
 	}
 	return nil
 }
