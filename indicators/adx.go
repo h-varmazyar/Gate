@@ -69,6 +69,33 @@ func (conf *adxConfig) CalculateADX(candles []models.Candle, appendCandles bool)
 	return nil
 }
 
+func (conf *adxConfig) UpdateADX() {
+	lastIndex := len(conf.Candles) - 1
+	conf.Candles[lastIndex].ADX.DmPositive = conf.Candles[lastIndex].High - conf.Candles[lastIndex-1].High
+	conf.Candles[lastIndex].ADX.DmNegative = conf.Candles[lastIndex-1].Low - conf.Candles[lastIndex].Low
+	if conf.Candles[lastIndex].ADX.DmPositive > conf.Candles[lastIndex].ADX.DmNegative {
+		conf.Candles[lastIndex].ADX.DmNegative = 0
+	} else {
+		conf.Candles[lastIndex].ADX.DmPositive = 0
+	}
+	conf.Candles[lastIndex].ADX.TR = math.Max(conf.Candles[lastIndex].High-conf.Candles[lastIndex].Low,
+		math.Max(conf.Candles[lastIndex].High-conf.Candles[lastIndex-1].Close,
+			conf.Candles[lastIndex-1].Close-conf.Candles[lastIndex].Low))
+
+	smoothedDmPositive := ((conf.Candles[lastIndex-1].ADX.DmPositive * (float64(conf.Length - 1))) + conf.Candles[lastIndex].ADX.DmPositive) / float64(conf.Length)
+	smoothedDmNegative := ((conf.Candles[lastIndex-1].ADX.DmNegative * (float64(conf.Length - 1))) + conf.Candles[lastIndex].ADX.DmNegative) / float64(conf.Length)
+	smoothedTR := ((conf.Candles[lastIndex-1].ADX.TR * (float64(conf.Length - 1))) + conf.Candles[lastIndex].ADX.TR) / float64(conf.Length)
+	smoothedDmPositive = smoothedDmPositive - (smoothedDmPositive / float64(conf.Length)) + conf.Candles[lastIndex].ADX.DmPositive
+	smoothedDmNegative = smoothedDmNegative - (smoothedDmNegative / float64(conf.Length)) + conf.Candles[lastIndex].ADX.DmNegative
+	smoothedTR = smoothedTR - (smoothedTR / float64(conf.Length)) + conf.Candles[lastIndex].ADX.TR
+
+	conf.Candles[lastIndex].ADX.DIPositive = 100 * smoothedDmPositive / smoothedTR
+	conf.Candles[lastIndex].ADX.DINegative = 100 * smoothedDmNegative / smoothedTR
+	conf.Candles[lastIndex].ADX.DX = 100 * math.Abs(conf.Candles[lastIndex].ADX.DIPositive-conf.Candles[lastIndex].ADX.DINegative) / (conf.Candles[lastIndex].ADX.DIPositive + conf.Candles[lastIndex].ADX.DINegative)
+
+	conf.Candles[lastIndex].ADX.ADX = (float64(conf.Length-1)*conf.Candles[lastIndex-1].ADX.ADX + conf.Candles[lastIndex].ADX.DX) / float64(conf.Length)
+}
+
 func (conf *adxConfig) validate() error {
 	if len(conf.Candles) < conf.Length*2 {
 		return errors.New(fmt.Sprintf("candles length must be bigger or equal than %d", conf.Length*2))
