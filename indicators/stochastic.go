@@ -69,6 +69,23 @@ func (conf *stochasticConfig) Calculate(candles []models.Candle, appendCandles b
 	return nil
 }
 
+func (conf *stochasticConfig) Update() error {
+	lowest := float64(0)
+	highest := float64(0)
+	lastIndex := len(conf.Candles) - 1
+	for _, innerCandle := range conf.Candles[lastIndex-conf.Length+1:] {
+		if innerCandle.Low < lowest {
+			lowest = innerCandle.Low
+		}
+		if innerCandle.High > highest {
+			highest = innerCandle.High
+		}
+	}
+	conf.Candles[lastIndex].Stochastic.IndexK = 100 * ((conf.Candles[lastIndex].Close - lowest) / (highest - lowest))
+	conf.Candles[lastIndex].Stochastic.IndexD = calculateIndexD(conf.Candles[lastIndex-conf.SmoothD+1:])
+	return nil
+}
+
 func calculateIndexD(candles []models.Candle) float64 {
 	sum := float64(0)
 	for _, candle := range candles {

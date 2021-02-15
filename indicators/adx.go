@@ -15,7 +15,7 @@ func NewAdxConfig(length int) *adxConfig {
 	return &adxConfig{&basicConfig{Length: length}}
 }
 
-func (conf *adxConfig) CalculateADX(candles []models.Candle, appendCandles bool) error {
+func (conf *adxConfig) Calculate(candles []models.Candle, appendCandles bool) error {
 	rangeCounter := conf.Length
 	dmCounter := 1
 	adxCounter := (conf.Length * 2) - 1
@@ -69,7 +69,7 @@ func (conf *adxConfig) CalculateADX(candles []models.Candle, appendCandles bool)
 	return nil
 }
 
-func (conf *adxConfig) UpdateADX() {
+func (conf *adxConfig) Update() {
 	lastIndex := len(conf.Candles) - 1
 	conf.Candles[lastIndex].ADX.DmPositive = conf.Candles[lastIndex].High - conf.Candles[lastIndex-1].High
 	conf.Candles[lastIndex].ADX.DmNegative = conf.Candles[lastIndex-1].Low - conf.Candles[lastIndex].Low

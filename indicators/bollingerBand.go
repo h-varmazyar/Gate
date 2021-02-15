@@ -20,7 +20,7 @@ func NewBollingerBandConfig(deviation, length int) *bollingerBandConfig {
 	}
 }
 
-func (conf *bollingerBandConfig) CalculateBollingerBand(candles []models.Candle, appendCandles bool) error {
+func (conf *bollingerBandConfig) Calculate(candles []models.Candle, appendCandles bool) error {
 	rangeCounter := conf.Length
 	if appendCandles {
 		rangeCounter = len(conf.Candles)
@@ -33,13 +33,12 @@ func (conf *bollingerBandConfig) CalculateBollingerBand(candles []models.Candle,
 	}
 
 	mac := NewMovingAverageConfig(conf.Length, SourceHLC3)
-	err := mac.CalculateSimple(conf.Candles[rangeCounter-conf.Length:], false)
+	err := mac.CalculateSimple(cloneCandles(conf.Candles[rangeCounter-conf.Length:]), false)
 	if err != nil {
 		return err
 	}
 	for i, candle := range conf.Candles[rangeCounter-1:] {
 		variance := float64(0)
-		//ma := TypicalPriceMovingAverage(conf.Candles[rangeCounter-conf.Length+i : rangeCounter+i])
 		ma := mac.Candles[rangeCounter+i].MovingAverage.Simple
 		for _, innerCandle := range conf.Candles[rangeCounter-conf.Length+i : rangeCounter+i] {
 			sum := (innerCandle.Close + innerCandle.High + innerCandle.Low) / 3
@@ -51,6 +50,28 @@ func (conf *bollingerBandConfig) CalculateBollingerBand(candles []models.Candle,
 			LowerBond: ma - float64(conf.Deviation)*math.Sqrt(variance),
 			MA:        ma,
 		}
+	}
+	return nil
+}
+
+func (conf *bollingerBandConfig) Update() error {
+	lastIndex := len(conf.Candles)
+	mac := NewMovingAverageConfig(conf.Length, SourceHLC3)
+	err := mac.CalculateSimple(cloneCandles(conf.Candles[lastIndex-conf.Length:]), false)
+	if err != nil {
+		return err
+	}
+	variance := float64(0)
+	ma := mac.Candles[len(mac.Candles)-1].MovingAverage.Simple
+	for _, innerCandle := range conf.Candles[lastIndex-conf.Length:] {
+		sum := (innerCandle.Close + innerCandle.High + innerCandle.Low) / 3
+		variance += math.Pow(ma-sum, 2)
+	}
+	variance /= float64(conf.Length)
+	conf.Candles[lastIndex-1].BollingerBand = &models.BollingerBand{
+		UpperBond: ma + float64(conf.Deviation)*math.Sqrt(variance),
+		LowerBond: ma - float64(conf.Deviation)*math.Sqrt(variance),
+		MA:        ma,
 	}
 	return nil
 }

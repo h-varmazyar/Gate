@@ -17,7 +17,7 @@ func NewRSIConfig(length int) *RSIConfig {
 	}
 }
 
-func (conf *RSIConfig) CalculateRsi(candles []models.Candle, firstOfSeries, appendCandles bool) error {
+func (conf *RSIConfig) Calculate(candles []models.Candle, firstOfSeries, appendCandles bool) error {
 	var rangeCounter int
 	if appendCandles {
 		rangeCounter = len(conf.Candles)
@@ -36,6 +36,12 @@ func (conf *RSIConfig) CalculateRsi(candles []models.Candle, firstOfSeries, appe
 	for i, candle := range conf.Candles[rangeCounter:] {
 		candle.RSI.RSI = 100 - (100 / (1 + conf.smoothedRs(rangeCounter+i)))
 	}
+	return nil
+}
+
+func (conf *RSIConfig) Update() error {
+	lastIndex := len(conf.Candles) - 1
+	conf.Candles[lastIndex].RSI.RSI = 100 - (100 / (1 + conf.smoothedRs(lastIndex)))
 	return nil
 }
 
