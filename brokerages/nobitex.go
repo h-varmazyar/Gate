@@ -21,9 +21,12 @@ func (n *Nobitex) Login(totp int) error {
 		Endpoint: "https://api.nobitex.ir/auth/login/",
 	}
 	if totp > 0 {
-		req.Headers = map[string]interface{}{"X-TOTP": totp}
+		req.Headers = map[string][]string{"X-TOTP": {string(totp)}}
 	}
-	resp := req.Execute()
+	resp, err := req.Execute()
+	if err != nil {
+		return err
+	}
 	if resp.Code == 200 {
 		respStr := struct {
 			Key string `json:"key"`
@@ -35,7 +38,7 @@ func (n *Nobitex) Login(totp int) error {
 
 		return nil
 	} else {
-		return errors.New(resp.ErrorMessage)
+		return errors.New(resp.Status)
 	}
 }
 
@@ -45,7 +48,10 @@ func (n *Nobitex) OrderBook(symbol string) (*api.OrderBookResponse, error) {
 		Endpoint: "https://api.nobitex.ir/v2/orderbook/" + symbol,
 	}
 
-	resp := req.Execute()
+	resp, err := req.Execute()
+	if err != nil {
+		return nil, err
+	}
 	if resp.Code == 200 {
 		respStr := struct {
 			Status string      `json:"status"`
@@ -90,7 +96,7 @@ func (n *Nobitex) OrderBook(symbol string) (*api.OrderBookResponse, error) {
 			return nil, errors.New("nobitex tesponse error")
 		}
 	} else {
-		return nil, errors.New(resp.ErrorMessage)
+		return nil, errors.New(resp.Status)
 	}
 }
 
@@ -100,7 +106,10 @@ func (n *Nobitex) RecentTrades(symbol string) (*api.RecentTradesResponse, error)
 		Endpoint: "https://api.nobitex.ir/v2/trades/" + symbol,
 	}
 
-	resp := req.Execute()
+	resp, err := req.Execute()
+	if err != nil {
+		return nil, err
+	}
 	if resp.Code == 200 {
 		respStr := struct {
 			Status string `json:"status"`
@@ -130,7 +139,7 @@ func (n *Nobitex) RecentTrades(symbol string) (*api.RecentTradesResponse, error)
 			return nil, errors.New("nobitex tesponse error")
 		}
 	} else {
-		return nil, errors.New(resp.ErrorMessage)
+		return nil, errors.New(resp.Status)
 	}
 }
 
@@ -141,7 +150,10 @@ func (n *Nobitex) OHLC(symbol string, resolution *models.Resolution, from, to fl
 		Params:   map[string]interface{}{"symbol": symbol, "resolution": resolution.Value, "from": from, "to": to},
 	}
 
-	resp := req.Execute()
+	resp, err := req.Execute()
+	if err != nil {
+		return nil, err
+	}
 	if resp.Code == 200 {
 		respStr := struct {
 			Status string    `json:"s"`
@@ -174,6 +186,6 @@ func (n *Nobitex) OHLC(symbol string, resolution *models.Resolution, from, to fl
 			return nil, errors.New(respStr.Error)
 		}
 	} else {
-		return nil, errors.New(resp.ErrorMessage)
+		return nil, errors.New(resp.Status)
 	}
 }
