@@ -7,6 +7,7 @@ import (
 	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/models"
 	"strconv"
+	"strings"
 )
 
 type Nobitex struct {
@@ -204,7 +205,7 @@ func (n *Nobitex) UserInfo() (*api.UserInfoResponse, error) {
 	}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status  string `json:"s"`
+			Status  string `json:"status"`
 			Profile struct {
 				FirstName    string `json:"firstName"`
 				LastName     string `json:"lastName"`
@@ -290,6 +291,93 @@ func (n *Nobitex) UserInfo() (*api.UserInfoResponse, error) {
 				BankAccount: bankAccounts,
 			}
 			return &userInfo, nil
+		} else {
+			return nil, errors.New("get user profile error")
+		}
+	} else {
+		return nil, errors.New(resp.Status)
+	}
+}
+
+func (n *Nobitex) WalletList() (*api.WalletsResponse, error) {
+	req := api.Request{
+		Type:     api.POST,
+		Endpoint: "https://api.nobitex.ir/users/wallets/list",
+		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", n.Token)}},
+	}
+
+	resp, err := req.Execute()
+	if err != nil {
+		return nil, err
+	}
+	if resp.Code == 200 {
+		respStr := struct {
+			Status  string `json:"status"`
+			Wallets []struct {
+				RialBalanceSell float64 `json:"rialBalanceSell"`
+				DepositAddress  string  `json:"depositAddress"`
+				BlockedBalance  string  `json:"blockedBalance"`
+				ActiveBalance   string  `json:"activeBalance"`
+				RialBalance     float64 `json:"rialBalance"`
+				Currency        string  `json:"currency"`
+				Balance         string  `json:"balance"`
+				User            string  `json:"user"`
+				Id              int     `json:"id"`
+			} `json:"wallets"`
+		}{}
+		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
+			return nil, err
+		}
+		if respStr.Status == "ok" {
+			wallets := make([]models.Wallet, len(respStr.Wallets))
+			for i, wallet := range respStr.Wallets {
+				wallets[i].ReferenceCurrencyBalance = wallet.RialBalance
+				wallets[i].BlockedBalance = wallet.BlockedBalance
+				wallets[i].ActiveBalance = wallet.ActiveBalance
+				wallets[i].TotalBalance = wallet.Balance
+				wallets[i].Currency = wallet.Currency
+			}
+
+			return &api.WalletsResponse{Wallets: wallets}, nil
+		} else {
+			return nil, errors.New("get user profile error")
+		}
+	} else {
+		return nil, errors.New(resp.Status)
+	}
+}
+
+func (n *Nobitex) WalletInfo(walletName string) (*api.WalletResponse, error) {
+	req := api.Request{
+		Type:     api.POST,
+		Endpoint: "https://api.nobitex.ir/v2/wallets",
+		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", n.Token)}},
+		Params:   map[string]interface{}{"currencies": walletName},
+	}
+
+	resp, err := req.Execute()
+	if err != nil {
+		return nil, err
+	}
+	if resp.Code == 200 {
+		respStr := struct {
+			Status  string `json:"status"`
+			Wallets map[string]struct {
+				Id      int    `json:"id"`
+				Balance string `json:"balance"`
+				Blocked string `json:"blocked"`
+			}
+		}{}
+
+		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
+			return nil, err
+		}
+		if respStr.Status == "ok" {
+			return &api.WalletResponse{Wallet: models.Wallet{
+				BlockedBalance: respStr.Wallets[strings.ToUpper(walletName)].Blocked,
+				TotalBalance:   respStr.Wallets[strings.ToUpper(walletName)].Balance,
+				Currency:       walletName,
+			}}, nil
 		} else {
 			return nil, errors.New("get user profile error")
 		}

@@ -19,6 +19,8 @@ type Requests interface {
 	MarketStats(destination, source string) (*MarketStatusResponse, error)
 	OHLC(symbol string, resolution *models.Resolution, from, to float64) (*OHLCResponse, error)
 	UserInfo() (*UserInfoResponse, error)
+	WalletList() (*WalletsResponse, error)
+	WalletInfo(walletName string) (*WalletResponse, error)
 }
 
 type RequestType int

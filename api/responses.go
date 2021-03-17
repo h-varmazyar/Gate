@@ -28,3 +28,11 @@ type UserInfoResponse struct {
 	User        models.User
 	BankAccount []models.BankAccount
 }
+
+type WalletResponse struct {
+	Wallet models.Wallet
+}
+
+type WalletsResponse struct {
+	Wallets []models.Wallet
+}
