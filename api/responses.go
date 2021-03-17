@@ -23,3 +23,8 @@ type OHLCResponse struct {
 	Resolution *models.Resolution
 	Candles    []models.Candle
 }
+
+type UserInfoResponse struct {
+	User        models.User
+	BankAccount []models.BankAccount
+}

@@ -18,6 +18,7 @@ type Requests interface {
 	RecentTrades(symbol string) (*RecentTradesResponse, error)
 	MarketStats(destination, source string) (*MarketStatusResponse, error)
 	OHLC(symbol string, resolution *models.Resolution, from, to float64) (*OHLCResponse, error)
+	UserInfo() (*UserInfoResponse, error)
 }
 
 type RequestType int

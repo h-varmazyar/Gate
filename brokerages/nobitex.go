@@ -3,6 +3,7 @@ package brokerages
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/models"
 	"strconv"
@@ -184,6 +185,113 @@ func (n *Nobitex) OHLC(symbol string, resolution *models.Resolution, from, to fl
 			return &ohlc, nil
 		} else {
 			return nil, errors.New(respStr.Error)
+		}
+	} else {
+		return nil, errors.New(resp.Status)
+	}
+}
+
+func (n *Nobitex) UserInfo() (*api.UserInfoResponse, error) {
+	req := api.Request{
+		Type:     api.GET,
+		Endpoint: "https://api.nobitex.ir/users/profile",
+		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", n.Token)}},
+	}
+
+	resp, err := req.Execute()
+	if err != nil {
+		return nil, err
+	}
+	if resp.Code == 200 {
+		respStr := struct {
+			Status  string `json:"s"`
+			Profile struct {
+				FirstName    string `json:"firstName"`
+				LastName     string `json:"lastName"`
+				NationalCode string `json:"nationalCode"`
+				Email        string `json:"email"`
+				Username     string `json:"username"`
+				Phone        string `json:"phone"`
+				Mobile       string `json:"mobile"`
+				City         string `json:"city"`
+				BankCards    []struct {
+					Number    string `json:"number"`
+					Bank      string `json:"bank"`
+					Owner     string `json:"owner"`
+					Confirmed bool   `json:"confirmed"`
+					Status    string `json:"status"`
+				} `json:"bankCards"`
+				BankAccounts []struct {
+					Id        int    `json:"id"`
+					Number    string `json:"number"`
+					IBAN      string `json:"shaba"`
+					Bank      string `json:"bank"`
+					Owner     string `json:"owner"`
+					Confirmed bool   `json:"confirmed"`
+					Status    string `json:"status"`
+				}
+				Verifications struct {
+					Email       bool `json:"email"`
+					Phone       bool `json:"phone"`
+					Mobile      bool `json:"mobile"`
+					Identity    bool `json:"identity"`
+					Selfie      bool `json:"selfie"`
+					BankAccount bool `json:"bankAccount"`
+					BankCard    bool `json:"bankCard"`
+					Address     bool `json:"address"`
+					City        bool `json:"city"`
+				} `json:"verifications"`
+				PendingVerifications struct {
+					Email       bool `json:"email"`
+					Phone       bool `json:"phone"`
+					Mobile      bool `json:"mobile"`
+					Identity    bool `json:"identity"`
+					Selfie      bool `json:"selfie"`
+					BankAccount bool `json:"bankAccount"`
+					BankCard    bool `json:"bankCard"`
+				} `json:"pendingVerifications"`
+				Options struct {
+					Fee               string `json:"fee"`
+					FeeUsdt           string `json:"feeUsdt"`
+					IsManualFee       bool   `json:"isManualFee"`
+					TFA               bool   `json:"tfa"`
+					SocialLoginEnable bool   `json:"socialLoginEnabled"`
+				} `json:"options"`
+				WithdrawEligible bool `json:"withdrawEligible"`
+			} `json:"profile"`
+			TradeStatus struct {
+				MonthTradesTotal string `json:"monthTradesTotal"`
+				MonthTradesCount int    `json:"monthTradesCount"`
+			} `json:"tradeStatus"`
+		}{}
+		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
+			return nil, err
+		}
+		if respStr.Status == "ok" {
+			bankAccounts := make([]models.BankAccount, len(respStr.Profile.BankAccounts))
+			for i, account := range respStr.Profile.BankAccounts {
+				bankAccounts[i].AccountNumber = account.Number
+				bankAccounts[i].OwnerName = account.Owner
+				bankAccounts[i].BankName = account.Bank
+				bankAccounts[i].Status = account.Status
+				bankAccounts[i].IBAN = account.IBAN
+			}
+			userInfo := api.UserInfoResponse{
+				User: models.User{
+					FirstName: respStr.Profile.FirstName,
+					LastName:  respStr.Profile.LastName,
+					Email:     respStr.Profile.Email,
+					Username:  respStr.Profile.Username,
+					Phone:     respStr.Profile.Phone,
+					Mobile:    respStr.Profile.Mobile,
+					City:      respStr.Profile.City,
+					IdCode:    respStr.Profile.NationalCode,
+				},
+				BankAccount: bankAccounts,
+			}
+			return &userInfo, nil
+		} else {
+			return nil, errors.New("get user profile error")
 		}
 	} else {
 		return nil, errors.New(resp.Status)
