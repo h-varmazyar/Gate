@@ -1,14 +1,41 @@
 package models
 
+import "time"
+
 type Order struct {
-	Price  float64
-	Volume float64
-	Qty    int
+	Id                  uint64
+	Fee                 float64
+	Qty                 int
+	User                string
+	Price               float64
+	Status              OrderStatus
+	Volume              string
+	CreatedAt           time.Time
+	OrderType           OrderType
+	TotalPrice          string
+	AveragePrice        string
+	MatchedVolume       string
+	SourceCurrency      string
+	UnMatchedVolume     string
+	DestinationCurrency string
 }
 
 type OrderType string
+type OrderStatus string
 
 const (
-	Bid = "bid"
-	Ask = "ask"
+	Ask  OrderType = "ask"
+	Bid  OrderType = "bid"
+	Buy  OrderType = "buy"
+	Sell OrderType = "sell"
+)
+
+const (
+	All      OrderStatus = "all"
+	New      OrderStatus = "new"
+	Open     OrderStatus = "open"
+	Done     OrderStatus = "done"
+	Close    OrderStatus = "Close"
+	Active   OrderStatus = "active"
+	Canceled OrderStatus = "canceled"
 )

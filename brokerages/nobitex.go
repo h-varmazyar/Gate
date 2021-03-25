@@ -8,6 +8,7 @@ import (
 	"github.com/mrNobody95/Gate/models"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Nobitex struct {
@@ -74,24 +75,16 @@ func (n *Nobitex) OrderBook(symbol string) (*api.OrderBookResponse, error) {
 				if err != nil {
 					return nil, err
 				}
-				volume, err := strconv.ParseFloat(bid[1], 64)
-				if err != nil {
-					return nil, err
-				}
 				orderBook.Bids[i].Price = price
-				orderBook.Bids[i].Volume = volume
+				orderBook.Bids[i].Volume = bid[1]
 			}
 			for i, ask := range respStr.Asks {
 				price, err := strconv.ParseFloat(ask[0], 64)
 				if err != nil {
 					return nil, err
 				}
-				volume, err := strconv.ParseFloat(ask[1], 64)
-				if err != nil {
-					return nil, err
-				}
 				orderBook.Asks[i].Price = price
-				orderBook.Asks[i].Volume = volume
+				orderBook.Asks[i].Volume = ask[1]
 			}
 			return &orderBook, nil
 		} else {
@@ -134,7 +127,7 @@ func (n *Nobitex) RecentTrades(symbol string) (*api.RecentTradesResponse, error)
 				recentTrade.Trades[i].Time = trade.Time
 				recentTrade.Trades[i].Price, _ = strconv.ParseFloat(trade.Price, 64)
 				recentTrade.Trades[i].Volume, _ = strconv.ParseFloat(trade.Volume, 64)
-				recentTrade.Trades[i].Type = models.TradeType(trade.Type)
+				recentTrade.Trades[i].Type = models.OrderType(trade.Type)
 			}
 			return &recentTrade, nil
 		} else {
@@ -336,6 +329,7 @@ func (n *Nobitex) WalletList() (*api.WalletsResponse, error) {
 				wallets[i].ActiveBalance = wallet.ActiveBalance
 				wallets[i].TotalBalance = wallet.Balance
 				wallets[i].Currency = wallet.Currency
+				wallets[i].ID = wallet.Id
 			}
 
 			return &api.WalletsResponse{Wallets: wallets}, nil
@@ -374,12 +368,362 @@ func (n *Nobitex) WalletInfo(walletName string) (*api.WalletResponse, error) {
 		}
 		if respStr.Status == "ok" {
 			return &api.WalletResponse{Wallet: models.Wallet{
+				ID:             respStr.Wallets[strings.ToUpper(walletName)].Id,
 				BlockedBalance: respStr.Wallets[strings.ToUpper(walletName)].Blocked,
 				TotalBalance:   respStr.Wallets[strings.ToUpper(walletName)].Balance,
 				Currency:       walletName,
 			}}, nil
 		} else {
 			return nil, errors.New("get user profile error")
+		}
+	} else {
+		return nil, errors.New(resp.Status)
+	}
+}
+
+func (n *Nobitex) WalletBalance(currency string) (*api.BalanceResponse, error) {
+	req := api.Request{
+		Type:     api.POST,
+		Endpoint: "https://api.nobitex.ir/users/wallets/balance",
+		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", n.Token)}},
+		Params:   map[string]interface{}{"currency": currency},
+	}
+
+	resp, err := req.Execute()
+	if err != nil {
+		return nil, err
+	}
+	if resp.Code == 200 {
+		respStr := struct {
+			Status  string `json:"status"`
+			Balance string `json:"balance"`
+		}{}
+		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
+			return nil, err
+		}
+		if respStr.Status == "ok" {
+			return &api.BalanceResponse{
+				Symbol:  currency,
+				Balance: respStr.Balance,
+			}, nil
+		} else {
+			return nil, errors.New("internal server error (wallet balance)")
+		}
+	} else {
+		return nil, errors.New(resp.Status)
+	}
+}
+
+func (n *Nobitex) TransactionList(walletID int) (*api.TransactionListResponse, error) {
+	req := api.Request{
+		Type:     api.POST,
+		Endpoint: "https://api.nobitex.ir/users/wallets/transactions/list",
+		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", n.Token)}},
+		Params:   map[string]interface{}{"wallet": walletID},
+	}
+
+	resp, err := req.Execute()
+	if err != nil {
+		return nil, err
+	}
+	if resp.Code == 200 {
+		respStr := struct {
+			Status       string `json:"status"`
+			Transactions []struct {
+				Currency      string    `json:"currency"`
+				CreatedAt     time.Time `json:"created_at"`
+				CalculatedFee string    `json:"calculatedFee"`
+				Id            uint64    `json:"id"`
+				Amount        string    `json:"amount"`
+				Description   string    `json:"description"`
+			} `json:"transactions"`
+		}{}
+		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
+			return nil, err
+		}
+		if respStr.Status == "ok" {
+			transactions := make([]models.Transaction, len(respStr.Transactions))
+			for i, transaction := range respStr.Transactions {
+				transactions[i] = models.Transaction{
+					ID:            transaction.Id,
+					Volume:        transaction.Amount,
+					Currency:      transaction.Currency,
+					CreatedAt:     transaction.CreatedAt,
+					Description:   transaction.Description,
+					CalculatedFee: transaction.CalculatedFee,
+				}
+			}
+			return &api.TransactionListResponse{Transactions: transactions}, nil
+		} else {
+			return nil, errors.New("internal server error (wallet balance)")
+		}
+	} else {
+		return nil, errors.New(resp.Status)
+	}
+}
+
+func (n *Nobitex) NewOrder(order models.Order) (*api.OrderResponse, error) {
+	body := make(map[string]interface{})
+	body["price"] = order.Price
+	body["amount"] = order.Volume
+	body["type"] = order.OrderType
+	body["srcCurrency"] = order.SourceCurrency
+	body["destCurrency"] = order.DestinationCurrency
+	req := api.Request{
+		Type:     api.POST,
+		Endpoint: "https://api.nobitex.ir/market/orders/add",
+		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", n.Token)}},
+		Params:   body,
+	}
+
+	resp, err := req.Execute()
+	if err != nil {
+		return nil, err
+	}
+	if resp.Code == 200 {
+		respStr := struct {
+			Status string `json:"status"`
+			Order  struct {
+				Id         uint64    `json:"id"`
+				Fee        float64   `json:"fee"`
+				Src        string    `json:"srcCurrency"`
+				Dest       string    `json:"destCurrency"`
+				Type       string    `json:"type"`
+				User       string    `json:"user"`
+				Price      string    `json:"price"`
+				Amount     string    `json:"amount"`
+				Status     string    `json:"status"`
+				Matched    string    `json:"matchedAmount"`
+				Unmatched  string    `json:"unmatchedAmount"`
+				CreatedAt  time.Time `json:"created_at"`
+				TotalPrice string    `json:"totalPrice"`
+			} `json:"transactions"`
+			Message string `json:"message"`
+		}{}
+		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
+			return nil, err
+		}
+		if respStr.Status == "ok" {
+			price, err := strconv.ParseFloat(respStr.Order.Price, 64)
+			if err != nil {
+				return nil, err
+			}
+			return &api.OrderResponse{
+				Order: models.Order{
+					Id:                  respStr.Order.Id,
+					Fee:                 respStr.Order.Fee,
+					User:                respStr.Order.User,
+					Price:               price,
+					Status:              models.OrderStatus(respStr.Order.Status),
+					Volume:              respStr.Order.Amount,
+					CreatedAt:           respStr.Order.CreatedAt,
+					OrderType:           models.OrderType(respStr.Order.Type),
+					TotalPrice:          respStr.Order.TotalPrice,
+					MatchedVolume:       respStr.Order.Matched,
+					SourceCurrency:      respStr.Order.Src,
+					UnMatchedVolume:     respStr.Order.Unmatched,
+					DestinationCurrency: respStr.Order.Dest,
+				},
+			}, nil
+		} else {
+			return nil, errors.New(respStr.Message)
+		}
+	} else {
+		return nil, errors.New(resp.Status)
+	}
+}
+
+func (n *Nobitex) OrderStatus(orderId uint64) (*api.OrderResponse, error) {
+	req := api.Request{
+		Type:     api.POST,
+		Endpoint: "https://api.nobitex.ir/market/orders/status",
+		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", n.Token)}},
+		Params:   map[string]interface{}{"id": orderId},
+	}
+
+	resp, err := req.Execute()
+	if err != nil {
+		return nil, err
+	}
+	if resp.Code == 200 {
+		respStr := struct {
+			Status string `json:"status"`
+			Order  struct {
+				Id         uint64    `json:"id"`
+				Fee        float64   `json:"fee"`
+				Src        string    `json:"srcCurrency"`
+				Dest       string    `json:"destCurrency"`
+				Type       string    `json:"type"`
+				User       string    `json:"user"`
+				Price      string    `json:"price"`
+				Amount     string    `json:"amount"`
+				Status     string    `json:"status"`
+				Matched    string    `json:"matchedAmount"`
+				Unmatched  string    `json:"unmatchedAmount"`
+				CreatedAt  time.Time `json:"created_at"`
+				TotalPrice string    `json:"totalPrice"`
+			} `json:"transactions"`
+			Message string `json:"message"`
+		}{}
+		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
+			return nil, err
+		}
+		if respStr.Status == "ok" {
+			price, err := strconv.ParseFloat(respStr.Order.Price, 64)
+			if err != nil {
+				return nil, err
+			}
+			return &api.OrderResponse{
+				Order: models.Order{
+					Id:                  respStr.Order.Id,
+					Fee:                 respStr.Order.Fee,
+					User:                respStr.Order.User,
+					Price:               price,
+					Status:              models.OrderStatus(respStr.Order.Status),
+					Volume:              respStr.Order.Amount,
+					CreatedAt:           respStr.Order.CreatedAt,
+					OrderType:           models.OrderType(respStr.Order.Type),
+					TotalPrice:          respStr.Order.TotalPrice,
+					MatchedVolume:       respStr.Order.Matched,
+					SourceCurrency:      respStr.Order.Src,
+					UnMatchedVolume:     respStr.Order.Unmatched,
+					DestinationCurrency: respStr.Order.Dest,
+				},
+			}, nil
+		} else {
+			return nil, errors.New(respStr.Message)
+		}
+	} else {
+		return nil, errors.New(resp.Status)
+	}
+}
+
+func (n *Nobitex) OrderList(status models.OrderStatus, Type models.OrderType, source, destination string, withDetails bool) (*api.OrderListResponse, error) {
+	body := make(map[string]interface{})
+	if status != "" {
+		body["status"] = status
+	}
+	if Type != "" {
+		body["type"] = Type
+	}
+	if source != "" {
+		body["srcCurrency"] = source
+	} else {
+		return nil, errors.New("please specify source currency")
+	}
+	if destination != "" {
+		body["dstCurrency"] = destination
+	} else {
+		return nil, errors.New("please specify destination currency")
+	}
+	if withDetails {
+		body["details"] = 2
+	} else {
+		body["details"] = 1
+	}
+	req := api.Request{
+		Type:     api.POST,
+		Endpoint: "https://api.nobitex.ir/market/orders/status",
+		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", n.Token)}},
+		Params:   map[string]interface{}{"id": body},
+	}
+
+	resp, err := req.Execute()
+	if err != nil {
+		return nil, err
+	}
+	if resp.Code == 200 {
+		respStr := struct {
+			Status string `json:"status"`
+			Orders []struct {
+				Id           uint64    `json:"id"`
+				Fee          float64   `json:"fee"`
+				Src          string    `json:"srcCurrency"`
+				Dest         string    `json:"destCurrency"`
+				Type         string    `json:"type"`
+				User         string    `json:"user"`
+				Price        string    `json:"price"`
+				Amount       string    `json:"amount"`
+				Status       string    `json:"status"`
+				Matched      string    `json:"matchedAmount"`
+				Unmatched    string    `json:"unmatchedAmount"`
+				CreatedAt    time.Time `json:"created_at"`
+				TotalPrice   string    `json:"totalPrice"`
+				AveragePrice string    `json:"averagePrice"`
+			} `json:"transactions"`
+			Message string `json:"message"`
+		}{}
+		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
+			return nil, err
+		}
+		if respStr.Status == "ok" {
+			orders := make([]models.Order, len(respStr.Orders))
+			for i, order := range respStr.Orders {
+				price, err := strconv.ParseFloat(order.Price, 64)
+				if err != nil {
+					continue
+				}
+				orders[i] = models.Order{
+					Id:                  order.Id,
+					Fee:                 order.Fee,
+					User:                order.User,
+					Price:               price,
+					Status:              models.OrderStatus(order.Status),
+					Volume:              order.Amount,
+					CreatedAt:           order.CreatedAt,
+					OrderType:           models.OrderType(order.Type),
+					TotalPrice:          order.TotalPrice,
+					MatchedVolume:       order.Matched,
+					SourceCurrency:      order.Src,
+					UnMatchedVolume:     order.Unmatched,
+					DestinationCurrency: order.Dest,
+				}
+			}
+			return &api.OrderListResponse{Orders: orders}, nil
+		} else {
+			return nil, errors.New(respStr.Message)
+		}
+	} else {
+		return nil, errors.New(resp.Status)
+	}
+}
+
+func (n *Nobitex) UpdateOrderStatus(orderId uint64, newStatus models.OrderStatus) (*api.UpdateOrderStatusResponse, error) {
+	body := make(map[string]interface{})
+	if orderId < 0 {
+		body["order"] = orderId
+	} else {
+		return nil, errors.New("please specify order id currency")
+	}
+	if newStatus != "" {
+		body["status"] = newStatus
+	} else {
+		return nil, errors.New("please specify new status currency")
+	}
+	req := api.Request{
+		Type:     api.POST,
+		Endpoint: "https://api.nobitex.ir/market/orders/update-status",
+		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", n.Token)}},
+		Params:   body,
+	}
+
+	resp, err := req.Execute()
+	if err != nil {
+		return nil, err
+	}
+	if resp.Code == 200 {
+		respStr := struct {
+			Status        string             `json:"status"`
+			Message       string             `json:"message"`
+			UpdatedStatus models.OrderStatus `json:"updatedStatus"`
+		}{}
+		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
+			return nil, err
+		}
+		if respStr.Status == "ok" {
+			return &api.UpdateOrderStatusResponse{NewStatus: respStr.UpdatedStatus}, nil
+		} else {
+			return nil, errors.New(respStr.Message)
 		}
 	} else {
 		return nil, errors.New(resp.Status)

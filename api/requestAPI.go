@@ -21,6 +21,12 @@ type Requests interface {
 	UserInfo() (*UserInfoResponse, error)
 	WalletList() (*WalletsResponse, error)
 	WalletInfo(walletName string) (*WalletResponse, error)
+	WalletBalance(currency string) (*BalanceResponse, error)
+	TransactionList(walletID int) (*TransactionListResponse, error)
+	NewOrder(order models.Order) (*OrderResponse, error)
+	OrderStatus(orderId uint64) (*OrderResponse, error)
+	OrderList(status models.OrderStatus, Type models.OrderType, source, destination string, withDetails bool) (*OrderListResponse, error)
+	UpdateOrderStatus(orderId uint64, newStatus models.OrderStatus) (*UpdateOrderStatusResponse, error)
 }
 
 type RequestType int

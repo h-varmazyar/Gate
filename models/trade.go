@@ -4,12 +4,5 @@ type Trade struct {
 	Time   float64
 	Price  float64
 	Volume float64
-	Type   TradeType
+	Type   OrderType
 }
-
-type TradeType string
-
-const (
-	Buy  = "buy"
-	Sell = "sell"
-)

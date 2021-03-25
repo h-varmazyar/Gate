@@ -36,3 +36,24 @@ type WalletResponse struct {
 type WalletsResponse struct {
 	Wallets []models.Wallet
 }
+
+type BalanceResponse struct {
+	Symbol  string
+	Balance string
+}
+
+type TransactionListResponse struct {
+	Transactions []models.Transaction
+}
+
+type OrderResponse struct {
+	Order models.Order
+}
+
+type OrderListResponse struct {
+	Orders []models.Order
+}
+
+type UpdateOrderStatusResponse struct {
+	NewStatus models.OrderStatus
+}
