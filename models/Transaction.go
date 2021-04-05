@@ -1,12 +1,13 @@
 package models
 
-import "time"
+import (
+	"gorm.io/gorm"
+)
 
 type Transaction struct {
-	ID            uint64
+	gorm.Model
 	Volume        string
 	Currency      string
-	CreatedAt     time.Time
 	Description   string
 	CalculatedFee string
 }

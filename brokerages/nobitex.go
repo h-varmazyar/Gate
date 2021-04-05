@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/models"
+	"gorm.io/gorm"
 	"strconv"
 	"strings"
 	"time"
@@ -433,7 +434,7 @@ func (n *Nobitex) TransactionList(walletID int) (*api.TransactionListResponse, e
 				Currency      string    `json:"currency"`
 				CreatedAt     time.Time `json:"created_at"`
 				CalculatedFee string    `json:"calculatedFee"`
-				Id            uint64    `json:"id"`
+				Id            uint      `json:"id"`
 				Amount        string    `json:"amount"`
 				Description   string    `json:"description"`
 			} `json:"transactions"`
@@ -445,10 +446,12 @@ func (n *Nobitex) TransactionList(walletID int) (*api.TransactionListResponse, e
 			transactions := make([]models.Transaction, len(respStr.Transactions))
 			for i, transaction := range respStr.Transactions {
 				transactions[i] = models.Transaction{
-					ID:            transaction.Id,
+					Model: gorm.Model{
+						ID:        transaction.Id,
+						CreatedAt: transaction.CreatedAt,
+					},
 					Volume:        transaction.Amount,
 					Currency:      transaction.Currency,
-					CreatedAt:     transaction.CreatedAt,
 					Description:   transaction.Description,
 					CalculatedFee: transaction.CalculatedFee,
 				}
@@ -484,7 +487,7 @@ func (n *Nobitex) NewOrder(order models.Order) (*api.OrderResponse, error) {
 		respStr := struct {
 			Status string `json:"status"`
 			Order  struct {
-				Id         uint64    `json:"id"`
+				Id         uint      `json:"id"`
 				Fee        float64   `json:"fee"`
 				Src        string    `json:"srcCurrency"`
 				Dest       string    `json:"destCurrency"`
@@ -510,13 +513,15 @@ func (n *Nobitex) NewOrder(order models.Order) (*api.OrderResponse, error) {
 			}
 			return &api.OrderResponse{
 				Order: models.Order{
-					Id:                  respStr.Order.Id,
+					Model: gorm.Model{
+						ID:        respStr.Order.Id,
+						CreatedAt: respStr.Order.CreatedAt,
+					},
 					Fee:                 respStr.Order.Fee,
 					User:                respStr.Order.User,
 					Price:               price,
 					Status:              models.OrderStatus(respStr.Order.Status),
 					Volume:              respStr.Order.Amount,
-					CreatedAt:           respStr.Order.CreatedAt,
 					OrderType:           models.OrderType(respStr.Order.Type),
 					TotalPrice:          respStr.Order.TotalPrice,
 					MatchedVolume:       respStr.Order.Matched,
@@ -549,7 +554,7 @@ func (n *Nobitex) OrderStatus(orderId uint64) (*api.OrderResponse, error) {
 		respStr := struct {
 			Status string `json:"status"`
 			Order  struct {
-				Id         uint64    `json:"id"`
+				Id         uint      `json:"id"`
 				Fee        float64   `json:"fee"`
 				Src        string    `json:"srcCurrency"`
 				Dest       string    `json:"destCurrency"`
@@ -575,13 +580,15 @@ func (n *Nobitex) OrderStatus(orderId uint64) (*api.OrderResponse, error) {
 			}
 			return &api.OrderResponse{
 				Order: models.Order{
-					Id:                  respStr.Order.Id,
+					Model: gorm.Model{
+						ID:        respStr.Order.Id,
+						CreatedAt: respStr.Order.CreatedAt,
+					},
 					Fee:                 respStr.Order.Fee,
 					User:                respStr.Order.User,
 					Price:               price,
 					Status:              models.OrderStatus(respStr.Order.Status),
 					Volume:              respStr.Order.Amount,
-					CreatedAt:           respStr.Order.CreatedAt,
 					OrderType:           models.OrderType(respStr.Order.Type),
 					TotalPrice:          respStr.Order.TotalPrice,
 					MatchedVolume:       respStr.Order.Matched,
@@ -636,7 +643,7 @@ func (n *Nobitex) OrderList(status models.OrderStatus, Type models.OrderType, so
 		respStr := struct {
 			Status string `json:"status"`
 			Orders []struct {
-				Id           uint64    `json:"id"`
+				Id           uint      `json:"id"`
 				Fee          float64   `json:"fee"`
 				Src          string    `json:"srcCurrency"`
 				Dest         string    `json:"destCurrency"`
@@ -664,13 +671,15 @@ func (n *Nobitex) OrderList(status models.OrderStatus, Type models.OrderType, so
 					continue
 				}
 				orders[i] = models.Order{
-					Id:                  order.Id,
+					Model: gorm.Model{
+						ID:        order.Id,
+						CreatedAt: order.CreatedAt,
+					},
 					Fee:                 order.Fee,
 					User:                order.User,
 					Price:               price,
 					Status:              models.OrderStatus(order.Status),
 					Volume:              order.Amount,
-					CreatedAt:           order.CreatedAt,
 					OrderType:           models.OrderType(order.Type),
 					TotalPrice:          order.TotalPrice,
 					MatchedVolume:       order.Matched,

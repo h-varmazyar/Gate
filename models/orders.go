@@ -1,16 +1,17 @@
 package models
 
-import "time"
+import (
+	"gorm.io/gorm"
+)
 
 type Order struct {
-	Id                  uint64
+	gorm.Model
 	Fee                 float64
 	Qty                 int
 	User                string
 	Price               float64
 	Status              OrderStatus
 	Volume              string
-	CreatedAt           time.Time
 	OrderType           OrderType
 	TotalPrice          string
 	AveragePrice        string
