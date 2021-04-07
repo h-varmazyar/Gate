@@ -12,14 +12,14 @@ import (
 	"time"
 )
 
-type Nobitex struct {
+type NobitexConfig struct {
 	Username  string
 	Password  string
 	Token     string
 	LongToken bool
 }
 
-func (n *Nobitex) Login(totp int) error {
+func (n NobitexConfig) Login(totp int) error {
 	req := api.Request{
 		Type:     api.POST,
 		Endpoint: "https://api.nobitex.ir/auth/login/",
@@ -46,10 +46,10 @@ func (n *Nobitex) Login(totp int) error {
 	}
 }
 
-func (n *Nobitex) OrderBook(symbol string) (*api.OrderBookResponse, error) {
+func (n NobitexConfig) OrderBook(symbol Symbol) (*api.OrderBookResponse, error) {
 	req := api.Request{
 		Type:     api.GET,
-		Endpoint: "https://api.nobitex.ir/v2/orderbook/" + symbol,
+		Endpoint: "https://api.nobitex.ir/v2/orderbook/" + string(symbol),
 	}
 
 	resp, err := req.Execute()
@@ -67,7 +67,7 @@ func (n *Nobitex) OrderBook(symbol string) (*api.OrderBookResponse, error) {
 		}
 		if respStr.Status == "ok" {
 			orderBook := api.OrderBookResponse{
-				Symbol: symbol,
+				Symbol: string(symbol),
 				Bids:   make([]models.Order, len(respStr.Bids)),
 				Asks:   make([]models.Order, len(respStr.Asks)),
 			}
@@ -96,10 +96,10 @@ func (n *Nobitex) OrderBook(symbol string) (*api.OrderBookResponse, error) {
 	}
 }
 
-func (n *Nobitex) RecentTrades(symbol string) (*api.RecentTradesResponse, error) {
+func (n NobitexConfig) RecentTrades(symbol Symbol) (*api.RecentTradesResponse, error) {
 	req := api.Request{
 		Type:     api.GET,
-		Endpoint: "https://api.nobitex.ir/v2/trades/" + symbol,
+		Endpoint: "https://api.nobitex.ir/v2/trades/" + string(symbol),
 	}
 
 	resp, err := req.Execute()
@@ -121,7 +121,7 @@ func (n *Nobitex) RecentTrades(symbol string) (*api.RecentTradesResponse, error)
 		}
 		if respStr.Status == "ok" {
 			recentTrade := api.RecentTradesResponse{
-				Symbol: symbol,
+				Symbol: string(symbol),
 				Trades: make([]models.Trade, len(respStr.Trades)),
 			}
 			for i, trade := range respStr.Trades {
@@ -139,7 +139,11 @@ func (n *Nobitex) RecentTrades(symbol string) (*api.RecentTradesResponse, error)
 	}
 }
 
-func (n *Nobitex) OHLC(symbol string, resolution *models.Resolution, from, to float64) (*api.OHLCResponse, error) {
+func (n NobitexConfig) MarketStats(destination, source string) (*api.MarketStatusResponse, error) {
+	return nil, nil
+}
+
+func (n NobitexConfig) OHLC(symbol Symbol, resolution *models.Resolution, from, to float64) (*api.OHLCResponse, error) {
 	req := api.Request{
 		Type:     api.GET,
 		Endpoint: "https://api.nobitex.ir/market/udf/history",
@@ -166,7 +170,7 @@ func (n *Nobitex) OHLC(symbol string, resolution *models.Resolution, from, to fl
 		}
 		if respStr.Status == "ok" {
 			ohlc := api.OHLCResponse{
-				Symbol:     symbol,
+				Symbol:     string(symbol),
 				Resolution: resolution,
 			}
 			for i := 0; i < len(respStr.Time); i++ {
@@ -186,7 +190,7 @@ func (n *Nobitex) OHLC(symbol string, resolution *models.Resolution, from, to fl
 	}
 }
 
-func (n *Nobitex) UserInfo() (*api.UserInfoResponse, error) {
+func (n NobitexConfig) UserInfo() (*api.UserInfoResponse, error) {
 	req := api.Request{
 		Type:     api.GET,
 		Endpoint: "https://api.nobitex.ir/users/profile",
@@ -293,7 +297,7 @@ func (n *Nobitex) UserInfo() (*api.UserInfoResponse, error) {
 	}
 }
 
-func (n *Nobitex) WalletList() (*api.WalletsResponse, error) {
+func (n NobitexConfig) WalletList() (*api.WalletsResponse, error) {
 	req := api.Request{
 		Type:     api.POST,
 		Endpoint: "https://api.nobitex.ir/users/wallets/list",
@@ -342,7 +346,7 @@ func (n *Nobitex) WalletList() (*api.WalletsResponse, error) {
 	}
 }
 
-func (n *Nobitex) WalletInfo(walletName string) (*api.WalletResponse, error) {
+func (n NobitexConfig) WalletInfo(walletName string) (*api.WalletResponse, error) {
 	req := api.Request{
 		Type:     api.POST,
 		Endpoint: "https://api.nobitex.ir/v2/wallets",
@@ -382,7 +386,7 @@ func (n *Nobitex) WalletInfo(walletName string) (*api.WalletResponse, error) {
 	}
 }
 
-func (n *Nobitex) WalletBalance(currency string) (*api.BalanceResponse, error) {
+func (n NobitexConfig) WalletBalance(currency string) (*api.BalanceResponse, error) {
 	req := api.Request{
 		Type:     api.POST,
 		Endpoint: "https://api.nobitex.ir/users/wallets/balance",
@@ -415,7 +419,7 @@ func (n *Nobitex) WalletBalance(currency string) (*api.BalanceResponse, error) {
 	}
 }
 
-func (n *Nobitex) TransactionList(walletID int) (*api.TransactionListResponse, error) {
+func (n NobitexConfig) TransactionList(walletID int) (*api.TransactionListResponse, error) {
 	req := api.Request{
 		Type:     api.POST,
 		Endpoint: "https://api.nobitex.ir/users/wallets/transactions/list",
@@ -465,7 +469,7 @@ func (n *Nobitex) TransactionList(walletID int) (*api.TransactionListResponse, e
 	}
 }
 
-func (n *Nobitex) NewOrder(order models.Order) (*api.OrderResponse, error) {
+func (n NobitexConfig) NewOrder(order models.Order) (*api.OrderResponse, error) {
 	body := make(map[string]interface{})
 	body["price"] = order.Price
 	body["amount"] = order.Volume
@@ -538,7 +542,7 @@ func (n *Nobitex) NewOrder(order models.Order) (*api.OrderResponse, error) {
 	}
 }
 
-func (n *Nobitex) OrderStatus(orderId uint64) (*api.OrderResponse, error) {
+func (n NobitexConfig) OrderStatus(orderId uint64) (*api.OrderResponse, error) {
 	req := api.Request{
 		Type:     api.POST,
 		Endpoint: "https://api.nobitex.ir/market/orders/status",
@@ -605,7 +609,7 @@ func (n *Nobitex) OrderStatus(orderId uint64) (*api.OrderResponse, error) {
 	}
 }
 
-func (n *Nobitex) OrderList(status models.OrderStatus, Type models.OrderType, source, destination string, withDetails bool) (*api.OrderListResponse, error) {
+func (n NobitexConfig) OrderList(status models.OrderStatus, Type models.OrderType, source, destination string, withDetails bool) (*api.OrderListResponse, error) {
 	body := make(map[string]interface{})
 	if status != "" {
 		body["status"] = status
@@ -697,7 +701,7 @@ func (n *Nobitex) OrderList(status models.OrderStatus, Type models.OrderType, so
 	}
 }
 
-func (n *Nobitex) UpdateOrderStatus(orderId uint64, newStatus models.OrderStatus) (*api.UpdateOrderStatusResponse, error) {
+func (n NobitexConfig) UpdateOrderStatus(orderId uint64, newStatus models.OrderStatus) (*api.UpdateOrderStatusResponse, error) {
 	body := make(map[string]interface{})
 	if orderId < 0 {
 		body["order"] = orderId

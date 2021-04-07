@@ -5,29 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/mrNobody95/Gate/models"
 	"io/ioutil"
 	"net/http"
 	url2 "net/url"
 	"strings"
 )
-
-type Requests interface {
-	Login(totp int) error
-	OrderBook(symbol string) (*OrderBookResponse, error)
-	RecentTrades(symbol string) (*RecentTradesResponse, error)
-	MarketStats(destination, source string) (*MarketStatusResponse, error)
-	OHLC(symbol string, resolution *models.Resolution, from, to float64) (*OHLCResponse, error)
-	UserInfo() (*UserInfoResponse, error)
-	WalletList() (*WalletsResponse, error)
-	WalletInfo(walletName string) (*WalletResponse, error)
-	WalletBalance(currency string) (*BalanceResponse, error)
-	TransactionList(walletID int) (*TransactionListResponse, error)
-	NewOrder(order models.Order) (*OrderResponse, error)
-	OrderStatus(orderId uint64) (*OrderResponse, error)
-	OrderList(status models.OrderStatus, Type models.OrderType, source, destination string, withDetails bool) (*OrderListResponse, error)
-	UpdateOrderStatus(orderId uint64, newStatus models.OrderStatus) (*UpdateOrderStatusResponse, error)
-}
 
 type RequestType int
 
