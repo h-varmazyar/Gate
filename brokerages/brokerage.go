@@ -6,6 +6,7 @@ import (
 )
 
 type Brokerage interface {
+	Validate() error
 	Login(totp int) error
 	OrderBook(symbol Symbol) (*api.OrderBookResponse, error)
 	RecentTrades(symbol Symbol) (*api.RecentTradesResponse, error)
@@ -20,6 +21,12 @@ type Brokerage interface {
 	OrderStatus(orderId uint64) (*api.OrderResponse, error)
 	OrderList(status models.OrderStatus, Type models.OrderType, source, destination string, withDetails bool) (*api.OrderListResponse, error)
 	UpdateOrderStatus(orderId uint64, newStatus models.OrderStatus) (*api.UpdateOrderStatusResponse, error)
+}
+
+type BrokerageConfig struct {
+	Name     string
+	Username string
+	Password string
 }
 
 type Symbol string
@@ -62,3 +69,7 @@ const (
 	TRX Currency = "trx"
 	SDT Currency = "sdt"
 )
+
+func (n *BrokerageConfig) Validate() error {
+
+}

@@ -13,10 +13,13 @@ import (
 )
 
 type NobitexConfig struct {
-	Username  string
-	Password  string
+	BrokerageConfig
 	Token     string
 	LongToken bool
+}
+
+func (n NobitexConfig) Validate() {
+
 }
 
 func (n NobitexConfig) Login(totp int) error {
