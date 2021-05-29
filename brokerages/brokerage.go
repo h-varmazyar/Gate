@@ -69,7 +69,3 @@ const (
 	TRX Currency = "trx"
 	SDT Currency = "sdt"
 )
-
-func (n *BrokerageConfig) Validate() error {
-
-}
