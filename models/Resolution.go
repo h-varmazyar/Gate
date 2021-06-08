@@ -1,6 +1,6 @@
 package models
 
 type Resolution struct {
-	Value interface{}
-	Label string
+	Value interface{} `gorm:"-"`
+	Label string      `gorm:"resolution_label"`
 }

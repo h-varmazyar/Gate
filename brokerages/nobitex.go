@@ -159,14 +159,14 @@ func (n NobitexConfig) OHLC(symbol Symbol, resolution *models.Resolution, from, 
 	}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status string    `json:"s"`
-			Time   []float64 `json:"t"`
-			Open   []string  `json:"o"`
-			High   []string  `json:"h"`
-			Low    []string  `json:"l"`
-			Close  []string  `json:"c"`
-			Volume []string  `json:"v"`
-			Error  string    `json:"errmsg"`
+			Status string   `json:"s"`
+			Time   []int64  `json:"t"`
+			Open   []string `json:"o"`
+			High   []string `json:"h"`
+			Low    []string `json:"l"`
+			Close  []string `json:"c"`
+			Volume []string `json:"v"`
+			Error  string   `json:"errmsg"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
 			return nil, err

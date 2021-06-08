@@ -13,4 +13,5 @@ func (n *Node) Start() error {
 	if err := n.Strategy.Validate(); err != nil {
 		return err
 	}
+
 }

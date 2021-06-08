@@ -14,9 +14,13 @@ type Job struct {
 type JobName string
 
 const (
-	OHLC = "get_ohlc"
+	SingleOHLC = "single_ohlc"
+	RangeOHLC  = "range_ohlc"
 )
 
-func (c *Context) ohlc(job *work.Job) error {
+func (c *Context) singleOhlc(job *work.Job) error {
+	return nil
+}
+func (c *Context) rangeOhlc(job *work.Job) error {
 	return nil
 }

@@ -24,13 +24,14 @@ type Brokerage interface {
 }
 
 type BrokerageConfig struct {
-	Name     string
+	Name     BrokerageName
 	Username string
 	Password string
 }
 
 type Symbol string
 type Currency string
+type BrokerageName string
 
 const (
 	BTCIRT  Symbol = "BTCIRT"
