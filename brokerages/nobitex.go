@@ -18,8 +18,12 @@ type NobitexConfig struct {
 	LongToken bool
 }
 
-func (n NobitexConfig) Validate() {
+func (n NobitexConfig) Validate() error {
+	return nil
+}
 
+func (n NobitexConfig) GetName() BrokerageName {
+	return n.Name
 }
 
 func (n NobitexConfig) Login(totp int) error {

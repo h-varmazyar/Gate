@@ -7,6 +7,7 @@ import (
 
 type Brokerage interface {
 	Validate() error
+	GetName() BrokerageName
 	Login(totp int) error
 	OrderBook(symbol Symbol) (*api.OrderBookResponse, error)
 	RecentTrades(symbol Symbol) (*api.RecentTradesResponse, error)
@@ -24,9 +25,10 @@ type Brokerage interface {
 }
 
 type BrokerageConfig struct {
-	Name     BrokerageName
-	Username string
-	Password string
+	Name                 BrokerageName
+	Username             string
+	Password             string
+	CandlePreRequestSize int
 }
 
 type Symbol string
@@ -69,4 +71,10 @@ const (
 	ETC Currency = "etc"
 	TRX Currency = "trx"
 	SDT Currency = "sdt"
+)
+
+const (
+	Binance BrokerageName = "binance"
+	coinex  BrokerageName = "coinex"
+	Nobitex BrokerageName = "nobitex"
 )

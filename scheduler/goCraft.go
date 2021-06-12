@@ -20,20 +20,22 @@ var redisPool = &redis.Pool{
 }
 
 var enqueue = work.NewEnqueuer("jh_bot_pool", redisPool)
+var pool *work.WorkerPool
 
 type Context struct {
 	customerID int64
 }
 
 func InitWorker() {
-	pool := work.NewWorkerPool(Context{}, 50, "gate_pool", redisPool)
+	pool = work.NewWorkerPool(Context{}, 50, "gate_pool", redisPool)
 
 	// Add middleware that will be executed for each job
 	pool.Middleware((*Context).Log)
 	pool.Middleware((*Context).FindCustomer)
 
 	//// Map the name of jobs to handler functions
-	pool.JobWithOptions(OHLC, work.JobOptions{Priority: 1, MaxFails: 2}, (*Context).ohlc)
+	pool.JobWithOptions(SingleOHLC, work.JobOptions{Priority: 1, MaxFails: 2}, (*Context).singleOhlc)
+	pool.JobWithOptions(RangeOHLC, work.JobOptions{Priority: 1, MaxFails: 2}, (*Context).rangeOhlc)
 	//pool.JobWithOptions(GameRequest, work.JobOptions{Priority: 1, MaxFails: 2}, (*Context).sendGameRequest)
 	//pool.JobWithOptions(Broadcast, work.JobOptions{Priority: 2, MaxFails: 2}, (*Context).Broadcast)
 	//

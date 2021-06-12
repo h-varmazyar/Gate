@@ -1,6 +1,9 @@
 package models
 
+import "time"
+
 type Resolution struct {
-	Value interface{} `gorm:"-"`
-	Label string      `gorm:"resolution_label"`
+	Duration time.Duration `gorm:"duration"`
+	Value    interface{}   `gorm:"value"`
+	Label    string        `gorm:"resolution_label"`
 }

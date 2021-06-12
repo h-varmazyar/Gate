@@ -16,8 +16,7 @@ type Strategy struct {
 	MaxBenefit            float64                                 `json:"max_benefit" xml:"max_benefit"`       //maximum benefit percentage in each trades
 	PrimaryAmount         float64                                 `json:"primary_amount" xml:"primary_amount"` //primary strategy amount of primary currency
 	CurrentAmount         float64                                 `json:"current_amount" xml:"current_amount"` //currency amount after each trades
-	BrokerageName         brokerages.BrokerageName                `json:"brokerage_name" xml:"brokerage_name"`
-	PrimaryCandles        map[brokerages.Symbol]models.Candle     `json:"primary_candles" xml:"primary_candles"`                 //strategy primary candles
+	Brokerage             brokerages.Brokerage                    `json:"brokerage" xml:"brokerage"`
 	PivotResolution       map[brokerages.Symbol]models.Resolution `json:"pivot_resolution" xml:"pivot_resolution"`               //
 	BufferedCandles       map[brokerages.Symbol]models.Candle     `json:"buffered_candles" xml:"buffered_candles"`               //strategy buffered candles
 	PrimaryCurrency       brokerages.Currency                     `json:"primary_currency" xml:"primary_currency"`               //
@@ -26,9 +25,7 @@ type Strategy struct {
 	HelperResolution      map[brokerages.Symbol]models.Resolution `json:"helper_resolution" xml:"helper_resolution"`             //
 	ReservePercentage     float64                                 `json:"reserve_percentage" xml:"reserve_percentage"`           //reserve percentage value for golden positions...
 	CandleBufferLength    int                                     `json:"candle_buffer_length" xml:"candle_buffer_length"`       //maximum candles length
-	HelperBufferedCandles map[brokerages.Symbol]models.Candle     `json:"helper_buffered_candles" xml:"helper_buffered_candles"` //strategy buffered candles
-
-	brokerage brokerages.Brokerage
+	BufferedHelperCandles map[brokerages.Symbol]models.Candle     `json:"buffered_helper_candles" xml:"buffered_helper_candles"` //strategy buffered candles
 }
 
 func (s *Strategy) Validate() error {
@@ -44,7 +41,7 @@ func (s *Strategy) Validate() error {
 	if err := s.Brokerage.Validate(); err != nil {
 		return err
 	}
-	if s.PivotResolution == "" {
+	if len(s.PivotResolution) == 0 {
 		return errors.New("pivot time frame must be declared")
 	}
 	if s.PrimaryCurrency == "" {
@@ -61,7 +58,7 @@ func (s *Strategy) CollectPrimaryData() {
 		candle := models.Candle{
 			Symbol:     symbol,
 			Resolution: s.PivotResolution[symbol],
-			Brokerage:  s.BrokerageName,
+			Brokerage:  s.Brokerage.GetName(),
 		}
 		err := candle.LoadLast()
 		if err != nil {
@@ -71,9 +68,50 @@ func (s *Strategy) CollectPrimaryData() {
 				continue
 			}
 		}
-		scheduler.Job{
+		err = (&scheduler.Job{
 			Name: scheduler.RangeOHLC,
-			Args: map[string]interface{}{"symbol": symbol, "qty": 400, "start_from": candle.Time},
+			Args: map[string]interface{}{"symbol": symbol,
+				"resolution": s.PivotResolution[symbol],
+				"start_from": candle.Time,
+				"brokerage":  s.Brokerage,
+			},
+		}).Enqueue()
+		if err != nil {
+			panic(err)
 		}
+		err = (&scheduler.Job{
+			Name: scheduler.RangeOHLC,
+			Args: map[string]interface{}{"symbol": symbol,
+				"resolution": s.HelperResolution[symbol],
+				"start_from": candle.Time,
+				"brokerage":  s.Brokerage,
+				"helper":     true,
+			},
+		}).Enqueue()
+	}
+}
+
+func (s *Strategy) CollectPeriodicData() {
+	for _, symbol := range s.Symbols {
+		err := (&scheduler.Job{
+			Name:   scheduler.SingleOHLC,
+			Period: s.PivotResolution[symbol].Duration,
+			Args: map[string]interface{}{"symbol": symbol,
+				"resolution": s.PivotResolution[symbol],
+				"brokerage":  s.Brokerage,
+			},
+		}).EnqueuePeriodically()
+		if err != nil {
+			panic(err)
+		}
+		err = (&scheduler.Job{
+			Name:   scheduler.SingleOHLC,
+			Period: s.HelperResolution[symbol].Duration,
+			Args: map[string]interface{}{"symbol": symbol,
+				"resolution": s.HelperResolution[symbol],
+				"brokerage":  s.Brokerage,
+				"helper":     true,
+			},
+		}).EnqueuePeriodically()
 	}
 }
