@@ -6,16 +6,6 @@ import (
 	"math"
 )
 
-type pSarConfig struct {
-	*basicConfig
-	acceleration       float64
-	maxAcceleration    float64
-	accelerationFactor float64
-	startAcceleration  float64
-	extremePoint       float64
-	trend              Trend
-}
-
 type Trend int
 
 const (
@@ -23,19 +13,7 @@ const (
 	Short Trend = -1
 )
 
-func NewParabolicSARConfig(length int, acceleration, maxAcceleration, startAF float64) *pSarConfig {
-	return &pSarConfig{
-		basicConfig: &basicConfig{
-			Length: length,
-		},
-		acceleration:       acceleration,
-		maxAcceleration:    maxAcceleration,
-		startAcceleration:  startAF,
-		accelerationFactor: startAF,
-	}
-}
-
-func (conf *pSarConfig) Calculate(candles []models.Candle, appendCandles bool) error {
+func (conf *IndicatorConfig) CalculatePSAR(candles []models.Candle, appendCandles bool) error {
 	var rangeCounter int
 	if appendCandles {
 		rangeCounter = len(conf.Candles) - 1
@@ -53,7 +31,7 @@ func (conf *pSarConfig) Calculate(candles []models.Candle, appendCandles bool) e
 		}
 		conf.Candles[1].ParabolicSAR.Trend = conf.trend
 	}
-	if err := conf.validate(); err != nil {
+	if err := conf.validatePSAR(); err != nil {
 		return err
 	}
 
@@ -93,7 +71,7 @@ func (conf *pSarConfig) Calculate(candles []models.Candle, appendCandles bool) e
 	return nil
 }
 
-func (conf *pSarConfig) Update() error {
+func (conf *IndicatorConfig) UpdatePSAR() error {
 	lastIndex := len(conf.Candles) - 1
 	if conf.Candles[lastIndex].High >= conf.Candles[lastIndex-1].High || conf.Candles[lastIndex-1].Low <= conf.Candles[lastIndex].Low {
 		conf.trend = Long
@@ -134,7 +112,7 @@ func (conf *pSarConfig) Update() error {
 	return nil
 }
 
-func (conf *pSarConfig) validate() error {
+func (conf *IndicatorConfig) validatePSAR() error {
 	if len(conf.Candles) < 2 {
 		return errors.New("candle length must be more than 2")
 	}

@@ -6,21 +6,21 @@ import (
 	"math"
 )
 
-type bollingerBandConfig struct {
-	*basicConfig
-	Deviation int
-}
+//type bollingerBandConfig struct {
+//	*basicConfig
+//	Deviation int
+//}
+//
+//func NewBollingerBandConfig(deviation, length int) *bollingerBandConfig {
+//	return &bollingerBandConfig{
+//		basicConfig: &basicConfig{
+//			Length: length,
+//		},
+//		Deviation: deviation,
+//	}
+//}
 
-func NewBollingerBandConfig(deviation, length int) *bollingerBandConfig {
-	return &bollingerBandConfig{
-		basicConfig: &basicConfig{
-			Length: length,
-		},
-		Deviation: deviation,
-	}
-}
-
-func (conf *bollingerBandConfig) Calculate(candles []models.Candle, appendCandles bool) error {
+func (conf *IndicatorConfig) CalculateBollingerBand(candles []models.Candle, appendCandles bool) error {
 	rangeCounter := conf.Length
 	if appendCandles {
 		rangeCounter = len(conf.Candles)
@@ -28,12 +28,15 @@ func (conf *bollingerBandConfig) Calculate(candles []models.Candle, appendCandle
 	} else {
 		conf.Candles = candles
 	}
-	if err := conf.validate(); err != nil {
+	if err := conf.validateBollingerBand(); err != nil {
 		return err
 	}
 
-	mac := NewMovingAverageConfig(conf.Length, SourceHLC3)
-	err := mac.CalculateSimple(cloneCandles(conf.Candles[rangeCounter-conf.Length:]), false)
+	mac := IndicatorConfig{
+		Length: conf.Length,
+		source: SourceHLC3,
+	}
+	err := mac.CalculateSMA(cloneCandles(conf.Candles[rangeCounter-conf.Length:]), false)
 	if err != nil {
 		return err
 	}
@@ -54,10 +57,13 @@ func (conf *bollingerBandConfig) Calculate(candles []models.Candle, appendCandle
 	return nil
 }
 
-func (conf *bollingerBandConfig) Update() error {
+func (conf *IndicatorConfig) UpdateBollingerBand() error {
 	lastIndex := len(conf.Candles)
-	mac := NewMovingAverageConfig(conf.Length, SourceHLC3)
-	err := mac.CalculateSimple(cloneCandles(conf.Candles[lastIndex-conf.Length:]), false)
+	mac := IndicatorConfig{
+		Length: conf.Length,
+		source: SourceHLC3,
+	}
+	err := mac.CalculateSMA(cloneCandles(conf.Candles[lastIndex-conf.Length:]), false)
 	if err != nil {
 		return err
 	}
@@ -76,7 +82,7 @@ func (conf *bollingerBandConfig) Update() error {
 	return nil
 }
 
-func (conf *bollingerBandConfig) validate() error {
+func (conf *IndicatorConfig) validateBollingerBand() error {
 	if len(conf.Candles) < conf.Length {
 		return errors.New("candles length must bigger or equal than indicator period length")
 	}

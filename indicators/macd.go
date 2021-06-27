@@ -6,13 +6,13 @@ import (
 	"github.com/mrNobody95/Gate/models"
 )
 
-type macdConfig struct {
-	Candles      []models.Candle
-	fastLength   int
-	slowLength   int
-	signalLength int
-	source       Source
-}
+//type macdConfig struct {
+//	Candles      []models.Candle
+//	fastLength   int
+//	slowLength   int
+//	signalLength int
+//	source       Source
+//}
 
 type Source string
 
@@ -26,16 +26,16 @@ const (
 	SourceOHLC4 = "ohlc4"
 )
 
-func NewMacdConfig(fastLength, slowLength, signalLength int, source Source) *macdConfig {
-	return &macdConfig{
-		fastLength:   fastLength,
-		slowLength:   slowLength,
-		signalLength: signalLength,
-		source:       source,
-	}
-}
+//func NewMacdConfig(fastLength, slowLength, signalLength int, source Source) *macdConfig {
+//	return &macdConfig{
+//		fastLength:   fastLength,
+//		slowLength:   slowLength,
+//		signalLength: signalLength,
+//		source:       source,
+//	}
+//}
 
-func (conf *macdConfig) Calculate(candles []models.Candle, appendCandles bool) error {
+func (conf *IndicatorConfig) CalculateMACD(candles []models.Candle, appendCandles bool) error {
 	var rangeCounter int
 	if appendCandles {
 		rangeCounter = len(conf.Candles)
@@ -44,19 +44,28 @@ func (conf *macdConfig) Calculate(candles []models.Candle, appendCandles bool) e
 		conf.Candles = candles
 		rangeCounter = conf.slowLength - 1
 	}
-	if err := conf.validate(); err != nil {
+	if err := conf.validateMA(); err != nil {
 		return err
 	}
-	slowEMA := NewMovingAverageConfig(conf.slowLength, conf.source)
-	fastEMA := NewMovingAverageConfig(conf.fastLength, conf.source)
-	signalEMA := NewMovingAverageConfig(conf.signalLength, conf.source)
-	if err := slowEMA.CalculateExponential(cloneCandles(conf.Candles[rangeCounter-conf.slowLength+1:]), false); err != nil {
+	slowEMA := IndicatorConfig{
+		slowLength: conf.slowLength,
+		source:     conf.source,
+	}
+	fastEMA := IndicatorConfig{
+		fastLength: conf.fastLength,
+		source:     conf.source,
+	}
+	signalEMA := IndicatorConfig{
+		signalLength: conf.signalLength,
+		source:       conf.source,
+	}
+	if err := slowEMA.CalculateEMA(cloneCandles(conf.Candles[rangeCounter-conf.slowLength+1:]), false); err != nil {
 		return err
 	}
-	if err := fastEMA.CalculateExponential(cloneCandles(conf.Candles[rangeCounter-conf.fastLength+1:]), false); err != nil {
+	if err := fastEMA.CalculateEMA(cloneCandles(conf.Candles[rangeCounter-conf.fastLength+1:]), false); err != nil {
 		return err
 	}
-	if err := signalEMA.CalculateExponential(cloneCandles(conf.Candles[rangeCounter-conf.signalLength+1:]), false); err != nil {
+	if err := signalEMA.CalculateEMA(cloneCandles(conf.Candles[rangeCounter-conf.signalLength+1:]), false); err != nil {
 		return err
 	}
 
@@ -67,19 +76,28 @@ func (conf *macdConfig) Calculate(candles []models.Candle, appendCandles bool) e
 	return nil
 }
 
-func (conf *macdConfig) Update() error {
+func (conf *IndicatorConfig) UpdateMACD() error {
 	lastIndex := len(conf.Candles)
 
-	slowEMA := NewMovingAverageConfig(conf.slowLength, conf.source)
-	fastEMA := NewMovingAverageConfig(conf.fastLength, conf.source)
-	signalEMA := NewMovingAverageConfig(conf.signalLength, conf.source)
-	if err := slowEMA.CalculateExponential(cloneCandles(conf.Candles[lastIndex-conf.slowLength:]), false); err != nil {
+	slowEMA := IndicatorConfig{
+		slowLength: conf.slowLength,
+		source:     conf.source,
+	}
+	fastEMA := IndicatorConfig{
+		fastLength: conf.fastLength,
+		source:     conf.source,
+	}
+	signalEMA := IndicatorConfig{
+		signalLength: conf.signalLength,
+		source:       conf.source,
+	}
+	if err := slowEMA.CalculateEMA(cloneCandles(conf.Candles[lastIndex-conf.slowLength:]), false); err != nil {
 		return err
 	}
-	if err := fastEMA.CalculateExponential(cloneCandles(conf.Candles[lastIndex-conf.fastLength:]), false); err != nil {
+	if err := fastEMA.CalculateEMA(cloneCandles(conf.Candles[lastIndex-conf.fastLength:]), false); err != nil {
 		return err
 	}
-	if err := signalEMA.CalculateExponential(cloneCandles(conf.Candles[lastIndex-conf.signalLength:]), false); err != nil {
+	if err := signalEMA.CalculateEMA(cloneCandles(conf.Candles[lastIndex-conf.signalLength:]), false); err != nil {
 		return err
 	}
 
@@ -88,7 +106,7 @@ func (conf *macdConfig) Update() error {
 	return nil
 }
 
-func (conf *macdConfig) validate() error {
+func (conf *IndicatorConfig) validateMACD() error {
 	if conf.slowLength < conf.fastLength {
 		return errors.New("slow length must be bigger than fast length")
 	}

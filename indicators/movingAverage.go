@@ -6,21 +6,21 @@ import (
 	"github.com/mrNobody95/Gate/models"
 )
 
-type movingAverageConfig struct {
-	*basicConfig
-	source Source
-}
+//type movingAverageConfig struct {
+//	*basicConfig
+//	source Source
+//}
+//
+//func NewMovingAverageConfig(length int, source Source) *movingAverageConfig {
+//	return &movingAverageConfig{
+//		basicConfig: &basicConfig{
+//			Length: length,
+//		},
+//		source: source,
+//	}
+//}
 
-func NewMovingAverageConfig(length int, source Source) *movingAverageConfig {
-	return &movingAverageConfig{
-		basicConfig: &basicConfig{
-			Length: length,
-		},
-		source: source,
-	}
-}
-
-func (conf *movingAverageConfig) CalculateSimple(candles []models.Candle, appendCandles bool) error {
+func (conf *IndicatorConfig) CalculateSMA(candles []models.Candle, appendCandles bool) error {
 	var rangeCounter int
 	if appendCandles {
 		rangeCounter = len(conf.Candles) + 1
@@ -29,7 +29,7 @@ func (conf *movingAverageConfig) CalculateSimple(candles []models.Candle, append
 		conf.Candles = candles
 		rangeCounter = conf.Length
 	}
-	if err := conf.validate(); err != nil {
+	if err := conf.validateMA(); err != nil {
 		return err
 	}
 
@@ -62,7 +62,7 @@ func sma(candles []models.Candle, length int, source Source) {
 	}
 }
 
-func (conf *movingAverageConfig) CalculateExponential(candles []models.Candle, appendCandles bool) error {
+func (conf *IndicatorConfig) CalculateEMA(candles []models.Candle, appendCandles bool) error {
 	var rangeCounter int
 	if appendCandles {
 		rangeCounter = len(conf.Candles)
@@ -74,7 +74,7 @@ func (conf *movingAverageConfig) CalculateExponential(candles []models.Candle, a
 		sma(conf.Candles[0:conf.Length], conf.Length, conf.source)
 		conf.Candles[conf.Length-1].MovingAverage.Exponential = conf.Candles[conf.Length-1].MovingAverage.Simple
 	}
-	if err := conf.validate(); err != nil {
+	if err := conf.validateMA(); err != nil {
 		return err
 	}
 	factor := 2 / float64(conf.Length+1)
@@ -101,7 +101,7 @@ func (conf *movingAverageConfig) CalculateExponential(candles []models.Candle, a
 	return nil
 }
 
-func (conf *movingAverageConfig) validate() error {
+func (conf *IndicatorConfig) validateMA() error {
 	if len(conf.Candles) < conf.Length {
 		return errors.New(fmt.Sprintf("candles length must be grater or equal than %d", conf.Length))
 	}

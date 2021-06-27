@@ -5,19 +5,7 @@ import (
 	"github.com/mrNobody95/Gate/models"
 )
 
-type RSIConfig struct {
-	*basicConfig
-}
-
-func NewRSIConfig(length int) *RSIConfig {
-	return &RSIConfig{
-		basicConfig: &basicConfig{
-			Length: length,
-		},
-	}
-}
-
-func (conf *RSIConfig) Calculate(candles []models.Candle, firstOfSeries, appendCandles bool) error {
+func (conf *IndicatorConfig) CalculateRSI(candles []models.Candle, firstOfSeries, appendCandles bool) error {
 	var rangeCounter int
 	if appendCandles {
 		rangeCounter = len(conf.Candles)
@@ -26,7 +14,7 @@ func (conf *RSIConfig) Calculate(candles []models.Candle, firstOfSeries, appendC
 		conf.Candles = candles
 		rangeCounter = 1
 	}
-	if err := conf.validate(firstOfSeries); err != nil {
+	if err := conf.validateRSI(firstOfSeries); err != nil {
 		return err
 	}
 	if firstOfSeries {
@@ -39,13 +27,13 @@ func (conf *RSIConfig) Calculate(candles []models.Candle, firstOfSeries, appendC
 	return nil
 }
 
-func (conf *RSIConfig) Update() error {
+func (conf *IndicatorConfig) UpdateRSI() error {
 	lastIndex := len(conf.Candles) - 1
 	conf.Candles[lastIndex].RSI.RSI = 100 - (100 / (1 + conf.smoothedRs(lastIndex)))
 	return nil
 }
 
-func (conf *RSIConfig) firstRsi() {
+func (conf *IndicatorConfig) firstRsi() {
 	gain := float64(0)
 	loss := float64(0)
 
@@ -65,7 +53,7 @@ func (conf *RSIConfig) firstRsi() {
 	conf.Candles[conf.Length].RSI.RSI = 100 - (100 / (1 + rs))
 }
 
-func (conf *RSIConfig) smoothedRs(currentIndex int) float64 {
+func (conf *IndicatorConfig) smoothedRs(currentIndex int) float64 {
 	change := conf.Candles[currentIndex].Close - conf.Candles[currentIndex-1].Close
 	if change > 0 {
 		conf.Candles[currentIndex].RSI.Gain = change
@@ -79,7 +67,7 @@ func (conf *RSIConfig) smoothedRs(currentIndex int) float64 {
 	return gain / loss
 }
 
-func (conf *RSIConfig) validate(firstOfSeries bool) error {
+func (conf *IndicatorConfig) validateRSI(firstOfSeries bool) error {
 	if firstOfSeries && len(conf.Candles)-1 < conf.Length {
 		return errors.New("candles length must bigger than indicator period length")
 	}

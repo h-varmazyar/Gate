@@ -7,15 +7,7 @@ import (
 	"math"
 )
 
-type adxConfig struct {
-	*basicConfig
-}
-
-func NewAdxConfig(length int) *adxConfig {
-	return &adxConfig{&basicConfig{Length: length}}
-}
-
-func (conf *adxConfig) Calculate(candles []models.Candle, appendCandles bool) error {
+func (conf *IndicatorConfig) CalculateADX(candles []models.Candle, appendCandles bool) error {
 	rangeCounter := conf.Length
 	dmCounter := 1
 	adxCounter := (conf.Length * 2) - 1
@@ -27,7 +19,7 @@ func (conf *adxConfig) Calculate(candles []models.Candle, appendCandles bool) er
 	} else {
 		conf.Candles = candles
 	}
-	if err := conf.validate(); err != nil {
+	if err := conf.validateADX(); err != nil {
 		return err
 	}
 	for i, candle := range conf.Candles[dmCounter:] {
@@ -69,7 +61,7 @@ func (conf *adxConfig) Calculate(candles []models.Candle, appendCandles bool) er
 	return nil
 }
 
-func (conf *adxConfig) Update() {
+func (conf *IndicatorConfig) UpdateADX() error {
 	lastIndex := len(conf.Candles) - 1
 	conf.Candles[lastIndex].ADX.DmPositive = conf.Candles[lastIndex].High - conf.Candles[lastIndex-1].High
 	conf.Candles[lastIndex].ADX.DmNegative = conf.Candles[lastIndex-1].Low - conf.Candles[lastIndex].Low
@@ -94,9 +86,10 @@ func (conf *adxConfig) Update() {
 	conf.Candles[lastIndex].ADX.DX = 100 * math.Abs(conf.Candles[lastIndex].ADX.DIPositive-conf.Candles[lastIndex].ADX.DINegative) / (conf.Candles[lastIndex].ADX.DIPositive + conf.Candles[lastIndex].ADX.DINegative)
 
 	conf.Candles[lastIndex].ADX.ADX = (float64(conf.Length-1)*conf.Candles[lastIndex-1].ADX.ADX + conf.Candles[lastIndex].ADX.DX) / float64(conf.Length)
+	return nil
 }
 
-func (conf *adxConfig) validate() error {
+func (conf *IndicatorConfig) validateADX() error {
 	if len(conf.Candles) < conf.Length*2 {
 		return errors.New(fmt.Sprintf("candles length must be bigger or equal than %d", conf.Length*2))
 	}
