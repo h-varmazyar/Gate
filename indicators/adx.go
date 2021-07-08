@@ -3,22 +3,13 @@ package indicators
 import (
 	"errors"
 	"fmt"
-	"github.com/mrNobody95/Gate/models"
 	"math"
 )
 
-func (conf *IndicatorConfig) CalculateADX(candles []models.Candle, appendCandles bool) error {
+func (conf *IndicatorConfig) CalculateADX() error {
 	rangeCounter := conf.Length
 	dmCounter := 1
 	adxCounter := (conf.Length * 2) - 1
-	if appendCandles {
-		rangeCounter = len(conf.Candles)
-		dmCounter = len(conf.Candles)
-		adxCounter = len(conf.Candles)
-		conf.Candles = append(conf.Candles, candles...)
-	} else {
-		conf.Candles = candles
-	}
 	if err := conf.validateADX(); err != nil {
 		return err
 	}
@@ -48,45 +39,50 @@ func (conf *IndicatorConfig) CalculateADX(candles []models.Candle, appendCandles
 		candle.ADX.DINegative = 100 * smoothedDmNegative / smoothedTR
 		candle.ADX.DX = 100 * math.Abs(candle.ADX.DIPositive-candle.ADX.DINegative) / (candle.ADX.DIPositive + candle.ADX.DINegative)
 	}
-	if !appendCandles {
-		sum := float64(0)
-		for _, candle := range conf.Candles[rangeCounter:adxCounter] {
-			sum += candle.ADX.DX
-		}
-		conf.Candles[adxCounter-1].ADX.ADX = sum / float64(adxCounter-rangeCounter)
+	sum := float64(0)
+	for _, candle := range conf.Candles[rangeCounter:adxCounter] {
+		sum += candle.ADX.DX
 	}
+	conf.Candles[adxCounter-1].ADX.ADX = sum / float64(adxCounter-rangeCounter)
+
 	for i, candle := range conf.Candles[adxCounter:] {
 		candle.ADX.ADX = (float64(conf.Length-1)*conf.Candles[adxCounter-i-1].ADX.ADX + candle.ADX.DX) / float64(conf.Length)
 	}
 	return nil
 }
 
-func (conf *IndicatorConfig) UpdateADX() error {
+func (conf *IndicatorConfig) UpdateADX() {
 	lastIndex := len(conf.Candles) - 1
-	conf.Candles[lastIndex].ADX.DmPositive = conf.Candles[lastIndex].High - conf.Candles[lastIndex-1].High
-	conf.Candles[lastIndex].ADX.DmNegative = conf.Candles[lastIndex-1].Low - conf.Candles[lastIndex].Low
-	if conf.Candles[lastIndex].ADX.DmPositive > conf.Candles[lastIndex].ADX.DmNegative {
-		conf.Candles[lastIndex].ADX.DmNegative = 0
+	length := float64(conf.Length)
+	lastCandle := conf.Candles[lastIndex]
+	preLastCandle := conf.Candles[lastIndex-1]
+
+	lastCandle.ADX.DmPositive = lastCandle.High - preLastCandle.High
+	lastCandle.ADX.DmNegative = preLastCandle.Low - lastCandle.Low
+	if lastCandle.ADX.DmPositive > lastCandle.ADX.DmNegative {
+		lastCandle.ADX.DmNegative = 0
 	} else {
-		conf.Candles[lastIndex].ADX.DmPositive = 0
+		lastCandle.ADX.DmPositive = 0
 	}
-	conf.Candles[lastIndex].ADX.TR = math.Max(conf.Candles[lastIndex].High-conf.Candles[lastIndex].Low,
-		math.Max(conf.Candles[lastIndex].High-conf.Candles[lastIndex-1].Close,
-			conf.Candles[lastIndex-1].Close-conf.Candles[lastIndex].Low))
+	lastCandle.ADX.TR = math.Max(lastCandle.High-lastCandle.Low,
+		math.Max(lastCandle.High-preLastCandle.Close, preLastCandle.Close-lastCandle.Low))
 
-	smoothedDmPositive := ((conf.Candles[lastIndex-1].ADX.DmPositive * (float64(conf.Length - 1))) + conf.Candles[lastIndex].ADX.DmPositive) / float64(conf.Length)
-	smoothedDmNegative := ((conf.Candles[lastIndex-1].ADX.DmNegative * (float64(conf.Length - 1))) + conf.Candles[lastIndex].ADX.DmNegative) / float64(conf.Length)
-	smoothedTR := ((conf.Candles[lastIndex-1].ADX.TR * (float64(conf.Length - 1))) + conf.Candles[lastIndex].ADX.TR) / float64(conf.Length)
-	smoothedDmPositive = smoothedDmPositive - (smoothedDmPositive / float64(conf.Length)) + conf.Candles[lastIndex].ADX.DmPositive
-	smoothedDmNegative = smoothedDmNegative - (smoothedDmNegative / float64(conf.Length)) + conf.Candles[lastIndex].ADX.DmNegative
-	smoothedTR = smoothedTR - (smoothedTR / float64(conf.Length)) + conf.Candles[lastIndex].ADX.TR
+	smoothedDmPositive := ((preLastCandle.ADX.DmPositive * (length - 1)) + lastCandle.ADX.DmPositive) / length
+	smoothedDmNegative := ((preLastCandle.ADX.DmNegative * (length - 1)) + lastCandle.ADX.DmNegative) / length
+	smoothedTR := ((preLastCandle.ADX.TR * (length - 1)) + lastCandle.ADX.TR) / length
+	smoothedDmPositive = smoothedDmPositive - (smoothedDmPositive / length) + lastCandle.ADX.DmPositive
+	smoothedDmNegative = smoothedDmNegative - (smoothedDmNegative / length) + lastCandle.ADX.DmNegative
+	smoothedTR = smoothedTR - (smoothedTR / length) + lastCandle.ADX.TR
 
-	conf.Candles[lastIndex].ADX.DIPositive = 100 * smoothedDmPositive / smoothedTR
-	conf.Candles[lastIndex].ADX.DINegative = 100 * smoothedDmNegative / smoothedTR
-	conf.Candles[lastIndex].ADX.DX = 100 * math.Abs(conf.Candles[lastIndex].ADX.DIPositive-conf.Candles[lastIndex].ADX.DINegative) / (conf.Candles[lastIndex].ADX.DIPositive + conf.Candles[lastIndex].ADX.DINegative)
+	lastCandle.ADX.DIPositive = 100 * smoothedDmPositive / smoothedTR
+	lastCandle.ADX.DINegative = 100 * smoothedDmNegative / smoothedTR
+	lastCandle.ADX.DX = 100 * math.Abs(lastCandle.ADX.DIPositive-lastCandle.ADX.DINegative) / (lastCandle.ADX.DIPositive + lastCandle.ADX.DINegative)
 
-	conf.Candles[lastIndex].ADX.ADX = (float64(conf.Length-1)*conf.Candles[lastIndex-1].ADX.ADX + conf.Candles[lastIndex].ADX.DX) / float64(conf.Length)
-	return nil
+	lastCandle.ADX.ADX = ((length-1)*preLastCandle.ADX.ADX + lastCandle.ADX.DX) / length
+
+	indicatorLock.Lock()
+	conf.Candles[lastIndex] = lastCandle
+	indicatorLock.Unlock()
 }
 
 func (conf *IndicatorConfig) validateADX() error {

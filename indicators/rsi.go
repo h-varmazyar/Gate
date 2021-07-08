@@ -2,18 +2,10 @@ package indicators
 
 import (
 	"errors"
-	"github.com/mrNobody95/Gate/models"
 )
 
-func (conf *IndicatorConfig) CalculateRSI(candles []models.Candle, firstOfSeries, appendCandles bool) error {
-	var rangeCounter int
-	if appendCandles {
-		rangeCounter = len(conf.Candles)
-		conf.Candles = append(conf.Candles, candles...)
-	} else {
-		conf.Candles = candles
-		rangeCounter = 1
-	}
+func (conf *IndicatorConfig) CalculateRSI(firstOfSeries bool) error {
+	rangeCounter := 1
 	if err := conf.validateRSI(firstOfSeries); err != nil {
 		return err
 	}
@@ -29,7 +21,9 @@ func (conf *IndicatorConfig) CalculateRSI(candles []models.Candle, firstOfSeries
 
 func (conf *IndicatorConfig) UpdateRSI() error {
 	lastIndex := len(conf.Candles) - 1
+	indicatorLock.Lock()
 	conf.Candles[lastIndex].RSI.RSI = 100 - (100 / (1 + conf.smoothedRs(lastIndex)))
+	indicatorLock.Unlock()
 	return nil
 }
 
@@ -55,6 +49,7 @@ func (conf *IndicatorConfig) firstRsi() {
 
 func (conf *IndicatorConfig) smoothedRs(currentIndex int) float64 {
 	change := conf.Candles[currentIndex].Close - conf.Candles[currentIndex-1].Close
+	indicatorLock.Lock()
 	if change > 0 {
 		conf.Candles[currentIndex].RSI.Gain = change
 		conf.Candles[currentIndex].RSI.Loss = float64(0)
@@ -62,6 +57,7 @@ func (conf *IndicatorConfig) smoothedRs(currentIndex int) float64 {
 		conf.Candles[currentIndex].RSI.Gain = float64(0)
 		conf.Candles[currentIndex].RSI.Loss = change
 	}
+	indicatorLock.Unlock()
 	gain := (conf.Candles[currentIndex-1].RSI.Gain*(float64(conf.Length-1)) + conf.Candles[currentIndex].RSI.Gain) / float64(conf.Length)
 	loss := (conf.Candles[currentIndex-1].RSI.Loss*(float64(conf.Length-1)) + conf.Candles[currentIndex].RSI.Loss) / float64(conf.Length)
 	return gain / loss

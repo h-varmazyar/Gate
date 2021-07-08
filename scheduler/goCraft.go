@@ -19,7 +19,7 @@ var redisPool = &redis.Pool{
 	},
 }
 
-var enqueue = work.NewEnqueuer("jh_bot_pool", redisPool)
+var enqueue = work.NewEnqueuer("gate_pool", redisPool)
 var pool *work.WorkerPool
 
 type Context struct {
@@ -36,11 +36,6 @@ func InitWorker() {
 	//// Map the name of jobs to handler functions
 	pool.JobWithOptions(SingleOHLC, work.JobOptions{Priority: 1, MaxFails: 2}, (*Context).singleOhlc)
 	pool.JobWithOptions(RangeOHLC, work.JobOptions{Priority: 1, MaxFails: 2}, (*Context).rangeOhlc)
-	//pool.JobWithOptions(GameRequest, work.JobOptions{Priority: 1, MaxFails: 2}, (*Context).sendGameRequest)
-	//pool.JobWithOptions(Broadcast, work.JobOptions{Priority: 2, MaxFails: 2}, (*Context).Broadcast)
-	//
-	//// Customize options:
-	//pool.JobWithOptions("export", work.JobOptions{Priority: 10, MaxFails: 1}, (*Context).Export)
 
 	// Start processing jobs
 	pool.Start()

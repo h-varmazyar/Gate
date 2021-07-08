@@ -2,7 +2,6 @@ package indicators
 
 import (
 	"errors"
-	"github.com/mrNobody95/Gate/models"
 	"math"
 )
 
@@ -13,24 +12,17 @@ const (
 	Short Trend = -1
 )
 
-func (conf *IndicatorConfig) CalculatePSAR(candles []models.Candle, appendCandles bool) error {
-	var rangeCounter int
-	if appendCandles {
-		rangeCounter = len(conf.Candles) - 1
-		conf.Candles = append(conf.Candles, candles...)
+func (conf *IndicatorConfig) CalculatePSAR() error {
+	rangeCounter := 1
+	if conf.Candles[1].High >= conf.Candles[0].High || conf.Candles[0].Low <= conf.Candles[1].Low {
+		conf.trend = Long
+		conf.Candles[1].ParabolicSAR.SAR = conf.Candles[0].Low
+		conf.extremePoint = conf.Candles[0].High
 	} else {
-		conf.Candles = candles
-		rangeCounter = 1
-		if conf.Candles[1].High >= conf.Candles[0].High || conf.Candles[0].Low <= conf.Candles[1].Low {
-			conf.trend = Long
-			conf.Candles[1].ParabolicSAR.SAR = conf.Candles[0].Low
-			conf.extremePoint = conf.Candles[0].High
-		} else {
-			conf.trend = Short
-			conf.extremePoint = conf.Candles[0].Low
-		}
-		conf.Candles[1].ParabolicSAR.Trend = conf.trend
+		conf.trend = Short
+		conf.extremePoint = conf.Candles[0].Low
 	}
+	conf.Candles[1].ParabolicSAR.Trend = conf.trend
 	if err := conf.validatePSAR(); err != nil {
 		return err
 	}
@@ -106,9 +98,11 @@ func (conf *IndicatorConfig) UpdatePSAR() error {
 			conf.accelerationFactor = conf.startAcceleration
 		}
 	}
+	indicatorLock.Lock()
 	conf.Candles[lastIndex].ParabolicSAR.SAR = nextSar
 	conf.Candles[lastIndex].ParabolicSAR.Trend = conf.trend
 	conf.Candles[lastIndex].ParabolicSAR.TrendFlipped = conf.Candles[lastIndex-1].ParabolicSAR.Trend != conf.trend
+	indicatorLock.Unlock()
 	return nil
 }
 

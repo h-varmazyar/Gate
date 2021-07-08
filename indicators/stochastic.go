@@ -19,14 +19,8 @@ func (conf *IndicatorConfig) validateStochastic() error {
 // stochastic value for candles[conf.Length:] (candles from 0 to conf.length-1 stochastic values not defined
 // and have zero value) otherwise is calculate the stochastic for all new input candles.
 // finally stochastic values save to the conf.candles[index].stochastic parameter or input candles.
-func (conf *IndicatorConfig) CalculateStochastic(candles []models.Candle, appendCandles bool) error {
+func (conf *IndicatorConfig) CalculateStochastic() error {
 	rangeCounter := conf.Length - 1
-	if appendCandles {
-		rangeCounter = len(conf.Candles)
-		conf.Candles = append(conf.Candles, candles...)
-	} else {
-		conf.Candles = candles
-	}
 	if err := conf.validateStochastic(); err != nil {
 		return err
 	}
@@ -62,8 +56,10 @@ func (conf *IndicatorConfig) UpdateStochastic() error {
 			highest = innerCandle.High
 		}
 	}
+	indicatorLock.Lock()
 	conf.Candles[lastIndex].Stochastic.IndexK = 100 * ((conf.Candles[lastIndex].Close - lowest) / (highest - lowest))
 	conf.Candles[lastIndex].Stochastic.IndexD = calculateIndexD(conf.Candles[lastIndex-conf.SmoothD+1:])
+	indicatorLock.Unlock()
 	return nil
 }
 

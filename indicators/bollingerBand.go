@@ -20,23 +20,18 @@ import (
 //	}
 //}
 
-func (conf *IndicatorConfig) CalculateBollingerBand(candles []models.Candle, appendCandles bool) error {
+func (conf *IndicatorConfig) CalculateBollingerBand() error {
 	rangeCounter := conf.Length
-	if appendCandles {
-		rangeCounter = len(conf.Candles)
-		conf.Candles = append(conf.Candles, candles...)
-	} else {
-		conf.Candles = candles
-	}
 	if err := conf.validateBollingerBand(); err != nil {
 		return err
 	}
 
 	mac := IndicatorConfig{
-		Length: conf.Length,
-		source: SourceHLC3,
+		Length:  conf.Length,
+		source:  SourceHLC3,
+		Candles: cloneCandles(conf.Candles[rangeCounter-conf.Length:]),
 	}
-	err := mac.CalculateSMA(cloneCandles(conf.Candles[rangeCounter-conf.Length:]), false)
+	err := mac.CalculateSMA()
 	if err != nil {
 		return err
 	}
@@ -60,10 +55,11 @@ func (conf *IndicatorConfig) CalculateBollingerBand(candles []models.Candle, app
 func (conf *IndicatorConfig) UpdateBollingerBand() error {
 	lastIndex := len(conf.Candles)
 	mac := IndicatorConfig{
-		Length: conf.Length,
-		source: SourceHLC3,
+		Length:  conf.Length,
+		source:  SourceHLC3,
+		Candles: cloneCandles(conf.Candles[lastIndex-conf.Length:]),
 	}
-	err := mac.CalculateSMA(cloneCandles(conf.Candles[lastIndex-conf.Length:]), false)
+	err := mac.CalculateSMA()
 	if err != nil {
 		return err
 	}
@@ -74,11 +70,13 @@ func (conf *IndicatorConfig) UpdateBollingerBand() error {
 		variance += math.Pow(ma-sum, 2)
 	}
 	variance /= float64(conf.Length)
+	indicatorLock.Lock()
 	conf.Candles[lastIndex-1].BollingerBand = &models.BollingerBand{
 		UpperBond: ma + float64(conf.Deviation)*math.Sqrt(variance),
 		LowerBond: ma - float64(conf.Deviation)*math.Sqrt(variance),
 		MA:        ma,
 	}
+	indicatorLock.Unlock()
 	return nil
 }
 

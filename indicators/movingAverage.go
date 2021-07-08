@@ -20,15 +20,8 @@ import (
 //	}
 //}
 
-func (conf *IndicatorConfig) CalculateSMA(candles []models.Candle, appendCandles bool) error {
-	var rangeCounter int
-	if appendCandles {
-		rangeCounter = len(conf.Candles) + 1
-		conf.Candles = append(conf.Candles, candles...)
-	} else {
-		conf.Candles = candles
-		rangeCounter = conf.Length
-	}
+func (conf *IndicatorConfig) CalculateSMA() error {
+	rangeCounter := conf.Length
 	if err := conf.validateMA(); err != nil {
 		return err
 	}
@@ -62,18 +55,11 @@ func sma(candles []models.Candle, length int, source Source) {
 	}
 }
 
-func (conf *IndicatorConfig) CalculateEMA(candles []models.Candle, appendCandles bool) error {
-	var rangeCounter int
-	if appendCandles {
-		rangeCounter = len(conf.Candles)
-		conf.Candles = append(conf.Candles, candles...)
-	} else {
-		conf.Candles = candles
-		rangeCounter = conf.Length
+func (conf *IndicatorConfig) CalculateEMA() error {
+	rangeCounter := conf.Length
 
-		sma(conf.Candles[0:conf.Length], conf.Length, conf.source)
-		conf.Candles[conf.Length-1].MovingAverage.Exponential = conf.Candles[conf.Length-1].MovingAverage.Simple
-	}
+	sma(conf.Candles[0:conf.Length], conf.Length, conf.source)
+	conf.Candles[conf.Length-1].MovingAverage.Exponential = conf.Candles[conf.Length-1].MovingAverage.Simple
 	if err := conf.validateMA(); err != nil {
 		return err
 	}

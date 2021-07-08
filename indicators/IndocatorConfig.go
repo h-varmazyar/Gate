@@ -2,6 +2,7 @@ package indicators
 
 import (
 	"github.com/mrNobody95/Gate/models"
+	"sync"
 )
 
 type IndicatorConfig struct {
@@ -26,6 +27,8 @@ type IndicatorConfig struct {
 	//bollinger band
 	Deviation int
 }
+
+var indicatorLock sync.Mutex
 
 func cloneCandles(candles []models.Candle) []models.Candle {
 	return append([]models.Candle{}, candles...)
