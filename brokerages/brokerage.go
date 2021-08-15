@@ -12,7 +12,7 @@ type Brokerage interface {
 	OrderBook(symbol Symbol) (*api.OrderBookResponse, error)
 	RecentTrades(symbol Symbol) (*api.RecentTradesResponse, error)
 	MarketStats(destination, source string) (*api.MarketStatusResponse, error)
-	OHLC(symbol Symbol, resolution *models.Resolution, from, to float64) (*api.OHLCResponse, error)
+	OHLC(symbol Symbol, resolution *models.Resolution, from, to int64) (*api.OHLCResponse, error)
 	UserInfo() (*api.UserInfoResponse, error)
 	WalletList() (*api.WalletsResponse, error)
 	WalletInfo(walletName string) (*api.WalletResponse, error)

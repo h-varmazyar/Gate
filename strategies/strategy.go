@@ -2,6 +2,7 @@ package strategies
 
 import (
 	"errors"
+	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/brokerages"
 	"github.com/mrNobody95/Gate/indicators"
 	"github.com/mrNobody95/Gate/models"
@@ -30,10 +31,8 @@ type Strategy struct {
 	CandleBufferLength    int                                     `json:"candle_buffer_length" xml:"candle_buffer_length"`       //maximum candles length
 	BufferedHelperCandles map[brokerages.Symbol][]models.Candle   `json:"buffered_helper_candles" xml:"buffered_helper_candles"` //strategy buffered candles
 	IndicatorConfig       indicators.IndicatorConfig
-	DataChannel           chan struct {
-		Symbol   brokerages.Symbol
-		IsHelper bool
-	}
+	HelperCallbackChannel chan api.OHLCResponse
+	CallbackChannel       chan api.OHLCResponse
 }
 
 func (s *Strategy) Validate() error {
@@ -68,13 +67,14 @@ func (s *Strategy) CollectPrimaryData() {
 			Resolution: s.PivotResolution[symbol],
 			Brokerage:  s.Brokerage.GetName(),
 		}
+		lastCandleId := uint(0)
 		err := candle.LoadLast()
 		if err != nil {
 			if err.Error() == "record not found" {
 				candle.Time = time.Now().Add(-time.Hour * 24 * 365).Unix()
-			} else {
-				continue
 			}
+		} else {
+			lastCandleId = candle.ID
 		}
 		helperCandle := models.Candle{
 			Symbol:     symbol,
@@ -85,17 +85,19 @@ func (s *Strategy) CollectPrimaryData() {
 		if err != nil {
 			if err.Error() == "record not found" {
 				candle.Time = time.Now().Add(-time.Hour * 24 * 365).Unix()
-			} else {
-				continue
 			}
+		} else {
+			lastCandleId = candle.ID
 		}
 		err = (&scheduler.Job{
 			Name: scheduler.RangeOHLC,
-			Args: map[string]interface{}{"symbol": symbol,
-				"resolution": s.PivotResolution[symbol],
-				"start_from": candle.Time,
-				"brokerage":  s.Brokerage,
-				"callback":   &s.DataChannel,
+			Args: map[string]interface{}{
+				"last_candle": lastCandleId,
+				"resolution":  s.PivotResolution[symbol],
+				"start_from":  candle.Time,
+				"brokerage":   s.Brokerage,
+				"callback":    &s.CallbackChannel,
+				"symbol":      symbol,
 			},
 		}).Enqueue()
 		if err != nil {
@@ -103,12 +105,13 @@ func (s *Strategy) CollectPrimaryData() {
 		}
 		err = (&scheduler.Job{
 			Name: scheduler.RangeOHLC,
-			Args: map[string]interface{}{"symbol": symbol,
-				"resolution": s.HelperResolution[symbol],
-				"start_from": helperCandle.Time,
-				"brokerage":  s.Brokerage,
-				"callback":   &s.DataChannel,
-				"helper":     true,
+			Args: map[string]interface{}{
+				"last_candle": lastCandleId,
+				"resolution":  s.HelperResolution[symbol],
+				"start_from":  helperCandle.Time,
+				"brokerage":   s.Brokerage,
+				"callback":    &s.HelperCallbackChannel,
+				"symbol":      symbol,
 			},
 		}).Enqueue()
 	}
@@ -119,86 +122,114 @@ func (s *Strategy) CollectPeriodicData() {
 		err := (&scheduler.Job{
 			Name:   scheduler.SingleOHLC,
 			Period: s.PivotResolution[symbol].Duration,
-			Args: map[string]interface{}{"symbol": symbol,
+			Args: map[string]interface{}{
 				"resolution": s.PivotResolution[symbol],
 				"brokerage":  s.Brokerage,
-				"callback":   &s.DataChannel,
+				"callback":   &s.CallbackChannel,
+				"symbol":     symbol,
 			},
-		}).EnqueuePeriodically()
+		}).EnqueueContinuously()
 		if err != nil {
 			panic(err)
 		}
 		err = (&scheduler.Job{
 			Name:   scheduler.SingleOHLC,
 			Period: s.HelperResolution[symbol].Duration,
-			Args: map[string]interface{}{"symbol": symbol,
+			Args: map[string]interface{}{
 				"resolution": s.HelperResolution[symbol],
 				"brokerage":  s.Brokerage,
-				"callback":   &s.DataChannel,
-				"helper":     true,
+				"callback":   &s.HelperCallbackChannel,
+				"symbol":     symbol,
 			},
-		}).EnqueuePeriodically()
+		}).EnqueueContinuously()
 	}
 }
 
 func (s *Strategy) CheckForNewData() {
 	go func() {
-		for data := range s.DataChannel {
-			s.calculateIndicators(data.Symbol, data.IsHelper)
+		for data := range s.CallbackChannel {
+			if len(data.Candles) == 1 {
+				var err error
+				last := len(s.BufferedCandles[data.Symbol]) - 1
+				if data.Candles[0].Time == s.BufferedCandles[data.Symbol][last].Time {
+					s.BufferedCandles[data.Symbol][last] = data.Candles[0]
+					s.updateIndicators(data.Symbol, false)
+					err = s.BufferedCandles[data.Symbol][last].Update()
+				} else {
+					s.BufferedCandles[data.Symbol] = s.BufferedCandles[data.Symbol][1:]
+					s.BufferedCandles[data.Symbol][last] = data.Candles[0]
+					s.updateIndicators(data.Symbol, false)
+					err = s.BufferedCandles[data.Symbol][last].Create()
+				}
+				if err != nil {
+					log.Error(err)
+				}
+			} else if data.ContinueLast > 0 {
+				candle := models.Candle{}
+				candle.ID = data.ContinueLast
+				err := candle.Load()
+				if err != nil {
+					log.Error(err)
+					continue
+				}
+				s.BufferedCandles[data.Symbol] = make([]models.Candle, len(data.Candles)+1)
+				s.BufferedCandles[data.Symbol][0] = candle
+				for i := 1; i < len(data.Candles)+1; i++ {
+					s.BufferedCandles[data.Symbol][i] = data.Candles[i-1]
+					s.updateIndicators(data.Symbol, false)
+					err := s.BufferedCandles[data.Symbol][i].Create()
+					if err != nil {
+						log.Error(err)
+					}
+				}
+			} else {
+				s.BufferedCandles[data.Symbol] = data.Candles
+				s.calculateIndicators(data.Symbol, false)
+			}
 		}
 	}()
-}
-
-func (s *Strategy) calculateIndicators(symbol brokerages.Symbol, isHelper bool) {
-	if isHelper {
-		s.IndicatorConfig.Candles = s.BufferedHelperCandles[symbol]
-	} else {
-		s.IndicatorConfig.Candles = s.BufferedCandles[symbol]
-	}
-	var wg sync.WaitGroup
-	wg.Add(6)
-	go func(wg *sync.WaitGroup) {
-		defer wg.Done()
-		s.IndicatorConfig.UpdateADX()
-	}(&wg)
-	go func(wg *sync.WaitGroup) {
-		defer wg.Done()
-		err := s.IndicatorConfig.UpdateBollingerBand()
-		if err != nil {
-			log.Error(err)
+	go func() {
+		for data := range s.HelperCallbackChannel {
+			if len(data.Candles) == 1 {
+				var err error
+				last := len(s.BufferedHelperCandles[data.Symbol]) - 1
+				if data.Candles[0].Time == s.BufferedHelperCandles[data.Symbol][last].Time {
+					s.BufferedHelperCandles[data.Symbol][last] = data.Candles[0]
+					s.updateIndicators(data.Symbol, true)
+					err = s.BufferedHelperCandles[data.Symbol][last].Update()
+				} else {
+					s.BufferedHelperCandles[data.Symbol] = s.BufferedHelperCandles[data.Symbol][1:]
+					s.BufferedHelperCandles[data.Symbol][last] = data.Candles[0]
+					s.updateIndicators(data.Symbol, true)
+					err = s.BufferedHelperCandles[data.Symbol][last].Create()
+				}
+				if err != nil {
+					log.Error(err)
+				}
+			} else if data.ContinueLast > 0 {
+				candle := models.Candle{}
+				candle.ID = data.ContinueLast
+				err := candle.Load()
+				if err != nil {
+					log.Error(err)
+					continue
+				}
+				s.BufferedHelperCandles[data.Symbol] = make([]models.Candle, len(data.Candles)+1)
+				s.BufferedHelperCandles[data.Symbol][0] = candle
+				for i := 1; i < len(data.Candles)+1; i++ {
+					s.BufferedHelperCandles[data.Symbol][i] = data.Candles[i-1]
+					s.updateIndicators(data.Symbol, true)
+					err := s.BufferedHelperCandles[data.Symbol][i].Create()
+					if err != nil {
+						log.Error(err)
+					}
+				}
+			} else {
+				s.BufferedHelperCandles[data.Symbol] = data.Candles
+				s.calculateIndicators(data.Symbol, true)
+			}
 		}
-	}(&wg)
-	go func(wg *sync.WaitGroup) {
-		defer wg.Done()
-		err := s.IndicatorConfig.UpdateMACD()
-		if err != nil {
-			log.Error(err)
-		}
-	}(&wg)
-	go func(wg *sync.WaitGroup) {
-		defer wg.Done()
-		err := s.IndicatorConfig.UpdatePSAR()
-		if err != nil {
-			log.Error(err)
-		}
-	}(&wg)
-	go func(wg *sync.WaitGroup) {
-		defer wg.Done()
-		err := s.IndicatorConfig.UpdateRSI()
-		if err != nil {
-			log.Error(err)
-		}
-	}(&wg)
-	go func(wg *sync.WaitGroup) {
-		defer wg.Done()
-		err := s.IndicatorConfig.UpdateStochastic()
-		if err != nil {
-			log.Error(err)
-		}
-	}(&wg)
-
-	wg.Wait()
-	s.CheckIndicators(symbol, isHelper)
+	}()
 }
 
 func (s *Strategy) CheckIndicators(symbol brokerages.Symbol, isHelper bool) {
@@ -213,4 +244,85 @@ func (s *Strategy) CheckIndicators(symbol brokerages.Symbol, isHelper bool) {
 	} else if last.RSI.RSI > 70 {
 
 	}
+}
+
+func (s *Strategy) updateIndicators(symbol brokerages.Symbol, isHelper bool) {
+	if isHelper {
+		s.IndicatorConfig.Candles = s.BufferedHelperCandles[symbol]
+	} else {
+		s.IndicatorConfig.Candles = s.BufferedCandles[symbol]
+	}
+	var wg sync.WaitGroup
+	wg.Add(6)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		s.IndicatorConfig.UpdateADX()
+	}(&wg)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		if err := s.IndicatorConfig.UpdateBollingerBand(); err != nil {
+			log.Error(err)
+		}
+	}(&wg)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		if err := s.IndicatorConfig.UpdateMACD(); err != nil {
+			log.Error(err)
+		}
+	}(&wg)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		if err := s.IndicatorConfig.UpdatePSAR(); err != nil {
+			log.Error(err)
+		}
+	}(&wg)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		if err := s.IndicatorConfig.UpdateRSI(); err != nil {
+			log.Error(err)
+		}
+	}(&wg)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		if err := s.IndicatorConfig.UpdateStochastic(); err != nil {
+			log.Error(err)
+		}
+	}(&wg)
+
+	wg.Wait()
+	s.CheckIndicators(symbol, isHelper)
+}
+
+func (s *Strategy) calculateIndicators(symbol brokerages.Symbol, isHelper bool) {
+	if isHelper {
+		s.IndicatorConfig.Candles = s.BufferedHelperCandles[symbol]
+	} else {
+		s.IndicatorConfig.Candles = s.BufferedCandles[symbol]
+	}
+	go s.IndicatorConfig.CalculateADX()
+	go func() {
+		if err := s.IndicatorConfig.CalculateBollingerBand(); err != nil {
+			log.Error(err)
+		}
+	}()
+	go func() {
+		if err := s.IndicatorConfig.CalculateMACD(); err != nil {
+			log.Error(err)
+		}
+	}()
+	go func() {
+		if err := s.IndicatorConfig.CalculatePSAR(); err != nil {
+			log.Error(err)
+		}
+	}()
+	go func() {
+		if err := s.IndicatorConfig.CalculateRSI(); err != nil {
+			log.Error(err)
+		}
+	}()
+	go func() {
+		if err := s.IndicatorConfig.CalculateStochastic(); err != nil {
+			log.Error(err)
+		}
+	}()
 }

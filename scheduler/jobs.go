@@ -1,8 +1,12 @@
 package scheduler
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gocraft/work"
+	"github.com/mrNobody95/Gate/api"
+	"github.com/mrNobody95/Gate/brokerages"
+	"github.com/mrNobody95/Gate/models"
 	"time"
 )
 
@@ -20,6 +24,11 @@ const (
 	SingleOHLC = "single_ohlc"
 	RangeOHLC  = "range_ohlc"
 )
+
+func (j *Job) EnqueueContinuously() error {
+	j.Args["continuously"] = true
+	return j.Enqueue()
+}
 
 func (j *Job) EnqueuePeriodically() error {
 	//todo: redesign with limits of brokerage...
@@ -60,8 +69,34 @@ func (j *Job) Enqueue() error {
 }
 
 func (c *Context) singleOhlc(job *work.Job) error {
+	brokerage, ok := (job.Args["brokerage"]).(brokerages.Brokerage)
+	if !ok {
+		return errors.New("brokerage argument in not valid")
+	}
+	resolution, ok := (job.Args["resolution"]).(models.Resolution)
+	if !ok {
+		return errors.New("resolution not set")
+	}
+	callback, ok := (job.Args["callback"]).(chan api.OHLCResponse)
+	if !ok {
+		return errors.New("callback channel not available")
+	}
+	symbol, ok := (job.Args["symbol"]).(brokerages.Symbol)
+	if !ok {
+		return errors.New("symbol not set")
+	}
+	t := time.Now().Unix()
+	ohlcResponse, err := brokerage.OHLC(symbol, &resolution, t, t)
+	if err != nil {
+		return err
+	}
+	if ohlcResponse.Status != "ok" {
+		return errors.New(ohlcResponse.Status)
+	}
+	callback <- *ohlcResponse
 	return nil
 }
+
 func (c *Context) rangeOhlc(job *work.Job) error {
 	return nil
 }

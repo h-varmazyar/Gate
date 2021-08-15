@@ -1,6 +1,9 @@
 package api
 
-import "github.com/mrNobody95/Gate/models"
+import (
+	"github.com/mrNobody95/Gate/brokerages"
+	"github.com/mrNobody95/Gate/models"
+)
 
 type OrderBookResponse struct {
 	Symbol string
@@ -19,9 +22,11 @@ type MarketStatusResponse struct {
 }
 
 type OHLCResponse struct {
-	Symbol     string
-	Resolution *models.Resolution
-	Candles    []models.Candle
+	ContinueLast uint
+	Resolution   *models.Resolution
+	Candles      []models.Candle
+	Status       string
+	Symbol       brokerages.Symbol
 }
 
 type UserInfoResponse struct {

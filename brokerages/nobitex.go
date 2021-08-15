@@ -150,7 +150,7 @@ func (n NobitexConfig) MarketStats(destination, source string) (*api.MarketStatu
 	return nil, nil
 }
 
-func (n NobitexConfig) OHLC(symbol Symbol, resolution *models.Resolution, from, to float64) (*api.OHLCResponse, error) {
+func (n NobitexConfig) OHLC(symbol Symbol, resolution *models.Resolution, from, to int64) (*api.OHLCResponse, error) {
 	req := api.Request{
 		Type:     api.GET,
 		Endpoint: "https://api.nobitex.ir/market/udf/history",
@@ -179,6 +179,7 @@ func (n NobitexConfig) OHLC(symbol Symbol, resolution *models.Resolution, from, 
 			ohlc := api.OHLCResponse{
 				Symbol:     string(symbol),
 				Resolution: resolution,
+				Status:     respStr.Status,
 			}
 			for i := 0; i < len(respStr.Time); i++ {
 				ohlc.Candles[i].Time = respStr.Time[i]

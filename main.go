@@ -1,31 +1,23 @@
 package main
 
 import (
-	"github.com/mrNobody95/Gate/brokerages"
+	"fmt"
+	"github.com/mrNobody95/Gate/strategies"
 )
 
 func main() {
-	input(brokerages.NobitexConfig{})
-	//s:=strategies.Strategy{
-	//	IsHFT:              false,
-	//	Symbols:            nil,
-	//	StopLoss:           0,
-	//	Brokerage:          brokerages.NobitexConfig{},
-	//	TimeFrame:          "",
-	//	MinBenefit:         0,
-	//	MaxBenefit:         0,
-	//	PrimaryAmount:      0,
-	//	CurrentAmount:      0,
-	//	PrimaryCandles:     nil,
-	//	BufferedCandles:    nil,
-	//	PrimaryCurrency:    "",
-	//	CurrentCurrency:    "",
-	//	MaxDailyBenefit:    0,
-	//	ReservePercentage:  0,
-	//	CandleBufferLength: 0,
-	//}
+	arr1 := []int{1, 2, 3, 4}
+	arr2 := arr1
+	fmt.Println("arr2 1:", arr2)
+	fmt.Println("arr1 1:", arr1)
+	arr2[1] = 9
+	fmt.Println("arr2 2:", arr2)
+	fmt.Println("arr1 2:", arr1)
 }
 
-func input(brok brokerages.Brokerage) {
+func defaultStrategy() {
+	strategy := strategies.Strategy{}
 
+	strategy.Validate()
+	strategy.CollectPrimaryData()
 }

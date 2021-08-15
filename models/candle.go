@@ -26,3 +26,17 @@ func (c *Candle) LoadLast() error {
 		Where("resolution_label LIKE ?", c.Resolution.Label).
 		Last(&c).Error
 }
+
+func (c *Candle) Load() error {
+	return db.Model(&Candle{}).
+		Where("ID = ?", c.ID).
+		Last(&c).Error
+}
+
+func (c *Candle) Create() error {
+	return db.Create(&c).Error
+}
+
+func (c *Candle) Update() error {
+	return db.Create(&c).Error
+}

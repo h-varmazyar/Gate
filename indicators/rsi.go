@@ -4,15 +4,12 @@ import (
 	"errors"
 )
 
-func (conf *IndicatorConfig) CalculateRSI(firstOfSeries bool) error {
-	rangeCounter := 1
-	if err := conf.validateRSI(firstOfSeries); err != nil {
+func (conf *IndicatorConfig) CalculateRSI() error {
+	if err := conf.validateRSI(); err != nil {
 		return err
 	}
-	if firstOfSeries {
-		conf.firstRsi()
-		rangeCounter = conf.Length + 1
-	}
+	conf.firstRsi()
+	rangeCounter := conf.Length + 1
 	for i, candle := range conf.Candles[rangeCounter:] {
 		candle.RSI.RSI = 100 - (100 / (1 + conf.smoothedRs(rangeCounter+i)))
 	}
@@ -63,8 +60,8 @@ func (conf *IndicatorConfig) smoothedRs(currentIndex int) float64 {
 	return gain / loss
 }
 
-func (conf *IndicatorConfig) validateRSI(firstOfSeries bool) error {
-	if firstOfSeries && len(conf.Candles)-1 < conf.Length {
+func (conf *IndicatorConfig) validateRSI() error {
+	if len(conf.Candles)-1 < conf.Length {
 		return errors.New("candles length must bigger than indicator period length")
 	}
 	return nil
