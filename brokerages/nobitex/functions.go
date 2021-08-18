@@ -1,87 +1,107 @@
-package brokerages
+package nobitex
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/mrNobody95/Gate/api"
+	"github.com/mrNobody95/Gate/brokerages"
 	"github.com/mrNobody95/Gate/models"
+	"github.com/mrNobody95/Gate/networkManager"
 	"gorm.io/gorm"
 	"strconv"
 	"strings"
 	"time"
 )
 
-type NobitexConfig struct {
-	BrokerageConfig
+type Config struct {
+	brokerages.BrokerageConfig
 	Token     string
 	LongToken bool
 }
 
-func (n NobitexConfig) Validate() error {
+type PeriodicOHLC struct {
+	Config
+	brokerages.Symbol
+	*models.Resolution
+	Response chan *OHLCResponse
+}
+
+func (config Config) Validate() error {
 	return nil
 }
 
-func (n NobitexConfig) GetName() BrokerageName {
-	return n.Name
+func (config Config) GetName() brokerages.BrokerageName {
+	return config.Name
 }
 
-func (n NobitexConfig) Login(totp int) error {
-	req := api.Request{
-		Type:     api.POST,
+func (config Config) Login(params LoginParams) *brokerages.BasicResponse {
+	req := networkManager.Request{
+		Type:     networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/auth/login/",
 	}
-	if totp > 0 {
-		req.Headers = map[string][]string{"X-TOTP": {string(totp)}}
+	if params.Totp > 0 {
+		req.Headers = map[string][]string{"X-TOTP": {strconv.Itoa(params.Totp)}}
 	}
 	resp, err := req.Execute()
 	if err != nil {
-		return err
+		return &brokerages.BasicResponse{Error: err}
 	}
 	if resp.Code == 200 {
 		respStr := struct {
 			Key string `json:"key"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return err
+			return &brokerages.BasicResponse{Error: err}
 		}
-		n.Token = respStr.Key
+		config.Token = respStr.Key
 
 		return nil
 	} else {
-		return errors.New(resp.Status)
+		return &brokerages.BasicResponse{Error: errors.New(resp.Status)}
 	}
 }
 
-func (n NobitexConfig) OrderBook(symbol Symbol) (*api.OrderBookResponse, error) {
-	req := api.Request{
-		Type:     api.GET,
-		Endpoint: "https://api.nobitex.ir/v2/orderbook/" + string(symbol),
+func (config Config) OrderBook(params OrderBookParams) *OrderBookResponse {
+	req := networkManager.Request{
+		Type:     networkManager.GET,
+		Endpoint: "https://api.nobitex.ir/v2/orderbook/" + string(params.Symbol),
 	}
 
 	resp, err := req.Execute()
 	if err != nil {
-		return nil, err
+		return &OrderBookResponse{
+			BasicResponse: brokerages.BasicResponse{
+				Error: err,
+			},
+		}
 	}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status string      `json:"status"`
+			Status string      `json:"Status"`
 			Bids   [][2]string `json:"bids"`
 			Asks   [][2]string `json:"asks"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return nil, err
+			return &OrderBookResponse{
+				BasicResponse: brokerages.BasicResponse{
+					Error: err,
+				},
+			}
 		}
 		if respStr.Status == "ok" {
-			orderBook := api.OrderBookResponse{
-				Symbol: string(symbol),
+			orderBook := OrderBookResponse{
+				Symbol: string(params.Symbol),
 				Bids:   make([]models.Order, len(respStr.Bids)),
 				Asks:   make([]models.Order, len(respStr.Asks)),
 			}
 			for i, bid := range respStr.Bids {
 				price, err := strconv.ParseFloat(bid[0], 64)
 				if err != nil {
-					return nil, err
+					return &OrderBookResponse{
+						BasicResponse: brokerages.BasicResponse{
+							Error: err,
+						},
+					}
 				}
 				orderBook.Bids[i].Price = price
 				orderBook.Bids[i].Volume = bid[1]
@@ -89,33 +109,47 @@ func (n NobitexConfig) OrderBook(symbol Symbol) (*api.OrderBookResponse, error) 
 			for i, ask := range respStr.Asks {
 				price, err := strconv.ParseFloat(ask[0], 64)
 				if err != nil {
-					return nil, err
+					return &OrderBookResponse{
+						BasicResponse: brokerages.BasicResponse{
+							Error: err,
+						},
+					}
 				}
 				orderBook.Asks[i].Price = price
 				orderBook.Asks[i].Volume = ask[1]
 			}
-			return &orderBook, nil
+			return &orderBook
 		} else {
-			return nil, errors.New("nobitex tesponse error")
+			return &OrderBookResponse{
+				BasicResponse: brokerages.BasicResponse{
+					Error: errors.New("nobitex tesponse error"),
+				},
+			}
 		}
 	} else {
-		return nil, errors.New(resp.Status)
+		return &OrderBookResponse{
+			BasicResponse: brokerages.BasicResponse{
+				Error: errors.New(resp.Status),
+			},
+		}
 	}
 }
 
-func (n NobitexConfig) RecentTrades(symbol Symbol) (*api.RecentTradesResponse, error) {
-	req := api.Request{
-		Type:     api.GET,
-		Endpoint: "https://api.nobitex.ir/v2/trades/" + string(symbol),
+func (config Config) RecentTrades(params OrderBookParams) *RecentTradesResponse {
+	req := networkManager.Request{
+		Type:     networkManager.GET,
+		Endpoint: "https://api.nobitex.ir/v2/trades/" + string(params.Symbol),
 	}
 
 	resp, err := req.Execute()
 	if err != nil {
-		return nil, err
+		return &RecentTradesResponse{
+			BasicResponse: brokerages.BasicResponse{Error: err},
+		}
 	}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status string `json:"status"`
+			Status string `json:"Status"`
 			Trades []struct {
 				Time   float64 `json:"time"`
 				Price  string  `json:"price"`
@@ -124,11 +158,13 @@ func (n NobitexConfig) RecentTrades(symbol Symbol) (*api.RecentTradesResponse, e
 			} `json:"trades"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return nil, err
+			return &RecentTradesResponse{
+				BasicResponse: brokerages.BasicResponse{Error: err},
+			}
 		}
 		if respStr.Status == "ok" {
-			recentTrade := api.RecentTradesResponse{
-				Symbol: string(symbol),
+			recentTrade := RecentTradesResponse{
+				Symbol: string(params.Symbol),
 				Trades: make([]models.Trade, len(respStr.Trades)),
 			}
 			for i, trade := range respStr.Trades {
@@ -137,29 +173,40 @@ func (n NobitexConfig) RecentTrades(symbol Symbol) (*api.RecentTradesResponse, e
 				recentTrade.Trades[i].Volume, _ = strconv.ParseFloat(trade.Volume, 64)
 				recentTrade.Trades[i].Type = models.OrderType(trade.Type)
 			}
-			return &recentTrade, nil
+			return &recentTrade
 		} else {
-			return nil, errors.New("nobitex tesponse error")
+			return &RecentTradesResponse{
+				BasicResponse: brokerages.BasicResponse{Error: errors.New("nobitex response error")},
+			}
 		}
 	} else {
-		return nil, errors.New(resp.Status)
+		return &RecentTradesResponse{
+			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
+		}
 	}
 }
 
-func (n NobitexConfig) MarketStats(destination, source string) (*api.MarketStatusResponse, error) {
-	return nil, nil
+func (config Config) MarketStats(params MarketStatusParams) *MarketStatusResponse {
+	return &MarketStatusResponse{}
 }
 
-func (n NobitexConfig) OHLC(symbol Symbol, resolution *models.Resolution, from, to int64) (*api.OHLCResponse, error) {
-	req := api.Request{
-		Type:     api.GET,
+func (config Config) OHLC(params OHLCParams) *OHLCResponse {
+	req := networkManager.Request{
+		Type:     networkManager.GET,
 		Endpoint: "https://api.nobitex.ir/market/udf/history",
-		Params:   map[string]interface{}{"symbol": symbol, "resolution": resolution.Value, "from": from, "to": to},
+		Params: map[string]interface{}{"symbol": params.Symbol,
+			"resolution": params.Resolution.Value,
+			"from":       params.From,
+			"to":         params.To},
 	}
 
 	resp, err := req.Execute()
 	if err != nil {
-		return nil, err
+		return &OHLCResponse{
+			BasicResponse: brokerages.BasicResponse{
+				Error: err,
+			},
+		}
 	}
 	if resp.Code == 200 {
 		respStr := struct {
@@ -173,12 +220,16 @@ func (n NobitexConfig) OHLC(symbol Symbol, resolution *models.Resolution, from, 
 			Error  string   `json:"errmsg"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return nil, err
+			return &OHLCResponse{
+				BasicResponse: brokerages.BasicResponse{
+					Error: err,
+				},
+			}
 		}
 		if respStr.Status == "ok" {
-			ohlc := api.OHLCResponse{
-				Symbol:     string(symbol),
-				Resolution: resolution,
+			ohlc := OHLCResponse{
+				Symbol:     params.Symbol,
+				Resolution: params.Resolution,
 				Status:     respStr.Status,
 			}
 			for i := 0; i < len(respStr.Time); i++ {
@@ -189,29 +240,41 @@ func (n NobitexConfig) OHLC(symbol Symbol, resolution *models.Resolution, from, 
 				ohlc.Candles[i].Close, _ = strconv.ParseFloat(respStr.Close[i], 64)
 				ohlc.Candles[i].Vol, _ = strconv.ParseFloat(respStr.Volume[i], 64)
 			}
-			return &ohlc, nil
+			return &ohlc
 		} else {
-			return nil, errors.New(respStr.Error)
+			return &OHLCResponse{
+				BasicResponse: brokerages.BasicResponse{
+					Error: errors.New(respStr.Error),
+				},
+			}
 		}
 	} else {
-		return nil, errors.New(resp.Status)
+		return &OHLCResponse{
+			BasicResponse: brokerages.BasicResponse{
+				Error: errors.New(resp.Status),
+			},
+		}
 	}
 }
 
-func (n NobitexConfig) UserInfo() (*api.UserInfoResponse, error) {
-	req := api.Request{
-		Type:     api.GET,
+func (config Config) UserInfo(brokerages.MustImplementAsFunctionParameter) *UserInfoResponse {
+	req := networkManager.Request{
+		Type:     networkManager.GET,
 		Endpoint: "https://api.nobitex.ir/users/profile",
-		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", n.Token)}},
+		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", config.Token)}},
 	}
 
 	resp, err := req.Execute()
 	if err != nil {
-		return nil, err
+		return &UserInfoResponse{
+			BasicResponse: brokerages.BasicResponse{
+				Error: err,
+			},
+		}
 	}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status  string `json:"status"`
+			Status  string `json:"Status"`
 			Profile struct {
 				FirstName    string `json:"firstName"`
 				LastName     string `json:"lastName"`
@@ -226,7 +289,7 @@ func (n NobitexConfig) UserInfo() (*api.UserInfoResponse, error) {
 					Bank      string `json:"bank"`
 					Owner     string `json:"owner"`
 					Confirmed bool   `json:"confirmed"`
-					Status    string `json:"status"`
+					Status    string `json:"Status"`
 				} `json:"bankCards"`
 				BankAccounts []struct {
 					Id        int    `json:"id"`
@@ -235,7 +298,7 @@ func (n NobitexConfig) UserInfo() (*api.UserInfoResponse, error) {
 					Bank      string `json:"bank"`
 					Owner     string `json:"owner"`
 					Confirmed bool   `json:"confirmed"`
-					Status    string `json:"status"`
+					Status    string `json:"Status"`
 				}
 				Verifications struct {
 					Email       bool `json:"email"`
@@ -272,7 +335,11 @@ func (n NobitexConfig) UserInfo() (*api.UserInfoResponse, error) {
 			} `json:"tradeStatus"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return nil, err
+			return &UserInfoResponse{
+				BasicResponse: brokerages.BasicResponse{
+					Error: err,
+				},
+			}
 		}
 		if respStr.Status == "ok" {
 			bankAccounts := make([]models.BankAccount, len(respStr.Profile.BankAccounts))
@@ -283,7 +350,7 @@ func (n NobitexConfig) UserInfo() (*api.UserInfoResponse, error) {
 				bankAccounts[i].Status = account.Status
 				bankAccounts[i].IBAN = account.IBAN
 			}
-			userInfo := api.UserInfoResponse{
+			userInfo := UserInfoResponse{
 				User: models.User{
 					FirstName: respStr.Profile.FirstName,
 					LastName:  respStr.Profile.LastName,
@@ -296,43 +363,59 @@ func (n NobitexConfig) UserInfo() (*api.UserInfoResponse, error) {
 				},
 				BankAccount: bankAccounts,
 			}
-			return &userInfo, nil
+			return &userInfo
 		} else {
-			return nil, errors.New("get user profile error")
+			return &UserInfoResponse{
+				BasicResponse: brokerages.BasicResponse{
+					Error: errors.New("get user profile error"),
+				},
+			}
 		}
 	} else {
-		return nil, errors.New(resp.Status)
+		return &UserInfoResponse{
+			BasicResponse: brokerages.BasicResponse{
+				Error: errors.New(resp.Status),
+			},
+		}
 	}
 }
 
-func (n NobitexConfig) WalletList() (*api.WalletsResponse, error) {
-	req := api.Request{
-		Type:     api.POST,
+func (config Config) WalletList(brokerages.MustImplementAsFunctionParameter) *WalletsResponse {
+	req := networkManager.Request{
+		Type:     networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/users/wallets/list",
-		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", n.Token)}},
+		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", config.Token)}},
 	}
 
 	resp, err := req.Execute()
 	if err != nil {
-		return nil, err
+		return &WalletsResponse{
+			BasicResponse: brokerages.BasicResponse{
+				Error: err,
+			},
+		}
 	}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status  string `json:"status"`
+			Status  string `json:"Status"`
 			Wallets []struct {
 				RialBalanceSell float64 `json:"rialBalanceSell"`
 				DepositAddress  string  `json:"depositAddress"`
 				BlockedBalance  string  `json:"blockedBalance"`
 				ActiveBalance   string  `json:"activeBalance"`
 				RialBalance     float64 `json:"rialBalance"`
-				Currency        string  `json:"currency"`
+				Currency        string  `json:"Currency"`
 				Balance         string  `json:"balance"`
 				User            string  `json:"user"`
 				Id              int     `json:"id"`
 			} `json:"wallets"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return nil, err
+			return &WalletsResponse{
+				BasicResponse: brokerages.BasicResponse{
+					Error: err,
+				},
+			}
 		}
 		if respStr.Status == "ok" {
 			wallets := make([]models.Wallet, len(respStr.Wallets))
@@ -345,30 +428,42 @@ func (n NobitexConfig) WalletList() (*api.WalletsResponse, error) {
 				wallets[i].ID = wallet.Id
 			}
 
-			return &api.WalletsResponse{Wallets: wallets}, nil
+			return &WalletsResponse{Wallets: wallets}
 		} else {
-			return nil, errors.New("get user profile error")
+			return &WalletsResponse{
+				BasicResponse: brokerages.BasicResponse{
+					Error: errors.New("get user profile error"),
+				},
+			}
 		}
 	} else {
-		return nil, errors.New(resp.Status)
+		return &WalletsResponse{
+			BasicResponse: brokerages.BasicResponse{
+				Error: errors.New(resp.Status),
+			},
+		}
 	}
 }
 
-func (n NobitexConfig) WalletInfo(walletName string) (*api.WalletResponse, error) {
-	req := api.Request{
-		Type:     api.POST,
+func (config Config) WalletInfo(params WalletInfoParams) *WalletResponse {
+	req := networkManager.Request{
+		Type:     networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/v2/wallets",
-		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", n.Token)}},
-		Params:   map[string]interface{}{"currencies": walletName},
+		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", config.Token)}},
+		Params:   map[string]interface{}{"currencies": params.WalletName},
 	}
 
 	resp, err := req.Execute()
 	if err != nil {
-		return nil, err
+		return &WalletResponse{
+			BasicResponse: brokerages.BasicResponse{
+				Error: err,
+			},
+		}
 	}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status  string `json:"status"`
+			Status  string `json:"Status"`
 			Wallets map[string]struct {
 				Id      int    `json:"id"`
 				Balance string `json:"balance"`
@@ -377,73 +472,95 @@ func (n NobitexConfig) WalletInfo(walletName string) (*api.WalletResponse, error
 		}{}
 
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return nil, err
+			return &WalletResponse{
+				BasicResponse: brokerages.BasicResponse{
+					Error: err,
+				},
+			}
 		}
 		if respStr.Status == "ok" {
-			return &api.WalletResponse{Wallet: models.Wallet{
-				ID:             respStr.Wallets[strings.ToUpper(walletName)].Id,
-				BlockedBalance: respStr.Wallets[strings.ToUpper(walletName)].Blocked,
-				TotalBalance:   respStr.Wallets[strings.ToUpper(walletName)].Balance,
-				Currency:       walletName,
-			}}, nil
+			return &WalletResponse{Wallet: models.Wallet{
+				ID:             respStr.Wallets[strings.ToUpper(params.WalletName)].Id,
+				BlockedBalance: respStr.Wallets[strings.ToUpper(params.WalletName)].Blocked,
+				TotalBalance:   respStr.Wallets[strings.ToUpper(params.WalletName)].Balance,
+				Currency:       params.WalletName,
+			}}
 		} else {
-			return nil, errors.New("get user profile error")
+			return &WalletResponse{
+				BasicResponse: brokerages.BasicResponse{
+					Error: errors.New("get user profile error"),
+				},
+			}
 		}
 	} else {
-		return nil, errors.New(resp.Status)
+		return &WalletResponse{
+			BasicResponse: brokerages.BasicResponse{
+				Error: errors.New(resp.Status),
+			},
+		}
 	}
 }
 
-func (n NobitexConfig) WalletBalance(currency string) (*api.BalanceResponse, error) {
-	req := api.Request{
-		Type:     api.POST,
+func (config Config) WalletBalance(params WalletBalanceParams) *BalanceResponse {
+	req := networkManager.Request{
+		Type:     networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/users/wallets/balance",
-		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", n.Token)}},
-		Params:   map[string]interface{}{"currency": currency},
+		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", config.Token)}},
+		Params:   map[string]interface{}{"currency": params.Currency},
 	}
 
 	resp, err := req.Execute()
 	if err != nil {
-		return nil, err
+		return &BalanceResponse{
+			BasicResponse: brokerages.BasicResponse{Error: err},
+		}
 	}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status  string `json:"status"`
+			Status  string `json:"Status"`
 			Balance string `json:"balance"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return nil, err
+			return &BalanceResponse{
+				BasicResponse: brokerages.BasicResponse{Error: err},
+			}
 		}
 		if respStr.Status == "ok" {
-			return &api.BalanceResponse{
-				Symbol:  currency,
+			return &BalanceResponse{
+				Symbol:  params.Currency,
 				Balance: respStr.Balance,
-			}, nil
+			}
 		} else {
-			return nil, errors.New("internal server error (wallet balance)")
+			return &BalanceResponse{
+				BasicResponse: brokerages.BasicResponse{Error: errors.New("internal server error (wallet balance)")},
+			}
 		}
 	} else {
-		return nil, errors.New(resp.Status)
+		return &BalanceResponse{
+			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
+		}
 	}
 }
 
-func (n NobitexConfig) TransactionList(walletID int) (*api.TransactionListResponse, error) {
-	req := api.Request{
-		Type:     api.POST,
+func (config Config) TransactionList(params TransactionListParams) *TransactionListResponse {
+	req := networkManager.Request{
+		Type:     networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/users/wallets/transactions/list",
-		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", n.Token)}},
-		Params:   map[string]interface{}{"wallet": walletID},
+		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", config.Token)}},
+		Params:   map[string]interface{}{"wallet": params.WalletID},
 	}
 
 	resp, err := req.Execute()
 	if err != nil {
-		return nil, err
+		return &TransactionListResponse{
+			BasicResponse: brokerages.BasicResponse{Error: err},
+		}
 	}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status       string `json:"status"`
+			Status       string `json:"Status"`
 			Transactions []struct {
-				Currency      string    `json:"currency"`
+				Currency      string    `json:"Currency"`
 				CreatedAt     time.Time `json:"created_at"`
 				CalculatedFee string    `json:"calculatedFee"`
 				Id            uint      `json:"id"`
@@ -452,7 +569,9 @@ func (n NobitexConfig) TransactionList(walletID int) (*api.TransactionListRespon
 			} `json:"transactions"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return nil, err
+			return &TransactionListResponse{
+				BasicResponse: brokerages.BasicResponse{Error: err},
+			}
 		}
 		if respStr.Status == "ok" {
 			transactions := make([]models.Transaction, len(respStr.Transactions))
@@ -468,36 +587,42 @@ func (n NobitexConfig) TransactionList(walletID int) (*api.TransactionListRespon
 					CalculatedFee: transaction.CalculatedFee,
 				}
 			}
-			return &api.TransactionListResponse{Transactions: transactions}, nil
+			return &TransactionListResponse{Transactions: transactions}
 		} else {
-			return nil, errors.New("internal server error (wallet balance)")
+			return &TransactionListResponse{
+				BasicResponse: brokerages.BasicResponse{Error: errors.New("internal server error (wallet balance)")},
+			}
 		}
 	} else {
-		return nil, errors.New(resp.Status)
+		return &TransactionListResponse{
+			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
+		}
 	}
 }
 
-func (n NobitexConfig) NewOrder(order models.Order) (*api.OrderResponse, error) {
+func (config Config) NewOrder(params NewOrderParams) *OrderResponse {
 	body := make(map[string]interface{})
-	body["price"] = order.Price
-	body["amount"] = order.Volume
-	body["type"] = order.OrderType
-	body["srcCurrency"] = order.SourceCurrency
-	body["destCurrency"] = order.DestinationCurrency
-	req := api.Request{
-		Type:     api.POST,
+	body["price"] = params.Order.Price
+	body["amount"] = params.Order.Volume
+	body["type"] = params.Order.OrderType
+	body["srcCurrency"] = params.Order.SourceCurrency
+	body["destCurrency"] = params.Order.DestinationCurrency
+	req := networkManager.Request{
+		Type:     networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/market/orders/add",
-		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", n.Token)}},
+		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", config.Token)}},
 		Params:   body,
 	}
 
 	resp, err := req.Execute()
 	if err != nil {
-		return nil, err
+		return &OrderResponse{
+			BasicResponse: brokerages.BasicResponse{Error: err},
+		}
 	}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status string `json:"status"`
+			Status string `json:"Status"`
 			Order  struct {
 				Id         uint      `json:"id"`
 				Fee        float64   `json:"fee"`
@@ -507,7 +632,7 @@ func (n NobitexConfig) NewOrder(order models.Order) (*api.OrderResponse, error) 
 				User       string    `json:"user"`
 				Price      string    `json:"price"`
 				Amount     string    `json:"amount"`
-				Status     string    `json:"status"`
+				Status     string    `json:"Status"`
 				Matched    string    `json:"matchedAmount"`
 				Unmatched  string    `json:"unmatchedAmount"`
 				CreatedAt  time.Time `json:"created_at"`
@@ -516,14 +641,18 @@ func (n NobitexConfig) NewOrder(order models.Order) (*api.OrderResponse, error) 
 			Message string `json:"message"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return nil, err
+			return &OrderResponse{
+				BasicResponse: brokerages.BasicResponse{Error: err},
+			}
 		}
 		if respStr.Status == "ok" {
 			price, err := strconv.ParseFloat(respStr.Order.Price, 64)
 			if err != nil {
-				return nil, err
+				return &OrderResponse{
+					BasicResponse: brokerages.BasicResponse{Error: err},
+				}
 			}
-			return &api.OrderResponse{
+			return &OrderResponse{
 				Order: models.Order{
 					Model: gorm.Model{
 						ID:        respStr.Order.Id,
@@ -541,30 +670,36 @@ func (n NobitexConfig) NewOrder(order models.Order) (*api.OrderResponse, error) 
 					UnMatchedVolume:     respStr.Order.Unmatched,
 					DestinationCurrency: respStr.Order.Dest,
 				},
-			}, nil
+			}
 		} else {
-			return nil, errors.New(respStr.Message)
+			return &OrderResponse{
+				BasicResponse: brokerages.BasicResponse{Error: errors.New(respStr.Message)},
+			}
 		}
 	} else {
-		return nil, errors.New(resp.Status)
+		return &OrderResponse{
+			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
+		}
 	}
 }
 
-func (n NobitexConfig) OrderStatus(orderId uint64) (*api.OrderResponse, error) {
-	req := api.Request{
-		Type:     api.POST,
-		Endpoint: "https://api.nobitex.ir/market/orders/status",
-		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", n.Token)}},
-		Params:   map[string]interface{}{"id": orderId},
+func (config Config) OrderStatus(params OrderStatusParams) *OrderResponse {
+	req := networkManager.Request{
+		Type:     networkManager.POST,
+		Endpoint: "https://api.nobitex.ir/market/orders/Status",
+		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", config.Token)}},
+		Params:   map[string]interface{}{"id": params.OrderId},
 	}
 
 	resp, err := req.Execute()
 	if err != nil {
-		return nil, err
+		return &OrderResponse{
+			BasicResponse: brokerages.BasicResponse{Error: err},
+		}
 	}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status string `json:"status"`
+			Status string `json:"Status"`
 			Order  struct {
 				Id         uint      `json:"id"`
 				Fee        float64   `json:"fee"`
@@ -574,7 +709,7 @@ func (n NobitexConfig) OrderStatus(orderId uint64) (*api.OrderResponse, error) {
 				User       string    `json:"user"`
 				Price      string    `json:"price"`
 				Amount     string    `json:"amount"`
-				Status     string    `json:"status"`
+				Status     string    `json:"Status"`
 				Matched    string    `json:"matchedAmount"`
 				Unmatched  string    `json:"unmatchedAmount"`
 				CreatedAt  time.Time `json:"created_at"`
@@ -583,14 +718,18 @@ func (n NobitexConfig) OrderStatus(orderId uint64) (*api.OrderResponse, error) {
 			Message string `json:"message"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return nil, err
+			return &OrderResponse{
+				BasicResponse: brokerages.BasicResponse{Error: err},
+			}
 		}
 		if respStr.Status == "ok" {
 			price, err := strconv.ParseFloat(respStr.Order.Price, 64)
 			if err != nil {
-				return nil, err
+				return &OrderResponse{
+					BasicResponse: brokerages.BasicResponse{Error: err},
+				}
 			}
-			return &api.OrderResponse{
+			return &OrderResponse{
 				Order: models.Order{
 					Model: gorm.Model{
 						ID:        respStr.Order.Id,
@@ -608,52 +747,62 @@ func (n NobitexConfig) OrderStatus(orderId uint64) (*api.OrderResponse, error) {
 					UnMatchedVolume:     respStr.Order.Unmatched,
 					DestinationCurrency: respStr.Order.Dest,
 				},
-			}, nil
+			}
 		} else {
-			return nil, errors.New(respStr.Message)
+			return &OrderResponse{
+				BasicResponse: brokerages.BasicResponse{Error: errors.New(respStr.Message)},
+			}
 		}
 	} else {
-		return nil, errors.New(resp.Status)
+		return &OrderResponse{
+			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
+		}
 	}
 }
 
-func (n NobitexConfig) OrderList(status models.OrderStatus, Type models.OrderType, source, destination string, withDetails bool) (*api.OrderListResponse, error) {
+func (config Config) OrderList(params OrderListParams) *OrderListResponse {
 	body := make(map[string]interface{})
-	if status != "" {
-		body["status"] = status
+	if params.Status != "" {
+		body["status"] = params.Status
 	}
-	if Type != "" {
-		body["type"] = Type
+	if params.Type != "" {
+		body["type"] = params.Type
 	}
-	if source != "" {
-		body["srcCurrency"] = source
+	if params.Source != "" {
+		body["srcCurrency"] = params.Source
 	} else {
-		return nil, errors.New("please specify source currency")
+		return &OrderListResponse{
+			BasicResponse: brokerages.BasicResponse{Error: errors.New("please specify Source Currency")},
+		}
 	}
-	if destination != "" {
-		body["dstCurrency"] = destination
+	if params.Destination != "" {
+		body["dstCurrency"] = params.Destination
 	} else {
-		return nil, errors.New("please specify destination currency")
+		return &OrderListResponse{
+			BasicResponse: brokerages.BasicResponse{Error: errors.New("please specify Destination Currency")},
+		}
 	}
-	if withDetails {
+	if params.WithDetails {
 		body["details"] = 2
 	} else {
 		body["details"] = 1
 	}
-	req := api.Request{
-		Type:     api.POST,
-		Endpoint: "https://api.nobitex.ir/market/orders/status",
-		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", n.Token)}},
+	req := networkManager.Request{
+		Type:     networkManager.POST,
+		Endpoint: "https://api.nobitex.ir/market/orders/Status",
+		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", config.Token)}},
 		Params:   map[string]interface{}{"id": body},
 	}
 
 	resp, err := req.Execute()
 	if err != nil {
-		return nil, err
+		return &OrderListResponse{
+			BasicResponse: brokerages.BasicResponse{Error: err},
+		}
 	}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status string `json:"status"`
+			Status string `json:"Status"`
 			Orders []struct {
 				Id           uint      `json:"id"`
 				Fee          float64   `json:"fee"`
@@ -663,7 +812,7 @@ func (n NobitexConfig) OrderList(status models.OrderStatus, Type models.OrderTyp
 				User         string    `json:"user"`
 				Price        string    `json:"price"`
 				Amount       string    `json:"amount"`
-				Status       string    `json:"status"`
+				Status       string    `json:"Status"`
 				Matched      string    `json:"matchedAmount"`
 				Unmatched    string    `json:"unmatchedAmount"`
 				CreatedAt    time.Time `json:"created_at"`
@@ -673,7 +822,9 @@ func (n NobitexConfig) OrderList(status models.OrderStatus, Type models.OrderTyp
 			Message string `json:"message"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return nil, err
+			return &OrderListResponse{
+				BasicResponse: brokerages.BasicResponse{Error: err},
+			}
 		}
 		if respStr.Status == "ok" {
 			orders := make([]models.Order, len(respStr.Orders))
@@ -700,53 +851,90 @@ func (n NobitexConfig) OrderList(status models.OrderStatus, Type models.OrderTyp
 					DestinationCurrency: order.Dest,
 				}
 			}
-			return &api.OrderListResponse{Orders: orders}, nil
+			return &OrderListResponse{Orders: orders}
 		} else {
-			return nil, errors.New(respStr.Message)
+			return &OrderListResponse{
+				BasicResponse: brokerages.BasicResponse{Error: errors.New(respStr.Message)},
+			}
 		}
 	} else {
-		return nil, errors.New(resp.Status)
+		return &OrderListResponse{
+			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
+		}
 	}
 }
 
-func (n NobitexConfig) UpdateOrderStatus(orderId uint64, newStatus models.OrderStatus) (*api.UpdateOrderStatusResponse, error) {
+func (config Config) UpdateOrderStatus(params UpdateOrderStatusParams) *UpdateOrderStatusResponse {
 	body := make(map[string]interface{})
-	if orderId < 0 {
-		body["order"] = orderId
+	if params.OrderId < 0 {
+		body["Order"] = params.OrderId
 	} else {
-		return nil, errors.New("please specify order id currency")
+		return &UpdateOrderStatusResponse{
+			BasicResponse: brokerages.BasicResponse{Error: errors.New("please specify Order id Currency")},
+		}
 	}
-	if newStatus != "" {
-		body["status"] = newStatus
+	if params.NewStatus != "" {
+		body["Status"] = params.NewStatus
 	} else {
-		return nil, errors.New("please specify new status currency")
+		return &UpdateOrderStatusResponse{
+			BasicResponse: brokerages.BasicResponse{Error: errors.New("please specify new Status Currency")},
+		}
 	}
-	req := api.Request{
-		Type:     api.POST,
-		Endpoint: "https://api.nobitex.ir/market/orders/update-status",
-		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", n.Token)}},
+	req := networkManager.Request{
+		Type:     networkManager.POST,
+		Endpoint: "https://api.nobitex.ir/market/orders/update-Status",
+		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", config.Token)}},
 		Params:   body,
 	}
 
 	resp, err := req.Execute()
 	if err != nil {
-		return nil, err
+		return &UpdateOrderStatusResponse{
+			BasicResponse: brokerages.BasicResponse{Error: err},
+		}
 	}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status        string             `json:"status"`
+			Status        string             `json:"Status"`
 			Message       string             `json:"message"`
 			UpdatedStatus models.OrderStatus `json:"updatedStatus"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return nil, err
+			return &UpdateOrderStatusResponse{
+				BasicResponse: brokerages.BasicResponse{Error: err},
+			}
 		}
 		if respStr.Status == "ok" {
-			return &api.UpdateOrderStatusResponse{NewStatus: respStr.UpdatedStatus}, nil
+			return &UpdateOrderStatusResponse{NewStatus: respStr.UpdatedStatus}
 		} else {
-			return nil, errors.New(respStr.Message)
+			return &UpdateOrderStatusResponse{
+				BasicResponse: brokerages.BasicResponse{Error: errors.New(respStr.Message)},
+			}
 		}
 	} else {
-		return nil, errors.New(resp.Status)
+		return &UpdateOrderStatusResponse{
+			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
+		}
 	}
+}
+
+func (periodic PeriodicOHLC) SubscribePeriodicOHLC(period time.Duration, endSignal chan bool) {
+	ticker := time.NewTicker(period)
+	go func() {
+		for {
+			select {
+			case <-endSignal:
+				return
+			case _ = <-ticker.C:
+				now := time.Now().Unix()
+				periodic.Response <- periodic.Config.OHLC(OHLCParams{
+					Resolution: periodic.Resolution,
+					Symbol:     periodic.Symbol,
+					From:       now,
+					To:         now,
+				})
+
+			}
+		}
+	}()
 }

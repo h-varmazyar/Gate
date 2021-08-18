@@ -2,11 +2,11 @@ package strategies
 
 import (
 	"errors"
-	"github.com/mrNobody95/Gate/api"
+	"fmt"
 	"github.com/mrNobody95/Gate/brokerages"
+	"github.com/mrNobody95/Gate/brokerages/nobitex"
 	"github.com/mrNobody95/Gate/indicators"
 	"github.com/mrNobody95/Gate/models"
-	"github.com/mrNobody95/Gate/scheduler"
 	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
@@ -31,8 +31,8 @@ type Strategy struct {
 	CandleBufferLength    int                                     `json:"candle_buffer_length" xml:"candle_buffer_length"`       //maximum candles length
 	BufferedHelperCandles map[brokerages.Symbol][]models.Candle   `json:"buffered_helper_candles" xml:"buffered_helper_candles"` //strategy buffered candles
 	IndicatorConfig       indicators.IndicatorConfig
-	HelperCallbackChannel chan api.OHLCResponse
-	CallbackChannel       chan api.OHLCResponse
+	HelperCallbackChannel chan nobitex.OHLCResponse
+	CallbackChannel       chan nobitex.OHLCResponse
 }
 
 func (s *Strategy) Validate() error {
@@ -89,60 +89,61 @@ func (s *Strategy) CollectPrimaryData() {
 		} else {
 			lastCandleId = candle.ID
 		}
-		err = (&scheduler.Job{
-			Name: scheduler.RangeOHLC,
-			Args: map[string]interface{}{
-				"last_candle": lastCandleId,
-				"resolution":  s.PivotResolution[symbol],
-				"start_from":  candle.Time,
-				"brokerage":   s.Brokerage,
-				"callback":    &s.CallbackChannel,
-				"symbol":      symbol,
-			},
-		}).Enqueue()
-		if err != nil {
-			panic(err)
-		}
-		err = (&scheduler.Job{
-			Name: scheduler.RangeOHLC,
-			Args: map[string]interface{}{
-				"last_candle": lastCandleId,
-				"resolution":  s.HelperResolution[symbol],
-				"start_from":  helperCandle.Time,
-				"brokerage":   s.Brokerage,
-				"callback":    &s.HelperCallbackChannel,
-				"symbol":      symbol,
-			},
-		}).Enqueue()
+		fmt.Println(lastCandleId, helperCandle)
+		//err = (&scheduler.Job{
+		//	Name: scheduler.RangeOHLC,
+		//	Args: map[string]interface{}{
+		//		"last_candle": lastCandleId,
+		//		"resolution":  s.PivotResolution[symbol],
+		//		"start_from":  candle.Time,
+		//		"brokerage":   s.Brokerage,
+		//		"callback":    &s.CallbackChannel,
+		//		"symbol":      symbol,
+		//	},
+		//}).Enqueue()
+		//if err != nil {
+		//	panic(err)
+		//}
+		//err = (&scheduler.Job{
+		//	Name: scheduler.RangeOHLC,
+		//	Args: map[string]interface{}{
+		//		"last_candle": lastCandleId,
+		//		"resolution":  s.HelperResolution[symbol],
+		//		"start_from":  helperCandle.Time,
+		//		"brokerage":   s.Brokerage,
+		//		"callback":    &s.HelperCallbackChannel,
+		//		"symbol":      symbol,
+		//	},
+		//}).Enqueue()
 	}
 }
 
 func (s *Strategy) CollectPeriodicData() {
-	for _, symbol := range s.Symbols {
-		err := (&scheduler.Job{
-			Name:   scheduler.SingleOHLC,
-			Period: s.PivotResolution[symbol].Duration,
-			Args: map[string]interface{}{
-				"resolution": s.PivotResolution[symbol],
-				"brokerage":  s.Brokerage,
-				"callback":   &s.CallbackChannel,
-				"symbol":     symbol,
-			},
-		}).EnqueueContinuously()
-		if err != nil {
-			panic(err)
-		}
-		err = (&scheduler.Job{
-			Name:   scheduler.SingleOHLC,
-			Period: s.HelperResolution[symbol].Duration,
-			Args: map[string]interface{}{
-				"resolution": s.HelperResolution[symbol],
-				"brokerage":  s.Brokerage,
-				"callback":   &s.HelperCallbackChannel,
-				"symbol":     symbol,
-			},
-		}).EnqueueContinuously()
-	}
+	//for _, symbol := range s.Symbols {
+		//err := (&scheduler.Job{
+		//	Name:   scheduler.SingleOHLC,
+		//	Period: s.PivotResolution[symbol].Duration,
+		//	Args: map[string]interface{}{
+		//		"resolution": s.PivotResolution[symbol],
+		//		"brokerage":  s.Brokerage,
+		//		"callback":   &s.CallbackChannel,
+		//		"symbol":     symbol,
+		//	},
+		//}).EnqueueContinuously()
+		//if err != nil {
+		//	panic(err)
+		//}
+		//err = (&scheduler.Job{
+		//	Name:   scheduler.SingleOHLC,
+		//	Period: s.HelperResolution[symbol].Duration,
+		//	Args: map[string]interface{}{
+		//		"resolution": s.HelperResolution[symbol],
+		//		"brokerage":  s.Brokerage,
+		//		"callback":   &s.HelperCallbackChannel,
+		//		"symbol":     symbol,
+		//	},
+		//}).EnqueueContinuously()
+	//}
 }
 
 func (s *Strategy) CheckForNewData() {
