@@ -23,7 +23,7 @@ type MarketStatusParams struct {
 
 type OHLCParams struct {
 	brokerages.MustImplementAsFunctionParameter
-	Resolution *models.Resolution
+	Resolution models.Resolution
 	Symbol     brokerages.Symbol
 	From       int64
 	To         int64

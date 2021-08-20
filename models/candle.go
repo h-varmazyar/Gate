@@ -21,7 +21,7 @@ type Candle struct {
 
 func (c *Candle) LoadLast() error {
 	return db.Model(&Candle{}).
-		Where("brokerage LINE ?", c.Brokerage).
+		Where("brokerage LIKE ?", c.Brokerage).
 		Where("symbol LIKE ?", c.Symbol).
 		Where("resolution_label LIKE ?", c.Resolution.Label).
 		Last(&c).Error
@@ -38,5 +38,5 @@ func (c *Candle) Create() error {
 }
 
 func (c *Candle) Update() error {
-	return db.Create(&c).Error
+	return db.Updates(&c).Error
 }

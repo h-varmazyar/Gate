@@ -21,20 +21,20 @@ type Brokerage interface {
 	//UpdateOrderStatus(orderId uint64, newStatus models.OrderStatus) (*api.UpdateOrderStatusResponse, error)
 	Validate() error
 	GetName() BrokerageName
-	OHLC(MustImplementAsFunctionParameter) *BasicResponse
-	Login(MustImplementAsFunctionParameter) *BasicResponse
-	NewOrder(MustImplementAsFunctionParameter) *BasicResponse
-	UserInfo(MustImplementAsFunctionParameter) *BasicResponse
-	OrderList(MustImplementAsFunctionParameter) *BasicResponse
-	OrderBook(MustImplementAsFunctionParameter) *BasicResponse
-	WalletInfo(MustImplementAsFunctionParameter) *BasicResponse
-	WalletList(MustImplementAsFunctionParameter) *BasicResponse
-	OrderStatus(MustImplementAsFunctionParameter) *BasicResponse
-	MarketStats(MustImplementAsFunctionParameter) *BasicResponse
-	RecentTrades(MustImplementAsFunctionParameter) *BasicResponse
-	WalletBalance(MustImplementAsFunctionParameter) *BasicResponse
-	TransactionList(MustImplementAsFunctionParameter) *BasicResponse
-	UpdateOrderStatus(MustImplementAsFunctionParameter) *BasicResponse
+	OHLC(MustImplementAsFunctionParameter) *OHLCResponse
+	Login(MustImplementAsFunctionParameter) interface{}
+	NewOrder(MustImplementAsFunctionParameter) interface{}
+	UserInfo(MustImplementAsFunctionParameter) interface{}
+	OrderList(MustImplementAsFunctionParameter) interface{}
+	OrderBook(MustImplementAsFunctionParameter) interface{}
+	WalletInfo(MustImplementAsFunctionParameter) interface{}
+	WalletList(MustImplementAsFunctionParameter) interface{}
+	OrderStatus(MustImplementAsFunctionParameter) interface{}
+	MarketStats(MustImplementAsFunctionParameter) interface{}
+	RecentTrades(MustImplementAsFunctionParameter) interface{}
+	WalletBalance(MustImplementAsFunctionParameter) interface{}
+	TransactionList(MustImplementAsFunctionParameter) interface{}
+	UpdateOrderStatus(MustImplementAsFunctionParameter) interface{}
 }
 
 type ManagementFunctions interface {
@@ -52,7 +52,7 @@ type BasicResponse struct {
 	Error error
 }
 
-type MustImplementAsFunctionParameter struct{}
+type MustImplementAsFunctionParameter interface {}
 
 type Symbol string
 type Currency string

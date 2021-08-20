@@ -3,5 +3,7 @@ package strategies
 func StartDefault() {
 	strategy := Strategy{}
 
-	strategy.CollectPrimaryData()
+	if err:=strategy.Validate();err!=nil{
+
+	}
 }

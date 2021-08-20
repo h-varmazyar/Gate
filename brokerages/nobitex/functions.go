@@ -20,10 +20,9 @@ type Config struct {
 }
 
 type PeriodicOHLC struct {
-	Config
 	brokerages.Symbol
-	*models.Resolution
-	Response chan *OHLCResponse
+	models.Resolution
+	Response chan *brokerages.OHLCResponse
 }
 
 func (config Config) Validate() error {
@@ -34,7 +33,8 @@ func (config Config) GetName() brokerages.BrokerageName {
 	return config.Name
 }
 
-func (config Config) Login(params LoginParams) *brokerages.BasicResponse {
+func (config Config) Login(input brokerages.MustImplementAsFunctionParameter) interface{} {
+	params:=input.(LoginParams)
 	req := networkManager.Request{
 		Type:     networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/auth/login/",
@@ -61,7 +61,8 @@ func (config Config) Login(params LoginParams) *brokerages.BasicResponse {
 	}
 }
 
-func (config Config) OrderBook(params OrderBookParams) *OrderBookResponse {
+func (config Config) OrderBook(input brokerages.MustImplementAsFunctionParameter) interface{} {
+	params:=input.(OrderBookParams)
 	req := networkManager.Request{
 		Type:     networkManager.GET,
 		Endpoint: "https://api.nobitex.ir/v2/orderbook/" + string(params.Symbol),
@@ -69,7 +70,7 @@ func (config Config) OrderBook(params OrderBookParams) *OrderBookResponse {
 
 	resp, err := req.Execute()
 	if err != nil {
-		return &OrderBookResponse{
+		return &brokerages.OrderBookResponse{
 			BasicResponse: brokerages.BasicResponse{
 				Error: err,
 			},
@@ -82,14 +83,14 @@ func (config Config) OrderBook(params OrderBookParams) *OrderBookResponse {
 			Asks   [][2]string `json:"asks"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &OrderBookResponse{
+			return &brokerages.OrderBookResponse{
 				BasicResponse: brokerages.BasicResponse{
 					Error: err,
 				},
 			}
 		}
 		if respStr.Status == "ok" {
-			orderBook := OrderBookResponse{
+			orderBook := brokerages.OrderBookResponse{
 				Symbol: string(params.Symbol),
 				Bids:   make([]models.Order, len(respStr.Bids)),
 				Asks:   make([]models.Order, len(respStr.Asks)),
@@ -97,7 +98,7 @@ func (config Config) OrderBook(params OrderBookParams) *OrderBookResponse {
 			for i, bid := range respStr.Bids {
 				price, err := strconv.ParseFloat(bid[0], 64)
 				if err != nil {
-					return &OrderBookResponse{
+					return &brokerages.OrderBookResponse{
 						BasicResponse: brokerages.BasicResponse{
 							Error: err,
 						},
@@ -109,7 +110,7 @@ func (config Config) OrderBook(params OrderBookParams) *OrderBookResponse {
 			for i, ask := range respStr.Asks {
 				price, err := strconv.ParseFloat(ask[0], 64)
 				if err != nil {
-					return &OrderBookResponse{
+					return &brokerages.OrderBookResponse{
 						BasicResponse: brokerages.BasicResponse{
 							Error: err,
 						},
@@ -120,14 +121,14 @@ func (config Config) OrderBook(params OrderBookParams) *OrderBookResponse {
 			}
 			return &orderBook
 		} else {
-			return &OrderBookResponse{
+			return &brokerages.OrderBookResponse{
 				BasicResponse: brokerages.BasicResponse{
 					Error: errors.New("nobitex tesponse error"),
 				},
 			}
 		}
 	} else {
-		return &OrderBookResponse{
+		return &brokerages.OrderBookResponse{
 			BasicResponse: brokerages.BasicResponse{
 				Error: errors.New(resp.Status),
 			},
@@ -135,7 +136,8 @@ func (config Config) OrderBook(params OrderBookParams) *OrderBookResponse {
 	}
 }
 
-func (config Config) RecentTrades(params OrderBookParams) *RecentTradesResponse {
+func (config Config) RecentTrades(input brokerages.MustImplementAsFunctionParameter) interface{} {
+	params:=input.(OrderBookParams)
 	req := networkManager.Request{
 		Type:     networkManager.GET,
 		Endpoint: "https://api.nobitex.ir/v2/trades/" + string(params.Symbol),
@@ -143,7 +145,7 @@ func (config Config) RecentTrades(params OrderBookParams) *RecentTradesResponse 
 
 	resp, err := req.Execute()
 	if err != nil {
-		return &RecentTradesResponse{
+		return &brokerages.RecentTradesResponse{
 			BasicResponse: brokerages.BasicResponse{Error: err},
 		}
 	}
@@ -158,12 +160,12 @@ func (config Config) RecentTrades(params OrderBookParams) *RecentTradesResponse 
 			} `json:"trades"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &RecentTradesResponse{
+			return &brokerages.RecentTradesResponse{
 				BasicResponse: brokerages.BasicResponse{Error: err},
 			}
 		}
 		if respStr.Status == "ok" {
-			recentTrade := RecentTradesResponse{
+			recentTrade := brokerages.RecentTradesResponse{
 				Symbol: string(params.Symbol),
 				Trades: make([]models.Trade, len(respStr.Trades)),
 			}
@@ -175,22 +177,23 @@ func (config Config) RecentTrades(params OrderBookParams) *RecentTradesResponse 
 			}
 			return &recentTrade
 		} else {
-			return &RecentTradesResponse{
+			return &brokerages.RecentTradesResponse{
 				BasicResponse: brokerages.BasicResponse{Error: errors.New("nobitex response error")},
 			}
 		}
 	} else {
-		return &RecentTradesResponse{
+		return &brokerages.RecentTradesResponse{
 			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
 		}
 	}
 }
 
-func (config Config) MarketStats(params MarketStatusParams) *MarketStatusResponse {
-	return &MarketStatusResponse{}
+func (config Config) MarketStats(input brokerages.MustImplementAsFunctionParameter) interface{} {
+	return &brokerages.MarketStatusResponse{}
 }
 
-func (config Config) OHLC(params OHLCParams) *OHLCResponse {
+func (config Config) OHLC(input brokerages.MustImplementAsFunctionParameter) *brokerages.OHLCResponse {
+	params:=input.(OHLCParams)
 	req := networkManager.Request{
 		Type:     networkManager.GET,
 		Endpoint: "https://api.nobitex.ir/market/udf/history",
@@ -202,7 +205,7 @@ func (config Config) OHLC(params OHLCParams) *OHLCResponse {
 
 	resp, err := req.Execute()
 	if err != nil {
-		return &OHLCResponse{
+		return &brokerages.OHLCResponse{
 			BasicResponse: brokerages.BasicResponse{
 				Error: err,
 			},
@@ -220,14 +223,14 @@ func (config Config) OHLC(params OHLCParams) *OHLCResponse {
 			Error  string   `json:"errmsg"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &OHLCResponse{
+			return &brokerages.OHLCResponse{
 				BasicResponse: brokerages.BasicResponse{
 					Error: err,
 				},
 			}
 		}
 		if respStr.Status == "ok" {
-			ohlc := OHLCResponse{
+			ohlc := brokerages.OHLCResponse{
 				Symbol:     params.Symbol,
 				Resolution: params.Resolution,
 				Status:     respStr.Status,
@@ -242,14 +245,14 @@ func (config Config) OHLC(params OHLCParams) *OHLCResponse {
 			}
 			return &ohlc
 		} else {
-			return &OHLCResponse{
+			return &brokerages.OHLCResponse{
 				BasicResponse: brokerages.BasicResponse{
 					Error: errors.New(respStr.Error),
 				},
 			}
 		}
 	} else {
-		return &OHLCResponse{
+		return &brokerages.OHLCResponse{
 			BasicResponse: brokerages.BasicResponse{
 				Error: errors.New(resp.Status),
 			},
@@ -257,7 +260,7 @@ func (config Config) OHLC(params OHLCParams) *OHLCResponse {
 	}
 }
 
-func (config Config) UserInfo(brokerages.MustImplementAsFunctionParameter) *UserInfoResponse {
+func (config Config) UserInfo(brokerages.MustImplementAsFunctionParameter) interface{} {
 	req := networkManager.Request{
 		Type:     networkManager.GET,
 		Endpoint: "https://api.nobitex.ir/users/profile",
@@ -266,7 +269,7 @@ func (config Config) UserInfo(brokerages.MustImplementAsFunctionParameter) *User
 
 	resp, err := req.Execute()
 	if err != nil {
-		return &UserInfoResponse{
+		return &brokerages.UserInfoResponse{
 			BasicResponse: brokerages.BasicResponse{
 				Error: err,
 			},
@@ -335,7 +338,7 @@ func (config Config) UserInfo(brokerages.MustImplementAsFunctionParameter) *User
 			} `json:"tradeStatus"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &UserInfoResponse{
+			return &brokerages.UserInfoResponse{
 				BasicResponse: brokerages.BasicResponse{
 					Error: err,
 				},
@@ -350,7 +353,7 @@ func (config Config) UserInfo(brokerages.MustImplementAsFunctionParameter) *User
 				bankAccounts[i].Status = account.Status
 				bankAccounts[i].IBAN = account.IBAN
 			}
-			userInfo := UserInfoResponse{
+			userInfo := brokerages.UserInfoResponse{
 				User: models.User{
 					FirstName: respStr.Profile.FirstName,
 					LastName:  respStr.Profile.LastName,
@@ -365,14 +368,14 @@ func (config Config) UserInfo(brokerages.MustImplementAsFunctionParameter) *User
 			}
 			return &userInfo
 		} else {
-			return &UserInfoResponse{
+			return &brokerages.UserInfoResponse{
 				BasicResponse: brokerages.BasicResponse{
 					Error: errors.New("get user profile error"),
 				},
 			}
 		}
 	} else {
-		return &UserInfoResponse{
+		return &brokerages.UserInfoResponse{
 			BasicResponse: brokerages.BasicResponse{
 				Error: errors.New(resp.Status),
 			},
@@ -380,7 +383,7 @@ func (config Config) UserInfo(brokerages.MustImplementAsFunctionParameter) *User
 	}
 }
 
-func (config Config) WalletList(brokerages.MustImplementAsFunctionParameter) *WalletsResponse {
+func (config Config) WalletList(brokerages.MustImplementAsFunctionParameter) interface{} {
 	req := networkManager.Request{
 		Type:     networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/users/wallets/list",
@@ -389,7 +392,7 @@ func (config Config) WalletList(brokerages.MustImplementAsFunctionParameter) *Wa
 
 	resp, err := req.Execute()
 	if err != nil {
-		return &WalletsResponse{
+		return &brokerages.WalletsResponse{
 			BasicResponse: brokerages.BasicResponse{
 				Error: err,
 			},
@@ -411,7 +414,7 @@ func (config Config) WalletList(brokerages.MustImplementAsFunctionParameter) *Wa
 			} `json:"wallets"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &WalletsResponse{
+			return &brokerages.WalletsResponse{
 				BasicResponse: brokerages.BasicResponse{
 					Error: err,
 				},
@@ -428,16 +431,16 @@ func (config Config) WalletList(brokerages.MustImplementAsFunctionParameter) *Wa
 				wallets[i].ID = wallet.Id
 			}
 
-			return &WalletsResponse{Wallets: wallets}
+			return &brokerages.WalletsResponse{Wallets: wallets}
 		} else {
-			return &WalletsResponse{
+			return &brokerages.WalletsResponse{
 				BasicResponse: brokerages.BasicResponse{
 					Error: errors.New("get user profile error"),
 				},
 			}
 		}
 	} else {
-		return &WalletsResponse{
+		return &brokerages.WalletsResponse{
 			BasicResponse: brokerages.BasicResponse{
 				Error: errors.New(resp.Status),
 			},
@@ -445,7 +448,8 @@ func (config Config) WalletList(brokerages.MustImplementAsFunctionParameter) *Wa
 	}
 }
 
-func (config Config) WalletInfo(params WalletInfoParams) *WalletResponse {
+func (config Config) WalletInfo(input brokerages.MustImplementAsFunctionParameter) interface{} {
+	params:=input.(WalletInfoParams)
 	req := networkManager.Request{
 		Type:     networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/v2/wallets",
@@ -455,7 +459,7 @@ func (config Config) WalletInfo(params WalletInfoParams) *WalletResponse {
 
 	resp, err := req.Execute()
 	if err != nil {
-		return &WalletResponse{
+		return &brokerages.WalletResponse{
 			BasicResponse: brokerages.BasicResponse{
 				Error: err,
 			},
@@ -472,28 +476,28 @@ func (config Config) WalletInfo(params WalletInfoParams) *WalletResponse {
 		}{}
 
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &WalletResponse{
+			return &brokerages.WalletResponse{
 				BasicResponse: brokerages.BasicResponse{
 					Error: err,
 				},
 			}
 		}
 		if respStr.Status == "ok" {
-			return &WalletResponse{Wallet: models.Wallet{
+			return &brokerages.WalletResponse{Wallet: models.Wallet{
 				ID:             respStr.Wallets[strings.ToUpper(params.WalletName)].Id,
 				BlockedBalance: respStr.Wallets[strings.ToUpper(params.WalletName)].Blocked,
 				TotalBalance:   respStr.Wallets[strings.ToUpper(params.WalletName)].Balance,
 				Currency:       params.WalletName,
 			}}
 		} else {
-			return &WalletResponse{
+			return &brokerages.WalletResponse{
 				BasicResponse: brokerages.BasicResponse{
 					Error: errors.New("get user profile error"),
 				},
 			}
 		}
 	} else {
-		return &WalletResponse{
+		return &brokerages.WalletResponse{
 			BasicResponse: brokerages.BasicResponse{
 				Error: errors.New(resp.Status),
 			},
@@ -501,7 +505,8 @@ func (config Config) WalletInfo(params WalletInfoParams) *WalletResponse {
 	}
 }
 
-func (config Config) WalletBalance(params WalletBalanceParams) *BalanceResponse {
+func (config Config) WalletBalance(input brokerages.MustImplementAsFunctionParameter) interface{} {
+	params:=input.(WalletBalanceParams)
 	req := networkManager.Request{
 		Type:     networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/users/wallets/balance",
@@ -511,7 +516,7 @@ func (config Config) WalletBalance(params WalletBalanceParams) *BalanceResponse 
 
 	resp, err := req.Execute()
 	if err != nil {
-		return &BalanceResponse{
+		return &brokerages.BalanceResponse{
 			BasicResponse: brokerages.BasicResponse{Error: err},
 		}
 	}
@@ -521,28 +526,29 @@ func (config Config) WalletBalance(params WalletBalanceParams) *BalanceResponse 
 			Balance string `json:"balance"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &BalanceResponse{
+			return &brokerages.BalanceResponse{
 				BasicResponse: brokerages.BasicResponse{Error: err},
 			}
 		}
 		if respStr.Status == "ok" {
-			return &BalanceResponse{
+			return &brokerages.BalanceResponse{
 				Symbol:  params.Currency,
 				Balance: respStr.Balance,
 			}
 		} else {
-			return &BalanceResponse{
+			return &brokerages.BalanceResponse{
 				BasicResponse: brokerages.BasicResponse{Error: errors.New("internal server error (wallet balance)")},
 			}
 		}
 	} else {
-		return &BalanceResponse{
+		return &brokerages.BalanceResponse{
 			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
 		}
 	}
 }
 
-func (config Config) TransactionList(params TransactionListParams) *TransactionListResponse {
+func (config Config) TransactionList(input brokerages.MustImplementAsFunctionParameter) interface{} {
+	params:=input.(TransactionListParams)
 	req := networkManager.Request{
 		Type:     networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/users/wallets/transactions/list",
@@ -552,7 +558,7 @@ func (config Config) TransactionList(params TransactionListParams) *TransactionL
 
 	resp, err := req.Execute()
 	if err != nil {
-		return &TransactionListResponse{
+		return &brokerages.TransactionListResponse{
 			BasicResponse: brokerages.BasicResponse{Error: err},
 		}
 	}
@@ -569,7 +575,7 @@ func (config Config) TransactionList(params TransactionListParams) *TransactionL
 			} `json:"transactions"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &TransactionListResponse{
+			return &brokerages.TransactionListResponse{
 				BasicResponse: brokerages.BasicResponse{Error: err},
 			}
 		}
@@ -587,20 +593,21 @@ func (config Config) TransactionList(params TransactionListParams) *TransactionL
 					CalculatedFee: transaction.CalculatedFee,
 				}
 			}
-			return &TransactionListResponse{Transactions: transactions}
+			return &brokerages.TransactionListResponse{Transactions: transactions}
 		} else {
-			return &TransactionListResponse{
+			return &brokerages.TransactionListResponse{
 				BasicResponse: brokerages.BasicResponse{Error: errors.New("internal server error (wallet balance)")},
 			}
 		}
 	} else {
-		return &TransactionListResponse{
+		return &brokerages.TransactionListResponse{
 			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
 		}
 	}
 }
 
-func (config Config) NewOrder(params NewOrderParams) *OrderResponse {
+func (config Config) NewOrder(input brokerages.MustImplementAsFunctionParameter) interface{} {
+	params :=input.(NewOrderParams)
 	body := make(map[string]interface{})
 	body["price"] = params.Order.Price
 	body["amount"] = params.Order.Volume
@@ -616,7 +623,7 @@ func (config Config) NewOrder(params NewOrderParams) *OrderResponse {
 
 	resp, err := req.Execute()
 	if err != nil {
-		return &OrderResponse{
+		return &brokerages.OrderResponse{
 			BasicResponse: brokerages.BasicResponse{Error: err},
 		}
 	}
@@ -641,18 +648,18 @@ func (config Config) NewOrder(params NewOrderParams) *OrderResponse {
 			Message string `json:"message"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &OrderResponse{
+			return &brokerages.OrderResponse{
 				BasicResponse: brokerages.BasicResponse{Error: err},
 			}
 		}
 		if respStr.Status == "ok" {
 			price, err := strconv.ParseFloat(respStr.Order.Price, 64)
 			if err != nil {
-				return &OrderResponse{
+				return &brokerages.OrderResponse{
 					BasicResponse: brokerages.BasicResponse{Error: err},
 				}
 			}
-			return &OrderResponse{
+			return &brokerages.OrderResponse{
 				Order: models.Order{
 					Model: gorm.Model{
 						ID:        respStr.Order.Id,
@@ -672,18 +679,19 @@ func (config Config) NewOrder(params NewOrderParams) *OrderResponse {
 				},
 			}
 		} else {
-			return &OrderResponse{
+			return &brokerages.OrderResponse{
 				BasicResponse: brokerages.BasicResponse{Error: errors.New(respStr.Message)},
 			}
 		}
 	} else {
-		return &OrderResponse{
+		return &brokerages.OrderResponse{
 			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
 		}
 	}
 }
 
-func (config Config) OrderStatus(params OrderStatusParams) *OrderResponse {
+func (config Config) OrderStatus(input brokerages.MustImplementAsFunctionParameter) interface{} {
+	params :=input.(OrderStatusParams)
 	req := networkManager.Request{
 		Type:     networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/market/orders/Status",
@@ -693,7 +701,7 @@ func (config Config) OrderStatus(params OrderStatusParams) *OrderResponse {
 
 	resp, err := req.Execute()
 	if err != nil {
-		return &OrderResponse{
+		return &brokerages.OrderResponse{
 			BasicResponse: brokerages.BasicResponse{Error: err},
 		}
 	}
@@ -718,18 +726,18 @@ func (config Config) OrderStatus(params OrderStatusParams) *OrderResponse {
 			Message string `json:"message"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &OrderResponse{
+			return &brokerages.OrderResponse{
 				BasicResponse: brokerages.BasicResponse{Error: err},
 			}
 		}
 		if respStr.Status == "ok" {
 			price, err := strconv.ParseFloat(respStr.Order.Price, 64)
 			if err != nil {
-				return &OrderResponse{
+				return &brokerages.OrderResponse{
 					BasicResponse: brokerages.BasicResponse{Error: err},
 				}
 			}
-			return &OrderResponse{
+			return &brokerages.OrderResponse{
 				Order: models.Order{
 					Model: gorm.Model{
 						ID:        respStr.Order.Id,
@@ -749,18 +757,19 @@ func (config Config) OrderStatus(params OrderStatusParams) *OrderResponse {
 				},
 			}
 		} else {
-			return &OrderResponse{
+			return &brokerages.OrderResponse{
 				BasicResponse: brokerages.BasicResponse{Error: errors.New(respStr.Message)},
 			}
 		}
 	} else {
-		return &OrderResponse{
+		return &brokerages.OrderResponse{
 			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
 		}
 	}
 }
 
-func (config Config) OrderList(params OrderListParams) *OrderListResponse {
+func (config Config) OrderList(input brokerages.MustImplementAsFunctionParameter) interface{} {
+	params :=input.(OrderListParams)
 	body := make(map[string]interface{})
 	if params.Status != "" {
 		body["status"] = params.Status
@@ -771,14 +780,14 @@ func (config Config) OrderList(params OrderListParams) *OrderListResponse {
 	if params.Source != "" {
 		body["srcCurrency"] = params.Source
 	} else {
-		return &OrderListResponse{
+		return &brokerages.OrderListResponse{
 			BasicResponse: brokerages.BasicResponse{Error: errors.New("please specify Source Currency")},
 		}
 	}
 	if params.Destination != "" {
 		body["dstCurrency"] = params.Destination
 	} else {
-		return &OrderListResponse{
+		return &brokerages.OrderListResponse{
 			BasicResponse: brokerages.BasicResponse{Error: errors.New("please specify Destination Currency")},
 		}
 	}
@@ -796,7 +805,7 @@ func (config Config) OrderList(params OrderListParams) *OrderListResponse {
 
 	resp, err := req.Execute()
 	if err != nil {
-		return &OrderListResponse{
+		return &brokerages.OrderListResponse{
 			BasicResponse: brokerages.BasicResponse{Error: err},
 		}
 	}
@@ -822,7 +831,7 @@ func (config Config) OrderList(params OrderListParams) *OrderListResponse {
 			Message string `json:"message"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &OrderListResponse{
+			return &brokerages.OrderListResponse{
 				BasicResponse: brokerages.BasicResponse{Error: err},
 			}
 		}
@@ -851,32 +860,33 @@ func (config Config) OrderList(params OrderListParams) *OrderListResponse {
 					DestinationCurrency: order.Dest,
 				}
 			}
-			return &OrderListResponse{Orders: orders}
+			return &brokerages.OrderListResponse{Orders: orders}
 		} else {
-			return &OrderListResponse{
+			return &brokerages.OrderListResponse{
 				BasicResponse: brokerages.BasicResponse{Error: errors.New(respStr.Message)},
 			}
 		}
 	} else {
-		return &OrderListResponse{
+		return &brokerages.OrderListResponse{
 			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
 		}
 	}
 }
 
-func (config Config) UpdateOrderStatus(params UpdateOrderStatusParams) *UpdateOrderStatusResponse {
+func (config Config) UpdateOrderStatus(input brokerages.MustImplementAsFunctionParameter) interface{} {
+	params :=input.(UpdateOrderStatusParams)
 	body := make(map[string]interface{})
 	if params.OrderId < 0 {
 		body["Order"] = params.OrderId
 	} else {
-		return &UpdateOrderStatusResponse{
+		return &brokerages.UpdateOrderStatusResponse{
 			BasicResponse: brokerages.BasicResponse{Error: errors.New("please specify Order id Currency")},
 		}
 	}
 	if params.NewStatus != "" {
 		body["Status"] = params.NewStatus
 	} else {
-		return &UpdateOrderStatusResponse{
+		return &brokerages.UpdateOrderStatusResponse{
 			BasicResponse: brokerages.BasicResponse{Error: errors.New("please specify new Status Currency")},
 		}
 	}
@@ -889,7 +899,7 @@ func (config Config) UpdateOrderStatus(params UpdateOrderStatusParams) *UpdateOr
 
 	resp, err := req.Execute()
 	if err != nil {
-		return &UpdateOrderStatusResponse{
+		return &brokerages.UpdateOrderStatusResponse{
 			BasicResponse: brokerages.BasicResponse{Error: err},
 		}
 	}
@@ -900,25 +910,25 @@ func (config Config) UpdateOrderStatus(params UpdateOrderStatusParams) *UpdateOr
 			UpdatedStatus models.OrderStatus `json:"updatedStatus"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &UpdateOrderStatusResponse{
+			return &brokerages.UpdateOrderStatusResponse{
 				BasicResponse: brokerages.BasicResponse{Error: err},
 			}
 		}
 		if respStr.Status == "ok" {
-			return &UpdateOrderStatusResponse{NewStatus: respStr.UpdatedStatus}
+			return &brokerages.UpdateOrderStatusResponse{NewStatus: respStr.UpdatedStatus}
 		} else {
-			return &UpdateOrderStatusResponse{
+			return &brokerages.UpdateOrderStatusResponse{
 				BasicResponse: brokerages.BasicResponse{Error: errors.New(respStr.Message)},
 			}
 		}
 	} else {
-		return &UpdateOrderStatusResponse{
+		return &brokerages.UpdateOrderStatusResponse{
 			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
 		}
 	}
 }
 
-func (periodic PeriodicOHLC) SubscribePeriodicOHLC(period time.Duration, endSignal chan bool) {
+func (config Config) SubscribePeriodicOHLC(periodic PeriodicOHLC,period time.Duration, endSignal chan bool) {
 	ticker := time.NewTicker(period)
 	go func() {
 		for {
@@ -927,12 +937,13 @@ func (periodic PeriodicOHLC) SubscribePeriodicOHLC(period time.Duration, endSign
 				return
 			case _ = <-ticker.C:
 				now := time.Now().Unix()
-				periodic.Response <- periodic.Config.OHLC(OHLCParams{
+				params:=OHLCParams{
 					Resolution: periodic.Resolution,
 					Symbol:     periodic.Symbol,
 					From:       now,
 					To:         now,
-				})
+				}
+				periodic.Response <- config.OHLC(params)
 
 			}
 		}

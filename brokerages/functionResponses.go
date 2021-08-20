@@ -1,76 +1,75 @@
-package nobitex
+package brokerages
 
 import (
-	"github.com/mrNobody95/Gate/brokerages"
 	"github.com/mrNobody95/Gate/models"
 )
 
 type OrderBookResponse struct {
-	brokerages.BasicResponse
+	BasicResponse
 	Symbol string
 	Bids   []models.Order
 	Asks   []models.Order
 }
 
 type RecentTradesResponse struct {
-	brokerages.BasicResponse
+	BasicResponse
 	Symbol string
 	Trades []models.Trade
 }
 
 type MarketStatusResponse struct {
-	brokerages.BasicResponse
+	BasicResponse
 	Symbol string
 	Trades []models.Trade
 }
 
 type OHLCResponse struct {
-	brokerages.BasicResponse
+	BasicResponse
 	ContinueLast uint
-	Resolution   *models.Resolution
+	Resolution   models.Resolution
 	Candles      []models.Candle
 	Status       string
-	Symbol       brokerages.Symbol
+	Symbol       Symbol
 }
 
 type UserInfoResponse struct {
-	brokerages.BasicResponse
+	BasicResponse
 	User        models.User
 	BankAccount []models.BankAccount
 }
 
 type WalletsResponse struct {
-	brokerages.BasicResponse
+	BasicResponse
 	Wallets []models.Wallet
 }
 
 type WalletResponse struct {
-	brokerages.BasicResponse
+	BasicResponse
 	Wallet models.Wallet
 }
 
 type BalanceResponse struct {
-	brokerages.BasicResponse
+	BasicResponse
 	Symbol  string
 	Balance string
 }
 
 type TransactionListResponse struct {
-	brokerages.BasicResponse
+	BasicResponse
 	Transactions []models.Transaction
 }
 
 type OrderResponse struct {
-	brokerages.BasicResponse
+	BasicResponse
 	Order models.Order
 }
 
 type OrderListResponse struct {
-	brokerages.BasicResponse
+	BasicResponse
 	Orders []models.Order
 }
 
 type UpdateOrderStatusResponse struct {
-	brokerages.BasicResponse
+	BasicResponse
 	NewStatus models.OrderStatus
 }
