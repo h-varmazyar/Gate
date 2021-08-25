@@ -3,6 +3,7 @@ package nobitex
 import (
 	"github.com/mrNobody95/Gate/brokerages"
 	"github.com/mrNobody95/Gate/models"
+	"github.com/mrNobody95/Gate/models/todo"
 )
 
 type LoginParams struct {
@@ -12,7 +13,7 @@ type LoginParams struct {
 
 type OrderBookParams struct {
 	brokerages.MustImplementAsFunctionParameter
-	Symbol brokerages.Symbol
+	Symbol models.Symbol
 }
 
 type MarketStatusParams struct {
@@ -24,7 +25,7 @@ type MarketStatusParams struct {
 type OHLCParams struct {
 	brokerages.MustImplementAsFunctionParameter
 	Resolution models.Resolution
-	Symbol     brokerages.Symbol
+	Symbol     models.Symbol
 	From       int64
 	To         int64
 }
@@ -46,7 +47,7 @@ type TransactionListParams struct {
 
 type NewOrderParams struct {
 	brokerages.MustImplementAsFunctionParameter
-	Order models.Order
+	Order todo.Order
 }
 
 type OrderStatusParams struct {
@@ -58,13 +59,13 @@ type OrderListParams struct {
 	brokerages.MustImplementAsFunctionParameter
 	Destination string
 	WithDetails bool
-	Status      models.OrderStatus
+	Status      todo.OrderStatus
 	Source      string
-	Type        models.OrderType
+	Type        todo.OrderType
 }
 
 type UpdateOrderStatusParams struct {
 	brokerages.MustImplementAsFunctionParameter
-	NewStatus models.OrderStatus
+	NewStatus todo.OrderStatus
 	OrderId   uint64
 }

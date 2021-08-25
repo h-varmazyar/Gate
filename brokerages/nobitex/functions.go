@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/mrNobody95/Gate/brokerages"
 	"github.com/mrNobody95/Gate/models"
+	"github.com/mrNobody95/Gate/models/todo"
 	"github.com/mrNobody95/Gate/networkManager"
 	"gorm.io/gorm"
 	"strconv"
@@ -14,13 +15,13 @@ import (
 )
 
 type Config struct {
-	brokerages.BrokerageConfig
+	models.Brokerage
 	Token     string
 	LongToken bool
 }
 
 type PeriodicOHLC struct {
-	brokerages.Symbol
+	models.Symbol
 	models.Resolution
 	Response chan *brokerages.OHLCResponse
 }
@@ -29,12 +30,12 @@ func (config Config) Validate() error {
 	return nil
 }
 
-func (config Config) GetName() brokerages.BrokerageName {
+func (config Config) GetName() models.BrokerageName {
 	return config.Name
 }
 
 func (config Config) Login(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params:=input.(LoginParams)
+	params := input.(LoginParams)
 	req := networkManager.Request{
 		Type:     networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/auth/login/",
@@ -62,10 +63,10 @@ func (config Config) Login(input brokerages.MustImplementAsFunctionParameter) in
 }
 
 func (config Config) OrderBook(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params:=input.(OrderBookParams)
+	params := input.(OrderBookParams)
 	req := networkManager.Request{
 		Type:     networkManager.GET,
-		Endpoint: "https://api.nobitex.ir/v2/orderbook/" + string(params.Symbol),
+		Endpoint: "https://api.nobitex.ir/v2/orderbook/" + params.Symbol.Value,
 	}
 
 	resp, err := req.Execute()
@@ -91,9 +92,9 @@ func (config Config) OrderBook(input brokerages.MustImplementAsFunctionParameter
 		}
 		if respStr.Status == "ok" {
 			orderBook := brokerages.OrderBookResponse{
-				Symbol: string(params.Symbol),
-				Bids:   make([]models.Order, len(respStr.Bids)),
-				Asks:   make([]models.Order, len(respStr.Asks)),
+				Symbol: params.Symbol.Value,
+				Bids:   make([]todo.Order, len(respStr.Bids)),
+				Asks:   make([]todo.Order, len(respStr.Asks)),
 			}
 			for i, bid := range respStr.Bids {
 				price, err := strconv.ParseFloat(bid[0], 64)
@@ -137,10 +138,10 @@ func (config Config) OrderBook(input brokerages.MustImplementAsFunctionParameter
 }
 
 func (config Config) RecentTrades(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params:=input.(OrderBookParams)
+	params := input.(OrderBookParams)
 	req := networkManager.Request{
 		Type:     networkManager.GET,
-		Endpoint: "https://api.nobitex.ir/v2/trades/" + string(params.Symbol),
+		Endpoint: "https://api.nobitex.ir/v2/trades/" + params.Symbol.Value,
 	}
 
 	resp, err := req.Execute()
@@ -166,14 +167,14 @@ func (config Config) RecentTrades(input brokerages.MustImplementAsFunctionParame
 		}
 		if respStr.Status == "ok" {
 			recentTrade := brokerages.RecentTradesResponse{
-				Symbol: string(params.Symbol),
-				Trades: make([]models.Trade, len(respStr.Trades)),
+				Symbol: params.Symbol.Value,
+				Trades: make([]todo.Trade, len(respStr.Trades)),
 			}
 			for i, trade := range respStr.Trades {
 				recentTrade.Trades[i].Time = trade.Time
 				recentTrade.Trades[i].Price, _ = strconv.ParseFloat(trade.Price, 64)
 				recentTrade.Trades[i].Volume, _ = strconv.ParseFloat(trade.Volume, 64)
-				recentTrade.Trades[i].Type = models.OrderType(trade.Type)
+				recentTrade.Trades[i].Type = todo.OrderType(trade.Type)
 			}
 			return &recentTrade
 		} else {
@@ -193,7 +194,7 @@ func (config Config) MarketStats(input brokerages.MustImplementAsFunctionParamet
 }
 
 func (config Config) OHLC(input brokerages.MustImplementAsFunctionParameter) *brokerages.OHLCResponse {
-	params:=input.(OHLCParams)
+	params := input.(OHLCParams)
 	req := networkManager.Request{
 		Type:     networkManager.GET,
 		Endpoint: "https://api.nobitex.ir/market/udf/history",
@@ -213,14 +214,14 @@ func (config Config) OHLC(input brokerages.MustImplementAsFunctionParameter) *br
 	}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status string   `json:"s"`
-			Time   []int64  `json:"t"`
-			Open   []string `json:"o"`
-			High   []string `json:"h"`
-			Low    []string `json:"l"`
-			Close  []string `json:"c"`
-			Volume []string `json:"v"`
-			Error  string   `json:"errmsg"`
+			Status string    `json:"s"`
+			Time   []int64   `json:"t"`
+			Open   []float64 `json:"o"`
+			High   []float64 `json:"h"`
+			Low    []float64 `json:"l"`
+			Close  []float64 `json:"c"`
+			Volume []float64 `json:"v"`
+			Error  string    `json:"errmsg"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
 			return &brokerages.OHLCResponse{
@@ -235,13 +236,17 @@ func (config Config) OHLC(input brokerages.MustImplementAsFunctionParameter) *br
 				Resolution: params.Resolution,
 				Status:     respStr.Status,
 			}
+			ohlc.Candles = make([]models.Candle, len(respStr.Time))
+			fmt.Println("candle:", len(respStr.Time))
 			for i := 0; i < len(respStr.Time); i++ {
-				ohlc.Candles[i].Time = respStr.Time[i]
-				ohlc.Candles[i].Open, _ = strconv.ParseFloat(respStr.Open[i], 64)
-				ohlc.Candles[i].High, _ = strconv.ParseFloat(respStr.High[i], 64)
-				ohlc.Candles[i].Low, _ = strconv.ParseFloat(respStr.Low[i], 64)
-				ohlc.Candles[i].Close, _ = strconv.ParseFloat(respStr.Close[i], 64)
-				ohlc.Candles[i].Vol, _ = strconv.ParseFloat(respStr.Volume[i], 64)
+				ohlc.Candles[i].Time = time.Unix(respStr.Time[i], 0)
+				ohlc.Candles[i].Open = respStr.Open[i]
+				ohlc.Candles[i].High = respStr.High[i]
+				ohlc.Candles[i].Low = respStr.Low[i]
+				ohlc.Candles[i].Close = respStr.Close[i]
+				ohlc.Candles[i].Vol = respStr.Volume[i]
+				ohlc.Candles[i].Symbol = params.Symbol
+
 			}
 			return &ohlc
 		} else {
@@ -345,7 +350,7 @@ func (config Config) UserInfo(brokerages.MustImplementAsFunctionParameter) inter
 			}
 		}
 		if respStr.Status == "ok" {
-			bankAccounts := make([]models.BankAccount, len(respStr.Profile.BankAccounts))
+			bankAccounts := make([]todo.BankAccount, len(respStr.Profile.BankAccounts))
 			for i, account := range respStr.Profile.BankAccounts {
 				bankAccounts[i].AccountNumber = account.Number
 				bankAccounts[i].OwnerName = account.Owner
@@ -354,7 +359,7 @@ func (config Config) UserInfo(brokerages.MustImplementAsFunctionParameter) inter
 				bankAccounts[i].IBAN = account.IBAN
 			}
 			userInfo := brokerages.UserInfoResponse{
-				User: models.User{
+				User: todo.User{
 					FirstName: respStr.Profile.FirstName,
 					LastName:  respStr.Profile.LastName,
 					Email:     respStr.Profile.Email,
@@ -421,7 +426,7 @@ func (config Config) WalletList(brokerages.MustImplementAsFunctionParameter) int
 			}
 		}
 		if respStr.Status == "ok" {
-			wallets := make([]models.Wallet, len(respStr.Wallets))
+			wallets := make([]todo.Wallet, len(respStr.Wallets))
 			for i, wallet := range respStr.Wallets {
 				wallets[i].ReferenceCurrencyBalance = wallet.RialBalance
 				wallets[i].BlockedBalance = wallet.BlockedBalance
@@ -449,7 +454,7 @@ func (config Config) WalletList(brokerages.MustImplementAsFunctionParameter) int
 }
 
 func (config Config) WalletInfo(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params:=input.(WalletInfoParams)
+	params := input.(WalletInfoParams)
 	req := networkManager.Request{
 		Type:     networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/v2/wallets",
@@ -483,7 +488,7 @@ func (config Config) WalletInfo(input brokerages.MustImplementAsFunctionParamete
 			}
 		}
 		if respStr.Status == "ok" {
-			return &brokerages.WalletResponse{Wallet: models.Wallet{
+			return &brokerages.WalletResponse{Wallet: todo.Wallet{
 				ID:             respStr.Wallets[strings.ToUpper(params.WalletName)].Id,
 				BlockedBalance: respStr.Wallets[strings.ToUpper(params.WalletName)].Blocked,
 				TotalBalance:   respStr.Wallets[strings.ToUpper(params.WalletName)].Balance,
@@ -506,7 +511,7 @@ func (config Config) WalletInfo(input brokerages.MustImplementAsFunctionParamete
 }
 
 func (config Config) WalletBalance(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params:=input.(WalletBalanceParams)
+	params := input.(WalletBalanceParams)
 	req := networkManager.Request{
 		Type:     networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/users/wallets/balance",
@@ -548,7 +553,7 @@ func (config Config) WalletBalance(input brokerages.MustImplementAsFunctionParam
 }
 
 func (config Config) TransactionList(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params:=input.(TransactionListParams)
+	params := input.(TransactionListParams)
 	req := networkManager.Request{
 		Type:     networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/users/wallets/transactions/list",
@@ -580,9 +585,9 @@ func (config Config) TransactionList(input brokerages.MustImplementAsFunctionPar
 			}
 		}
 		if respStr.Status == "ok" {
-			transactions := make([]models.Transaction, len(respStr.Transactions))
+			transactions := make([]todo.Transaction, len(respStr.Transactions))
 			for i, transaction := range respStr.Transactions {
-				transactions[i] = models.Transaction{
+				transactions[i] = todo.Transaction{
 					Model: gorm.Model{
 						ID:        transaction.Id,
 						CreatedAt: transaction.CreatedAt,
@@ -607,7 +612,7 @@ func (config Config) TransactionList(input brokerages.MustImplementAsFunctionPar
 }
 
 func (config Config) NewOrder(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params :=input.(NewOrderParams)
+	params := input.(NewOrderParams)
 	body := make(map[string]interface{})
 	body["price"] = params.Order.Price
 	body["amount"] = params.Order.Volume
@@ -660,7 +665,7 @@ func (config Config) NewOrder(input brokerages.MustImplementAsFunctionParameter)
 				}
 			}
 			return &brokerages.OrderResponse{
-				Order: models.Order{
+				Order: todo.Order{
 					Model: gorm.Model{
 						ID:        respStr.Order.Id,
 						CreatedAt: respStr.Order.CreatedAt,
@@ -668,9 +673,9 @@ func (config Config) NewOrder(input brokerages.MustImplementAsFunctionParameter)
 					Fee:                 respStr.Order.Fee,
 					User:                respStr.Order.User,
 					Price:               price,
-					Status:              models.OrderStatus(respStr.Order.Status),
+					Status:              todo.OrderStatus(respStr.Order.Status),
 					Volume:              respStr.Order.Amount,
-					OrderType:           models.OrderType(respStr.Order.Type),
+					OrderType:           todo.OrderType(respStr.Order.Type),
 					TotalPrice:          respStr.Order.TotalPrice,
 					MatchedVolume:       respStr.Order.Matched,
 					SourceCurrency:      respStr.Order.Src,
@@ -691,7 +696,7 @@ func (config Config) NewOrder(input brokerages.MustImplementAsFunctionParameter)
 }
 
 func (config Config) OrderStatus(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params :=input.(OrderStatusParams)
+	params := input.(OrderStatusParams)
 	req := networkManager.Request{
 		Type:     networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/market/orders/Status",
@@ -738,7 +743,7 @@ func (config Config) OrderStatus(input brokerages.MustImplementAsFunctionParamet
 				}
 			}
 			return &brokerages.OrderResponse{
-				Order: models.Order{
+				Order: todo.Order{
 					Model: gorm.Model{
 						ID:        respStr.Order.Id,
 						CreatedAt: respStr.Order.CreatedAt,
@@ -746,9 +751,9 @@ func (config Config) OrderStatus(input brokerages.MustImplementAsFunctionParamet
 					Fee:                 respStr.Order.Fee,
 					User:                respStr.Order.User,
 					Price:               price,
-					Status:              models.OrderStatus(respStr.Order.Status),
+					Status:              todo.OrderStatus(respStr.Order.Status),
 					Volume:              respStr.Order.Amount,
-					OrderType:           models.OrderType(respStr.Order.Type),
+					OrderType:           todo.OrderType(respStr.Order.Type),
 					TotalPrice:          respStr.Order.TotalPrice,
 					MatchedVolume:       respStr.Order.Matched,
 					SourceCurrency:      respStr.Order.Src,
@@ -769,7 +774,7 @@ func (config Config) OrderStatus(input brokerages.MustImplementAsFunctionParamet
 }
 
 func (config Config) OrderList(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params :=input.(OrderListParams)
+	params := input.(OrderListParams)
 	body := make(map[string]interface{})
 	if params.Status != "" {
 		body["status"] = params.Status
@@ -836,13 +841,13 @@ func (config Config) OrderList(input brokerages.MustImplementAsFunctionParameter
 			}
 		}
 		if respStr.Status == "ok" {
-			orders := make([]models.Order, len(respStr.Orders))
+			orders := make([]todo.Order, len(respStr.Orders))
 			for i, order := range respStr.Orders {
 				price, err := strconv.ParseFloat(order.Price, 64)
 				if err != nil {
 					continue
 				}
-				orders[i] = models.Order{
+				orders[i] = todo.Order{
 					Model: gorm.Model{
 						ID:        order.Id,
 						CreatedAt: order.CreatedAt,
@@ -850,9 +855,9 @@ func (config Config) OrderList(input brokerages.MustImplementAsFunctionParameter
 					Fee:                 order.Fee,
 					User:                order.User,
 					Price:               price,
-					Status:              models.OrderStatus(order.Status),
+					Status:              todo.OrderStatus(order.Status),
 					Volume:              order.Amount,
-					OrderType:           models.OrderType(order.Type),
+					OrderType:           todo.OrderType(order.Type),
 					TotalPrice:          order.TotalPrice,
 					MatchedVolume:       order.Matched,
 					SourceCurrency:      order.Src,
@@ -874,7 +879,7 @@ func (config Config) OrderList(input brokerages.MustImplementAsFunctionParameter
 }
 
 func (config Config) UpdateOrderStatus(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params :=input.(UpdateOrderStatusParams)
+	params := input.(UpdateOrderStatusParams)
 	body := make(map[string]interface{})
 	if params.OrderId < 0 {
 		body["Order"] = params.OrderId
@@ -905,9 +910,9 @@ func (config Config) UpdateOrderStatus(input brokerages.MustImplementAsFunctionP
 	}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status        string             `json:"Status"`
-			Message       string             `json:"message"`
-			UpdatedStatus models.OrderStatus `json:"updatedStatus"`
+			Status        string           `json:"Status"`
+			Message       string           `json:"message"`
+			UpdatedStatus todo.OrderStatus `json:"updatedStatus"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
 			return &brokerages.UpdateOrderStatusResponse{
@@ -928,7 +933,7 @@ func (config Config) UpdateOrderStatus(input brokerages.MustImplementAsFunctionP
 	}
 }
 
-func (config Config) SubscribePeriodicOHLC(periodic PeriodicOHLC,period time.Duration, endSignal chan bool) {
+func (config Config) SubscribePeriodicOHLC(periodic PeriodicOHLC, period time.Duration, endSignal chan bool) {
 	ticker := time.NewTicker(period)
 	go func() {
 		for {
@@ -937,7 +942,7 @@ func (config Config) SubscribePeriodicOHLC(periodic PeriodicOHLC,period time.Dur
 				return
 			case _ = <-ticker.C:
 				now := time.Now().Unix()
-				params:=OHLCParams{
+				params := OHLCParams{
 					Resolution: periodic.Resolution,
 					Symbol:     periodic.Symbol,
 					From:       now,

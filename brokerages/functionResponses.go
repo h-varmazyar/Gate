@@ -2,25 +2,26 @@ package brokerages
 
 import (
 	"github.com/mrNobody95/Gate/models"
+	"github.com/mrNobody95/Gate/models/todo"
 )
 
 type OrderBookResponse struct {
 	BasicResponse
 	Symbol string
-	Bids   []models.Order
-	Asks   []models.Order
+	Bids   []todo.Order
+	Asks   []todo.Order
 }
 
 type RecentTradesResponse struct {
 	BasicResponse
 	Symbol string
-	Trades []models.Trade
+	Trades []todo.Trade
 }
 
 type MarketStatusResponse struct {
 	BasicResponse
 	Symbol string
-	Trades []models.Trade
+	Trades []todo.Trade
 }
 
 type OHLCResponse struct {
@@ -29,23 +30,23 @@ type OHLCResponse struct {
 	Resolution   models.Resolution
 	Candles      []models.Candle
 	Status       string
-	Symbol       Symbol
+	Symbol       models.Symbol
 }
 
 type UserInfoResponse struct {
 	BasicResponse
-	User        models.User
-	BankAccount []models.BankAccount
+	User        todo.User
+	BankAccount []todo.BankAccount
 }
 
 type WalletsResponse struct {
 	BasicResponse
-	Wallets []models.Wallet
+	Wallets []todo.Wallet
 }
 
 type WalletResponse struct {
 	BasicResponse
-	Wallet models.Wallet
+	Wallet todo.Wallet
 }
 
 type BalanceResponse struct {
@@ -56,20 +57,20 @@ type BalanceResponse struct {
 
 type TransactionListResponse struct {
 	BasicResponse
-	Transactions []models.Transaction
+	Transactions []todo.Transaction
 }
 
 type OrderResponse struct {
 	BasicResponse
-	Order models.Order
+	Order todo.Order
 }
 
 type OrderListResponse struct {
 	BasicResponse
-	Orders []models.Order
+	Orders []todo.Order
 }
 
 type UpdateOrderStatusResponse struct {
 	BasicResponse
-	NewStatus models.OrderStatus
+	NewStatus todo.OrderStatus
 }
