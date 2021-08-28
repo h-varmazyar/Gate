@@ -198,12 +198,11 @@ func (config Config) OHLC(input brokerages.MustImplementAsFunctionParameter) *br
 	req := networkManager.Request{
 		Type:     networkManager.GET,
 		Endpoint: "https://api.nobitex.ir/market/udf/history",
-		Params: map[string]interface{}{"symbol": params.Symbol,
+		Params: map[string]interface{}{"symbol": params.Symbol.Value,
 			"resolution": params.Resolution.Value,
 			"from":       params.From,
 			"to":         params.To},
 	}
-
 	resp, err := req.Execute()
 	if err != nil {
 		return &brokerages.OHLCResponse{
@@ -237,7 +236,6 @@ func (config Config) OHLC(input brokerages.MustImplementAsFunctionParameter) *br
 				Status:     respStr.Status,
 			}
 			ohlc.Candles = make([]models.Candle, len(respStr.Time))
-			fmt.Println("candle:", len(respStr.Time))
 			for i := 0; i < len(respStr.Time); i++ {
 				ohlc.Candles[i].Time = time.Unix(respStr.Time[i], 0)
 				ohlc.Candles[i].Open = respStr.Open[i]
@@ -246,7 +244,6 @@ func (config Config) OHLC(input brokerages.MustImplementAsFunctionParameter) *br
 				ohlc.Candles[i].Close = respStr.Close[i]
 				ohlc.Candles[i].Vol = respStr.Volume[i]
 				ohlc.Candles[i].Symbol = params.Symbol
-
 			}
 			return &ohlc
 		} else {

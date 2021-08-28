@@ -2,7 +2,6 @@ package models
 
 import (
 	"github.com/mrNobody95/Gate/models/todo"
-	"github.com/mrNobody95/gorm"
 	"time"
 )
 
@@ -12,7 +11,6 @@ type Candle struct {
 	ID              uint64 `gorm:"primarykey"`
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
-	DeletedAt       gorm.DeletedAt `gorm:"index"`
 	Time            time.Time
 	Vol             float64
 	Low             float64

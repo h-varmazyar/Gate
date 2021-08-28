@@ -2,30 +2,35 @@ package indicators
 
 import (
 	"github.com/mrNobody95/Gate/models"
+	"github.com/mrNobody95/Gate/models/todo"
 	"sync"
 )
 
-type IndicatorConfig struct {
+type Configuration struct {
+	//moving average
+	MovingAverageLength int
+	MovingAverageSource Source
+
 	Candles []models.Candle
 	Length  int
 	//stochastic
-	SmoothD int
-	SmoothK int
+	StochasticSmoothD int
+	StochasticSmoothK int
 	//parabolic sar
 	acceleration       float64
 	maxAcceleration    float64
 	accelerationFactor float64
 	startAcceleration  float64
 	extremePoint       float64
-	trend              Trend
+	trend              todo.Trend
 	//moving average
 	source Source
 	//macd
-	fastLength   int
-	slowLength   int
-	signalLength int
+	MacdFastLength   int
+	MacdSlowLength   int
+	MacdSignalLength int
 	//bollinger band
-	Deviation int
+	BollingerDeviation int
 }
 
 var indicatorLock sync.Mutex

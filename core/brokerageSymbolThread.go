@@ -51,6 +51,30 @@ func (thread *BrokerageSymbolThread) CollectPrimaryData() {
 	}
 }
 
+func (thread *BrokerageSymbolThread) PeriodicOHLC() {
+	for _, resolution := range thread.Resolutions {
+		go func(resolution models.Resolution) {
+			conf := indicators.Configuration{
+				Candles: make([]models.Candle, 0),
+				//Length:  thread.Strategy.IndicatorCalcLength,
+			}
+			candle := models.Candle{
+				Symbol:     thread.Symbol,
+				Resolution: resolution,
+			}
+			if err := candle.LoadLast(); err != nil {
+				log.Errorf("fetch last candle failed: %v", err)
+				return
+			} else {
+				conf.Candles = append(conf.Candles, candle)
+			}
+			if err := thread.makeOHLCRequest(&conf, resolution, candle.Time.Unix(), time.Now().Unix()); err != nil {
+				log.Errorf("ohlc request failed: %s", err.Error())
+			}
+		}(resolution)
+	}
+}
+
 func (thread *BrokerageSymbolThread) makeOHLCRequest(conf *indicators.Configuration, resolution models.Resolution, from, to int64) error {
 	log.Infof("make ohlc request for %s in %s with resolution %s from %v to %v",
 		thread.Symbol.Value, thread.Brokerage.Name, resolution.Label,
