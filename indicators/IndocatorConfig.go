@@ -2,7 +2,6 @@ package indicators
 
 import (
 	"github.com/mrNobody95/Gate/models"
-	"github.com/mrNobody95/Gate/models/todo"
 	"sync"
 )
 
@@ -12,7 +11,7 @@ type Configuration struct {
 	MovingAverageSource Source
 
 	Candles []models.Candle
-	Length  int
+	//Length  int
 	//stochastic
 	StochasticSmoothD int
 	StochasticSmoothK int
@@ -22,7 +21,7 @@ type Configuration struct {
 	accelerationFactor float64
 	startAcceleration  float64
 	extremePoint       float64
-	trend              todo.Trend
+	trend              models.Trend
 	//moving average
 	source Source
 	//macd
@@ -31,6 +30,7 @@ type Configuration struct {
 	MacdSignalLength int
 	//bollinger band
 	BollingerDeviation int
+	BollingerLength    int
 }
 
 var indicatorLock sync.Mutex

@@ -1,7 +1,6 @@
 package models
 
 import (
-	"github.com/mrNobody95/Gate/models/todo"
 	"time"
 )
 
@@ -21,7 +20,7 @@ type Candle struct {
 	Resolution      Resolution `gorm:"foreignKey:ResolutionRefer;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	SymbolRefer     uint16
 	ResolutionRefer uint
-	todo.Indicators `gorm:"-"`
+	Indicators      `gorm:"-"`
 }
 
 func (c *Candle) LoadLast() error {

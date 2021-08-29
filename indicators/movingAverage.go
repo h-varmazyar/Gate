@@ -6,20 +6,6 @@ import (
 	"github.com/mrNobody95/Gate/models"
 )
 
-//type movingAverageConfig struct {
-//	*basicConfig
-//	source Source
-//}
-//
-//func NewMovingAverageConfig(length int, source Source) *movingAverageConfig {
-//	return &movingAverageConfig{
-//		basicConfig: &basicConfig{
-//			Length: length,
-//		},
-//		source: source,
-//	}
-//}
-
 func sma(candles []models.Candle, length int, source Source) {
 	for i := length - 1; i < len(candles); i++ {
 		sum := float64(0)
@@ -41,11 +27,13 @@ func sma(candles []models.Candle, length int, source Source) {
 				sum += (innerCandle.Open + innerCandle.Close + innerCandle.High + innerCandle.Low) / 4
 			}
 		}
+		indicatorLock.Lock()
 		candles[i].MovingAverage.Simple = sum / float64(length)
+		indicatorLock.Unlock()
 	}
 }
 
-func (conf *Configuration) CalculateSMA() error {
+func (conf *Configuration) calculateSMA() error {
 	if err := conf.validateMA(); err != nil {
 		return err
 	}
@@ -54,7 +42,7 @@ func (conf *Configuration) CalculateSMA() error {
 	return nil
 }
 
-func (conf *Configuration) UpdateSMA() error {
+func (conf *Configuration) updateSMA() error {
 	if err := conf.validateMA(); err != nil {
 		return err
 	}
@@ -73,7 +61,7 @@ func (conf *Configuration) CalculateEMA() error {
 	factor := 2 / float64(conf.MovingAverageLength+1)
 	for i := conf.MovingAverageLength; i < len(conf.Candles); i++ {
 		price := float64(0)
-		switch conf.source {
+		switch conf.MovingAverageSource {
 		case SourceClose:
 			price = conf.Candles[i].Close
 		case SourceOpen:
@@ -89,7 +77,9 @@ func (conf *Configuration) CalculateEMA() error {
 		case SourceOHLC4:
 			price = (conf.Candles[i].Open + conf.Candles[i].Close + conf.Candles[i].High + conf.Candles[i].Low) / 4
 		}
+		indicatorLock.Lock()
 		conf.Candles[i].MovingAverage.Exponential = price*factor + conf.Candles[i-1].MovingAverage.Exponential*(1-factor)
+		indicatorLock.Unlock()
 	}
 	return nil
 }
@@ -102,7 +92,7 @@ func (conf *Configuration) UpdateEMA() error {
 	price := float64(0)
 	factor := 2 / float64(conf.MovingAverageLength+1)
 
-	switch conf.source {
+	switch conf.MovingAverageSource {
 	case SourceClose:
 		price = conf.Candles[i].Close
 	case SourceOpen:
@@ -118,7 +108,9 @@ func (conf *Configuration) UpdateEMA() error {
 	case SourceOHLC4:
 		price = (conf.Candles[i].Open + conf.Candles[i].Close + conf.Candles[i].High + conf.Candles[i].Low) / 4
 	}
+	indicatorLock.Lock()
 	conf.Candles[i].MovingAverage.Exponential = price*factor + conf.Candles[i-1].MovingAverage.Exponential*(1-factor)
+	indicatorLock.Unlock()
 	return nil
 }
 

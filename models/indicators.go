@@ -1,15 +1,15 @@
 package models
 
-import "github.com/mrNobody95/Gate/indicators"
+type Trend int
 
 type Indicators struct {
-	Stochastic    *Stochastic
-	BollingerBand *BollingerBand
-	RSI           *RSI
-	ADX           *ADX
-	ParabolicSAR  *ParabolicSAR
-	MovingAverage *MovingAverage
-	MACD          *MACD
+	MovingAverage
+	BollingerBand
+	Stochastic
+	RSI
+	ADX
+	ParabolicSAR
+	MACD
 }
 
 type Stochastic struct {
@@ -41,7 +41,7 @@ type ADX struct {
 
 type ParabolicSAR struct {
 	SAR          float64
-	Trend        indicators.Trend
+	Trend        Trend
 	TrendFlipped bool
 }
 
