@@ -5,12 +5,31 @@ import (
 	"sync"
 )
 
+type Source string
+
+const (
+	SourceOpen  = "open"
+	SourceClose = "close"
+	SourceHigh  = "high"
+	SourceLow   = "low"
+	SourceHL2   = "hl2"
+	SourceHLC3  = "hlc3"
+	SourceOHLC4 = "ohlc4"
+)
+
 type Configuration struct {
+	Candles []models.Candle
 	//moving average
 	MovingAverageLength int
 	MovingAverageSource Source
+	//bollinger band
+	BollingerLength    int
+	BollingerDeviation int
+	//macd
+	MacdFastLength   int
+	MacdSlowLength   int
+	MacdSignalLength int
 
-	Candles []models.Candle
 	//Length  int
 	//stochastic
 	StochasticSmoothD int
@@ -23,14 +42,7 @@ type Configuration struct {
 	extremePoint       float64
 	trend              models.Trend
 	//moving average
-	source Source
-	//macd
-	MacdFastLength   int
-	MacdSlowLength   int
-	MacdSignalLength int
-	//bollinger band
-	BollingerDeviation int
-	BollingerLength    int
+	//source Source
 }
 
 var indicatorLock sync.Mutex
