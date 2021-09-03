@@ -28,7 +28,6 @@ type Configuration struct {
 	//ADX/ATR
 	AdxAtrLength int
 
-	//Length  int
 	//parabolic sar
 	AccelerationCoefficient float64
 	maxAcceleration         float64
