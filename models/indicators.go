@@ -5,11 +5,12 @@ type Trend int
 type Indicators struct {
 	MovingAverage
 	BollingerBand
-	Stochastic
-	RSI
-	ADX
 	ParabolicSAR
+	Stochastic
 	MACD
+	ATR
+	ADX
+	RSI
 }
 
 type Stochastic struct {
@@ -29,13 +30,17 @@ type RSI struct {
 	RSI  float64
 }
 
+type ATR struct {
+	TR  float64
+	ATR float64
+}
+
 type ADX struct {
 	DIPositive float64
 	DINegative float64
 	ADX        float64
 	DmPositive float64
 	DmNegative float64
-	TR         float64
 	DX         float64
 }
 

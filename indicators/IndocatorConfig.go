@@ -7,16 +7,6 @@ import (
 
 type Source string
 
-const (
-	SourceOpen  = "open"
-	SourceClose = "close"
-	SourceHigh  = "high"
-	SourceLow   = "low"
-	SourceHL2   = "hl2"
-	SourceHLC3  = "hlc3"
-	SourceOHLC4 = "ohlc4"
-)
-
 type Configuration struct {
 	Candles []models.Candle
 	//moving average
@@ -29,23 +19,40 @@ type Configuration struct {
 	MacdFastLength   int
 	MacdSlowLength   int
 	MacdSignalLength int
-
-	//Length  int
+	//RSI
+	RsiLength int
 	//stochastic
+	StochasticLength  int
 	StochasticSmoothD int
 	StochasticSmoothK int
+	//ADX/ATR
+	AdxAtrLength int
+
+	//Length  int
 	//parabolic sar
-	acceleration       float64
-	maxAcceleration    float64
-	accelerationFactor float64
-	startAcceleration  float64
-	extremePoint       float64
-	trend              models.Trend
-	//moving average
-	//source Source
+	AccelerationCoefficient float64
+	maxAcceleration         float64
+	accelerationFactor      float64
+	startAcceleration       float64
+	extremePoint            float64
+	trend                   models.Trend
 }
 
+const (
+	SourceOpen  = "open"
+	SourceClose = "close"
+	SourceHigh  = "high"
+	SourceLow   = "low"
+	SourceHL2   = "hl2"
+	SourceHLC3  = "hlc3"
+	SourceOHLC4 = "ohlc4"
+)
+
 var indicatorLock sync.Mutex
+
+func DefaultConfig() *Configuration {
+	return &Configuration{}
+}
 
 func cloneCandles(candles []models.Candle) []models.Candle {
 	return append([]models.Candle{}, candles...)
