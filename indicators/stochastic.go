@@ -6,10 +6,10 @@ import (
 )
 
 func (conf *Configuration) validateStochastic() error {
-	if len(conf.Candles) < conf.StochasticLength {
+	if len(conf.Candles) < conf.StochasticLengthK {
 		return errors.New("candles length must bigger or equal than indicator period length")
 	}
-	if conf.StochasticSmoothD >= conf.StochasticLength {
+	if conf.StochasticLengthD >= conf.StochasticLengthK {
 		return errors.New("smoothD parameter must be smaller than indicator period length")
 	}
 	return nil
@@ -26,10 +26,10 @@ func (conf *Configuration) CalculateStochastic() error {
 		return err
 	}
 
-	for i := conf.StochasticLength - 1; i < len(conf.Candles); i++ {
+	for i := conf.StochasticLengthK - 1; i < len(conf.Candles); i++ {
 		lowest := float64(0)
 		highest := float64(0)
-		for j := i - conf.StochasticLength - 1; j < conf.StochasticLength; j++ {
+		for j := i - conf.StochasticLengthK - 1; j < conf.StochasticLengthK; j++ {
 			if conf.Candles[j].Low < lowest {
 				lowest = conf.Candles[j].Low
 			}
@@ -39,7 +39,7 @@ func (conf *Configuration) CalculateStochastic() error {
 		}
 		indicatorLock.Lock()
 		conf.Candles[i].Stochastic.IndexK = 100 * ((conf.Candles[i].Close - lowest) / (highest - lowest))
-		conf.Candles[i].Stochastic.IndexD = calculateIndexD(conf.Candles[i-conf.StochasticSmoothD+1 : i+1])
+		conf.Candles[i].Stochastic.IndexD = calculateIndexD(conf.Candles[i-conf.StochasticLengthD+1 : i+1])
 		indicatorLock.Unlock()
 	}
 	return nil
@@ -49,7 +49,7 @@ func (conf *Configuration) UpdateStochastic() {
 	lowest := float64(0)
 	highest := float64(0)
 	lastIndex := len(conf.Candles) - 1
-	for i := len(conf.Candles) - conf.StochasticLength; i < len(conf.Candles); i++ {
+	for i := len(conf.Candles) - conf.StochasticLengthK; i < len(conf.Candles); i++ {
 		if conf.Candles[i].Low < lowest {
 			lowest = conf.Candles[i].Low
 		}
@@ -59,7 +59,7 @@ func (conf *Configuration) UpdateStochastic() {
 	}
 	indicatorLock.Lock()
 	conf.Candles[lastIndex].Stochastic.IndexK = 100 * ((conf.Candles[lastIndex].Close - lowest) / (highest - lowest))
-	conf.Candles[lastIndex].Stochastic.IndexD = calculateIndexD(conf.Candles[lastIndex-conf.StochasticSmoothD+1:])
+	conf.Candles[lastIndex].Stochastic.IndexD = calculateIndexD(conf.Candles[lastIndex-conf.StochasticLengthD+1:])
 	indicatorLock.Unlock()
 }
 

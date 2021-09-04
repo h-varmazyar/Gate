@@ -2,111 +2,119 @@ package indicators
 
 import (
 	"errors"
+	"github.com/mrNobody95/Gate/models"
 	"math"
 )
 
-type Trend int
-
 const (
-	Long  Trend = 1
-	Short Trend = -1
+	Long  models.Trend = 1
+	Short models.Trend = -1
 )
 
-func (conf *IndicatorConfig) CalculatePSAR() error {
-	rangeCounter := 1
-	if conf.Candles[1].High >= conf.Candles[0].High || conf.Candles[0].Low <= conf.Candles[1].Low {
-		conf.trend = Long
-		conf.Candles[1].ParabolicSAR.SAR = conf.Candles[0].Low
-		conf.extremePoint = conf.Candles[0].High
-	} else {
-		conf.trend = Short
-		conf.extremePoint = conf.Candles[0].Low
-	}
-	conf.Candles[1].ParabolicSAR.Trend = conf.trend
+func (conf *Configuration) CalculatePSAR() error {
 	if err := conf.validatePSAR(); err != nil {
 		return err
 	}
-
-	for i, candle := range conf.Candles[rangeCounter : len(conf.Candles)-1] {
-		nextSar := candle.ParabolicSAR.SAR
-		if conf.trend == Long {
-			if candle.High > conf.extremePoint {
-				conf.extremePoint = candle.High
-				conf.accelerationFactor = math.Min(conf.maxAcceleration, conf.acceleration+conf.accelerationFactor)
-			}
-			tmpSar := nextSar + conf.accelerationFactor*(conf.extremePoint-nextSar)
-			nextSar = math.Min(math.Min(conf.Candles[rangeCounter+i-1].Low, candle.Low), tmpSar)
-			if nextSar > conf.Candles[rangeCounter+i+1].Low {
-				conf.trend = Short
-				nextSar = conf.extremePoint
-				conf.extremePoint = conf.Candles[rangeCounter+i+1].Low
-				conf.accelerationFactor = conf.startAcceleration
-			}
-		} else if conf.trend == Short {
-			if candle.Low < conf.extremePoint {
-				conf.extremePoint = candle.Low
-				conf.accelerationFactor = math.Min(conf.maxAcceleration, conf.acceleration+conf.accelerationFactor)
-			}
-			tmpSar := nextSar + conf.accelerationFactor*(conf.extremePoint-nextSar)
-			nextSar = math.Max(math.Max(conf.Candles[rangeCounter+i-1].High, candle.High), tmpSar)
-			if nextSar < conf.Candles[rangeCounter+i+1].High {
-				conf.trend = Long
-				nextSar = conf.extremePoint
-				conf.extremePoint = conf.Candles[rangeCounter+i+1].High
-				conf.accelerationFactor = conf.startAcceleration
-			}
-		}
-		conf.Candles[rangeCounter+i+1].ParabolicSAR.SAR = nextSar
-		conf.Candles[rangeCounter+i+1].ParabolicSAR.Trend = conf.trend
-		conf.Candles[rangeCounter+i+1].ParabolicSAR.TrendFlipped = candle.ParabolicSAR.Trend != conf.trend
-	}
-	return nil
-}
-
-func (conf *IndicatorConfig) UpdatePSAR() error {
-	lastIndex := len(conf.Candles) - 1
-	if conf.Candles[lastIndex].High >= conf.Candles[lastIndex-1].High || conf.Candles[lastIndex-1].Low <= conf.Candles[lastIndex].Low {
-		conf.trend = Long
+	var trend models.Trend
+	var nextSar float64
+	var xp float64
+	af := float64(0)
+	if conf.Candles[1].High >= conf.Candles[0].High || conf.Candles[0].Low <= conf.Candles[1].Low {
+		trend = Long
+		nextSar = conf.Candles[1].Low
+		xp = math.Max(conf.Candles[0].High, conf.Candles[1].High)
 	} else {
-		conf.trend = Short
-	}
-	nextSar := conf.Candles[lastIndex-1].ParabolicSAR.SAR
-	if conf.trend == Long {
-		if conf.Candles[lastIndex-1].High > conf.extremePoint {
-			conf.extremePoint = conf.Candles[lastIndex-1].High
-			conf.accelerationFactor = math.Min(conf.maxAcceleration, conf.acceleration+conf.accelerationFactor)
-		}
-		tmpSar := nextSar + conf.accelerationFactor*(conf.extremePoint-nextSar)
-		nextSar = math.Min(math.Min(conf.Candles[lastIndex-2].Low, conf.Candles[lastIndex-1].Low), tmpSar)
-		if nextSar > conf.Candles[lastIndex].Low {
-			conf.trend = Short
-			nextSar = conf.extremePoint
-			conf.extremePoint = conf.Candles[lastIndex].Low
-			conf.accelerationFactor = conf.startAcceleration
-		}
-	} else if conf.trend == Short {
-		if conf.Candles[lastIndex-1].Low < conf.extremePoint {
-			conf.extremePoint = conf.Candles[lastIndex-1].Low
-			conf.accelerationFactor = math.Min(conf.maxAcceleration, conf.acceleration+conf.accelerationFactor)
-		}
-		tmpSar := nextSar + conf.accelerationFactor*(conf.extremePoint-nextSar)
-		nextSar = math.Max(math.Max(conf.Candles[lastIndex-2].High, conf.Candles[lastIndex-1].High), tmpSar)
-		if nextSar < conf.Candles[lastIndex].High {
-			conf.trend = Long
-			nextSar = conf.extremePoint
-			conf.extremePoint = conf.Candles[lastIndex].High
-			conf.accelerationFactor = conf.startAcceleration
-		}
+		trend = Short
+		nextSar = conf.Candles[1].High
+		xp = math.Min(conf.Candles[0].Low, conf.Candles[1].Low)
 	}
 	indicatorLock.Lock()
-	conf.Candles[lastIndex].ParabolicSAR.SAR = nextSar
-	conf.Candles[lastIndex].ParabolicSAR.Trend = conf.trend
-	conf.Candles[lastIndex].ParabolicSAR.TrendFlipped = conf.Candles[lastIndex-1].ParabolicSAR.Trend != conf.trend
+	conf.Candles[1].ParabolicSAR.Trend = trend
+	conf.Candles[1].ParabolicSAR.SAR = nextSar
+	indicatorLock.Unlock()
+
+	for i := 1; i < len(conf.Candles)-1; i++ {
+		nextSar = conf.Candles[i].ParabolicSAR.SAR
+		if conf.Candles[i].Trend == Long {
+			if conf.Candles[i].High > xp {
+				xp = conf.Candles[i].High
+				af = math.Min(conf.maxAcceleration, conf.Acceleration+af)
+			}
+			nextSar = math.Min(math.Min(conf.Candles[i].Low, conf.Candles[i-1].Low), nextSar+af*(xp-nextSar))
+			if nextSar > conf.Candles[i+1].Low {
+				trend = Short
+				nextSar = xp
+				xp = conf.Candles[i+1].Low
+				af = conf.Acceleration
+			}
+		} else if conf.Candles[i].Trend == Short {
+			if conf.Candles[i].Low < xp {
+				xp = conf.Candles[i].Low
+				af = math.Min(conf.maxAcceleration, conf.Acceleration+af)
+			}
+			nextSar = math.Max(math.Max(conf.Candles[i-1].High, conf.Candles[i].High), nextSar+af*(xp-nextSar))
+			if nextSar < conf.Candles[i+1].High {
+				trend = Long
+				nextSar = xp
+				xp = conf.Candles[i+1].High
+				af = conf.Acceleration
+			}
+		}
+		indicatorLock.Lock()
+		conf.Candles[i+1].ParabolicSAR.SAR = nextSar
+		conf.Candles[i+1].ParabolicSAR.Trend = trend
+		conf.Candles[i+1].ParabolicSAR.TrendFlipped = conf.Candles[i].ParabolicSAR.Trend != trend
+		indicatorLock.Unlock()
+	}
+	indicatorLock.Lock()
+	conf.af = af
+	conf.xp = xp
 	indicatorLock.Unlock()
 	return nil
 }
 
-func (conf *IndicatorConfig) validatePSAR() error {
+func (conf *Configuration) UpdatePSAR() error {
+	var trend models.Trend
+	lastIndex := len(conf.Candles) - 1
+	xp := conf.xp
+	af := conf.af
+	nextSar := conf.Candles[lastIndex-1].ParabolicSAR.SAR
+	if conf.Candles[lastIndex-1].Trend == Long {
+		if conf.Candles[lastIndex-1].High > xp {
+			xp = conf.Candles[lastIndex-1].High
+			af = math.Min(conf.maxAcceleration, conf.Acceleration+af)
+		}
+		nextSar = math.Min(math.Min(conf.Candles[lastIndex-2].Low, conf.Candles[lastIndex-1].Low), nextSar+af*(xp-nextSar))
+		if nextSar > conf.Candles[lastIndex].Low {
+			trend = Short
+			nextSar = xp
+			xp = conf.Candles[lastIndex].Low
+			af = conf.Acceleration
+		}
+	} else if conf.Candles[lastIndex-1].Trend == Short {
+		if conf.Candles[lastIndex-1].Low < xp {
+			xp = conf.Candles[lastIndex-1].Low
+			af = math.Min(conf.maxAcceleration, conf.Acceleration+af)
+		}
+		nextSar = math.Max(math.Max(conf.Candles[lastIndex-2].High, conf.Candles[lastIndex-1].High), nextSar+af*(xp-nextSar))
+		if nextSar < conf.Candles[lastIndex].High {
+			trend = Long
+			nextSar = xp
+			xp = conf.Candles[lastIndex].High
+			af = conf.Acceleration
+		}
+	}
+	indicatorLock.Lock()
+	conf.xp = xp
+	conf.af = af
+	conf.Candles[lastIndex].ParabolicSAR.SAR = nextSar
+	conf.Candles[lastIndex].ParabolicSAR.Trend = trend
+	conf.Candles[lastIndex].ParabolicSAR.TrendFlipped = conf.Candles[lastIndex-1].ParabolicSAR.Trend != trend
+	indicatorLock.Unlock()
+	return nil
+}
+
+func (conf *Configuration) validatePSAR() error {
 	if len(conf.Candles) < 2 {
 		return errors.New("candle length must be more than 2")
 	}

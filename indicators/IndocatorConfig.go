@@ -22,19 +22,15 @@ type Configuration struct {
 	//RSI
 	RsiLength int
 	//stochastic
-	StochasticLength  int
-	StochasticSmoothD int
-	StochasticSmoothK int
+	StochasticLengthK int
+	StochasticLengthD int
 	//ADX/ATR
 	AdxAtrLength int
-
 	//parabolic sar
-	AccelerationCoefficient float64
-	maxAcceleration         float64
-	accelerationFactor      float64
-	startAcceleration       float64
-	extremePoint            float64
-	trend                   models.Trend
+	maxAcceleration float64
+	Acceleration    float64
+	af              float64
+	xp              float64
 }
 
 const (

@@ -22,6 +22,9 @@ func (conf *Configuration) CalculateADX() error {
 		}
 		indicatorLock.Unlock()
 	}
+	if err := conf.CalculateATR(); err != nil {
+		return err
+	}
 	//first TR[length]
 	sumTR := make([]float64, len(conf.Candles))
 	sumDP := make([]float64, len(conf.Candles))
@@ -79,6 +82,7 @@ func (conf *Configuration) UpdateADX() {
 		conf.Candles[i].DmNegative = 0
 	}
 	indicatorLock.Unlock()
+	conf.UpdateATR()
 	sumTR := float64((conf.AdxAtrLength-1)/conf.AdxAtrLength)*conf.Candles[i-1].TR + conf.Candles[i].TR
 	sumDP := float64((conf.AdxAtrLength-1)/conf.AdxAtrLength)*conf.Candles[i-1].DmNegative + conf.Candles[i].DmPositive
 	sumDN := float64((conf.AdxAtrLength-1)/conf.AdxAtrLength)*conf.Candles[i-1].DmNegative + conf.Candles[i].DmNegative
