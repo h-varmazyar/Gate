@@ -4,9 +4,34 @@ import (
 	"github.com/mrNobody95/Gate/models"
 	log "github.com/sirupsen/logrus"
 	"sync"
+	"time"
 )
 
-func (conf *Configuration) CalculateIndicators(candles []models.Candle) {
+func (conf *Configuration) PreCalculation(symbol models.Symbol, resolution models.Resolution, startFrom time.Time, size int) (int64, error) {
+	candle := models.Candle{
+		Symbol:     symbol,
+		Resolution: resolution,
+		Time:       startFrom,
+	}
+	for {
+		list, err := candle.LoadList()
+		if err != nil {
+			if err.Error() == "record not found" {
+				return candle.Time.Unix(), nil
+			} else {
+				return 0, err
+			}
+		}
+		if len(list) > 0 {
+			conf.CalculateIndicators(list, size)
+			candle.Time = list[len(list)-1].Time.Add(candle.Resolution.Duration)
+		} else {
+			return conf.Candles[len(conf.Candles)].Time.Unix(), nil
+		}
+	}
+}
+
+func (conf *Configuration) CalculateIndicators(candles []models.Candle, size int) {
 	if len(conf.Candles) == 0 {
 		conf.Candles = append(conf.Candles, candles...)
 		conf.calculateIndicators()
@@ -19,6 +44,9 @@ func (conf *Configuration) CalculateIndicators(candles []models.Candle) {
 			}
 			conf.updateIndicators()
 		}
+	}
+	if len(conf.Candles) > size {
+		conf.Candles = conf.Candles[len(conf.Candles)-size:]
 	}
 }
 
@@ -87,16 +115,23 @@ func (conf *Configuration) updateIndicators() {
 	}(&wg)
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
-		if err := conf.UpdateRSI(); err != nil {
-			log.Error(err)
-		}
+		conf.UpdateRSI()
 	}(&wg)
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
-		if err := conf.UpdateStochastic(); err != nil {
-			log.Error(err)
-		}
+		conf.UpdateStochastic()
 	}(&wg)
 
 	wg.Wait()
+}
+
+func (conf *Configuration) CheckIndicatorSignals() {
+	//stochastic:=conf.Candles[len(conf.Candles)-1].Stochastic.SignalStrength()
+	//bb:=conf.Candles[len(conf.Candles)-1].BollingerBand.SignalStrength()
+	//rsi:=conf.Candles[len(conf.Candles)-1].RSI.SignalStrength()
+	//atr:=conf.Candles[len(conf.Candles)-1].ATR.SignalStrength()
+	//adx:=conf.Candles[len(conf.Candles)-1].ADX.SignalStrength()
+	//pSar:=conf.Candles[len(conf.Candles)-1].ParabolicSAR.SignalStrength()
+	//macd:=conf.Candles[len(conf.Candles)-1].MACD.SignalStrength()
+	//ma:=conf.Candles[len(conf.Candles)-1].MovingAverage.SignalStrength()
 }

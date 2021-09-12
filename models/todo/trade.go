@@ -1,4 +1,4 @@
-package models
+package todo
 
 type Trade struct {
 	Time   float64

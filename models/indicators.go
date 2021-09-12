@@ -18,10 +18,18 @@ type Stochastic struct {
 	IndexD float64
 }
 
+func (stochastic *Stochastic) SignalStrength() float64 {
+	return float64(0)
+}
+
 type BollingerBand struct {
 	UpperBond float64
 	LowerBond float64
 	MA        float64
+}
+
+func (bollingerBand *BollingerBand) SignalStrength() float64 {
+	return float64(0)
 }
 
 type RSI struct {
@@ -30,9 +38,17 @@ type RSI struct {
 	RSI  float64
 }
 
+func (rsi *RSI) SignalStrength() float64 {
+	return float64(0)
+}
+
 type ATR struct {
 	TR  float64
 	ATR float64
+}
+
+func (atr *ATR) SignalStrength() float64 {
+	return float64(0)
 }
 
 type ADX struct {
@@ -44,10 +60,18 @@ type ADX struct {
 	DX         float64
 }
 
+func (adx *ADX) SignalStrength() float64 {
+	return float64(0)
+}
+
 type ParabolicSAR struct {
 	SAR          float64
 	Trend        Trend
 	TrendFlipped bool
+}
+
+func (pSar *ParabolicSAR) SignalStrength() float64 {
+	return float64(0)
 }
 
 type MACD struct {
@@ -55,7 +79,15 @@ type MACD struct {
 	Signal float64
 }
 
+func (macd *MACD) SignalStrength() float64 {
+	return float64(0)
+}
+
 type MovingAverage struct {
 	Simple      float64
 	Exponential float64
+}
+
+func (movingAverage *MovingAverage) SignalStrength() float64 {
+	return float64(0)
 }

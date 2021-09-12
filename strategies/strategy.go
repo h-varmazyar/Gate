@@ -3,16 +3,18 @@ package strategies
 import (
 	"errors"
 	"github.com/mrNobody95/Gate/models"
+	"time"
 )
 
 type Strategy struct {
-	IsHFT               bool            `json:"is_hft" xml:"is_hft"`                             //
-	Symbols             []models.Symbol `json:"symbols" xml:"symbols"`                           //
-	StopLoss            float64         `json:"stop_loss" xml:"stop_loss"`                       //every trading stop loss percentage
-	MinBenefit          float64         `json:"min_benefit" xml:"min_benefit"`                   //minimum benefit percentage in each trades
-	MaxBenefit          float64         `json:"max_benefit" xml:"max_benefit"`                   //maximum benefit percentage in each trades
-	PrimaryAmount       float64         `json:"primary_amount" xml:"primary_amount"`             //primary strategy amount of primary currency
-	CurrentAmount       float64         `json:"current_amount" xml:"current_amount"`             //currency amount after each trades
+	IsHFT               bool            `json:"is_hft" xml:"is_hft"`                 //
+	Symbols             []models.Symbol `json:"symbols" xml:"symbols"`               //
+	StopLoss            float64         `json:"stop_loss" xml:"stop_loss"`           //every trading stop loss percentage
+	MinBenefit          float64         `json:"min_benefit" xml:"min_benefit"`       //minimum benefit percentage in each trades
+	MaxBenefit          float64         `json:"max_benefit" xml:"max_benefit"`       //maximum benefit percentage in each trades
+	PrimaryAmount       float64         `json:"primary_amount" xml:"primary_amount"` //primary strategy amount of primary currency
+	CurrentAmount       float64         `json:"current_amount" xml:"current_amount"` //currency amount after each trades
+	PeriodDuration      time.Duration
 	PrimaryCurrency     models.Currency `json:"primary_currency" xml:"primary_currency"`         //
 	CurrentCurrency     models.Currency `json:"current_currency" xml:"current_currency"`         //
 	MaxDailyBenefit     float64         `json:"max_daily_benefit" xml:"max_daily_benefit"`       //maximum daily benefit percentage

@@ -4,7 +4,7 @@ type BrokerageName string
 
 const (
 	Binance BrokerageName = "binance"
-	coinex  BrokerageName = "coinex"
+	Coinex  BrokerageName = "coinex"
 	Nobitex BrokerageName = "nobitex"
 )
 
@@ -14,4 +14,9 @@ type Brokerage struct {
 	Token    string        `gorm:"size:150"`
 	Username string        `gorm:"size:50"`
 	Password string        `gorm:"size:100"`
+}
+
+func LoadBrokerage(brokerageName string) (*Brokerage, error) {
+	br := &Brokerage{}
+	return br, db.Model(&Brokerage{}).Where("name LIKE ?", brokerageName).First(&br).Error
 }

@@ -1,4 +1,4 @@
-package models
+package todo
 
 type Wallet struct {
 	ID                       int

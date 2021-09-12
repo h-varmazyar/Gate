@@ -24,17 +24,21 @@ type Candle struct {
 }
 
 func (c *Candle) LoadLast() error {
-	//return db.Model(&Candle{}).
-	//	Preload("Resolutions").
-	//	Where("brokerage LIKE ?", c.Brokerage).
-	//	Where("symbol LIKE ?", c.Symbol).
-	//	Where("value LIKE ?", c.Resolution.Value).
-	//	Last(&c).Error
 	return db.Model(&Candle{}).
 		Where("symbol_refer = ?", c.Symbol.Id).
 		Where("resolution_refer = ?", c.Resolution.Id).
 		Order("time ASC").
 		Last(&c).Error
+}
+
+func (c *Candle) LoadList() ([]Candle, error) {
+	var candles []Candle
+	return candles, db.Model(&Candle{}).
+		Where("symbol_refer = ?", c.Symbol.Id).
+		Where("resolution_refer = ?", c.Resolution.Id).
+		Where("time >= ?", c.Time).
+		Order("time ASC").
+		Limit(500).Find(&c).Error
 }
 
 func (c *Candle) Load() error {
