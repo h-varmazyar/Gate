@@ -1,14 +1,29 @@
 package main
 
 import (
+	"fmt"
+	"github.com/jinzhu/copier"
 	_ "github.com/joho/godotenv/autoload"
-	"github.com/mrNobody95/Gate/cli"
 	"github.com/mrNobody95/Gate/core"
+	"github.com/mrNobody95/Gate/indicators"
+	"github.com/mrNobody95/Gate/models"
 	log "github.com/sirupsen/logrus"
 )
 
 func main() {
-	cli.Execute()
+	//cli.Execute()
+	conf := indicators.Configuration{Candles: []models.Candle{
+		{
+			ID: 1,
+		},
+	}}
+
+	var other indicators.Configuration
+	copier.Copy(&other, &conf)
+	other.Candles = []models.Candle{{Open: 10}}
+	other.Candles[0].ID = 2
+	fmt.Println(conf.Candles[0].ID)
+	fmt.Println(other.Candles[0].ID)
 	return
 	//nobitex.Config{}.OHLC(nobitex.OHLCParams{
 	//	Resolution:                       models.Resolution{
@@ -16,7 +31,7 @@ func main() {
 	//		Value:          "60",
 	//		Duration:       time.Hour,
 	//	},
-	//	Symbol:                           models.Symbol{
+	//	Market:                           models.Market{
 	//		Id:             0,
 	//		Value:          "BTCIRT",
 	//	},
@@ -33,12 +48,12 @@ func main() {
 		//	},
 		//	Token: "19aa9b3edc7fb2e467819e32d7585bf3ea31c49a",
 		//},
-		//PivotResolution: map[models.Symbol]models.Resolution{
+		//PivotResolution: map[models.Market]models.Resolution{
 		//	nobitex.BTCIRT: {
 		//		Value: "60",
 		//	},
 		//},
-		//HelperResolution: map[models.Symbol]models.Resolution{
+		//HelperResolution: map[models.Market]models.Resolution{
 		//	nobitex.BTCIRT: {
 		//		Value: "D",
 		//	},
@@ -54,12 +69,12 @@ func main() {
 		//Strategy: strategies.Strategy{
 		//	IsHFT:           false,
 		//	PrimaryCurrency: nobitex.RLS,
-		//	//Symbols: []models.Symbol{
+		//	//Symbols: []models.Market{
 		//	//	nobitex.BTCIRT,
 		//	//},
 		//	StopLoss:            3,
 		//	ReservePercentage:   0,
-		//	CandleBufferLength:  400,
+		//	BufferedCandleCount:  400,
 		//	IndicatorCalcLength: 14,
 		//},
 	}).Start()

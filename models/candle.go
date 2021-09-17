@@ -16,7 +16,7 @@ type Candle struct {
 	Open            float64
 	High            float64
 	Close           float64
-	Symbol          Symbol     `gorm:"foreignKey:SymbolRefer;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Symbol          Market     `gorm:"foreignKey:SymbolRefer;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Resolution      Resolution `gorm:"foreignKey:ResolutionRefer;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	SymbolRefer     uint16
 	ResolutionRefer uint

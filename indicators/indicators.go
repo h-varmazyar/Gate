@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func (conf *Configuration) PreCalculation(symbol models.Symbol, resolution models.Resolution, startFrom time.Time, size int) (int64, error) {
+func (conf *Configuration) PreCalculation(symbol models.Market, resolution models.Resolution, startFrom time.Time, size int) (int64, error) {
 	candle := models.Candle{
 		Symbol:     symbol,
 		Resolution: resolution,

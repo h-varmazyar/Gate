@@ -18,6 +18,11 @@ type RecentTradesResponse struct {
 	Trades []todo.Trade
 }
 
+type MarketListResponse struct {
+	BasicResponse
+	Markets []models.Market
+}
+
 type MarketStatusResponse struct {
 	BasicResponse
 	Symbol string
@@ -30,7 +35,7 @@ type OHLCResponse struct {
 	Resolution   models.Resolution
 	Candles      []models.Candle
 	Status       string
-	Symbol       models.Symbol
+	Symbol       models.Market
 }
 
 type UserInfoResponse struct {

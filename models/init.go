@@ -25,7 +25,7 @@ func init() {
 		Host:     os.Getenv("dbHost"),
 		Port:     port,
 		SSLMode:  false,
-	}).Initialize(&Brokerage{}, &Symbol{}, &Resolution{}, &Candle{})
+	}).Initialize(&Brokerage{}, &Market{}, &Resolution{}, &Candle{})
 	//}).Initialize(&Candle{}, &BankAccount{}, &Order{}, &Resolution{}, &Trade{}, &Transaction{}, &User{}, &Wallet{})
 
 	if err != nil {

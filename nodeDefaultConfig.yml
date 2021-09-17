@@ -1,0 +1,45 @@
+#default config for coinex
+loadMarketsOnline: true
+markets:
+  -
+resolutions:
+  - value: 1min
+    label: 1min
+    duration: 60000000000
+  - value: 3min
+    label: 3min
+    duration: 180000000000
+  - value: 5min
+    label: 5min
+    duration: 300000000000
+  - value: 15min
+    label: 15min
+    duration: 900000000000
+  - value: 30min
+    label: 30min
+    duration: 1800000000000
+  - value: 1hour
+    label: 1hour
+    duration: 3600000000000
+  - value: 2hour
+    label: 2hour
+    duration: 7200000000000
+  - value: 4hour
+    label: 4hour
+    duration: 14400000000000
+  - value: 6hour
+    label: 6hour
+    duration: 21600000000000
+  - value: 12hour
+    label: 12hour
+    duration: 43200000000000
+  - value: 1day
+    label: 1day
+    duration: 86400000000000
+fakeTrading: true
+enableTrading: true
+strategy:
+  hft: true
+  bufferedCandleCount: 400
+  indicatorUpdatePeriod: 1000000000
+

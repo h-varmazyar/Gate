@@ -1,4 +1,4 @@
-package nobitex
+package coinex
 
 import (
 	"encoding/json"
@@ -15,7 +15,9 @@ import (
 )
 
 type Config struct {
-	Token string
+	ApiId   string
+	ApiHash string
+	Token   string //remove it
 }
 
 type PeriodicOHLC struct {
@@ -27,10 +29,6 @@ type PeriodicOHLC struct {
 func (config Config) Validate() error {
 	return nil
 }
-
-//func (config Config) GetName() models.BrokerageName {
-//	return config.Name
-//}
 
 func (config Config) Login(input brokerages.MustImplementAsFunctionParameter) interface{} {
 	params := input.(LoginParams)
@@ -135,8 +133,40 @@ func (config Config) OrderBook(input brokerages.MustImplementAsFunctionParameter
 	}
 }
 
-func (config Config) MarketList(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	return errors.New("must be implemented")
+func (config Config) MarketList(_ brokerages.MustImplementAsFunctionParameter) interface{} {
+	req := networkManager.Request{
+		Method:   networkManager.GET,
+		Endpoint: "https://api.coinex.com/v1/market/list/",
+	}
+
+	resp, err := req.Execute()
+	if err != nil {
+		return &brokerages.RecentTradesResponse{
+			BasicResponse: brokerages.BasicResponse{Error: err},
+		}
+	}
+	marketList := brokerages.MarketListResponse{}
+	if resp.Code == 200 {
+		respStr := struct {
+			Code    int      `json:"code"`
+			Markets []string `json:"data"`
+			Message string   `json:"message"`
+		}{}
+		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
+			marketList.Error = err
+		}
+		if respStr.Code == 0 {
+			marketList.Markets = make([]models.Market, len(respStr.Markets))
+			for i, market := range respStr.Markets {
+				marketList.Markets[i].Value = market
+			}
+		} else {
+			marketList.Error = errors.New("coinex response error: " + respStr.Message)
+		}
+	} else {
+		marketList.Error = errors.New(resp.Status)
+	}
+	return marketList
 }
 
 func (config Config) RecentTrades(input brokerages.MustImplementAsFunctionParameter) interface{} {

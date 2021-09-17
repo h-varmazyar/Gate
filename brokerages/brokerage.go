@@ -1,19 +1,19 @@
 package brokerages
 
 import (
-	"github.com/mrNobody95/Gate/models"
 	"time"
 )
 
 type BrokerageRequests interface {
 	Validate() error
-	GetName() models.BrokerageName
+	//GetName() models.BrokerageName
 	OHLC(MustImplementAsFunctionParameter) *OHLCResponse
 	Login(MustImplementAsFunctionParameter) interface{}
 	NewOrder(MustImplementAsFunctionParameter) interface{}
 	UserInfo(MustImplementAsFunctionParameter) interface{}
 	OrderList(MustImplementAsFunctionParameter) interface{}
 	OrderBook(MustImplementAsFunctionParameter) interface{}
+	MarketList(MustImplementAsFunctionParameter) interface{}
 	WalletInfo(MustImplementAsFunctionParameter) interface{}
 	WalletList(MustImplementAsFunctionParameter) interface{}
 	OrderStatus(MustImplementAsFunctionParameter) interface{}

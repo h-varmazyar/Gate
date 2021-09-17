@@ -34,16 +34,12 @@ func initStartEngineCommand() *cobra.Command {
 				cmd.Help()
 			} else {
 				brokerage, _ := cmd.Flags().GetString("brokerage")
-				config, _ := cmd.Flags().GetString("config")
-				collectData, _ := cmd.Flags().GetBool("collect-data")
-				fakeDealing, _ := cmd.Flags().GetBool("fake-dealing")
-				core.StartNewNode(brokerage, config, collectData, fakeDealing)
+				configPath, _ := cmd.Flags().GetString("config")
+				core.StartNewNode(brokerage, configPath)
 			}
 		},
 	}
 	command.Flags().StringP("brokerage", "b", "nobitex", "Select brokerage node [nobitex] (default \"nobitex\")")
 	command.Flags().StringP("config", "c", "", "Node config json file path - let it empty for using default config")
-	command.Flags().BoolP("collect-data", "o", false, "Just collecting data from brokerage")
-	command.Flags().BoolP("fake-dealing", "f", false, "Simulate buy and sell")
 	return command
 }

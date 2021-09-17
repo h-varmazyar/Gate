@@ -8,7 +8,7 @@ import (
 type Source string
 
 type Configuration struct {
-	Candles []models.Candle
+	Candles []models.Candle `copier:"-"`
 	//moving average
 	MovingAverageLength int
 	MovingAverageSource Source

@@ -1,4 +1,4 @@
-package nobitex
+package coinex
 
 import (
 	"github.com/mrNobody95/Gate/brokerages"
