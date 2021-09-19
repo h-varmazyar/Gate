@@ -1,10 +1,14 @@
 package models
 
+import "time"
+
 type Market struct {
-	Id             uint16
-	Value          string    `gorm:"size:50"`
-	Brokerage      Brokerage `gorm:"foreignKey:BrokerageRefer;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	BrokerageRefer uint8
+	Id              uint16
+	Value           string    `gorm:"size:50"`
+	Brokerage       Brokerage `gorm:"foreignKey:BrokerageRefer;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	StartTime       time.Time
+	StartTimeString string `yaml:"startTime" gorm:"-"`
+	BrokerageRefer  uint8
 }
 
 func (market *Market) CreateOrLoad() error {

@@ -10,17 +10,20 @@ func (conf *Configuration) CalculateMACD() error {
 		return err
 	}
 	slowEMA := Configuration{
-		MovingAverageSource: conf.MovingAverageSource,
+		MovingAverageSource: conf.MacdSource,
+		MovingAverageLength: conf.MacdSlowLength,
 		MacdSlowLength:      conf.MacdSlowLength,
 		Candles:             cloneCandles(conf.Candles),
 	}
 	fastEMA := Configuration{
-		MovingAverageSource: conf.MovingAverageSource,
+		MovingAverageSource: conf.MacdSource,
+		MovingAverageLength: conf.MacdFastLength,
 		MacdFastLength:      conf.MacdFastLength,
 		Candles:             cloneCandles(conf.Candles),
 	}
 	signalEMA := Configuration{
-		MovingAverageSource: conf.MovingAverageSource,
+		MovingAverageSource: conf.MacdSource,
+		MovingAverageLength: conf.MacdSignalLength,
 		MacdSignalLength:    conf.MacdSignalLength,
 		Candles:             cloneCandles(conf.Candles),
 	}
@@ -45,17 +48,20 @@ func (conf *Configuration) CalculateMACD() error {
 
 func (conf *Configuration) UpdateMACD() error {
 	slowEMA := Configuration{
-		MovingAverageSource: conf.MovingAverageSource,
+		MovingAverageSource: conf.MacdSource,
+		MovingAverageLength: conf.MacdSlowLength,
 		MacdSlowLength:      conf.MacdSlowLength,
 		Candles:             cloneCandles(conf.Candles),
 	}
 	fastEMA := Configuration{
-		MovingAverageSource: conf.MovingAverageSource,
+		MovingAverageSource: conf.MacdSource,
+		MovingAverageLength: conf.MacdFastLength,
 		MacdFastLength:      conf.MacdFastLength,
 		Candles:             cloneCandles(conf.Candles),
 	}
 	signalEMA := Configuration{
-		MovingAverageSource: conf.MovingAverageSource,
+		MovingAverageSource: conf.MacdSource,
+		MovingAverageLength: conf.MacdSignalLength,
 		MacdSignalLength:    conf.MacdSignalLength,
 		Candles:             cloneCandles(conf.Candles),
 	}
@@ -69,9 +75,13 @@ func (conf *Configuration) UpdateMACD() error {
 		return err
 	}
 
+	//color.HiYellow("lenght: %d", len(conf.Candles))
+	//color.HiYellow("lenght: %d", len(fastEMA.Candles))
+	//color.HiYellow("lenght: %d", len(signalEMA.Candles))
+	//color.HiYellow("lenght: %d", len(slowEMA.Candles))
 	indicatorLock.Lock()
-	conf.Candles[len(conf.Candles)-1].MACD.MACD = fastEMA.Candles[len(conf.Candles)-1].MovingAverage.Exponential - slowEMA.Candles[len(conf.Candles)-1].MovingAverage.Exponential
-	conf.Candles[len(conf.Candles)-1].MACD.Signal = signalEMA.Candles[len(conf.Candles)-1].MovingAverage.Exponential
+	conf.Candles[len(conf.Candles)-1].MACD.MACD = fastEMA.Candles[len(fastEMA.Candles)-1].MovingAverage.Exponential - slowEMA.Candles[len(slowEMA.Candles)-1].MovingAverage.Exponential
+	conf.Candles[len(conf.Candles)-1].MACD.Signal = signalEMA.Candles[len(signalEMA.Candles)-1].MovingAverage.Exponential
 	indicatorLock.Unlock()
 	return nil
 }
@@ -82,6 +92,9 @@ func (conf *Configuration) validateMACD() error {
 	}
 	if len(conf.Candles) < conf.MacdSlowLength {
 		return errors.New(fmt.Sprintf("candles length must be grater or equal than %d", conf.MacdSlowLength))
+	}
+	if conf.MacdSource == "" {
+		return errors.New("macd source must be declared")
 	}
 	return nil
 }

@@ -13,16 +13,13 @@ type Resolution struct {
 	BrokerageRefer uint8
 }
 
-func (resolution *Resolution) CreateOrUpdate() error {
-	count := int64(0)
+func (resolution *Resolution) CreateOrLoad() error {
 	err := db.Model(&Resolution{}).
 		Where("brokerage_refer = ?", resolution.BrokerageRefer).
-		Where("value LIKE ?", resolution.Value).Count(&count).Error
-	if err != nil {
-		return err
-	}
-	if count == 0 {
+		Where("value LIKE ?", resolution.Value).
+		First(&resolution).Error
+	if err != nil && err.Error() == "record not found" {
 		return db.Model(&Resolution{}).Create(&resolution).Error
 	}
-	return nil
+	return err
 }

@@ -25,7 +25,7 @@ type Strategy struct {
 
 func (s *Strategy) Validate() error {
 	if len(s.Markets) == 0 {
-		return errors.New("trading symbols must be declared")
+		return errors.New("trading markets must be declared")
 	}
 	if s.StopLoss == 0 || s.StopLoss > 100 {
 		return errors.New("stop loss percentage must be between 1 and 100")

@@ -31,7 +31,7 @@ func (config Config) Validate() error {
 }
 
 func (config Config) Login(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(LoginParams)
+	params := input.(brokerages.LoginParams)
 	req := networkManager.Request{
 		Method:   networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/auth/login/",
@@ -59,7 +59,7 @@ func (config Config) Login(input brokerages.MustImplementAsFunctionParameter) in
 }
 
 func (config Config) OrderBook(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(OrderBookParams)
+	params := input.(brokerages.OrderBookParams)
 	req := networkManager.Request{
 		Method:   networkManager.GET,
 		Endpoint: "https://api.nobitex.ir/v2/orderbook/" + params.Symbol.Value,
@@ -170,7 +170,7 @@ func (config Config) MarketList(_ brokerages.MustImplementAsFunctionParameter) i
 }
 
 func (config Config) RecentTrades(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(OrderBookParams)
+	params := input.(brokerages.OrderBookParams)
 	req := networkManager.Request{
 		Method:   networkManager.GET,
 		Endpoint: "https://api.nobitex.ir/v2/trades/" + params.Symbol.Value,
@@ -226,14 +226,15 @@ func (config Config) MarketStats(input brokerages.MustImplementAsFunctionParamet
 }
 
 func (config Config) OHLC(input brokerages.MustImplementAsFunctionParameter) *brokerages.OHLCResponse {
-	params := input.(OHLCParams)
+	params := input.(brokerages.OHLCParams)
 	req := networkManager.Request{
 		Method:   networkManager.GET,
-		Endpoint: "https://api.nobitex.ir/market/udf/history",
-		Params: map[string]interface{}{"symbol": params.Symbol.Value,
-			"resolution": params.Resolution.Value,
-			"from":       params.From,
-			"to":         params.To},
+		Endpoint: "https://www.coinex.com/res/market/kline",
+		Params: map[string]interface{}{
+			"market":     params.Market.Value,
+			"interval":   params.Resolution.Value,
+			"start_time": params.From,
+			"end_time":   params.To},
 	}
 	resp, err := req.Execute()
 	if err != nil {
@@ -245,14 +246,9 @@ func (config Config) OHLC(input brokerages.MustImplementAsFunctionParameter) *br
 	}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status string    `json:"s"`
-			Time   []int64   `json:"t"`
-			Open   []float64 `json:"o"`
-			High   []float64 `json:"h"`
-			Low    []float64 `json:"l"`
-			Close  []float64 `json:"c"`
-			Volume []float64 `json:"v"`
-			Error  string    `json:"errmsg"`
+			Code    int             `json:"code"`
+			Data    [][]interface{} `json:"data"`
+			Message string          `json:"message"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
 			return &brokerages.OHLCResponse{
@@ -261,27 +257,68 @@ func (config Config) OHLC(input brokerages.MustImplementAsFunctionParameter) *br
 				},
 			}
 		}
-		if respStr.Status == "ok" {
+		if respStr.Code == 0 {
 			ohlc := brokerages.OHLCResponse{
-				Symbol:     params.Symbol,
+				Market:     params.Market,
 				Resolution: params.Resolution,
-				Status:     respStr.Status,
+				Status:     respStr.Message,
 			}
-			ohlc.Candles = make([]models.Candle, len(respStr.Time))
-			for i := 0; i < len(respStr.Time); i++ {
-				ohlc.Candles[i].Time = time.Unix(respStr.Time[i], 0)
-				ohlc.Candles[i].Open = respStr.Open[i]
-				ohlc.Candles[i].High = respStr.High[i]
-				ohlc.Candles[i].Low = respStr.Low[i]
-				ohlc.Candles[i].Close = respStr.Close[i]
-				ohlc.Candles[i].Vol = respStr.Volume[i]
-				ohlc.Candles[i].Symbol = params.Symbol
+			ohlc.Candles = make([]models.Candle, len(respStr.Data))
+			for i := 0; i < len(respStr.Data); i++ {
+				ohlc.Candles[i].Time = time.Unix(int64((respStr.Data[i][0]).(float64)), 0)
+				num, err := strconv.ParseFloat(respStr.Data[i][1].(string), 64)
+				if err != nil {
+					return &brokerages.OHLCResponse{
+						BasicResponse: brokerages.BasicResponse{
+							Error: err,
+						},
+					}
+				}
+				ohlc.Candles[i].Open = num
+				num, err = strconv.ParseFloat(respStr.Data[i][2].(string), 64)
+				if err != nil {
+					return &brokerages.OHLCResponse{
+						BasicResponse: brokerages.BasicResponse{
+							Error: err,
+						},
+					}
+				}
+				ohlc.Candles[i].Close = num
+				num, err = strconv.ParseFloat(respStr.Data[i][3].(string), 64)
+				if err != nil {
+					return &brokerages.OHLCResponse{
+						BasicResponse: brokerages.BasicResponse{
+							Error: err,
+						},
+					}
+				}
+				ohlc.Candles[i].High = num
+				num, err = strconv.ParseFloat(respStr.Data[i][4].(string), 64)
+				if err != nil {
+					return &brokerages.OHLCResponse{
+						BasicResponse: brokerages.BasicResponse{
+							Error: err,
+						},
+					}
+				}
+				ohlc.Candles[i].Low = num
+				num, err = strconv.ParseFloat(respStr.Data[i][5].(string), 64)
+				if err != nil {
+					return &brokerages.OHLCResponse{
+						BasicResponse: brokerages.BasicResponse{
+							Error: err,
+						},
+					}
+				}
+				ohlc.Candles[i].Vol = num
+				ohlc.Candles[i].Market = params.Market
+				ohlc.Candles[i].Resolution = params.Resolution
 			}
 			return &ohlc
 		} else {
 			return &brokerages.OHLCResponse{
 				BasicResponse: brokerages.BasicResponse{
-					Error: errors.New(respStr.Error),
+					Error: errors.New(fmt.Sprintf("error occured (%d): %s", respStr.Code, respStr.Message)),
 				},
 			}
 		}
@@ -483,7 +520,7 @@ func (config Config) WalletList(brokerages.MustImplementAsFunctionParameter) int
 }
 
 func (config Config) WalletInfo(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(WalletInfoParams)
+	params := input.(brokerages.WalletInfoParams)
 	req := networkManager.Request{
 		Method:   networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/v2/wallets",
@@ -540,7 +577,7 @@ func (config Config) WalletInfo(input brokerages.MustImplementAsFunctionParamete
 }
 
 func (config Config) WalletBalance(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(WalletBalanceParams)
+	params := input.(brokerages.WalletBalanceParams)
 	req := networkManager.Request{
 		Method:   networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/users/wallets/balance",
@@ -582,7 +619,7 @@ func (config Config) WalletBalance(input brokerages.MustImplementAsFunctionParam
 }
 
 func (config Config) TransactionList(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(TransactionListParams)
+	params := input.(brokerages.TransactionListParams)
 	req := networkManager.Request{
 		Method:   networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/users/wallets/transactions/list",
@@ -641,7 +678,7 @@ func (config Config) TransactionList(input brokerages.MustImplementAsFunctionPar
 }
 
 func (config Config) NewOrder(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(NewOrderParams)
+	params := input.(brokerages.NewOrderParams)
 	body := make(map[string]interface{})
 	body["price"] = params.Order.Price
 	body["amount"] = params.Order.Volume
@@ -725,7 +762,7 @@ func (config Config) NewOrder(input brokerages.MustImplementAsFunctionParameter)
 }
 
 func (config Config) OrderStatus(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(OrderStatusParams)
+	params := input.(brokerages.OrderStatusParams)
 	req := networkManager.Request{
 		Method:   networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/market/orders/Status",
@@ -803,7 +840,7 @@ func (config Config) OrderStatus(input brokerages.MustImplementAsFunctionParamet
 }
 
 func (config Config) OrderList(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(OrderListParams)
+	params := input.(brokerages.OrderListParams)
 	body := make(map[string]interface{})
 	if params.Status != "" {
 		body["status"] = params.Status
@@ -908,7 +945,7 @@ func (config Config) OrderList(input brokerages.MustImplementAsFunctionParameter
 }
 
 func (config Config) UpdateOrderStatus(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(UpdateOrderStatusParams)
+	params := input.(brokerages.UpdateOrderStatusParams)
 	body := make(map[string]interface{})
 	if params.OrderId < 0 {
 		body["Order"] = params.OrderId
@@ -971,9 +1008,9 @@ func (config Config) SubscribePeriodicOHLC(periodic PeriodicOHLC, period time.Du
 				return
 			case _ = <-ticker.C:
 				now := time.Now().Unix()
-				params := OHLCParams{
+				params := brokerages.OHLCParams{
 					Resolution: periodic.Resolution,
-					Symbol:     periodic.Market,
+					Market:     periodic.Market,
 					From:       now,
 					To:         now,
 				}

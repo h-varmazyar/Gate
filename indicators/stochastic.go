@@ -29,7 +29,7 @@ func (conf *Configuration) CalculateStochastic() error {
 	for i := conf.StochasticLengthK - 1; i < len(conf.Candles); i++ {
 		lowest := float64(0)
 		highest := float64(0)
-		for j := i - conf.StochasticLengthK - 1; j < conf.StochasticLengthK; j++ {
+		for j := i - (conf.StochasticLengthK - 1); j < conf.StochasticLengthK; j++ {
 			if conf.Candles[j].Low < lowest {
 				lowest = conf.Candles[j].Low
 			}

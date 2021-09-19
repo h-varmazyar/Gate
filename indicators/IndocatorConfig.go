@@ -10,37 +10,38 @@ type Source string
 type Configuration struct {
 	Candles []models.Candle `copier:"-"`
 	//moving average
-	MovingAverageLength int
-	MovingAverageSource Source
+	MovingAverageSource Source `yaml:"MovingAverageSource"`
+	MovingAverageLength int    `yaml:"MovingAverageLength"`
 	//bollinger band
-	BollingerLength    int
-	BollingerDeviation int
+	BollingerDeviation int `yaml:"BollingerDeviation"`
+	BollingerLength    int `yaml:"BollingerLength"`
 	//macd
-	MacdFastLength   int
-	MacdSlowLength   int
-	MacdSignalLength int
+	MacdSignalLength int    `yaml:"MacdSignalLength"`
+	MacdFastLength   int    `yaml:"MacdFastLength"`
+	MacdSlowLength   int    `yaml:"MacdSlowLength"`
+	MacdSource       Source `yaml:"MacdSource"`
 	//RSI
-	RsiLength int
+	RsiLength int `yaml:"RsiLength"`
 	//stochastic
-	StochasticLengthK int
-	StochasticLengthD int
+	StochasticLengthK int `yaml:"StochasticLengthK"`
+	StochasticLengthD int `yaml:"StochasticLengthD"`
 	//ADX/ATR
-	AdxAtrLength int
+	AdxAtrLength int `yaml:"AdxAtrLength"`
 	//parabolic sar
-	maxAcceleration float64
-	Acceleration    float64
+	maxAcceleration float64 `yaml:"maxAcceleration"`
+	Acceleration    float64 `yaml:"Acceleration"`
 	af              float64
 	xp              float64
 }
 
 const (
-	SourceOpen  = "open"
-	SourceClose = "close"
-	SourceHigh  = "high"
-	SourceLow   = "low"
-	SourceHL2   = "hl2"
-	SourceHLC3  = "hlc3"
-	SourceOHLC4 = "ohlc4"
+	SourceOHLC4 Source = "ohlc4"
+	SourceClose Source = "close"
+	SourceOpen  Source = "open"
+	SourceHigh  Source = "high"
+	SourceHLC3  Source = "hlc3"
+	SourceLow   Source = "low"
+	SourceHL2   Source = "hl2"
 )
 
 var indicatorLock sync.Mutex

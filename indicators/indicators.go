@@ -7,9 +7,9 @@ import (
 	"time"
 )
 
-func (conf *Configuration) PreCalculation(symbol models.Market, resolution models.Resolution, startFrom time.Time, size int) (int64, error) {
+func (conf *Configuration) PreCalculation(market models.Market, resolution models.Resolution, startFrom time.Time, size int) (int64, error) {
 	candle := models.Candle{
-		Symbol:     symbol,
+		Market:     market,
 		Resolution: resolution,
 		Time:       startFrom,
 	}
@@ -26,7 +26,7 @@ func (conf *Configuration) PreCalculation(symbol models.Market, resolution model
 			conf.CalculateIndicators(list, size)
 			candle.Time = list[len(list)-1].Time.Add(candle.Resolution.Duration)
 		} else {
-			return conf.Candles[len(conf.Candles)].Time.Unix(), nil
+			return candle.Time.Unix(), nil
 		}
 	}
 }
@@ -66,21 +66,25 @@ func (conf *Configuration) calculateIndicators() {
 		}
 	}(&wg)
 	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
 		if err := conf.CalculateMACD(); err != nil {
 			log.Error(err)
 		}
 	}(&wg)
 	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
 		if err := conf.CalculatePSAR(); err != nil {
 			log.Error(err)
 		}
 	}(&wg)
 	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
 		if err := conf.CalculateRSI(); err != nil {
 			log.Error(err)
 		}
 	}(&wg)
 	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
 		if err := conf.CalculateStochastic(); err != nil {
 			log.Error(err)
 		}

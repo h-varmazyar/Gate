@@ -2,29 +2,38 @@ package main
 
 import (
 	"fmt"
-	"github.com/jinzhu/copier"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/mrNobody95/Gate/core"
-	"github.com/mrNobody95/Gate/indicators"
-	"github.com/mrNobody95/Gate/models"
 	log "github.com/sirupsen/logrus"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
 	//cli.Execute()
-	conf := indicators.Configuration{Candles: []models.Candle{
-		{
-			ID: 1,
-		},
-	}}
 
-	var other indicators.Configuration
-	copier.Copy(&other, &conf)
-	other.Candles = []models.Candle{{Open: 10}}
-	other.Candles[0].ID = 2
-	fmt.Println(conf.Candles[0].ID)
-	fmt.Println(other.Candles[0].ID)
+	exit := make(chan os.Signal, 1)
+	done := make(chan bool, 1)
+
+	signal.Notify(exit, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		core.Stop()
+		done <- true
+	}()
+	core.StartNewNode("coinex", "")
+
+	<-done
+	fmt.Println("exiting")
+
 	return
+	//
+	//fmt.Println(time.Unix(1606780800, 0))
+
+	//color.HiRed("salam")
+	//fmt.Println("second:",color.HiRedString("salam2"))
+	//return
 	//nobitex.Config{}.OHLC(nobitex.OHLCParams{
 	//	Resolution:                       models.Resolution{
 	//		Label:          "hour",

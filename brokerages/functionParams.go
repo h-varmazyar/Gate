@@ -1,62 +1,61 @@
-package coinex
+package brokerages
 
 import (
-	"github.com/mrNobody95/Gate/brokerages"
 	"github.com/mrNobody95/Gate/models"
 	"github.com/mrNobody95/Gate/models/todo"
 )
 
 type LoginParams struct {
-	brokerages.MustImplementAsFunctionParameter
+	MustImplementAsFunctionParameter
 	Totp int
 }
 
 type OrderBookParams struct {
-	brokerages.MustImplementAsFunctionParameter
+	MustImplementAsFunctionParameter
 	Symbol models.Market
 }
 
 type MarketStatusParams struct {
-	brokerages.MustImplementAsFunctionParameter
+	MustImplementAsFunctionParameter
 	Destination string
 	Source      string
 }
 
 type OHLCParams struct {
-	brokerages.MustImplementAsFunctionParameter
+	MustImplementAsFunctionParameter
 	Resolution models.Resolution
-	Symbol     models.Market
+	Market     models.Market
 	From       int64
 	To         int64
 }
 
 type WalletInfoParams struct {
-	brokerages.MustImplementAsFunctionParameter
+	MustImplementAsFunctionParameter
 	WalletName string
 }
 
 type WalletBalanceParams struct {
-	brokerages.MustImplementAsFunctionParameter
+	MustImplementAsFunctionParameter
 	Currency string
 }
 
 type TransactionListParams struct {
-	brokerages.MustImplementAsFunctionParameter
+	MustImplementAsFunctionParameter
 	WalletID int
 }
 
 type NewOrderParams struct {
-	brokerages.MustImplementAsFunctionParameter
+	MustImplementAsFunctionParameter
 	Order todo.Order
 }
 
 type OrderStatusParams struct {
-	brokerages.MustImplementAsFunctionParameter
+	MustImplementAsFunctionParameter
 	OrderId uint64
 }
 
 type OrderListParams struct {
-	brokerages.MustImplementAsFunctionParameter
+	MustImplementAsFunctionParameter
 	Destination string
 	WithDetails bool
 	Status      todo.OrderStatus
@@ -65,7 +64,7 @@ type OrderListParams struct {
 }
 
 type UpdateOrderStatusParams struct {
-	brokerages.MustImplementAsFunctionParameter
+	MustImplementAsFunctionParameter
 	NewStatus todo.OrderStatus
 	OrderId   uint64
 }

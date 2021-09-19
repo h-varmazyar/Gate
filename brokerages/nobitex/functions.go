@@ -233,7 +233,7 @@ func (config Config) OHLC(input brokerages.MustImplementAsFunctionParameter) *br
 		}
 		if respStr.Status == "ok" {
 			ohlc := brokerages.OHLCResponse{
-				Symbol:     params.Symbol,
+				Market:     params.Symbol,
 				Resolution: params.Resolution,
 				Status:     respStr.Status,
 			}
@@ -245,7 +245,7 @@ func (config Config) OHLC(input brokerages.MustImplementAsFunctionParameter) *br
 				ohlc.Candles[i].Low = respStr.Low[i]
 				ohlc.Candles[i].Close = respStr.Close[i]
 				ohlc.Candles[i].Vol = respStr.Volume[i]
-				ohlc.Candles[i].Symbol = params.Symbol
+				ohlc.Candles[i].Market = params.Symbol
 			}
 			return &ohlc
 		} else {

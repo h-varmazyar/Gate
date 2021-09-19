@@ -63,7 +63,6 @@ func (r *Request) get() (*Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(url)
 	req := &http.Request{
 		Method: http.MethodGet,
 		URL:    url,

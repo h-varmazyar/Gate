@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/mrNobody95/gorm"
+	"github.com/mrNobody95/gorm/logger"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"strconv"
@@ -17,16 +18,18 @@ func init() {
 		log.Panicf("db port cast failed: %v", err)
 	}
 	err, db = (&gorm.DatabaseConfig{
-		Type:     gorm.MYSQL,
-		Username: os.Getenv("dbUsername"),
-		Password: os.Getenv("dbPassword"),
-		CharSet:  os.Getenv("dbCharset"),
-		Name:     os.Getenv("dbName"),
-		Host:     os.Getenv("dbHost"),
-		Port:     port,
-		SSLMode:  false,
+		Type:                      gorm.MYSQL,
+		Username:                  os.Getenv("dbUsername"),
+		Password:                  os.Getenv("dbPassword"),
+		CharSet:                   os.Getenv("dbCharset"),
+		Name:                      os.Getenv("dbName"),
+		Host:                      os.Getenv("dbHost"),
+		Port:                      port,
+		SSLMode:                   false,
+		LogLevel:                  logger.Silent,
+		ColorfulLog:               true,
+		IgnoreRecordNotFoundError: false,
 	}).Initialize(&Brokerage{}, &Market{}, &Resolution{}, &Candle{})
-	//}).Initialize(&Candle{}, &BankAccount{}, &Order{}, &Resolution{}, &Trade{}, &Transaction{}, &User{}, &Wallet{})
 
 	if err != nil {
 		log.Panicf("initializing db failed:%v", err)

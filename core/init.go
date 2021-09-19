@@ -7,6 +7,14 @@ import (
 	"github.com/mrNobody95/Gate/models"
 )
 
+var nodeArr []*Node
+
+func Stop() {
+	for _, node := range nodeArr {
+		close(node.dataChannel)
+	}
+}
+
 func StartNewNode(brokerageName, configPath string) {
 	brokerage, err := models.LoadBrokerage(brokerageName)
 	if err != nil {
@@ -37,6 +45,7 @@ func StartNewNode(brokerageName, configPath string) {
 		color.Red("brokerage not valid: %s", err.Error())
 		return
 	}
+	nodeArr = append(nodeArr, &node)
 	err = node.Start()
 	if err != nil {
 		color.Red("brokerage starting failed: %s", err.Error())

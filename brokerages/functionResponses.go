@@ -35,7 +35,7 @@ type OHLCResponse struct {
 	Resolution   models.Resolution
 	Candles      []models.Candle
 	Status       string
-	Symbol       models.Market
+	Market       models.Market
 }
 
 type UserInfoResponse struct {

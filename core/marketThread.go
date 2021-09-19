@@ -1,23 +1,30 @@
 package core
 
 import (
-	"github.com/mrNobody95/Gate/brokerages/nobitex"
+	"fmt"
+	"github.com/fatih/color"
+	"github.com/mrNobody95/Gate/brokerages"
 	"github.com/mrNobody95/Gate/indicators"
 	"github.com/mrNobody95/Gate/models"
 	log "github.com/sirupsen/logrus"
+	"sync"
 	"time"
 )
 
-type BrokerageSymbolThread struct {
+type MarketThread struct {
 	*Node
 	Market                       models.Market
 	StartFrom                    time.Time
 	IndicatorConfigPerResolution map[uint]*indicators.Configuration
 }
 
-func (thread *BrokerageSymbolThread) CollectPrimaryData() {
+func (thread *MarketThread) CollectPrimaryData() {
+	color.HiGreen("Collecting primary data for: %s", thread.Market.Value)
+	wg := sync.WaitGroup{}
+	wg.Add(len(thread.Resolutions))
 	for _, resolution := range thread.Resolutions {
 		go func(resolution models.Resolution) {
+			defer wg.Done()
 			conf, ok := thread.IndicatorConfigPerResolution[resolution.Id]
 			if !ok {
 				conf = indicators.DefaultConfig()
@@ -27,22 +34,28 @@ func (thread *BrokerageSymbolThread) CollectPrimaryData() {
 				log.Errorf("fetch first candle failed: %v", err)
 				return
 			}
-			count := (time.Now().Unix() - lastTime) / int64(resolution.Duration)
-
-			for i := int64(0); i < count; i += 500 {
-				from := lastTime + 500*i*int64(resolution.Duration)
-				to := lastTime + 500*(i+1)*int64(resolution.Duration)
+			count := (time.Now().Unix() - lastTime) / int64(resolution.Duration/time.Second)
+			j := count / 500
+			if count%500 != 0 {
+				j++
+			}
+			for i := int64(1); i <= j; i++ {
+				from := lastTime + 500*(i-1)*int64(resolution.Duration/time.Second)
+				to := lastTime + 500*i*int64(resolution.Duration/time.Second)
 				if err := thread.makeOHLCRequest(conf, resolution, from, to); err != nil {
 					log.Errorf("ohlc request failed: %s", err.Error())
 				}
 			}
+			fmt.Println("end of primary:", len(conf.Candles))
 			//todo: check next line
 			//thread.IndicatorConfigPerResolution[resolution.Id]=conf
 		}(resolution)
 	}
+	wg.Wait()
 }
 
-func (thread *BrokerageSymbolThread) PeriodicOHLC() {
+func (thread *MarketThread) PeriodicOHLC() {
+	color.HiGreen("Making Periodic ohlc for: %s", thread.Market.Value)
 	for _, resolution := range thread.Resolutions {
 		go func(resolution models.Resolution) {
 			conf, ok := thread.IndicatorConfigPerResolution[resolution.Id]
@@ -57,7 +70,13 @@ func (thread *BrokerageSymbolThread) PeriodicOHLC() {
 				}
 				//todo: check next line
 				//thread.IndicatorConfigPerResolution[resolution.Id]=conf
-				thread.checkForSignals()
+				//data:=conf.Candles[len(conf.Candles)-1]
+				//fmt.Printf("| %-7.3f | %-7.3f | %-7.3f | %-7.3f | %-7.3f |\n",
+				//	data.Open, data.High, data.LowerBond, data.Close, data.Vol)
+				thread.dataChannel <- conf.Candles[len(conf.Candles)-1]
+				if thread.EnableTrading || thread.FakeTrading {
+					thread.checkForSignals()
+				}
 				end := time.Now()
 				idealTime := thread.Strategy.IndicatorUpdatePeriod - end.Sub(start)
 				if idealTime > 0 {
@@ -69,25 +88,23 @@ func (thread *BrokerageSymbolThread) PeriodicOHLC() {
 	}
 }
 
-func (thread *BrokerageSymbolThread) makeOHLCRequest(conf *indicators.Configuration, resolution models.Resolution, from, to int64) error {
-	log.Infof("make ohlc request for %s in %s with resolution %s from %v to %v",
-		thread.Market.Value, thread.Brokerage.Name, resolution.Label,
-		time.Unix(from, 0).Format("02/01/2006, 15:04:05"),
-		time.Unix(to, 0).Format("02/01/2006, 15:04:05"))
-
-	response := thread.Requests.OHLC(nobitex.OHLCParams{
+func (thread *MarketThread) makeOHLCRequest(conf *indicators.Configuration, resolution models.Resolution, from, to int64) error {
+	response := thread.Requests.OHLC(brokerages.OHLCParams{
 		Resolution: resolution,
-		Symbol:     thread.Market,
+		Market:     thread.Market,
 		From:       from,
 		To:         to,
 	})
 	if response.Error != nil {
 		return response.Error
 	}
+	if len(response.Candles) == 0 {
+		return nil
+	}
 	conf.CalculateIndicators(response.Candles, thread.Strategy.BufferedCandleCount)
 	go func(symbol string, brokerage models.BrokerageName, candles []models.Candle) {
 		for _, candle := range candles {
-			if err := candle.Create(); err != nil {
+			if err := candle.CreateOrUpdate(); err != nil {
 				log.Errorf("creating candle failed for %s in %s at %s",
 					symbol, brokerage, candle.Time.Format("02/01/2006, 15:04:05"))
 			}
@@ -96,7 +113,7 @@ func (thread *BrokerageSymbolThread) makeOHLCRequest(conf *indicators.Configurat
 	return nil
 }
 
-func (thread *BrokerageSymbolThread) checkForSignals() {
+func (thread *MarketThread) checkForSignals() {
 	for _, resolution := range thread.Resolutions {
 		thread.IndicatorConfigPerResolution[resolution.Id].CheckIndicatorSignals()
 		//todo: calculate lines and patterns

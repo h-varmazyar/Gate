@@ -2,7 +2,9 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"github.com/fatih/color"
+	"github.com/gosuri/uilive"
 	"github.com/jinzhu/copier"
 	"github.com/mrNobody95/Gate/brokerages"
 	"github.com/mrNobody95/Gate/indicators"
@@ -10,6 +12,7 @@ import (
 	"github.com/mrNobody95/Gate/strategies"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"strconv"
 	"time"
 )
 
@@ -22,6 +25,7 @@ type Node struct {
 	FakeTrading     bool
 	EnableTrading   bool
 	IndicatorConfig indicators.Configuration
+	dataChannel     chan models.Candle
 	//NetworkManager   interface{}
 	//IndicatorConfig  indicators.Configuration
 	//PivotResolution  map[models.Market]models.Resolution
@@ -30,6 +34,7 @@ type Node struct {
 }
 
 func (node *Node) Validate() error {
+	color.HiGreen("Validating node")
 	if node.Brokerage == nil {
 		return errors.New("you must declared working brokerage")
 	}
@@ -43,6 +48,8 @@ func (node *Node) Validate() error {
 }
 
 func (node *Node) Start() error {
+	color.HiGreen("Starting node")
+	node.dataChannel = make(chan models.Candle, 100)
 	for _, market := range node.Markets {
 		go func(market models.Market) {
 			indicatorConfigs := make(map[uint]*indicators.Configuration)
@@ -57,23 +64,22 @@ func (node *Node) Start() error {
 				tmp.Candles = make([]models.Candle, 0)
 				indicatorConfigs[resolution.Id] = &tmp
 			}
-			thread := BrokerageSymbolThread{
+			thread := MarketThread{
 				Node:                         node,
 				Market:                       market,
-				StartFrom:                    time.Time{},
+				StartFrom:                    market.StartTime,
 				IndicatorConfigPerResolution: indicatorConfigs,
 			}
 			thread.CollectPrimaryData()
 			thread.PeriodicOHLC()
-			if node.EnableTrading || node.FakeTrading {
-				thread.checkForSignals()
-			}
 		}(market)
 	}
+	node.cliPrinter()
 	return nil
 }
 
 func (node *Node) LoadConfig(path string) error {
+	color.HiGreen("Loading YAML config")
 	if path == "" {
 		path = node.Brokerage.DefaultConfigPath
 	}
@@ -90,77 +96,65 @@ func (node *Node) LoadConfig(path string) error {
 		if resp.Error != nil {
 			return resp.Error
 		}
-		for _, market := range resp.Markets {
-			err = market.CreateOrLoad()
+		config.Markets = resp.Markets
+	}
+	for _, market := range config.Markets {
+		if market.StartTimeString != "" {
+			t, err := strconv.ParseInt(market.StartTimeString, 10, 64)
 			if err != nil {
 				return err
 			}
-			node.Markets = append(node.Markets, market)
+			market.StartTime = time.Unix(t, 0)
+		} else {
+			market.StartTime = time.Unix(1594512000, 0)
 		}
+		market.BrokerageRefer = node.Brokerage.Id
+		err = market.CreateOrLoad()
+		if err != nil {
+			return err
+		}
+		node.Markets = append(node.Markets, market)
 	}
-	node.Resolutions = config.Resolutions
+	for _, resolution := range config.Resolutions {
+		resolution.BrokerageRefer = node.Brokerage.Id
+		err = resolution.CreateOrLoad()
+		if err != nil {
+			return err
+		}
+		node.Resolutions = append(node.Resolutions, resolution)
+	}
+
 	node.Strategy = &config.Strategy
 	node.FakeTrading = config.FakeTrading
 	node.EnableTrading = config.EnableTrading
+	node.IndicatorConfig = config.IndicatorConfigs
 	return nil
 }
 
-//func (node *Node) CollectPrimaryData() error {
-//	for _, symbol := range node.Strategy.Symbols {
-//		go func(symbol models.Market) {
-//			if err := node.makeOHLCRequest(symbol, node.PivotResolution[symbol]); err != nil {
-//				log.Errorf("ohlc request failed for symbol %s: %s", symbol, err.Error())
-//			}
-//		}(symbol)
-//		go func(symbol models.Market) {
-//			if err := node.makeOHLCRequest(symbol, node.HelperResolution[symbol]); err != nil {
-//				log.Errorf("ohlc request failed for symbol %s: %s", symbol, err.Error())
-//			}
-//		}(symbol)
-//	}
-//	return nil
-//}
+func (node *Node) cliPrinter() {
+	dataMap := make(map[uint16]map[uint]models.Candle)
+	writer := uilive.New()
+	writer.Start()
+	for candle := range node.dataChannel {
+		_, ok := dataMap[candle.Market.Id][candle.Resolution.Id]
+		if !ok {
+			dataMap[candle.Market.Id] = make(map[uint]models.Candle)
+		}
+		dataMap[candle.Market.Id][candle.Resolution.Id] = candle
+		output := "+------------+------------+--------------------+--------------------+--------------------+--------------------+--------------------+\n"
+		output += "|   Market   | Resolution |         RSI        |     Stochastic     | Bollinger band(Up) |Bollinger band(Down)|Bollinger band(Midl)|\n"
+		output += "+------------+------------+--------------------+--------------------+--------------------+--------------------+--------------------+\n"
 
-//func (node *Node) makeOHLCRequest(symbol models.Market, resolution models.Resolution) error {
-//	log.Infof("make ohlc request:%s - %s - %s", symbol, resolution.Value, node.Brokerage.GetName())
-//	conf := indicators.Configuration{
-//		Length: node.Strategy.IndicatorCalcLength,
-//	}
-//	firstTime := false
-//	candle := models.Candle{
-//		Market:     symbol,
-//		Resolution: resolution,
-//	}
-//	err := candle.LoadLast()
-//	if err != nil {
-//		if err.Error() == "record not found" {
-//			candle.Time = time.Now().Add(-time.Hour * 24 * 365).Unix()
-//			firstTime = true
-//		} else {
-//			return err
-//		}
-//	} else {
-//		conf.Candles = append(conf.Candles, candle)
-//	}
-//	response := node.Brokerage.OHLC(nobitex.OHLCParams{
-//		Resolution: candle.Resolution,
-//		Market:     candle.Market,
-//		From:       candle.Time,
-//		To:         time.Now().Unix(),
-//	})
-//	if response.Error != nil {
-//		return response.Error
-//	}
-//	fmt.Println(firstTime)
-//	conf.CalculateIndicators(response.Candles, firstTime)
-//	node.UpdateBufferedData(conf.Candles, symbol, resolution.Value)
-//	return nil
-//}
-//
-//func (node *Node) UpdateBufferedData(candles []models.Candle, symbol models.Market, resolution string) {
-//	tmp := node.BufferedCandles[symbol][resolution]
-//	tmp = append(tmp, candles...)
-//	if diff := len(tmp) - node.Strategy.BufferedCandleCount; diff > 0 {
-//		node.BufferedCandles[symbol][resolution] = tmp[diff:]
-//	}
-//}
+		for _, resolution := range dataMap {
+			for _, data := range resolution {
+				output += fmt.Sprintf("| %-10s | %-10s | %-18f | %-18f | %-18f | %-18f | %-18f |\n+------------+------------+--------------------+--------------------+--------------------+--------------------+--------------------+\n",
+					data.Market.Value, data.Resolution.Label,
+					data.RSI.RSI, data.Stochastic.IndexK, data.UpperBond, data.LowerBond, data.MA)
+			}
+		}
+
+		fmt.Fprint(writer, output)
+	}
+	color.Blue("closing printer channel")
+	writer.Stop()
+}
