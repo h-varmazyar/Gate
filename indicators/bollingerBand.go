@@ -17,10 +17,26 @@ func (conf *Configuration) CalculateBollingerBand() error {
 		variance := float64(0)
 		ma := conf.Candles[i].MovingAverage.Simple
 		for j := 1 + i - conf.BollingerLength; j <= i; j++ {
-			sum := (conf.Candles[j].Close + conf.Candles[j].High + conf.Candles[j].Low) / 3
+			sum := float64(0)
+			switch conf.MovingAverageSource {
+			case SourceOpen:
+				sum = conf.Candles[j].Open
+			case SourceHigh:
+				sum = conf.Candles[j].High
+			case SourceLow:
+				sum = conf.Candles[j].Low
+			case SourceClose:
+				sum = conf.Candles[j].Close
+			case SourceOHLC4:
+				sum = (conf.Candles[j].Open + conf.Candles[j].High + conf.Candles[j].Low + conf.Candles[j].Close) / 4
+			case SourceHLC3:
+				sum = (conf.Candles[j].Low + conf.Candles[j].High + conf.Candles[j].Close) / 3
+			case SourceHL2:
+				sum = (conf.Candles[j].Low + conf.Candles[j].High) / 2
+			}
 			variance += math.Pow(ma-sum, 2)
 		}
-		variance /= float64(conf.BollingerLength)
+		variance /= float64(conf.BollingerLength - 1)
 		indicatorLock.Lock()
 		conf.Candles[i].BollingerBand.MA = ma
 		conf.Candles[i].BollingerBand.UpperBond = ma + float64(conf.BollingerDeviation)*math.Sqrt(variance)
@@ -38,7 +54,23 @@ func (conf *Configuration) UpdateBollingerBand() error {
 	variance := float64(0)
 	ma := conf.Candles[len(conf.Candles)-1].MovingAverage.Simple
 	for j := len(conf.Candles) - conf.BollingerLength; j < len(conf.Candles); j++ {
-		sum := (conf.Candles[j].Close + conf.Candles[j].High + conf.Candles[j].Low) / 3
+		sum := float64(0)
+		switch conf.MovingAverageSource {
+		case SourceOpen:
+			sum = conf.Candles[j].Open
+		case SourceHigh:
+			sum = conf.Candles[j].High
+		case SourceLow:
+			sum = conf.Candles[j].Low
+		case SourceClose:
+			sum = conf.Candles[j].Close
+		case SourceOHLC4:
+			sum = (conf.Candles[j].Open + conf.Candles[j].High + conf.Candles[j].Low + conf.Candles[j].Close) / 4
+		case SourceHLC3:
+			sum = (conf.Candles[j].Low + conf.Candles[j].High + conf.Candles[j].Close) / 3
+		case SourceHL2:
+			sum = (conf.Candles[j].Low + conf.Candles[j].High) / 2
+		}
 		variance += math.Pow(ma-sum, 2)
 	}
 	variance /= float64(conf.BollingerLength)
