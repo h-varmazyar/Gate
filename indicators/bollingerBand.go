@@ -36,7 +36,7 @@ func (conf *Configuration) CalculateBollingerBand() error {
 			}
 			variance += math.Pow(ma-sum, 2)
 		}
-		variance /= float64(conf.BollingerLength - 1)
+		variance /= float64(conf.BollingerLength)
 		indicatorLock.Lock()
 		conf.Candles[i].BollingerBand.MA = ma
 		conf.Candles[i].BollingerBand.UpperBond = ma + float64(conf.BollingerDeviation)*math.Sqrt(variance)

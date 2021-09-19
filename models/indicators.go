@@ -16,6 +16,7 @@ type Indicators struct {
 type Stochastic struct {
 	IndexK float64
 	IndexD float64
+	FastK  float64
 }
 
 func (stochastic *Stochastic) SignalStrength() float64 {

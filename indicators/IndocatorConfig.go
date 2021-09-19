@@ -23,8 +23,9 @@ type Configuration struct {
 	//RSI
 	RsiLength int `yaml:"RsiLength"`
 	//stochastic
-	StochasticLengthK int `yaml:"StochasticLengthK"`
-	StochasticLengthD int `yaml:"StochasticLengthD"`
+	StochasticLength  int `yaml:"StochasticLength"`
+	StochasticSmoothK int `yaml:"StochasticSmoothK"`
+	StochasticSmoothD int `yaml:"StochasticSmoothD"`
 	//ADX/ATR
 	AdxAtrLength int `yaml:"AdxAtrLength"`
 	//parabolic sar

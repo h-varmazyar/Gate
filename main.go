@@ -69,7 +69,7 @@ func main() {
 		//},
 		//IndicatorConfig: indicators.Configuration{
 		//	Length:            14,
-		//	StochasticLengthD: 3,
+		//	StochasticD: 3,
 		//	StochasticSmoothK: 1,
 		//	MacdFastLength:    12,
 		//	MacdSlowLength:    26,

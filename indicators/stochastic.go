@@ -3,13 +3,17 @@ package indicators
 import (
 	"errors"
 	"github.com/mrNobody95/Gate/models"
+	"math"
 )
 
 func (conf *Configuration) validateStochastic() error {
-	if len(conf.Candles) < conf.StochasticLengthK {
+	if len(conf.Candles) < conf.StochasticLength {
 		return errors.New("candles length must bigger or equal than indicator period length")
 	}
-	if conf.StochasticLengthD >= conf.StochasticLengthK {
+	if conf.StochasticSmoothK >= conf.StochasticLength {
+		return errors.New("smoothK parameter must be smaller than indicator period length")
+	}
+	if conf.StochasticSmoothD >= conf.StochasticLength {
 		return errors.New("smoothD parameter must be smaller than indicator period length")
 	}
 	return nil
@@ -26,10 +30,10 @@ func (conf *Configuration) CalculateStochastic() error {
 		return err
 	}
 
-	for i := conf.StochasticLengthK - 1; i < len(conf.Candles); i++ {
-		lowest := float64(0)
+	for i := conf.StochasticLength - 1; i < len(conf.Candles); i++ {
+		lowest := math.MaxFloat64
 		highest := float64(0)
-		for j := i - (conf.StochasticLengthK - 1); j < conf.StochasticLengthK; j++ {
+		for j := i - (conf.StochasticLength - 1); j < conf.StochasticLength; j++ {
 			if conf.Candles[j].Low < lowest {
 				lowest = conf.Candles[j].Low
 			}
@@ -38,18 +42,26 @@ func (conf *Configuration) CalculateStochastic() error {
 			}
 		}
 		indicatorLock.Lock()
-		conf.Candles[i].Stochastic.IndexK = 100 * ((conf.Candles[i].Close - lowest) / (highest - lowest))
-		conf.Candles[i].Stochastic.IndexD = calculateIndexD(conf.Candles[i-conf.StochasticLengthD+1 : i+1])
+		conf.Candles[i].Stochastic.FastK = 100 * ((conf.Candles[i].Close - lowest) / (highest - lowest))
+		indicatorLock.Unlock()
+
+		sum := float64(0)
+		for j := i - conf.StochasticSmoothK + 1; j <= i; j++ {
+			sum += conf.Candles[j].FastK
+		}
+		indicatorLock.Lock()
+		conf.Candles[i].Stochastic.IndexK = sum / float64(conf.StochasticSmoothK)
+		conf.Candles[i].Stochastic.IndexD = calculateIndexD(conf.Candles[i-conf.StochasticSmoothD+1 : i+1])
 		indicatorLock.Unlock()
 	}
 	return nil
 }
 
 func (conf *Configuration) UpdateStochastic() {
-	lowest := float64(0)
+	lowest := math.MaxFloat64
 	highest := float64(0)
 	lastIndex := len(conf.Candles) - 1
-	for i := len(conf.Candles) - conf.StochasticLengthK; i < len(conf.Candles); i++ {
+	for i := len(conf.Candles) - conf.StochasticLength; i < len(conf.Candles); i++ {
 		if conf.Candles[i].Low < lowest {
 			lowest = conf.Candles[i].Low
 		}
@@ -58,8 +70,16 @@ func (conf *Configuration) UpdateStochastic() {
 		}
 	}
 	indicatorLock.Lock()
-	conf.Candles[lastIndex].Stochastic.IndexK = 100 * ((conf.Candles[lastIndex].Close - lowest) / (highest - lowest))
-	conf.Candles[lastIndex].Stochastic.IndexD = calculateIndexD(conf.Candles[lastIndex-conf.StochasticLengthD+1:])
+	conf.Candles[lastIndex].FastK = 100 * ((conf.Candles[lastIndex].Close - lowest) / (highest - lowest))
+	indicatorLock.Unlock()
+
+	sum := float64(0)
+	for j := len(conf.Candles) - conf.StochasticSmoothK; j < len(conf.Candles); j++ {
+		sum += conf.Candles[j].FastK
+	}
+	indicatorLock.Lock()
+	conf.Candles[lastIndex].IndexK = sum / float64(conf.StochasticSmoothK)
+	conf.Candles[lastIndex].IndexD = calculateIndexD(conf.Candles[lastIndex-conf.StochasticSmoothD+1:])
 	indicatorLock.Unlock()
 }
 
