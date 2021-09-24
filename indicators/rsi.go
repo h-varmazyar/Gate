@@ -2,6 +2,7 @@ package indicators
 
 import (
 	"errors"
+	"math"
 )
 
 func (conf *Configuration) CalculateRSI() error {
@@ -32,6 +33,7 @@ func (conf *Configuration) firstRsi() {
 		}
 	}
 
+	loss = math.Abs(loss)
 	rs := gain / loss
 
 	indicatorLock.Lock()
@@ -49,11 +51,11 @@ func (conf *Configuration) smoothedRs(index int) {
 	if change > 0 {
 		gain = change
 	} else {
-		loss = change
+		loss = change * -1
 	}
 
-	gain = conf.Candles[index-1].RSI.Gain*(float64(conf.RsiLength-1)) + gain
-	loss = conf.Candles[index-1].RSI.Loss*(float64(conf.RsiLength-1)) + loss
+	gain = (conf.Candles[index-1].RSI.Gain*(float64(conf.RsiLength-1)) + gain) / float64(conf.RsiLength)
+	loss = (conf.Candles[index-1].RSI.Loss*(float64(conf.RsiLength-1)) + loss) / float64(conf.RsiLength)
 
 	indicatorLock.Lock()
 	conf.Candles[index].RSI.Gain = gain
