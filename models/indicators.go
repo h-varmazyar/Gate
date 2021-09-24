@@ -57,6 +57,7 @@ type ADX struct {
 	DINegative float64
 	ADX        float64
 	DmPositive float64
+	TR         float64
 	DmNegative float64
 	DX         float64
 }
