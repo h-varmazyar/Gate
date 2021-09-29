@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"github.com/fatih/color"
 	"github.com/mrNobody95/Gate/brokerages"
 	"github.com/mrNobody95/Gate/indicators"
@@ -46,7 +45,6 @@ func (thread *MarketThread) CollectPrimaryData() {
 					log.Errorf("ohlc request failed: %s", err.Error())
 				}
 			}
-			fmt.Println("end of primary:", len(conf.Candles))
 			//todo: check next line
 			//thread.IndicatorConfigPerResolution[resolution.Id]=conf
 		}(resolution)

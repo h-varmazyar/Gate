@@ -77,8 +77,10 @@ func (pSar *ParabolicSAR) SignalStrength() float64 {
 }
 
 type MACD struct {
-	MACD   float64
-	Signal float64
+	MACD    float64
+	Signal  float64
+	SlowEMA float64
+	FastEMA float64
 }
 
 func (macd *MACD) SignalStrength() float64 {

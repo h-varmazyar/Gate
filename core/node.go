@@ -149,7 +149,7 @@ func (node *Node) cliPrinter() {
 			for _, data := range resolution {
 				output += fmt.Sprintf("| %-10s | %-10s | %-18f | %-18f | %-18f | %-18f | %-18f |\n+------------+------------+--------------------+--------------------+--------------------+--------------------+--------------------+\n",
 					data.Market.Value, data.Resolution.Label,
-					data.ADX.ADX, data.ADX.DINegative, data.ADX.DIPositive, data.ADX.DX, data.MA)
+					data.MACD.MACD, data.MACD.Signal, data.ADX.DIPositive, data.ADX.DX, data.MA)
 			}
 		}
 

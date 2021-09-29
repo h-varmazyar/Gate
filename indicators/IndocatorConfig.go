@@ -20,6 +20,7 @@ type Configuration struct {
 	MacdFastLength   int    `yaml:"MacdFastLength"`
 	MacdSlowLength   int    `yaml:"MacdSlowLength"`
 	MacdSource       Source `yaml:"MacdSource"`
+	From             int
 	//RSI
 	RsiLength int `yaml:"RsiLength"`
 	//stochastic
@@ -36,13 +37,14 @@ type Configuration struct {
 }
 
 const (
-	SourceOHLC4 Source = "ohlc4"
-	SourceClose Source = "close"
-	SourceOpen  Source = "open"
-	SourceHigh  Source = "high"
-	SourceHLC3  Source = "hlc3"
-	SourceLow   Source = "low"
-	SourceHL2   Source = "hl2"
+	SourceCustom Source = "custom"
+	SourceOHLC4  Source = "ohlc4"
+	SourceClose  Source = "close"
+	SourceOpen   Source = "open"
+	SourceHigh   Source = "high"
+	SourceHLC3   Source = "hlc3"
+	SourceLow    Source = "low"
+	SourceHL2    Source = "hl2"
 )
 
 var indicatorLock sync.Mutex

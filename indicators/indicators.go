@@ -52,13 +52,13 @@ func (conf *Configuration) CalculateIndicators(candles []models.Candle, size int
 
 func (conf *Configuration) calculateIndicators() {
 	var wg sync.WaitGroup
-	wg.Add(6)
-	go func(wg *sync.WaitGroup) {
-		defer wg.Done()
-		if err := conf.CalculateADX(); err != nil {
-			log.Error(err)
-		}
-	}(&wg)
+	wg.Add(5)
+	//go func(wg *sync.WaitGroup) {
+	//	defer wg.Done()
+	//	if err := conf.CalculateADX(); err != nil {
+	//		log.Error(err)
+	//	}
+	//}(&wg)
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
 		if err := conf.CalculateBollingerBand(); err != nil {
