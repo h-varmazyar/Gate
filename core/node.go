@@ -58,7 +58,7 @@ func (node *Node) Start() error {
 				err := copier.Copy(&tmp, &node.IndicatorConfig)
 				if err != nil {
 					color.Red("copy indicator config failed for %s in resolution %s: %s",
-						market.Value, resolution.Value, err.Error())
+						market.Name, resolution.Value, err.Error())
 					return
 				}
 				tmp.Candles = make([]models.Candle, 0)
@@ -92,7 +92,7 @@ func (node *Node) LoadConfig(path string) error {
 		return err
 	}
 	if config.LoadMarketsOnline {
-		resp := node.Requests.MarketList(nil).(brokerages.MarketListResponse)
+		resp := node.Requests.MarketList()
 		if resp.Error != nil {
 			return resp.Error
 		}
@@ -148,7 +148,7 @@ func (node *Node) cliPrinter() {
 		for _, resolution := range dataMap {
 			for _, data := range resolution {
 				output += fmt.Sprintf("| %-10s | %-10s | %-18f | %-18f | %-18f | %-18f | %-18f |\n+------------+------------+--------------------+--------------------+--------------------+--------------------+--------------------+\n",
-					data.Market.Value, data.Resolution.Label,
+					data.Market.Name, data.Resolution.Label,
 					data.MACD.MACD, data.MACD.Signal, data.ADX.DIPositive, data.ADX.DX, data.MA)
 			}
 		}

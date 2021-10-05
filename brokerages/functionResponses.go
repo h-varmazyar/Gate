@@ -8,8 +8,8 @@ import (
 type OrderBookResponse struct {
 	BasicResponse
 	Symbol string
-	Bids   []todo.Order
-	Asks   []todo.Order
+	Bids   []models.Order
+	Asks   []models.Order
 }
 
 type RecentTradesResponse struct {
@@ -44,14 +44,14 @@ type UserInfoResponse struct {
 	BankAccount []todo.BankAccount
 }
 
-type WalletsResponse struct {
+type WalletListResponse struct {
 	BasicResponse
-	Wallets []todo.Wallet
+	Wallets []models.Wallet
 }
 
 type WalletResponse struct {
 	BasicResponse
-	Wallet todo.Wallet
+	Wallet models.Wallet
 }
 
 type BalanceResponse struct {
@@ -67,15 +67,20 @@ type TransactionListResponse struct {
 
 type OrderResponse struct {
 	BasicResponse
-	Order todo.Order
+	Order models.Order
 }
 
 type OrderListResponse struct {
 	BasicResponse
-	Orders []todo.Order
+	Orders []models.Order
 }
 
 type UpdateOrderStatusResponse struct {
 	BasicResponse
-	NewStatus todo.OrderStatus
+	NewStatus models.OrderStatus
+}
+
+type MarketInfoResponse struct {
+	BasicResponse
+	Market models.Market
 }

@@ -30,8 +30,8 @@ func StartNewNode(brokerageName, configPath string) {
 	case models.Binance:
 	case models.Coinex:
 		node.Requests = coinex.Config{
-			ApiId:   "",
-			ApiHash: "",
+			AccessId:  "",
+			SecretKey: "",
 		}
 	}
 	err = node.LoadConfig(configPath)

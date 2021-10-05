@@ -18,7 +18,7 @@ type MarketThread struct {
 }
 
 func (thread *MarketThread) CollectPrimaryData() {
-	color.HiGreen("Collecting primary data for: %s", thread.Market.Value)
+	color.HiGreen("Collecting primary data for: %s", thread.Market.Name)
 	wg := sync.WaitGroup{}
 	wg.Add(len(thread.Resolutions))
 	for _, resolution := range thread.Resolutions {
@@ -53,7 +53,7 @@ func (thread *MarketThread) CollectPrimaryData() {
 }
 
 func (thread *MarketThread) PeriodicOHLC() {
-	color.HiGreen("Making Periodic ohlc for: %s", thread.Market.Value)
+	color.HiGreen("Making Periodic ohlc for: %s", thread.Market.Name)
 	for _, resolution := range thread.Resolutions {
 		go func(resolution models.Resolution) {
 			conf, ok := thread.IndicatorConfigPerResolution[resolution.Id]
@@ -107,7 +107,7 @@ func (thread *MarketThread) makeOHLCRequest(conf *indicators.Configuration, reso
 					symbol, brokerage, candle.Time.Format("02/01/2006, 15:04:05"))
 			}
 		}
-	}(thread.Market.Value, thread.Brokerage.Name, response.Candles)
+	}(thread.Market.Name, thread.Brokerage.Name, response.Candles)
 	return nil
 }
 

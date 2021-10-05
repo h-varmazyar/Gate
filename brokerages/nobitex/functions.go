@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/mrNobody95/Gate/brokerages"
+	"github.com/mrNobody95/Gate/brokerages/coinex"
 	"github.com/mrNobody95/Gate/models"
 	"github.com/mrNobody95/Gate/models/todo"
 	"github.com/mrNobody95/Gate/networkManager"
@@ -18,22 +19,11 @@ type Config struct {
 	Token string
 }
 
-type PeriodicOHLC struct {
-	models.Market
-	models.Resolution
-	Response chan *brokerages.OHLCResponse
-}
-
 func (config Config) Validate() error {
 	return nil
 }
 
-//func (config Config) GetName() models.BrokerageName {
-//	return config.Name
-//}
-
-func (config Config) Login(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(LoginParams)
+func (config Config) Login(params brokerages.LoginParams) *brokerages.BasicResponse {
 	req := networkManager.Request{
 		Method:   networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/auth/login/",
@@ -60,11 +50,10 @@ func (config Config) Login(input brokerages.MustImplementAsFunctionParameter) in
 	}
 }
 
-func (config Config) OrderBook(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(OrderBookParams)
+func (config Config) OrderBook(params brokerages.OrderBookParams) *brokerages.OrderBookResponse {
 	req := networkManager.Request{
 		Method:   networkManager.GET,
-		Endpoint: "https://api.nobitex.ir/v2/orderbook/" + params.Symbol.Value,
+		Endpoint: "https://api.nobitex.ir/v2/orderbook/" + params.Symbol.Name,
 	}
 
 	resp, err := req.Execute()
@@ -90,9 +79,9 @@ func (config Config) OrderBook(input brokerages.MustImplementAsFunctionParameter
 		}
 		if respStr.Status == "ok" {
 			orderBook := brokerages.OrderBookResponse{
-				Symbol: params.Symbol.Value,
-				Bids:   make([]todo.Order, len(respStr.Bids)),
-				Asks:   make([]todo.Order, len(respStr.Asks)),
+				Symbol: params.Symbol.Name,
+				Bids:   make([]models.Order, len(respStr.Bids)),
+				Asks:   make([]models.Order, len(respStr.Asks)),
 			}
 			for i, bid := range respStr.Bids {
 				price, err := strconv.ParseFloat(bid[0], 64)
@@ -103,8 +92,8 @@ func (config Config) OrderBook(input brokerages.MustImplementAsFunctionParameter
 						},
 					}
 				}
-				orderBook.Bids[i].Price = price
-				orderBook.Bids[i].Volume = bid[1]
+				orderBook.Bids[i].AveragePrice = price
+				orderBook.Bids[i].Amount, _ = strconv.ParseFloat(bid[1], 64)
 			}
 			for i, ask := range respStr.Asks {
 				price, err := strconv.ParseFloat(ask[0], 64)
@@ -115,8 +104,8 @@ func (config Config) OrderBook(input brokerages.MustImplementAsFunctionParameter
 						},
 					}
 				}
-				orderBook.Asks[i].Price = price
-				orderBook.Asks[i].Volume = ask[1]
+				orderBook.Asks[i].AveragePrice = price
+				orderBook.Asks[i].Amount, _ = strconv.ParseFloat(ask[1], 64)
 			}
 			return &orderBook
 		} else {
@@ -135,15 +124,22 @@ func (config Config) OrderBook(input brokerages.MustImplementAsFunctionParameter
 	}
 }
 
-func (config Config) MarketList(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	return errors.New("must be implemented")
+func (config Config) MarketList() *brokerages.MarketListResponse {
+	return &brokerages.MarketListResponse{
+		BasicResponse: brokerages.BasicResponse{Error: errors.New("must be implemented")},
+	}
 }
 
-func (config Config) RecentTrades(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(OrderBookParams)
+func (config Config) MarketInfo(brokerages.MarketInfoParams) *brokerages.MarketInfoResponse {
+	return &brokerages.MarketInfoResponse{
+		BasicResponse: brokerages.BasicResponse{Error: errors.New("must be implemented")},
+	}
+}
+
+func (config Config) RecentTrades(params brokerages.OrderBookParams) *brokerages.RecentTradesResponse {
 	req := networkManager.Request{
 		Method:   networkManager.GET,
-		Endpoint: "https://api.nobitex.ir/v2/trades/" + params.Symbol.Value,
+		Endpoint: "https://api.nobitex.ir/v2/trades/" + params.Symbol.Name,
 	}
 
 	resp, err := req.Execute()
@@ -169,14 +165,14 @@ func (config Config) RecentTrades(input brokerages.MustImplementAsFunctionParame
 		}
 		if respStr.Status == "ok" {
 			recentTrade := brokerages.RecentTradesResponse{
-				Symbol: params.Symbol.Value,
+				Symbol: params.Symbol.Name,
 				Trades: make([]todo.Trade, len(respStr.Trades)),
 			}
 			for i, trade := range respStr.Trades {
 				recentTrade.Trades[i].Time = trade.Time
 				recentTrade.Trades[i].Price, _ = strconv.ParseFloat(trade.Price, 64)
 				recentTrade.Trades[i].Volume, _ = strconv.ParseFloat(trade.Volume, 64)
-				recentTrade.Trades[i].Type = todo.OrderType(trade.Type)
+				recentTrade.Trades[i].Type = models.OrderType(trade.Type)
 			}
 			return &recentTrade
 		} else {
@@ -191,16 +187,11 @@ func (config Config) RecentTrades(input brokerages.MustImplementAsFunctionParame
 	}
 }
 
-func (config Config) MarketStats(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	return &brokerages.MarketStatusResponse{}
-}
-
-func (config Config) OHLC(input brokerages.MustImplementAsFunctionParameter) *brokerages.OHLCResponse {
-	params := input.(OHLCParams)
+func (config Config) OHLC(params brokerages.OHLCParams) *brokerages.OHLCResponse {
 	req := networkManager.Request{
 		Method:   networkManager.GET,
 		Endpoint: "https://api.nobitex.ir/market/udf/history",
-		Params: map[string]interface{}{"symbol": params.Symbol.Value,
+		Params: map[string]interface{}{"symbol": params.Market.Name,
 			"resolution": params.Resolution.Value,
 			"from":       params.From,
 			"to":         params.To},
@@ -233,7 +224,7 @@ func (config Config) OHLC(input brokerages.MustImplementAsFunctionParameter) *br
 		}
 		if respStr.Status == "ok" {
 			ohlc := brokerages.OHLCResponse{
-				Market:     params.Symbol,
+				Market:     params.Market,
 				Resolution: params.Resolution,
 				Status:     respStr.Status,
 			}
@@ -245,7 +236,7 @@ func (config Config) OHLC(input brokerages.MustImplementAsFunctionParameter) *br
 				ohlc.Candles[i].Low = respStr.Low[i]
 				ohlc.Candles[i].Close = respStr.Close[i]
 				ohlc.Candles[i].Vol = respStr.Volume[i]
-				ohlc.Candles[i].Market = params.Symbol
+				ohlc.Candles[i].Market = params.Market
 			}
 			return &ohlc
 		} else {
@@ -264,7 +255,7 @@ func (config Config) OHLC(input brokerages.MustImplementAsFunctionParameter) *br
 	}
 }
 
-func (config Config) UserInfo(brokerages.MustImplementAsFunctionParameter) interface{} {
+func (config Config) UserInfo() *brokerages.UserInfoResponse {
 	req := networkManager.Request{
 		Method:   networkManager.GET,
 		Endpoint: "https://api.nobitex.ir/users/profile",
@@ -387,7 +378,7 @@ func (config Config) UserInfo(brokerages.MustImplementAsFunctionParameter) inter
 	}
 }
 
-func (config Config) WalletList(brokerages.MustImplementAsFunctionParameter) interface{} {
+func (config Config) WalletList() *brokerages.WalletListResponse {
 	req := networkManager.Request{
 		Method:   networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/users/wallets/list",
@@ -396,7 +387,7 @@ func (config Config) WalletList(brokerages.MustImplementAsFunctionParameter) int
 
 	resp, err := req.Execute()
 	if err != nil {
-		return &brokerages.WalletsResponse{
+		return &brokerages.WalletListResponse{
 			BasicResponse: brokerages.BasicResponse{
 				Error: err,
 			},
@@ -418,33 +409,44 @@ func (config Config) WalletList(brokerages.MustImplementAsFunctionParameter) int
 			} `json:"wallets"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &brokerages.WalletsResponse{
+			return &brokerages.WalletListResponse{
 				BasicResponse: brokerages.BasicResponse{
 					Error: err,
 				},
 			}
 		}
 		if respStr.Status == "ok" {
-			wallets := make([]todo.Wallet, len(respStr.Wallets))
-			for i, wallet := range respStr.Wallets {
-				wallets[i].ReferenceCurrencyBalance = wallet.RialBalance
-				wallets[i].BlockedBalance = wallet.BlockedBalance
-				wallets[i].ActiveBalance = wallet.ActiveBalance
-				wallets[i].TotalBalance = wallet.Balance
-				wallets[i].Currency = wallet.Currency
-				wallets[i].ID = wallet.Id
+			var wallets []models.Wallet
+			for _, wallet := range respStr.Wallets {
+				tmp := models.Wallet{}
+				tmp.ReferenceCurrencyBalance = wallet.RialBalance
+				tmp.BlockedBalance, err = strconv.ParseFloat(wallet.BlockedBalance, 64)
+				if err != nil {
+					continue
+				}
+				tmp.ActiveBalance, err = strconv.ParseFloat(wallet.ActiveBalance, 64)
+				if err != nil {
+					continue
+				}
+				tmp.TotalBalance, err = strconv.ParseFloat(wallet.Balance, 64)
+				if err != nil {
+					continue
+				}
+				tmp.Currency = wallet.Currency
+				tmp.ID = wallet.Id
+				wallets = append(wallets, tmp)
 			}
 
-			return &brokerages.WalletsResponse{Wallets: wallets}
+			return &brokerages.WalletListResponse{Wallets: wallets}
 		} else {
-			return &brokerages.WalletsResponse{
+			return &brokerages.WalletListResponse{
 				BasicResponse: brokerages.BasicResponse{
-					Error: errors.New("get user profile error"),
+					Error: errors.New("get wallet list error"),
 				},
 			}
 		}
 	} else {
-		return &brokerages.WalletsResponse{
+		return &brokerages.WalletListResponse{
 			BasicResponse: brokerages.BasicResponse{
 				Error: errors.New(resp.Status),
 			},
@@ -452,8 +454,7 @@ func (config Config) WalletList(brokerages.MustImplementAsFunctionParameter) int
 	}
 }
 
-func (config Config) WalletInfo(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(WalletInfoParams)
+func (config Config) WalletInfo(params brokerages.WalletInfoParams) *brokerages.WalletResponse {
 	req := networkManager.Request{
 		Method:   networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/v2/wallets",
@@ -487,16 +488,22 @@ func (config Config) WalletInfo(input brokerages.MustImplementAsFunctionParamete
 			}
 		}
 		if respStr.Status == "ok" {
-			return &brokerages.WalletResponse{Wallet: todo.Wallet{
-				ID:             respStr.Wallets[strings.ToUpper(params.WalletName)].Id,
-				BlockedBalance: respStr.Wallets[strings.ToUpper(params.WalletName)].Blocked,
-				TotalBalance:   respStr.Wallets[strings.ToUpper(params.WalletName)].Balance,
-				Currency:       params.WalletName,
-			}}
+			wallet := models.Wallet{}
+			wallet.ID = respStr.Wallets[strings.ToUpper(params.WalletName)].Id
+			wallet.BlockedBalance, err = strconv.ParseFloat(respStr.Wallets[strings.ToUpper(params.WalletName)].Blocked, 64)
+			if err != nil {
+				return &brokerages.WalletResponse{BasicResponse: brokerages.BasicResponse{Error: err}}
+			}
+			wallet.TotalBalance, err = strconv.ParseFloat(respStr.Wallets[strings.ToUpper(params.WalletName)].Balance, 64)
+			if err != nil {
+				return &brokerages.WalletResponse{BasicResponse: brokerages.BasicResponse{Error: err}}
+			}
+			wallet.Currency = params.WalletName
+			return &brokerages.WalletResponse{Wallet: wallet}
 		} else {
 			return &brokerages.WalletResponse{
 				BasicResponse: brokerages.BasicResponse{
-					Error: errors.New("get user profile error"),
+					Error: errors.New("get wallet info error"),
 				},
 			}
 		}
@@ -509,8 +516,7 @@ func (config Config) WalletInfo(input brokerages.MustImplementAsFunctionParamete
 	}
 }
 
-func (config Config) WalletBalance(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(WalletBalanceParams)
+func (config Config) WalletBalance(params brokerages.WalletBalanceParams) *brokerages.BalanceResponse {
 	req := networkManager.Request{
 		Method:   networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/users/wallets/balance",
@@ -551,8 +557,7 @@ func (config Config) WalletBalance(input brokerages.MustImplementAsFunctionParam
 	}
 }
 
-func (config Config) TransactionList(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(TransactionListParams)
+func (config Config) TransactionList(params brokerages.TransactionListParams) *brokerages.TransactionListResponse {
 	req := networkManager.Request{
 		Method:   networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/users/wallets/transactions/list",
@@ -610,14 +615,13 @@ func (config Config) TransactionList(input brokerages.MustImplementAsFunctionPar
 	}
 }
 
-func (config Config) NewOrder(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(NewOrderParams)
+func (config Config) NewOrder(params brokerages.NewOrderParams) *brokerages.OrderResponse {
 	body := make(map[string]interface{})
-	body["price"] = params.Order.Price
-	body["amount"] = params.Order.Volume
-	body["type"] = params.Order.OrderType
-	body["srcCurrency"] = params.Order.SourceCurrency
-	body["destCurrency"] = params.Order.DestinationCurrency
+	body["price"] = params.Price
+	body["amount"] = params.Amount
+	body["type"] = params.BuyOrSell
+	body["srcCurrency"] = params.Market.Source
+	body["destCurrency"] = params.Market.Destination
 	req := networkManager.Request{
 		Method:   networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/market/orders/add",
@@ -663,25 +667,55 @@ func (config Config) NewOrder(input brokerages.MustImplementAsFunctionParameter)
 					BasicResponse: brokerages.BasicResponse{Error: err},
 				}
 			}
-			return &brokerages.OrderResponse{
-				Order: todo.Order{
-					Model: gorm.Model{
-						ID:        respStr.Order.Id,
-						CreatedAt: respStr.Order.CreatedAt,
-					},
-					Fee:                 respStr.Order.Fee,
-					User:                respStr.Order.User,
-					Price:               price,
-					Status:              todo.OrderStatus(respStr.Order.Status),
-					Volume:              respStr.Order.Amount,
-					OrderType:           todo.OrderType(respStr.Order.Type),
-					TotalPrice:          respStr.Order.TotalPrice,
-					MatchedVolume:       respStr.Order.Matched,
-					SourceCurrency:      respStr.Order.Src,
-					UnMatchedVolume:     respStr.Order.Unmatched,
-					DestinationCurrency: respStr.Order.Dest,
-				},
+			order := models.Order{
+				ClientUUID:       strings.ReplaceAll(params.ClientUUID.String(), "-", ""),
+				ServerOrderId:    int64(respStr.Order.Id),
+				CreatedAt:        respStr.Order.CreatedAt,
+				AssetFee:         respStr.Order.Fee,
+				User:             respStr.Order.User,
+				AveragePrice:     price,
+				Status:           models.OrderStatus(respStr.Order.Status),
+				SellOrBuy:        models.OrderType(respStr.Order.Type),
+				SourceAsset:      models.Asset(respStr.Order.Src),
+				DestinationAsset: models.Asset(respStr.Order.Dest),
 			}
+			if respStr.Order.Amount != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Order.Amount, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("amount parse failed")},
+					}
+				}
+				order.Amount = tmp
+			}
+			if respStr.Order.TotalPrice != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Order.TotalPrice, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("amount parse failed")},
+					}
+				}
+				order.ExecutedPrice = tmp
+			}
+			if respStr.Order.Matched != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Order.Matched, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("amount parse failed")},
+					}
+				}
+				order.ExecutedAmount = tmp
+			}
+			if respStr.Order.Unmatched != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Order.Unmatched, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("amount parse failed")},
+					}
+				}
+				order.UnExecutedAmount = tmp
+			}
+			return &brokerages.OrderResponse{Order: order}
 		} else {
 			return &brokerages.OrderResponse{
 				BasicResponse: brokerages.BasicResponse{Error: errors.New(respStr.Message)},
@@ -694,13 +728,12 @@ func (config Config) NewOrder(input brokerages.MustImplementAsFunctionParameter)
 	}
 }
 
-func (config Config) OrderStatus(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(OrderStatusParams)
+func (config Config) OrderStatus(params brokerages.OrderStatusParams) *brokerages.OrderResponse {
 	req := networkManager.Request{
 		Method:   networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/market/orders/Status",
 		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", config.Token)}},
-		Params:   map[string]interface{}{"id": params.OrderId},
+		Params:   map[string]interface{}{"id": params.ServerOrderId},
 	}
 
 	resp, err := req.Execute()
@@ -741,25 +774,55 @@ func (config Config) OrderStatus(input brokerages.MustImplementAsFunctionParamet
 					BasicResponse: brokerages.BasicResponse{Error: err},
 				}
 			}
-			return &brokerages.OrderResponse{
-				Order: todo.Order{
-					Model: gorm.Model{
-						ID:        respStr.Order.Id,
-						CreatedAt: respStr.Order.CreatedAt,
-					},
-					Fee:                 respStr.Order.Fee,
-					User:                respStr.Order.User,
-					Price:               price,
-					Status:              todo.OrderStatus(respStr.Order.Status),
-					Volume:              respStr.Order.Amount,
-					OrderType:           todo.OrderType(respStr.Order.Type),
-					TotalPrice:          respStr.Order.TotalPrice,
-					MatchedVolume:       respStr.Order.Matched,
-					SourceCurrency:      respStr.Order.Src,
-					UnMatchedVolume:     respStr.Order.Unmatched,
-					DestinationCurrency: respStr.Order.Dest,
-				},
+			order := models.Order{
+				ClientUUID:       strings.ReplaceAll(params.ClientUUID.String(), "-", ""),
+				ServerOrderId:    int64(respStr.Order.Id),
+				CreatedAt:        respStr.Order.CreatedAt,
+				AssetFee:         respStr.Order.Fee,
+				User:             respStr.Order.User,
+				AveragePrice:     price,
+				Status:           models.OrderStatus(respStr.Order.Status),
+				SellOrBuy:        models.OrderType(respStr.Order.Type),
+				SourceAsset:      models.Asset(respStr.Order.Src),
+				DestinationAsset: models.Asset(respStr.Order.Dest),
 			}
+			if respStr.Order.Amount != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Order.Amount, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("amount parse failed")},
+					}
+				}
+				order.Amount = tmp
+			}
+			if respStr.Order.TotalPrice != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Order.TotalPrice, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("amount parse failed")},
+					}
+				}
+				order.ExecutedPrice = tmp
+			}
+			if respStr.Order.Matched != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Order.Matched, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("amount parse failed")},
+					}
+				}
+				order.ExecutedAmount = tmp
+			}
+			if respStr.Order.Unmatched != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Order.Unmatched, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("amount parse failed")},
+					}
+				}
+				order.UnExecutedAmount = tmp
+			}
+			return &brokerages.OrderResponse{Order: order}
 		} else {
 			return &brokerages.OrderResponse{
 				BasicResponse: brokerages.BasicResponse{Error: errors.New(respStr.Message)},
@@ -772,8 +835,7 @@ func (config Config) OrderStatus(input brokerages.MustImplementAsFunctionParamet
 	}
 }
 
-func (config Config) OrderList(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(OrderListParams)
+func (config Config) OrderList(params brokerages.OrderListParams) *brokerages.OrderListResponse {
 	body := make(map[string]interface{})
 	if params.Status != "" {
 		body["status"] = params.Status
@@ -781,15 +843,15 @@ func (config Config) OrderList(input brokerages.MustImplementAsFunctionParameter
 	if params.Type != "" {
 		body["type"] = params.Type
 	}
-	if params.Source != "" {
-		body["srcCurrency"] = params.Source
+	if params.Market.Source != "" {
+		body["srcCurrency"] = params.Market.Source
 	} else {
 		return &brokerages.OrderListResponse{
 			BasicResponse: brokerages.BasicResponse{Error: errors.New("please specify Source Currency")},
 		}
 	}
-	if params.Destination != "" {
-		body["dstCurrency"] = params.Destination
+	if params.Market.Destination != "" {
+		body["dstCurrency"] = params.Market.Destination
 	} else {
 		return &brokerages.OrderListResponse{
 			BasicResponse: brokerages.BasicResponse{Error: errors.New("please specify Destination Currency")},
@@ -840,28 +902,59 @@ func (config Config) OrderList(input brokerages.MustImplementAsFunctionParameter
 			}
 		}
 		if respStr.Status == "ok" {
-			orders := make([]todo.Order, len(respStr.Orders))
+			orders := make([]models.Order, len(respStr.Orders))
 			for i, order := range respStr.Orders {
 				price, err := strconv.ParseFloat(order.Price, 64)
 				if err != nil {
 					continue
 				}
-				orders[i] = todo.Order{
-					Model: gorm.Model{
-						ID:        order.Id,
-						CreatedAt: order.CreatedAt,
-					},
-					Fee:                 order.Fee,
-					User:                order.User,
-					Price:               price,
-					Status:              todo.OrderStatus(order.Status),
-					Volume:              order.Amount,
-					OrderType:           todo.OrderType(order.Type),
-					TotalPrice:          order.TotalPrice,
-					MatchedVolume:       order.Matched,
-					SourceCurrency:      order.Src,
-					UnMatchedVolume:     order.Unmatched,
-					DestinationCurrency: order.Dest,
+				orders[i] = models.Order{
+					ClientUUID:       strings.ReplaceAll(params.ClientUUID.String(), "-", ""),
+					ServerOrderId:    int64(order.Id),
+					CreatedAt:        order.CreatedAt,
+					AssetFee:         order.Fee,
+					User:             order.User,
+					AveragePrice:     price,
+					Status:           models.OrderStatus(order.Status),
+					SellOrBuy:        models.OrderType(order.Type),
+					SourceAsset:      models.Asset(order.Src),
+					DestinationAsset: models.Asset(order.Dest),
+				}
+				if order.Amount != "" {
+					tmp, parseErr := strconv.ParseFloat(order.Amount, 64)
+					if parseErr != nil {
+						return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{
+							Error: errors.New("amount parse failed")},
+						}
+					}
+					orders[i].Amount = tmp
+				}
+				if order.TotalPrice != "" {
+					tmp, parseErr := strconv.ParseFloat(order.TotalPrice, 64)
+					if parseErr != nil {
+						return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{
+							Error: errors.New("amount parse failed")},
+						}
+					}
+					orders[i].ExecutedPrice = tmp
+				}
+				if order.Matched != "" {
+					tmp, parseErr := strconv.ParseFloat(order.Matched, 64)
+					if parseErr != nil {
+						return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{
+							Error: errors.New("amount parse failed")},
+						}
+					}
+					orders[i].ExecutedAmount = tmp
+				}
+				if order.Unmatched != "" {
+					tmp, parseErr := strconv.ParseFloat(order.Unmatched, 64)
+					if parseErr != nil {
+						return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{
+							Error: errors.New("amount parse failed")},
+						}
+					}
+					orders[i].UnExecutedAmount = tmp
 				}
 			}
 			return &brokerages.OrderListResponse{Orders: orders}
@@ -877,8 +970,7 @@ func (config Config) OrderList(input brokerages.MustImplementAsFunctionParameter
 	}
 }
 
-func (config Config) UpdateOrderStatus(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(UpdateOrderStatusParams)
+func (config Config) UpdateOrderStatus(params brokerages.UpdateOrderStatusParams) *brokerages.UpdateOrderStatusResponse {
 	body := make(map[string]interface{})
 	if params.OrderId < 0 {
 		body["Order"] = params.OrderId
@@ -909,9 +1001,9 @@ func (config Config) UpdateOrderStatus(input brokerages.MustImplementAsFunctionP
 	}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status        string           `json:"Status"`
-			Message       string           `json:"message"`
-			UpdatedStatus todo.OrderStatus `json:"updatedStatus"`
+			Status        string             `json:"Status"`
+			Message       string             `json:"message"`
+			UpdatedStatus models.OrderStatus `json:"updatedStatus"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
 			return &brokerages.UpdateOrderStatusResponse{
@@ -932,24 +1024,6 @@ func (config Config) UpdateOrderStatus(input brokerages.MustImplementAsFunctionP
 	}
 }
 
-func (config Config) SubscribePeriodicOHLC(periodic PeriodicOHLC, period time.Duration, endSignal chan bool) {
-	ticker := time.NewTicker(period)
-	go func() {
-		for {
-			select {
-			case <-endSignal:
-				return
-			case _ = <-ticker.C:
-				now := time.Now().Unix()
-				params := OHLCParams{
-					Resolution: periodic.Resolution,
-					Symbol:     periodic.Market,
-					From:       now,
-					To:         now,
-				}
-				periodic.Response <- config.OHLC(params)
-
-			}
-		}
-	}()
+func (config Config) CancelOrder(brokerages.CancelOrderParams) *brokerages.OrderResponse {
+	return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{Error: coinex.ErrMustBeImplemented}}
 }

@@ -4,29 +4,27 @@ import (
 	"github.com/mrNobody95/Gate/models"
 )
 
-//const (
-//	BTCIRT  models.Market = "BTCIRT"
-//	ETHIRT  models.Market = "ETHIRT"
-//	LTCIRT  models.Market = "LTCIRT"
-//	XRPIRT  models.Market = "XRPIRT"
-//	BCHIRT  models.Market = "BCHIRT"
-//	BNBIRT  models.Market = "BNBIRT"
-//	EOSIRT  models.Market = "EOSIRT"
-//	XLMIRT  models.Market = "XLMIRT"
-//	ETCIRT  models.Market = "ETCIRT"
-//	TRXIRT  models.Market = "TRXIRT"
-//	SDTIRT  models.Market = "SDTIRT"
-//	BTCUSDT models.Market = "BTCUSDT"
-//	ETHUSDT models.Market = "ETHUSDT"
-//	LTCUSDT models.Market = "LTCUSDT"
-//	XRPUSDT models.Market = "XRPUSDT"
-//	BCHUSDT models.Market = "BCHUSDT"
-//	BNBUSDT models.Market = "BNBUSDT"
-//	EOSUSDT models.Market = "EOSUSDT"
-//	XLMUSDT models.Market = "XLMUSDT"
-//	ETCUSDT models.Market = "ETCUSDT"
-//	TRXUSDT models.Market = "TRXUSDT"
-//)
+const (
+	ResponseSuccess               = 0
+	ResponseError                 = 1
+	ResponseParameterError        = 2
+	ResponseInternalError         = 3
+	ResponseIpNotAllow            = 23
+	ResponseAccessIdNotExist      = 24
+	ResponseSignatureError        = 25
+	ResponseServiceUnavailable    = 35
+	ResponseServiceTimeout        = 36
+	ResponseUnpairedAccount       = 40
+	ResponseTransferToSubRejected = 49
+	ResponseInsufficientBalance   = 107
+	ResponseForbidTrading         = 115
+	ResponseTonceCheckError       = 227
+	ResponseOrderNumberNotExist   = 600
+	ResponseOtherUserOrder        = 601
+	ResponseBellowMinLimit        = 602
+	ResponsePriceDeviationLarge   = 606
+	ResponseMergeDepthError       = 651
+)
 
 const (
 	USD  models.Currency = "usd"

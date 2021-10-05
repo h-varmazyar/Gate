@@ -6,232 +6,39 @@ import (
 	"fmt"
 	"github.com/mrNobody95/Gate/brokerages"
 	"github.com/mrNobody95/Gate/models"
-	"github.com/mrNobody95/Gate/models/todo"
 	"github.com/mrNobody95/Gate/networkManager"
-	"gorm.io/gorm"
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
 )
 
-type Config struct {
-	ApiId   string
-	ApiHash string
-	Token   string //remove it
-}
+var ErrMustBeImplemented = errors.New("must be implemented")
 
-type PeriodicOHLC struct {
-	models.Market
-	models.Resolution
-	Response chan *brokerages.OHLCResponse
+type Config struct {
+	AccessId  string
+	SecretKey string
 }
 
 func (config Config) Validate() error {
 	return nil
 }
 
-func (config Config) Login(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(brokerages.LoginParams)
-	req := networkManager.Request{
-		Method:   networkManager.POST,
-		Endpoint: "https://api.nobitex.ir/auth/login/",
-	}
-	if params.Totp > 0 {
-		req.Headers = map[string][]string{"X-TOTP": {strconv.Itoa(params.Totp)}}
-	}
-	resp, err := req.Execute()
-	if err != nil {
-		return &brokerages.BasicResponse{Error: err}
-	}
-	if resp.Code == 200 {
-		respStr := struct {
-			Key string `json:"key"`
-		}{}
-		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &brokerages.BasicResponse{Error: err}
-		}
-		config.Token = respStr.Key
-
-		return nil
-	} else {
-		return &brokerages.BasicResponse{Error: errors.New(resp.Status)}
-	}
+func (config Config) Login(brokerages.LoginParams) *brokerages.BasicResponse {
+	return nil
 }
 
-func (config Config) OrderBook(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(brokerages.OrderBookParams)
-	req := networkManager.Request{
-		Method:   networkManager.GET,
-		Endpoint: "https://api.nobitex.ir/v2/orderbook/" + params.Symbol.Value,
-	}
-
-	resp, err := req.Execute()
-	if err != nil {
-		return &brokerages.OrderBookResponse{
-			BasicResponse: brokerages.BasicResponse{
-				Error: err,
-			},
-		}
-	}
-	if resp.Code == 200 {
-		respStr := struct {
-			Status string      `json:"Status"`
-			Bids   [][2]string `json:"bids"`
-			Asks   [][2]string `json:"asks"`
-		}{}
-		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &brokerages.OrderBookResponse{
-				BasicResponse: brokerages.BasicResponse{
-					Error: err,
-				},
-			}
-		}
-		if respStr.Status == "ok" {
-			orderBook := brokerages.OrderBookResponse{
-				Symbol: params.Symbol.Value,
-				Bids:   make([]todo.Order, len(respStr.Bids)),
-				Asks:   make([]todo.Order, len(respStr.Asks)),
-			}
-			for i, bid := range respStr.Bids {
-				price, err := strconv.ParseFloat(bid[0], 64)
-				if err != nil {
-					return &brokerages.OrderBookResponse{
-						BasicResponse: brokerages.BasicResponse{
-							Error: err,
-						},
-					}
-				}
-				orderBook.Bids[i].Price = price
-				orderBook.Bids[i].Volume = bid[1]
-			}
-			for i, ask := range respStr.Asks {
-				price, err := strconv.ParseFloat(ask[0], 64)
-				if err != nil {
-					return &brokerages.OrderBookResponse{
-						BasicResponse: brokerages.BasicResponse{
-							Error: err,
-						},
-					}
-				}
-				orderBook.Asks[i].Price = price
-				orderBook.Asks[i].Volume = ask[1]
-			}
-			return &orderBook
-		} else {
-			return &brokerages.OrderBookResponse{
-				BasicResponse: brokerages.BasicResponse{
-					Error: errors.New("nobitex tesponse error"),
-				},
-			}
-		}
-	} else {
-		return &brokerages.OrderBookResponse{
-			BasicResponse: brokerages.BasicResponse{
-				Error: errors.New(resp.Status),
-			},
-		}
-	}
+func (config Config) OrderBook(brokerages.OrderBookParams) *brokerages.OrderBookResponse {
+	return &brokerages.OrderBookResponse{BasicResponse: brokerages.BasicResponse{Error: ErrMustBeImplemented}}
 }
 
-func (config Config) MarketList(_ brokerages.MustImplementAsFunctionParameter) interface{} {
-	req := networkManager.Request{
-		Method:   networkManager.GET,
-		Endpoint: "https://api.coinex.com/v1/market/list/",
-	}
-
-	resp, err := req.Execute()
-	if err != nil {
-		return &brokerages.RecentTradesResponse{
-			BasicResponse: brokerages.BasicResponse{Error: err},
-		}
-	}
-	marketList := brokerages.MarketListResponse{}
-	if resp.Code == 200 {
-		respStr := struct {
-			Code    int      `json:"code"`
-			Markets []string `json:"data"`
-			Message string   `json:"message"`
-		}{}
-		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			marketList.Error = err
-		}
-		if respStr.Code == 0 {
-			marketList.Markets = make([]models.Market, len(respStr.Markets))
-			for i, market := range respStr.Markets {
-				marketList.Markets[i].Value = market
-			}
-		} else {
-			marketList.Error = errors.New("coinex response error: " + respStr.Message)
-		}
-	} else {
-		marketList.Error = errors.New(resp.Status)
-	}
-	return marketList
-}
-
-func (config Config) RecentTrades(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(brokerages.OrderBookParams)
-	req := networkManager.Request{
-		Method:   networkManager.GET,
-		Endpoint: "https://api.nobitex.ir/v2/trades/" + params.Symbol.Value,
-	}
-
-	resp, err := req.Execute()
-	if err != nil {
-		return &brokerages.RecentTradesResponse{
-			BasicResponse: brokerages.BasicResponse{Error: err},
-		}
-	}
-	if resp.Code == 200 {
-		respStr := struct {
-			Status string `json:"Status"`
-			Trades []struct {
-				Time   float64 `json:"time"`
-				Price  string  `json:"price"`
-				Volume string  `json:"volume"`
-				Type   string  `json:"type"`
-			} `json:"trades"`
-		}{}
-		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &brokerages.RecentTradesResponse{
-				BasicResponse: brokerages.BasicResponse{Error: err},
-			}
-		}
-		if respStr.Status == "ok" {
-			recentTrade := brokerages.RecentTradesResponse{
-				Symbol: params.Symbol.Value,
-				Trades: make([]todo.Trade, len(respStr.Trades)),
-			}
-			for i, trade := range respStr.Trades {
-				recentTrade.Trades[i].Time = trade.Time
-				recentTrade.Trades[i].Price, _ = strconv.ParseFloat(trade.Price, 64)
-				recentTrade.Trades[i].Volume, _ = strconv.ParseFloat(trade.Volume, 64)
-				recentTrade.Trades[i].Type = todo.OrderType(trade.Type)
-			}
-			return &recentTrade
-		} else {
-			return &brokerages.RecentTradesResponse{
-				BasicResponse: brokerages.BasicResponse{Error: errors.New("nobitex response error")},
-			}
-		}
-	} else {
-		return &brokerages.RecentTradesResponse{
-			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
-		}
-	}
-}
-
-func (config Config) MarketStats(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	return &brokerages.MarketStatusResponse{}
-}
-
-func (config Config) OHLC(input brokerages.MustImplementAsFunctionParameter) *brokerages.OHLCResponse {
-	params := input.(brokerages.OHLCParams)
+//market endpoints
+func (config Config) OHLC(params brokerages.OHLCParams) *brokerages.OHLCResponse {
 	req := networkManager.Request{
 		Method:   networkManager.GET,
 		Endpoint: "https://www.coinex.com/res/market/kline",
 		Params: map[string]interface{}{
-			"market":     params.Market.Value,
+			"market":     params.Market.Name,
 			"interval":   params.Resolution.Value,
 			"start_time": params.From,
 			"end_time":   params.To},
@@ -331,692 +138,1039 @@ func (config Config) OHLC(input brokerages.MustImplementAsFunctionParameter) *br
 	}
 }
 
-func (config Config) UserInfo(brokerages.MustImplementAsFunctionParameter) interface{} {
+func (config Config) MarketList() *brokerages.MarketListResponse {
 	req := networkManager.Request{
 		Method:   networkManager.GET,
-		Endpoint: "https://api.nobitex.ir/users/profile",
-		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", config.Token)}},
+		Endpoint: "https://api.coinex.com/v1/market/list/",
 	}
 
 	resp, err := req.Execute()
 	if err != nil {
-		return &brokerages.UserInfoResponse{
-			BasicResponse: brokerages.BasicResponse{
-				Error: err,
-			},
-		}
-	}
-	if resp.Code == 200 {
-		respStr := struct {
-			Status  string `json:"Status"`
-			Profile struct {
-				FirstName    string `json:"firstName"`
-				LastName     string `json:"lastName"`
-				NationalCode string `json:"nationalCode"`
-				Email        string `json:"email"`
-				Username     string `json:"username"`
-				Phone        string `json:"phone"`
-				Mobile       string `json:"mobile"`
-				City         string `json:"city"`
-				BankCards    []struct {
-					Number    string `json:"number"`
-					Bank      string `json:"bank"`
-					Owner     string `json:"owner"`
-					Confirmed bool   `json:"confirmed"`
-					Status    string `json:"Status"`
-				} `json:"bankCards"`
-				BankAccounts []struct {
-					Id        int    `json:"id"`
-					Number    string `json:"number"`
-					IBAN      string `json:"shaba"`
-					Bank      string `json:"bank"`
-					Owner     string `json:"owner"`
-					Confirmed bool   `json:"confirmed"`
-					Status    string `json:"Status"`
-				}
-				Verifications struct {
-					Email       bool `json:"email"`
-					Phone       bool `json:"phone"`
-					Mobile      bool `json:"mobile"`
-					Identity    bool `json:"identity"`
-					Selfie      bool `json:"selfie"`
-					BankAccount bool `json:"bankAccount"`
-					BankCard    bool `json:"bankCard"`
-					Address     bool `json:"address"`
-					City        bool `json:"city"`
-				} `json:"verifications"`
-				PendingVerifications struct {
-					Email       bool `json:"email"`
-					Phone       bool `json:"phone"`
-					Mobile      bool `json:"mobile"`
-					Identity    bool `json:"identity"`
-					Selfie      bool `json:"selfie"`
-					BankAccount bool `json:"bankAccount"`
-					BankCard    bool `json:"bankCard"`
-				} `json:"pendingVerifications"`
-				Options struct {
-					Fee               string `json:"fee"`
-					FeeUsdt           string `json:"feeUsdt"`
-					IsManualFee       bool   `json:"isManualFee"`
-					TFA               bool   `json:"tfa"`
-					SocialLoginEnable bool   `json:"socialLoginEnabled"`
-				} `json:"options"`
-				WithdrawEligible bool `json:"withdrawEligible"`
-			} `json:"profile"`
-			TradeStatus struct {
-				MonthTradesTotal string `json:"monthTradesTotal"`
-				MonthTradesCount int    `json:"monthTradesCount"`
-			} `json:"tradeStatus"`
-		}{}
-		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &brokerages.UserInfoResponse{
-				BasicResponse: brokerages.BasicResponse{
-					Error: err,
-				},
-			}
-		}
-		if respStr.Status == "ok" {
-			bankAccounts := make([]todo.BankAccount, len(respStr.Profile.BankAccounts))
-			for i, account := range respStr.Profile.BankAccounts {
-				bankAccounts[i].AccountNumber = account.Number
-				bankAccounts[i].OwnerName = account.Owner
-				bankAccounts[i].BankName = account.Bank
-				bankAccounts[i].Status = account.Status
-				bankAccounts[i].IBAN = account.IBAN
-			}
-			userInfo := brokerages.UserInfoResponse{
-				User: todo.User{
-					FirstName: respStr.Profile.FirstName,
-					LastName:  respStr.Profile.LastName,
-					Email:     respStr.Profile.Email,
-					Username:  respStr.Profile.Username,
-					Phone:     respStr.Profile.Phone,
-					Mobile:    respStr.Profile.Mobile,
-					City:      respStr.Profile.City,
-					IdCode:    respStr.Profile.NationalCode,
-				},
-				BankAccount: bankAccounts,
-			}
-			return &userInfo
-		} else {
-			return &brokerages.UserInfoResponse{
-				BasicResponse: brokerages.BasicResponse{
-					Error: errors.New("get user profile error"),
-				},
-			}
-		}
-	} else {
-		return &brokerages.UserInfoResponse{
-			BasicResponse: brokerages.BasicResponse{
-				Error: errors.New(resp.Status),
-			},
-		}
-	}
-}
-
-func (config Config) WalletList(brokerages.MustImplementAsFunctionParameter) interface{} {
-	req := networkManager.Request{
-		Method:   networkManager.POST,
-		Endpoint: "https://api.nobitex.ir/users/wallets/list",
-		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", config.Token)}},
-	}
-
-	resp, err := req.Execute()
-	if err != nil {
-		return &brokerages.WalletsResponse{
-			BasicResponse: brokerages.BasicResponse{
-				Error: err,
-			},
-		}
-	}
-	if resp.Code == 200 {
-		respStr := struct {
-			Status  string `json:"Status"`
-			Wallets []struct {
-				RialBalanceSell float64 `json:"rialBalanceSell"`
-				DepositAddress  string  `json:"depositAddress"`
-				BlockedBalance  string  `json:"blockedBalance"`
-				ActiveBalance   string  `json:"activeBalance"`
-				RialBalance     float64 `json:"rialBalance"`
-				Currency        string  `json:"Currency"`
-				Balance         string  `json:"balance"`
-				User            string  `json:"user"`
-				Id              int     `json:"id"`
-			} `json:"wallets"`
-		}{}
-		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &brokerages.WalletsResponse{
-				BasicResponse: brokerages.BasicResponse{
-					Error: err,
-				},
-			}
-		}
-		if respStr.Status == "ok" {
-			wallets := make([]todo.Wallet, len(respStr.Wallets))
-			for i, wallet := range respStr.Wallets {
-				wallets[i].ReferenceCurrencyBalance = wallet.RialBalance
-				wallets[i].BlockedBalance = wallet.BlockedBalance
-				wallets[i].ActiveBalance = wallet.ActiveBalance
-				wallets[i].TotalBalance = wallet.Balance
-				wallets[i].Currency = wallet.Currency
-				wallets[i].ID = wallet.Id
-			}
-
-			return &brokerages.WalletsResponse{Wallets: wallets}
-		} else {
-			return &brokerages.WalletsResponse{
-				BasicResponse: brokerages.BasicResponse{
-					Error: errors.New("get user profile error"),
-				},
-			}
-		}
-	} else {
-		return &brokerages.WalletsResponse{
-			BasicResponse: brokerages.BasicResponse{
-				Error: errors.New(resp.Status),
-			},
-		}
-	}
-}
-
-func (config Config) WalletInfo(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(brokerages.WalletInfoParams)
-	req := networkManager.Request{
-		Method:   networkManager.POST,
-		Endpoint: "https://api.nobitex.ir/v2/wallets",
-		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", config.Token)}},
-		Params:   map[string]interface{}{"currencies": params.WalletName},
-	}
-
-	resp, err := req.Execute()
-	if err != nil {
-		return &brokerages.WalletResponse{
-			BasicResponse: brokerages.BasicResponse{
-				Error: err,
-			},
-		}
-	}
-	if resp.Code == 200 {
-		respStr := struct {
-			Status  string `json:"Status"`
-			Wallets map[string]struct {
-				Id      int    `json:"id"`
-				Balance string `json:"balance"`
-				Blocked string `json:"blocked"`
-			}
-		}{}
-
-		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &brokerages.WalletResponse{
-				BasicResponse: brokerages.BasicResponse{
-					Error: err,
-				},
-			}
-		}
-		if respStr.Status == "ok" {
-			return &brokerages.WalletResponse{Wallet: todo.Wallet{
-				ID:             respStr.Wallets[strings.ToUpper(params.WalletName)].Id,
-				BlockedBalance: respStr.Wallets[strings.ToUpper(params.WalletName)].Blocked,
-				TotalBalance:   respStr.Wallets[strings.ToUpper(params.WalletName)].Balance,
-				Currency:       params.WalletName,
-			}}
-		} else {
-			return &brokerages.WalletResponse{
-				BasicResponse: brokerages.BasicResponse{
-					Error: errors.New("get user profile error"),
-				},
-			}
-		}
-	} else {
-		return &brokerages.WalletResponse{
-			BasicResponse: brokerages.BasicResponse{
-				Error: errors.New(resp.Status),
-			},
-		}
-	}
-}
-
-func (config Config) WalletBalance(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(brokerages.WalletBalanceParams)
-	req := networkManager.Request{
-		Method:   networkManager.POST,
-		Endpoint: "https://api.nobitex.ir/users/wallets/balance",
-		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", config.Token)}},
-		Params:   map[string]interface{}{"currency": params.Currency},
-	}
-
-	resp, err := req.Execute()
-	if err != nil {
-		return &brokerages.BalanceResponse{
+		return &brokerages.MarketListResponse{
 			BasicResponse: brokerages.BasicResponse{Error: err},
 		}
 	}
+	marketList := brokerages.MarketListResponse{}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status  string `json:"Status"`
-			Balance string `json:"balance"`
+			Code    int      `json:"code"`
+			Markets []string `json:"data"`
+			Message string   `json:"message"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &brokerages.BalanceResponse{
-				BasicResponse: brokerages.BasicResponse{Error: err},
-			}
+			marketList.Error = err
 		}
-		if respStr.Status == "ok" {
-			return &brokerages.BalanceResponse{
-				Symbol:  params.Currency,
-				Balance: respStr.Balance,
+		if respStr.Code == ResponseSuccess {
+			marketList.Markets = make([]models.Market, len(respStr.Markets))
+			for i, market := range respStr.Markets {
+				marketList.Markets[i].Name = market
 			}
 		} else {
-			return &brokerages.BalanceResponse{
-				BasicResponse: brokerages.BasicResponse{Error: errors.New("internal server error (wallet balance)")},
-			}
+			marketList.Error = errors.New("coinex response error: " + respStr.Message)
 		}
 	} else {
-		return &brokerages.BalanceResponse{
-			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
-		}
+		marketList.Error = errors.New(resp.Status)
 	}
+	return &marketList
 }
 
-func (config Config) TransactionList(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(brokerages.TransactionListParams)
+func (config Config) MarketInfo(params brokerages.MarketInfoParams) *brokerages.MarketInfoResponse {
 	req := networkManager.Request{
-		Method:   networkManager.POST,
-		Endpoint: "https://api.nobitex.ir/users/wallets/transactions/list",
-		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", config.Token)}},
-		Params:   map[string]interface{}{"wallet": params.WalletID},
+		Method:   networkManager.GET,
+		Endpoint: "https://api.coinex.com/v1/market/detail",
+		Params:   map[string]interface{}{"market": params.MarketName},
 	}
 
 	resp, err := req.Execute()
 	if err != nil {
-		return &brokerages.TransactionListResponse{
+		return &brokerages.MarketInfoResponse{
 			BasicResponse: brokerages.BasicResponse{Error: err},
 		}
 	}
+	marketInfo := brokerages.MarketInfoResponse{}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status       string `json:"Status"`
-			Transactions []struct {
-				Currency      string    `json:"Currency"`
-				CreatedAt     time.Time `json:"created_at"`
-				CalculatedFee string    `json:"calculatedFee"`
-				Id            uint      `json:"id"`
-				Amount        string    `json:"amount"`
-				Description   string    `json:"description"`
-			} `json:"transactions"`
+			Code           int    `json:"code"`
+			Message        string `json:"message"`
+			TackerFeeRate  string `json:"tacker_fee_rate"`
+			MakerFeeRate   string `json:"maker_fee_rate"`
+			MinAmount      string `json:"min_amount"`
+			TradingName    string `json:"trading_name"`
+			TradingDecimal int    `json:"trading_decimal"`
+			PricingName    string `json:"pricing_name"`
+			PricingDecimal int    `json:"pricing_decimal"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &brokerages.TransactionListResponse{
-				BasicResponse: brokerages.BasicResponse{Error: err},
-			}
+			marketInfo.Error = err
 		}
-		if respStr.Status == "ok" {
-			transactions := make([]todo.Transaction, len(respStr.Transactions))
-			for i, transaction := range respStr.Transactions {
-				transactions[i] = todo.Transaction{
-					Model: gorm.Model{
-						ID:        transaction.Id,
-						CreatedAt: transaction.CreatedAt,
-					},
-					Volume:        transaction.Amount,
-					Currency:      transaction.Currency,
-					Description:   transaction.Description,
-					CalculatedFee: transaction.CalculatedFee,
-				}
-			}
-			return &brokerages.TransactionListResponse{Transactions: transactions}
-		} else {
-			return &brokerages.TransactionListResponse{
-				BasicResponse: brokerages.BasicResponse{Error: errors.New("internal server error (wallet balance)")},
-			}
-		}
-	} else {
-		return &brokerages.TransactionListResponse{
-			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
-		}
-	}
-}
-
-func (config Config) NewOrder(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(brokerages.NewOrderParams)
-	body := make(map[string]interface{})
-	body["price"] = params.Order.Price
-	body["amount"] = params.Order.Volume
-	body["type"] = params.Order.OrderType
-	body["srcCurrency"] = params.Order.SourceCurrency
-	body["destCurrency"] = params.Order.DestinationCurrency
-	req := networkManager.Request{
-		Method:   networkManager.POST,
-		Endpoint: "https://api.nobitex.ir/market/orders/add",
-		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", config.Token)}},
-		Params:   body,
-	}
-
-	resp, err := req.Execute()
-	if err != nil {
-		return &brokerages.OrderResponse{
-			BasicResponse: brokerages.BasicResponse{Error: err},
-		}
-	}
-	if resp.Code == 200 {
-		respStr := struct {
-			Status string `json:"Status"`
-			Order  struct {
-				Id         uint      `json:"id"`
-				Fee        float64   `json:"fee"`
-				Src        string    `json:"srcCurrency"`
-				Dest       string    `json:"destCurrency"`
-				Type       string    `json:"type"`
-				User       string    `json:"user"`
-				Price      string    `json:"price"`
-				Amount     string    `json:"amount"`
-				Status     string    `json:"Status"`
-				Matched    string    `json:"matchedAmount"`
-				Unmatched  string    `json:"unmatchedAmount"`
-				CreatedAt  time.Time `json:"created_at"`
-				TotalPrice string    `json:"totalPrice"`
-			} `json:"transactions"`
-			Message string `json:"message"`
-		}{}
-		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &brokerages.OrderResponse{
-				BasicResponse: brokerages.BasicResponse{Error: err},
-			}
-		}
-		if respStr.Status == "ok" {
-			price, err := strconv.ParseFloat(respStr.Order.Price, 64)
+		if respStr.Code == ResponseSuccess {
+			marketInfo.Market.TakerFeeRate, err = strconv.ParseFloat(respStr.TackerFeeRate, 64)
 			if err != nil {
-				return &brokerages.OrderResponse{
-					BasicResponse: brokerages.BasicResponse{Error: err},
+				return &brokerages.MarketInfoResponse{
+					BasicResponse: brokerages.BasicResponse{
+						Error: err,
+					},
 				}
 			}
-			return &brokerages.OrderResponse{
-				Order: todo.Order{
-					Model: gorm.Model{
-						ID:        respStr.Order.Id,
-						CreatedAt: respStr.Order.CreatedAt,
-					},
-					Fee:                 respStr.Order.Fee,
-					User:                respStr.Order.User,
-					Price:               price,
-					Status:              todo.OrderStatus(respStr.Order.Status),
-					Volume:              respStr.Order.Amount,
-					OrderType:           todo.OrderType(respStr.Order.Type),
-					TotalPrice:          respStr.Order.TotalPrice,
-					MatchedVolume:       respStr.Order.Matched,
-					SourceCurrency:      respStr.Order.Src,
-					UnMatchedVolume:     respStr.Order.Unmatched,
-					DestinationCurrency: respStr.Order.Dest,
-				},
-			}
-		} else {
-			return &brokerages.OrderResponse{
-				BasicResponse: brokerages.BasicResponse{Error: errors.New(respStr.Message)},
-			}
-		}
-	} else {
-		return &brokerages.OrderResponse{
-			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
-		}
-	}
-}
-
-func (config Config) OrderStatus(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(brokerages.OrderStatusParams)
-	req := networkManager.Request{
-		Method:   networkManager.POST,
-		Endpoint: "https://api.nobitex.ir/market/orders/Status",
-		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", config.Token)}},
-		Params:   map[string]interface{}{"id": params.OrderId},
-	}
-
-	resp, err := req.Execute()
-	if err != nil {
-		return &brokerages.OrderResponse{
-			BasicResponse: brokerages.BasicResponse{Error: err},
-		}
-	}
-	if resp.Code == 200 {
-		respStr := struct {
-			Status string `json:"Status"`
-			Order  struct {
-				Id         uint      `json:"id"`
-				Fee        float64   `json:"fee"`
-				Src        string    `json:"srcCurrency"`
-				Dest       string    `json:"destCurrency"`
-				Type       string    `json:"type"`
-				User       string    `json:"user"`
-				Price      string    `json:"price"`
-				Amount     string    `json:"amount"`
-				Status     string    `json:"Status"`
-				Matched    string    `json:"matchedAmount"`
-				Unmatched  string    `json:"unmatchedAmount"`
-				CreatedAt  time.Time `json:"created_at"`
-				TotalPrice string    `json:"totalPrice"`
-			} `json:"transactions"`
-			Message string `json:"message"`
-		}{}
-		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &brokerages.OrderResponse{
-				BasicResponse: brokerages.BasicResponse{Error: err},
-			}
-		}
-		if respStr.Status == "ok" {
-			price, err := strconv.ParseFloat(respStr.Order.Price, 64)
+			marketInfo.Market.MakerFeeRate, err = strconv.ParseFloat(respStr.MakerFeeRate, 64)
 			if err != nil {
-				return &brokerages.OrderResponse{
-					BasicResponse: brokerages.BasicResponse{Error: err},
+				return &brokerages.MarketInfoResponse{
+					BasicResponse: brokerages.BasicResponse{
+						Error: err,
+					},
 				}
 			}
-			return &brokerages.OrderResponse{
-				Order: todo.Order{
-					Model: gorm.Model{
-						ID:        respStr.Order.Id,
-						CreatedAt: respStr.Order.CreatedAt,
+			marketInfo.Market.MinAmount, err = strconv.ParseFloat(respStr.MinAmount, 64)
+			if err != nil {
+				return &brokerages.MarketInfoResponse{
+					BasicResponse: brokerages.BasicResponse{
+						Error: err,
 					},
-					Fee:                 respStr.Order.Fee,
-					User:                respStr.Order.User,
-					Price:               price,
-					Status:              todo.OrderStatus(respStr.Order.Status),
-					Volume:              respStr.Order.Amount,
-					OrderType:           todo.OrderType(respStr.Order.Type),
-					TotalPrice:          respStr.Order.TotalPrice,
-					MatchedVolume:       respStr.Order.Matched,
-					SourceCurrency:      respStr.Order.Src,
-					UnMatchedVolume:     respStr.Order.Unmatched,
-					DestinationCurrency: respStr.Order.Dest,
-				},
+				}
 			}
+			marketInfo.Market.TradingName = respStr.TradingName
+			marketInfo.Market.TradingDecimal = respStr.TradingDecimal
+			marketInfo.Market.PricingName = respStr.PricingName
+			marketInfo.Market.PricingDecimal = respStr.PricingDecimal
 		} else {
-			return &brokerages.OrderResponse{
-				BasicResponse: brokerages.BasicResponse{Error: errors.New(respStr.Message)},
-			}
+			marketInfo.Error = errors.New("coinex response error: " + respStr.Message)
 		}
 	} else {
-		return &brokerages.OrderResponse{
-			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
-		}
+		marketInfo.Error = errors.New(resp.Status)
 	}
+	return &marketInfo
 }
 
-func (config Config) OrderList(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(brokerages.OrderListParams)
-	body := make(map[string]interface{})
-	if params.Status != "" {
-		body["status"] = params.Status
-	}
-	if params.Type != "" {
-		body["type"] = params.Type
-	}
-	if params.Source != "" {
-		body["srcCurrency"] = params.Source
-	} else {
-		return &brokerages.OrderListResponse{
-			BasicResponse: brokerages.BasicResponse{Error: errors.New("please specify Source Currency")},
-		}
-	}
-	if params.Destination != "" {
-		body["dstCurrency"] = params.Destination
-	} else {
-		return &brokerages.OrderListResponse{
-			BasicResponse: brokerages.BasicResponse{Error: errors.New("please specify Destination Currency")},
-		}
-	}
-	if params.WithDetails {
-		body["details"] = 2
-	} else {
-		body["details"] = 1
-	}
+//account endpoints
+func (config Config) WalletList() *brokerages.WalletListResponse {
 	req := networkManager.Request{
-		Method:   networkManager.POST,
-		Endpoint: "https://api.nobitex.ir/market/orders/Status",
-		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", config.Token)}},
-		Params:   map[string]interface{}{"id": body},
+		Method:   networkManager.GET,
+		Endpoint: "https://api.coinex.com/v1/balance/info",
+		Headers:  map[string][]string{"authorization": {config.AccessId}},
+		Params: map[string]interface{}{
+			"access_id": config.AccessId,
+			"tonce":     time.Now().UnixNano() / 1000,
+		},
 	}
 
 	resp, err := req.Execute()
 	if err != nil {
-		return &brokerages.OrderListResponse{
-			BasicResponse: brokerages.BasicResponse{Error: err},
+		return &brokerages.WalletListResponse{
+			BasicResponse: brokerages.BasicResponse{
+				Error: err,
+			},
 		}
 	}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status string `json:"Status"`
-			Orders []struct {
-				Id           uint      `json:"id"`
-				Fee          float64   `json:"fee"`
-				Src          string    `json:"srcCurrency"`
-				Dest         string    `json:"destCurrency"`
-				Type         string    `json:"type"`
-				User         string    `json:"user"`
-				Price        string    `json:"price"`
-				Amount       string    `json:"amount"`
-				Status       string    `json:"Status"`
-				Matched      string    `json:"matchedAmount"`
-				Unmatched    string    `json:"unmatchedAmount"`
-				CreatedAt    time.Time `json:"created_at"`
-				TotalPrice   string    `json:"totalPrice"`
-				AveragePrice string    `json:"averagePrice"`
-			} `json:"transactions"`
-			Message string `json:"message"`
+			Code int `json:"code"`
+			Data map[string]struct {
+				Available string `json:"available"`
+				Frozen    string `json:"frozen"`
+			} `json:"data"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &brokerages.OrderListResponse{
-				BasicResponse: brokerages.BasicResponse{Error: err},
+			return &brokerages.WalletListResponse{
+				BasicResponse: brokerages.BasicResponse{
+					Error: err,
+				},
 			}
 		}
-		if respStr.Status == "ok" {
-			orders := make([]todo.Order, len(respStr.Orders))
-			for i, order := range respStr.Orders {
-				price, err := strconv.ParseFloat(order.Price, 64)
+		if respStr.Code == ResponseSuccess {
+			var wallets []models.Wallet
+			for key, value := range respStr.Data {
+				wallet := models.Wallet{}
+				wallet.Currency = key
+				wallet.BlockedBalance, err = strconv.ParseFloat(value.Frozen, 64)
 				if err != nil {
 					continue
 				}
-				orders[i] = todo.Order{
-					Model: gorm.Model{
-						ID:        order.Id,
-						CreatedAt: order.CreatedAt,
-					},
-					Fee:                 order.Fee,
-					User:                order.User,
-					Price:               price,
-					Status:              todo.OrderStatus(order.Status),
-					Volume:              order.Amount,
-					OrderType:           todo.OrderType(order.Type),
-					TotalPrice:          order.TotalPrice,
-					MatchedVolume:       order.Matched,
-					SourceCurrency:      order.Src,
-					UnMatchedVolume:     order.Unmatched,
-					DestinationCurrency: order.Dest,
+				wallet.TotalBalance, err = strconv.ParseFloat(value.Available, 64)
+				if err != nil {
+					continue
 				}
+				wallet.ActiveBalance = wallet.TotalBalance - wallet.BlockedBalance
+				wallets = append(wallets, wallet)
 			}
-			return &brokerages.OrderListResponse{Orders: orders}
+
+			return &brokerages.WalletListResponse{Wallets: wallets}
 		} else {
-			return &brokerages.OrderListResponse{
-				BasicResponse: brokerages.BasicResponse{Error: errors.New(respStr.Message)},
+			return &brokerages.WalletListResponse{
+				BasicResponse: brokerages.BasicResponse{
+					Error: errors.New("get wallet list error"),
+				},
 			}
 		}
 	} else {
-		return &brokerages.OrderListResponse{
-			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
+		return &brokerages.WalletListResponse{
+			BasicResponse: brokerages.BasicResponse{
+				Error: errors.New(resp.Status),
+			},
 		}
 	}
 }
 
-func (config Config) UpdateOrderStatus(input brokerages.MustImplementAsFunctionParameter) interface{} {
-	params := input.(brokerages.UpdateOrderStatusParams)
-	body := make(map[string]interface{})
-	if params.OrderId < 0 {
-		body["Order"] = params.OrderId
-	} else {
-		return &brokerages.UpdateOrderStatusResponse{
-			BasicResponse: brokerages.BasicResponse{Error: errors.New("please specify Order id Currency")},
+//trading endpoints
+func (config Config) NewOrder(params brokerages.NewOrderParams) *brokerages.OrderResponse {
+	endpoint := ""
+	var queryParams map[string]interface{}
+	switch params.OrderKind {
+	case models.LimitOrderKind:
+		endpoint = "https://api.coinex.com/v1/order/limit"
+		queryParams = map[string]interface{}{
+			"access_id": config.AccessId,
+			"source_id": fmt.Sprintf("%d", rand.Int()),
+			"market":    params.Market.Name,
+			"amount":    fmt.Sprintf("%f", params.Amount),
+			"option":    params.Option,
+			"price":     fmt.Sprintf("%f", params.Price),
+			"tonce":     time.Now().UnixNano() / 1000,
+			"client_id": strings.ReplaceAll(params.ClientUUID.String(), "-", ""),
+			"type":      params.BuyOrSell,
+			"hide":      params.HideOrder,
 		}
-	}
-	if params.NewStatus != "" {
-		body["Status"] = params.NewStatus
-	} else {
-		return &brokerages.UpdateOrderStatusResponse{
-			BasicResponse: brokerages.BasicResponse{Error: errors.New("please specify new Status Currency")},
+	case models.MarketOrderKind:
+		endpoint = "https://api.coinex.com/v1/order/market"
+		queryParams = map[string]interface{}{
+			"access_id": config.AccessId,
+			"market":    params.Market.Name,
+			"type":      params.BuyOrSell,
+			"amount":    fmt.Sprintf("%f", params.Amount),
+			"tonce":     time.Now().UnixNano() / 1000,
+			"client_id": strings.ReplaceAll(params.ClientUUID.String(), "-", ""),
+			"source_id": fmt.Sprintf("%d", rand.Int()),
 		}
+	case models.StopLimitOrderKind:
+		endpoint = "https://api.coinex.com/v1/order/stop/limit"
+		queryParams = map[string]interface{}{
+			"access_id":  config.AccessId,
+			"market":     params.Market.Name,
+			"type":       params.BuyOrSell,
+			"amount":     fmt.Sprintf("%f", params.Amount),
+			"price":      fmt.Sprintf("%f", params.Price),
+			"stop_price": fmt.Sprintf("%f", params.StopPrice),
+			"source_id":  fmt.Sprintf("%d", rand.Int()),
+			"option":     params.Option,
+			"tonce":      time.Now().UnixNano() / 1000,
+			"client_id":  strings.ReplaceAll(params.ClientUUID.String(), "-", ""),
+			"hide":       params.HideOrder,
+		}
+	case models.IOCOrderKind:
+		endpoint = "https://api.coinex.com/v1/order/stop/limit"
+		queryParams = map[string]interface{}{
+			"access_id": config.AccessId,
+			"market":    params.Market.Name,
+			"type":      params.BuyOrSell,
+			"amount":    fmt.Sprintf("%f", params.Amount),
+			"price":     fmt.Sprintf("%f", params.Price),
+			"source_id": fmt.Sprintf("%d", rand.Int()),
+			"tonce":     time.Now().UnixNano() / 1000,
+			"client_id": strings.ReplaceAll(params.ClientUUID.String(), "-", ""),
+		}
+	case models.MultipleLimitOrderKind:
+		//todo: must be implemented
+		return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{Error: errors.New("multiple limit order not implemented yet")}}
+	default:
+		return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{Error: errors.New("invalid order kind")}}
 	}
 	req := networkManager.Request{
 		Method:   networkManager.POST,
-		Endpoint: "https://api.nobitex.ir/market/orders/update-Status",
-		Headers:  map[string][]string{"Authorization": {fmt.Sprintf("Token %s", config.Token)}},
-		Params:   body,
+		Endpoint: endpoint,
+		Headers:  map[string][]string{"authorization": {config.AccessId}},
+		Params:   queryParams,
 	}
 
 	resp, err := req.Execute()
 	if err != nil {
-		return &brokerages.UpdateOrderStatusResponse{
-			BasicResponse: brokerages.BasicResponse{Error: err},
-		}
+		return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{Error: err}}
 	}
 	if resp.Code == 200 {
 		respStr := struct {
-			Status        string           `json:"Status"`
-			Message       string           `json:"message"`
-			UpdatedStatus todo.OrderStatus `json:"updatedStatus"`
+			Code int `json:"code"`
+			Data struct {
+				Amount       string `json:"amount"`
+				AssetFee     string `json:"asset_fee"`
+				AvgPrice     string `json:"avg_price"`
+				CreateTime   int64  `json:"create_time"`
+				DealAmount   string `json:"deal_amount"`
+				DealFee      string `json:"deal_fee"`
+				DealMoney    string `json:"deal_money"`
+				FeeAsset     string `json:"fee_asset"`
+				FeeDiscount  string `json:"fee_discount"`
+				FinishedTime int64  `json:"finished_time"`
+				Id           int64  `json:"id"`
+				Left         string `json:"left"`
+				MakerFeeRate string `json:"maker_fee_rate"`
+				MoneyFee     string `json:"money_fee"`
+				Market       string `json:"market"`
+				OrderType    string `json:"order_type"`
+				Price        string `json:"price"`
+				Status       string `json:"status"`
+				StockFee     string `json:"stock_fee"`
+				TakerFeeRate string `json:"taker_fee_rate"`
+				Type         string `json:"type"`
+				ClientId     string `json:"client_id"`
+			} `json:"data"`
+			Message string `json:"message"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &brokerages.UpdateOrderStatusResponse{
-				BasicResponse: brokerages.BasicResponse{Error: err},
-			}
+			return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{Error: err}}
 		}
-		if respStr.Status == "ok" {
-			return &brokerages.UpdateOrderStatusResponse{NewStatus: respStr.UpdatedStatus}
+		if respStr.Code == ResponseSuccess {
+			order := models.Order{
+				ClientUUID:    respStr.Data.ClientId,
+				ServerOrderId: respStr.Data.Id,
+				CreatedAt:     time.Unix(respStr.Data.CreateTime, 0),
+				FinishedAt:    time.Unix(respStr.Data.FinishedTime, 0),
+				Status:        models.OrderStatus(respStr.Data.Status),
+				Market:        params.Market,
+				SellOrBuy:     models.OrderType(respStr.Data.Type),
+				OrderKind:     models.OrderKind(respStr.Data.OrderType),
+				FeeAsset:      models.Asset(respStr.Data.FeeAsset),
+			}
+			if respStr.Data.Amount != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.Amount, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("order amount parse failed")},
+					}
+				}
+				order.Amount = tmp
+			}
+
+			if respStr.Data.DealAmount != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.DealAmount, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("executed amount parse failed")},
+					}
+				}
+				order.ExecutedAmount = tmp
+			}
+
+			if respStr.Data.Left != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.Left, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("unexecuted amount parse failed")},
+					}
+				}
+				order.UnExecutedAmount = tmp
+			}
+
+			if respStr.Data.DealMoney != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.DealMoney, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("executed price parse failed")},
+					}
+				}
+				order.ExecutedPrice = tmp
+			}
+
+			if respStr.Data.MakerFeeRate != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.MakerFeeRate, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("maker fee rate parse failed")},
+					}
+				}
+				order.MakerFeeRate = tmp
+			}
+
+			if respStr.Data.TakerFeeRate != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.TakerFeeRate, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("taker fee rate parse failed")},
+					}
+				}
+				order.TakerFeeRate = tmp
+			}
+
+			if respStr.Data.AvgPrice != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.AvgPrice, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("average price parse failed")},
+					}
+				}
+				order.AveragePrice = tmp
+			}
+
+			if respStr.Data.AssetFee != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.AssetFee, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("transaction fee parse failed")},
+					}
+				}
+				order.TransactionFee = tmp
+			}
+
+			if respStr.Data.FeeDiscount != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.FeeDiscount, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("fee discount parse failed")},
+					}
+				}
+				order.FeeDiscount = tmp
+			}
+			if respStr.Data.AssetFee != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.AssetFee, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("asset fee parse failed")},
+					}
+				}
+				order.AssetFee = tmp
+			}
+
+			if respStr.Data.MoneyFee != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.MoneyFee, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("money fee parse failed")},
+					}
+				}
+				order.MoneyFee = tmp
+			}
+
+			if respStr.Data.StockFee != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.StockFee, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("stock fee parse failed")},
+					}
+				}
+				order.StockFee = tmp
+			}
+			return &brokerages.OrderResponse{Order: order}
 		} else {
-			return &brokerages.UpdateOrderStatusResponse{
-				BasicResponse: brokerages.BasicResponse{Error: errors.New(respStr.Message)},
+			return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+				Error: errors.New("get wallet list error")},
 			}
 		}
 	} else {
-		return &brokerages.UpdateOrderStatusResponse{
-			BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)},
-		}
+		return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)}}
 	}
 }
 
-func (config Config) SubscribePeriodicOHLC(periodic PeriodicOHLC, period time.Duration, endSignal chan bool) {
-	ticker := time.NewTicker(period)
-	go func() {
-		for {
-			select {
-			case <-endSignal:
-				return
-			case _ = <-ticker.C:
-				now := time.Now().Unix()
-				params := brokerages.OHLCParams{
-					Resolution: periodic.Resolution,
-					Market:     periodic.Market,
-					From:       now,
-					To:         now,
-				}
-				periodic.Response <- config.OHLC(params)
+func (config Config) CancelOrder(params brokerages.CancelOrderParams) *brokerages.OrderResponse {
+	var queryParams map[string]interface{}
+	queryParams = map[string]interface{}{
+		"access_id":  config.AccessId,
+		"account_id": 0,
+		"market":     params.Market.Name,
+		"tonce":      time.Now().UnixNano() / 1000,
+		"client_id":  strings.ReplaceAll(params.ClientUUID.String(), "-", ""),
+	}
+	if !params.AllOrders {
+		queryParams["id"] = params.ServerOrderId
+		queryParams["type"] = params.IsBuy
+	}
 
+	req := networkManager.Request{
+		Method:   networkManager.DELETE,
+		Endpoint: "https://api.coinex.com/v1/order/pending",
+		Headers:  map[string][]string{"authorization": {config.AccessId}},
+		Params:   queryParams,
+	}
+
+	resp, err := req.Execute()
+	if err != nil {
+		return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{Error: err}}
+	}
+	if resp.Code == 200 {
+		respStr := struct {
+			Code int `json:"code"`
+			Data struct {
+				Amount       string `json:"amount"`
+				AssetFee     string `json:"asset_fee"`
+				AvgPrice     string `json:"avg_price"`
+				CreateTime   int64  `json:"create_time"`
+				DealAmount   string `json:"deal_amount"`
+				DealFee      string `json:"deal_fee"`
+				DealMoney    string `json:"deal_money"`
+				FeeAsset     string `json:"fee_asset"`
+				FeeDiscount  string `json:"fee_discount"`
+				FinishedTime int64  `json:"finished_time"`
+				Id           int64  `json:"id"`
+				Left         string `json:"left"`
+				MakerFeeRate string `json:"maker_fee_rate"`
+				MoneyFee     string `json:"money_fee"`
+				Market       string `json:"market"`
+				OrderType    string `json:"order_type"`
+				Price        string `json:"price"`
+				Status       string `json:"status"`
+				StockFee     string `json:"stock_fee"`
+				TakerFeeRate string `json:"taker_fee_rate"`
+				Type         string `json:"type"`
+				ClientId     string `json:"client_id"`
+			} `json:"data"`
+			Message string `json:"message"`
+		}{}
+		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
+			return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{Error: err}}
+		}
+		if respStr.Code == ResponseSuccess {
+			order := models.Order{
+				ClientUUID:    respStr.Data.ClientId,
+				ServerOrderId: respStr.Data.Id,
+				CreatedAt:     time.Unix(respStr.Data.CreateTime, 0),
+				FinishedAt:    time.Unix(respStr.Data.FinishedTime, 0),
+				Status:        models.OrderStatus(respStr.Data.Status),
+				Market:        params.Market,
+				SellOrBuy:     models.OrderType(respStr.Data.Type),
+				OrderKind:     models.OrderKind(respStr.Data.OrderType),
+				FeeAsset:      models.Asset(respStr.Data.FeeAsset),
+			}
+			if respStr.Data.Amount != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.Amount, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("order amount parse failed")},
+					}
+				}
+				order.Amount = tmp
+			}
+
+			if respStr.Data.DealAmount != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.DealAmount, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("executed amount parse failed")},
+					}
+				}
+				order.ExecutedAmount = tmp
+			}
+
+			if respStr.Data.Left != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.Left, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("unexecuted amount parse failed")},
+					}
+				}
+				order.UnExecutedAmount = tmp
+			}
+
+			if respStr.Data.DealMoney != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.DealMoney, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("executed price parse failed")},
+					}
+				}
+				order.ExecutedPrice = tmp
+			}
+
+			if respStr.Data.MakerFeeRate != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.MakerFeeRate, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("maker fee rate parse failed")},
+					}
+				}
+				order.MakerFeeRate = tmp
+			}
+
+			if respStr.Data.TakerFeeRate != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.TakerFeeRate, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("taker fee rate parse failed")},
+					}
+				}
+				order.TakerFeeRate = tmp
+			}
+
+			if respStr.Data.AvgPrice != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.AvgPrice, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("average price parse failed")},
+					}
+				}
+				order.AveragePrice = tmp
+			}
+
+			if respStr.Data.AssetFee != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.AssetFee, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("transaction fee parse failed")},
+					}
+				}
+				order.TransactionFee = tmp
+			}
+
+			if respStr.Data.FeeDiscount != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.FeeDiscount, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("fee discount parse failed")},
+					}
+				}
+				order.FeeDiscount = tmp
+			}
+			if respStr.Data.AssetFee != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.AssetFee, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("asset fee parse failed")},
+					}
+				}
+				order.AssetFee = tmp
+			}
+
+			if respStr.Data.MoneyFee != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.MoneyFee, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("money fee parse failed")},
+					}
+				}
+				order.MoneyFee = tmp
+			}
+
+			if respStr.Data.StockFee != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.StockFee, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("stock fee parse failed")},
+					}
+				}
+				order.StockFee = tmp
+			}
+			return &brokerages.OrderResponse{Order: order}
+		} else {
+			return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+				Error: errors.New("get wallet list error")},
 			}
 		}
-	}()
+	} else {
+		return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)}}
+	}
+}
+
+func (config Config) OrderStatus(params brokerages.OrderStatusParams) *brokerages.OrderResponse {
+	req := networkManager.Request{
+		Method:   networkManager.GET,
+		Endpoint: "https://api.coinex.com/v1/order/status",
+		Headers:  map[string][]string{"authorization": {config.AccessId}},
+		Params: map[string]interface{}{
+			"access_id": config.AccessId,
+			"id":        params.ServerOrderId,
+			"market":    params.Market.Name,
+			"tonce":     time.Now().UnixNano() / 1000,
+			"client_id": strings.ReplaceAll(params.ClientUUID.String(), "-", ""),
+		},
+	}
+
+	resp, err := req.Execute()
+	if err != nil {
+		return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{Error: err}}
+	}
+	if resp.Code == 200 {
+		respStr := struct {
+			Code int `json:"code"`
+			Data struct {
+				Amount       string `json:"amount"`
+				AssetFee     string `json:"asset_fee"`
+				AvgPrice     string `json:"avg_price"`
+				CreateTime   int64  `json:"create_time"`
+				DealAmount   string `json:"deal_amount"`
+				DealFee      string `json:"deal_fee"`
+				DealMoney    string `json:"deal_money"`
+				FeeAsset     string `json:"fee_asset"`
+				FeeDiscount  string `json:"fee_discount"`
+				FinishedTime int64  `json:"finished_time"`
+				Id           int64  `json:"id"`
+				Left         string `json:"left"`
+				MakerFeeRate string `json:"maker_fee_rate"`
+				MoneyFee     string `json:"money_fee"`
+				Market       string `json:"market"`
+				OrderType    string `json:"order_type"`
+				Price        string `json:"price"`
+				Status       string `json:"status"`
+				StockFee     string `json:"stock_fee"`
+				TakerFeeRate string `json:"taker_fee_rate"`
+				Type         string `json:"type"`
+				ClientId     string `json:"client_id"`
+			} `json:"data"`
+			Message string `json:"message"`
+		}{}
+		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
+			return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{Error: err}}
+		}
+		if respStr.Code == ResponseSuccess {
+			order := models.Order{
+				ClientUUID:    respStr.Data.ClientId,
+				ServerOrderId: respStr.Data.Id,
+				CreatedAt:     time.Unix(respStr.Data.CreateTime, 0),
+				FinishedAt:    time.Unix(respStr.Data.FinishedTime, 0),
+				Status:        models.OrderStatus(respStr.Data.Status),
+				Market:        params.Market,
+				SellOrBuy:     models.OrderType(respStr.Data.Type),
+				OrderKind:     models.OrderKind(respStr.Data.OrderType),
+				FeeAsset:      models.Asset(respStr.Data.FeeAsset),
+			}
+			if respStr.Data.Amount != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.Amount, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("order amount parse failed")},
+					}
+				}
+				order.Amount = tmp
+			}
+
+			if respStr.Data.DealAmount != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.DealAmount, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("executed amount parse failed")},
+					}
+				}
+				order.ExecutedAmount = tmp
+			}
+
+			if respStr.Data.Left != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.Left, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("unexecuted amount parse failed")},
+					}
+				}
+				order.UnExecutedAmount = tmp
+			}
+
+			if respStr.Data.DealMoney != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.DealMoney, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("executed price parse failed")},
+					}
+				}
+				order.ExecutedPrice = tmp
+			}
+
+			if respStr.Data.MakerFeeRate != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.MakerFeeRate, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("maker fee rate parse failed")},
+					}
+				}
+				order.MakerFeeRate = tmp
+			}
+
+			if respStr.Data.TakerFeeRate != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.TakerFeeRate, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("taker fee rate parse failed")},
+					}
+				}
+				order.TakerFeeRate = tmp
+			}
+
+			if respStr.Data.AvgPrice != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.AvgPrice, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("average price parse failed")},
+					}
+				}
+				order.AveragePrice = tmp
+			}
+
+			if respStr.Data.AssetFee != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.AssetFee, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("transaction fee parse failed")},
+					}
+				}
+				order.TransactionFee = tmp
+			}
+
+			if respStr.Data.FeeDiscount != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.FeeDiscount, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("fee discount parse failed")},
+					}
+				}
+				order.FeeDiscount = tmp
+			}
+			if respStr.Data.AssetFee != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.AssetFee, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("asset fee parse failed")},
+					}
+				}
+				order.AssetFee = tmp
+			}
+
+			if respStr.Data.MoneyFee != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.MoneyFee, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("money fee parse failed")},
+					}
+				}
+				order.MoneyFee = tmp
+			}
+
+			if respStr.Data.StockFee != "" {
+				tmp, parseErr := strconv.ParseFloat(respStr.Data.StockFee, 64)
+				if parseErr != nil {
+					return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+						Error: errors.New("stock fee parse failed")},
+					}
+				}
+				order.StockFee = tmp
+			}
+			return &brokerages.OrderResponse{Order: order}
+		} else {
+			return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{
+				Error: errors.New("get wallet list error")},
+			}
+		}
+	} else {
+		return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)}}
+	}
+}
+
+func (config Config) OrderList(params brokerages.OrderListParams) *brokerages.OrderListResponse {
+	endpoint := ""
+	if params.IsExecuted {
+		endpoint = "https://api.coinex.com/v1/order/finished"
+	} else {
+		endpoint = "https://api.coinex.com/v1/order/pending"
+	}
+	req := networkManager.Request{
+		Method:   networkManager.GET,
+		Endpoint: endpoint,
+		Headers:  map[string][]string{"authorization": {config.AccessId}},
+		Params: map[string]interface{}{
+			"access_id":  config.AccessId,
+			"market":     params.Market.Name,
+			"type":       params.IsBuy,
+			"page":       params.Page,
+			"limit":      params.Limit,
+			"tonce":      time.Now().UnixNano() / 1000,
+			"account_id": 0,
+			"client_id":  strings.ReplaceAll(params.ClientUUID.String(), "-", ""),
+		},
+	}
+
+	resp, err := req.Execute()
+	if err != nil {
+		return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{Error: err}}
+	}
+	if resp.Code == 200 {
+		respStr := struct {
+			Code int `json:"code"`
+			Data []struct {
+				Amount       string `json:"amount"`
+				AssetFee     string `json:"asset_fee"`
+				AvgPrice     string `json:"avg_price"`
+				CreateTime   int64  `json:"create_time"`
+				DealAmount   string `json:"deal_amount"`
+				DealFee      string `json:"deal_fee"`
+				DealMoney    string `json:"deal_money"`
+				FeeAsset     string `json:"fee_asset"`
+				FeeDiscount  string `json:"fee_discount"`
+				FinishedTime int64  `json:"finished_time"`
+				Id           int64  `json:"id"`
+				Left         string `json:"left"`
+				MakerFeeRate string `json:"maker_fee_rate"`
+				MoneyFee     string `json:"money_fee"`
+				Market       string `json:"market"`
+				OrderType    string `json:"order_type"`
+				Price        string `json:"price"`
+				Status       string `json:"status"`
+				StockFee     string `json:"stock_fee"`
+				TakerFeeRate string `json:"taker_fee_rate"`
+				Type         string `json:"type"`
+				ClientId     string `json:"client_id"`
+			} `json:"data"`
+			Message string `json:"message"`
+		}{}
+		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
+			return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{Error: err}}
+		}
+		if respStr.Code == ResponseSuccess {
+			var orders []models.Order
+			for _, data := range respStr.Data {
+				order := models.Order{
+					ClientUUID:    data.ClientId,
+					ServerOrderId: data.Id,
+					CreatedAt:     time.Unix(data.CreateTime, 0),
+					FinishedAt:    time.Unix(data.FinishedTime, 0),
+					Status:        models.OrderStatus(data.Status),
+					Market:        params.Market,
+					SellOrBuy:     models.OrderType(data.Type),
+					OrderKind:     models.OrderKind(data.OrderType),
+					FeeAsset:      models.Asset(data.FeeAsset),
+				}
+				if data.Amount != "" {
+					tmp, parseErr := strconv.ParseFloat(data.Amount, 64)
+					if parseErr != nil {
+						return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{
+							Error: errors.New("order amount parse failed")},
+						}
+					}
+					order.Amount = tmp
+				}
+
+				if data.DealAmount != "" {
+					tmp, parseErr := strconv.ParseFloat(data.DealAmount, 64)
+					if parseErr != nil {
+						return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{
+							Error: errors.New("executed amount parse failed")},
+						}
+					}
+					order.ExecutedAmount = tmp
+				}
+
+				if data.Left != "" {
+					tmp, parseErr := strconv.ParseFloat(data.Left, 64)
+					if parseErr != nil {
+						return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{
+							Error: errors.New("unexecuted amount parse failed")},
+						}
+					}
+					order.UnExecutedAmount = tmp
+				}
+
+				if data.DealMoney != "" {
+					tmp, parseErr := strconv.ParseFloat(data.DealMoney, 64)
+					if parseErr != nil {
+						return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{
+							Error: errors.New("executed price parse failed")},
+						}
+					}
+					order.ExecutedPrice = tmp
+				}
+
+				if data.MakerFeeRate != "" {
+					tmp, parseErr := strconv.ParseFloat(data.MakerFeeRate, 64)
+					if parseErr != nil {
+						return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{
+							Error: errors.New("maker fee rate parse failed")},
+						}
+					}
+					order.MakerFeeRate = tmp
+				}
+
+				if data.TakerFeeRate != "" {
+					tmp, parseErr := strconv.ParseFloat(data.TakerFeeRate, 64)
+					if parseErr != nil {
+						return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{
+							Error: errors.New("taker fee rate parse failed")},
+						}
+					}
+					order.TakerFeeRate = tmp
+				}
+
+				if data.AvgPrice != "" {
+					tmp, parseErr := strconv.ParseFloat(data.AvgPrice, 64)
+					if parseErr != nil {
+						return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{
+							Error: errors.New("average price parse failed")},
+						}
+					}
+					order.AveragePrice = tmp
+				}
+
+				if data.AssetFee != "" {
+					tmp, parseErr := strconv.ParseFloat(data.AssetFee, 64)
+					if parseErr != nil {
+						return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{
+							Error: errors.New("transaction fee parse failed")},
+						}
+					}
+					order.TransactionFee = tmp
+				}
+
+				if data.FeeDiscount != "" {
+					tmp, parseErr := strconv.ParseFloat(data.FeeDiscount, 64)
+					if parseErr != nil {
+						return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{
+							Error: errors.New("fee discount parse failed")},
+						}
+					}
+					order.FeeDiscount = tmp
+				}
+				if data.AssetFee != "" {
+					tmp, parseErr := strconv.ParseFloat(data.AssetFee, 64)
+					if parseErr != nil {
+						return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{
+							Error: errors.New("asset fee parse failed")},
+						}
+					}
+					order.AssetFee = tmp
+				}
+
+				if data.MoneyFee != "" {
+					tmp, parseErr := strconv.ParseFloat(data.MoneyFee, 64)
+					if parseErr != nil {
+						return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{
+							Error: errors.New("money fee parse failed")},
+						}
+					}
+					order.MoneyFee = tmp
+				}
+
+				if data.StockFee != "" {
+					tmp, parseErr := strconv.ParseFloat(data.StockFee, 64)
+					if parseErr != nil {
+						return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{
+							Error: errors.New("stock fee parse failed")},
+						}
+					}
+					order.StockFee = tmp
+				}
+				orders = append(orders, order)
+			}
+			return &brokerages.OrderListResponse{Orders: orders}
+		} else {
+			return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{
+				Error: errors.New("get wallet list error")},
+			}
+		}
+	} else {
+		return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{Error: errors.New(resp.Status)}}
+	}
+}
+
+//todo: must be implement next methods
+func (config Config) RecentTrades(brokerages.OrderBookParams) *brokerages.RecentTradesResponse {
+	return &brokerages.RecentTradesResponse{BasicResponse: brokerages.BasicResponse{Error: ErrMustBeImplemented}}
+}
+
+func (config Config) UserInfo() *brokerages.UserInfoResponse {
+	return &brokerages.UserInfoResponse{BasicResponse: brokerages.BasicResponse{Error: ErrMustBeImplemented}}
+}
+
+func (config Config) WalletInfo(brokerages.WalletInfoParams) *brokerages.WalletResponse {
+	return &brokerages.WalletResponse{BasicResponse: brokerages.BasicResponse{Error: ErrMustBeImplemented}}
+}
+
+func (config Config) WalletBalance(brokerages.WalletBalanceParams) *brokerages.BalanceResponse {
+	return &brokerages.BalanceResponse{BasicResponse: brokerages.BasicResponse{Error: ErrMustBeImplemented}}
+}
+
+func (config Config) TransactionList(brokerages.TransactionListParams) *brokerages.TransactionListResponse {
+	return &brokerages.TransactionListResponse{BasicResponse: brokerages.BasicResponse{Error: ErrMustBeImplemented}}
+}
+
+func (config Config) UpdateOrderStatus(brokerages.UpdateOrderStatusParams) *brokerages.UpdateOrderStatusResponse {
+	return &brokerages.UpdateOrderStatusResponse{BasicResponse: brokerages.BasicResponse{Error: ErrMustBeImplemented}}
 }

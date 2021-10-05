@@ -37,12 +37,12 @@ func main() {
 	//nobitex.Config{}.OHLC(nobitex.OHLCParams{
 	//	Resolution:                       models.Resolution{
 	//		Label:          "hour",
-	//		Value:          "60",
+	//		Name:          "60",
 	//		Duration:       time.Hour,
 	//	},
 	//	Market:                           models.Market{
 	//		Id:             0,
-	//		Value:          "BTCIRT",
+	//		Name:          "BTCIRT",
 	//	},
 	//	From:                             time.Now().Add(time.Hour*(-4)).Unix(),
 	//	To:                               time.Now().Unix(),
@@ -59,12 +59,12 @@ func main() {
 		//},
 		//PivotResolution: map[models.Market]models.Resolution{
 		//	nobitex.BTCIRT: {
-		//		Value: "60",
+		//		Name: "60",
 		//	},
 		//},
 		//HelperResolution: map[models.Market]models.Resolution{
 		//	nobitex.BTCIRT: {
-		//		Value: "D",
+		//		Name: "D",
 		//	},
 		//},
 		//IndicatorConfig: indicators.Configuration{

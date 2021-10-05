@@ -1,35 +1,30 @@
 package brokerages
 
-import (
-	"time"
-)
-
 type BrokerageRequests interface {
 	Validate() error
-	//GetName() models.BrokerageName
-	OHLC(MustImplementAsFunctionParameter) *OHLCResponse
-	Login(MustImplementAsFunctionParameter) interface{}
-	NewOrder(MustImplementAsFunctionParameter) interface{}
-	UserInfo(MustImplementAsFunctionParameter) interface{}
-	OrderList(MustImplementAsFunctionParameter) interface{}
-	OrderBook(MustImplementAsFunctionParameter) interface{}
-	MarketList(MustImplementAsFunctionParameter) interface{}
-	WalletInfo(MustImplementAsFunctionParameter) interface{}
-	WalletList(MustImplementAsFunctionParameter) interface{}
-	OrderStatus(MustImplementAsFunctionParameter) interface{}
-	MarketStats(MustImplementAsFunctionParameter) interface{}
-	RecentTrades(MustImplementAsFunctionParameter) interface{}
-	WalletBalance(MustImplementAsFunctionParameter) interface{}
-	TransactionList(MustImplementAsFunctionParameter) interface{}
-	UpdateOrderStatus(MustImplementAsFunctionParameter) interface{}
-}
+	//market endpoints
+	OHLC(OHLCParams) *OHLCResponse
+	MarketList() *MarketListResponse                 //coinex
+	MarketInfo(MarketInfoParams) *MarketInfoResponse //coinex
+	//account endpoints
+	WalletList() *WalletListResponse
+	//trading endpoints
+	NewOrder(NewOrderParams) *OrderResponse
+	CancelOrder(CancelOrderParams) *OrderResponse
+	OrderStatus(OrderStatusParams) *OrderResponse
+	OrderList(OrderListParams) *OrderListResponse
 
-type ManagementFunctions interface {
-	SubscribePeriodicOHLC(period time.Duration, endSignal chan bool)
+	Login(LoginParams) *BasicResponse
+
+	UserInfo() *UserInfoResponse
+	WalletInfo(WalletInfoParams) *WalletResponse
+	OrderBook(OrderBookParams) *OrderBookResponse
+	WalletBalance(WalletBalanceParams) *BalanceResponse
+	RecentTrades(OrderBookParams) *RecentTradesResponse
+	TransactionList(TransactionListParams) *TransactionListResponse
+	UpdateOrderStatus(UpdateOrderStatusParams) *UpdateOrderStatusResponse
 }
 
 type BasicResponse struct {
 	Error error
 }
-
-type MustImplementAsFunctionParameter interface{}
