@@ -1,4 +1,4 @@
-package api
+package networkManager
 
 import (
 	"bytes"
@@ -14,10 +14,10 @@ import (
 type RequestType int
 
 type Request struct {
-	Type     RequestType
 	Endpoint string
 	Headers  map[string][]string
 	Params   map[string]interface{}
+	Method   RequestType
 }
 
 type Response struct {
@@ -36,7 +36,7 @@ const (
 )
 
 func (r *Request) Execute() (*Response, error) {
-	switch r.Type {
+	switch r.Method {
 	case GET:
 		return r.get()
 	case PUT:
@@ -52,13 +52,12 @@ func (r *Request) Execute() (*Response, error) {
 }
 
 func (r *Request) get() (*Response, error) {
-	params := "?"
+	params := ""
 	for key, value := range r.Params {
-		params += fmt.Sprintf("%s=%v", key, value)
+		params = fmt.Sprintf("%s%s=%v&", params, key, value)
 	}
-	endpoint := strings.TrimSuffix(r.Endpoint, "/")
-	endpoint += params
-	endpoint = strings.TrimSuffix(r.Endpoint, "?")
+	endpoint := fmt.Sprintf("%s?%s", strings.TrimSuffix(r.Endpoint, "/"), params)
+	endpoint = strings.TrimSuffix(endpoint, "&")
 
 	url, err := url2.Parse(endpoint)
 	if err != nil {

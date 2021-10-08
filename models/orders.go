@@ -1,28 +1,49 @@
 package models
 
 import (
-	"gorm.io/gorm"
+	"time"
 )
 
 type Order struct {
-	gorm.Model
-	Fee                 float64
-	Qty                 int
-	User                string
-	Price               float64
-	Status              OrderStatus
-	Volume              string
-	OrderType           OrderType
-	TotalPrice          string
-	AveragePrice        string
-	MatchedVolume       string
-	SourceCurrency      string
-	UnMatchedVolume     string
-	DestinationCurrency string
+	ClientUUID       string `gorm:"primarykey"`
+	ServerOrderId    int64
+	Amount           float64
+	CreatedAt        time.Time
+	FinishedAt       time.Time
+	ExecutedAmount   float64
+	UnExecutedAmount float64
+	Status           OrderStatus
+	ExecutedPrice    float64
+	Market           Market
+	MakerFeeRate     float64
+	TakerFeeRate     float64
+	SellOrBuy        OrderType
+	OrderKind        OrderKind
+	AveragePrice     float64
+	TransactionFee   float64
+	SourceAsset      Asset
+	DestinationAsset Asset
+	FeeAsset         Asset
+	FeeDiscount      float64
+	AssetFee         float64
+	MoneyFee         float64
+	StockFee         float64
+	User             string
+
+	//Fee                 float64
+	//Qty                 int
+	//User                string
+	//Price               float64
+	//TotalPrice          string
+	//MatchedVolume       string
+	//UnMatchedVolume     string
 }
 
 type OrderType string
+type OrderKind string
+type OrderOption string
 type OrderStatus string
+type Asset string
 
 const (
 	Ask  OrderType = "ask"
@@ -32,11 +53,24 @@ const (
 )
 
 const (
-	All      OrderStatus = "all"
-	New      OrderStatus = "new"
-	Open     OrderStatus = "open"
-	Done     OrderStatus = "done"
-	Close    OrderStatus = "Close"
-	Active   OrderStatus = "active"
-	Canceled OrderStatus = "canceled"
+	LimitOrderKind         OrderKind = "limit"
+	MarketOrderKind        OrderKind = "market"
+	MultipleLimitOrderKind OrderKind = "batch"
+	IOCOrderKind           OrderKind = "ioc"
+	StopLimitOrderKind     OrderKind = "stop-limit"
+	AllOrderKind           OrderKind = "all"
+)
+
+const (
+	New            OrderStatus = "new"
+	Done           OrderStatus = "done"
+	PartlyExecuted OrderStatus = "part_deal"
+	UnExecuted     OrderStatus = "not_deal"
+)
+
+const (
+	OptionIOC       OrderOption = "IOC"
+	OptionFOK       OrderOption = "FOK"
+	OptionNormal    OrderOption = "NORMAL"
+	OptionMakerOnly OrderOption = "MAKER_ONLY"
 )

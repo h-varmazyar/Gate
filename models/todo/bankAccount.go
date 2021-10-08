@@ -1,4 +1,4 @@
-package models
+package todo
 
 type BankAccount struct {
 	AccountNumber string

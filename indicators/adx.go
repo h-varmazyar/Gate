@@ -3,91 +3,93 @@ package indicators
 import (
 	"errors"
 	"fmt"
+	"github.com/mrNobody95/Gate/models"
 	"math"
 )
 
-func (conf *IndicatorConfig) CalculateADX() error {
-	rangeCounter := conf.Length
-	dmCounter := 1
-	adxCounter := (conf.Length * 2) - 1
-	if err := conf.validateADX(); err != nil {
+func (conf *Configuration) CalculateADX(candles []models.Candle) error {
+	if err := conf.validateADX(len(candles)); err != nil {
 		return err
 	}
-	for i, candle := range conf.Candles[dmCounter:] {
-		candle.ADX.DmPositive = candle.High - conf.Candles[dmCounter-i-1].High
-		candle.ADX.DmNegative = conf.Candles[dmCounter-i-1].Low - candle.Low
-		if candle.ADX.DmPositive > candle.ADX.DmNegative {
-			candle.ADX.DmNegative = 0
-		} else {
-			candle.ADX.DmPositive = 0
+	for i := 1; i < len(candles); i++ {
+		upMove := candles[i].High - candles[i-1].High
+		downMove := candles[i-1].Low - candles[i].Low
+		if upMove > downMove && upMove > 0 {
+			candles[i].DmPositive = upMove
+			candles[i].DmNegative = 0
+		} else if downMove > 0 {
+			candles[i].DmNegative = downMove
+			candles[i].DmPositive = 0
 		}
-		candle.ADX.TR = math.Max(candle.High-candle.Low, math.Max(candle.High-conf.Candles[dmCounter-i-1].Close, conf.Candles[dmCounter-i-1].Close-candle.Low))
+		method1 := candles[i].High - candles[i].Low
+		method2 := math.Abs(candles[i].High - candles[i-1].Close)
+		method3 := math.Abs(candles[i-1].Close - candles[i].Low)
+		candles[i].ADX.TR = math.Max(method1, math.Max(method2, method3))
 	}
-	for i, candle := range conf.Candles[rangeCounter:] {
-		smoothedDmPositive := float64(0)
-		smoothedDmNegative := float64(0)
-		smoothedTR := float64(0)
-		for _, innerCandle := range conf.Candles[rangeCounter+i+1-conf.Length : rangeCounter+i+1] {
-			smoothedDmPositive += innerCandle.ADX.DmPositive
-			smoothedDmNegative += innerCandle.ADX.DmNegative
-			smoothedTR += innerCandle.ADX.TR
-		}
-		smoothedDmPositive = smoothedDmPositive - (smoothedDmPositive / float64(conf.Length)) + candle.ADX.DmPositive
-		smoothedDmNegative = smoothedDmNegative - (smoothedDmNegative / float64(conf.Length)) + candle.ADX.DmNegative
-		smoothedTR = smoothedTR - (smoothedTR / float64(conf.Length)) + candle.ADX.TR
-		candle.ADX.DIPositive = 100 * smoothedDmPositive / smoothedTR
-		candle.ADX.DINegative = 100 * smoothedDmNegative / smoothedTR
-		candle.ADX.DX = 100 * math.Abs(candle.ADX.DIPositive-candle.ADX.DINegative) / (candle.ADX.DIPositive + candle.ADX.DINegative)
+	sumTR := float64(0)
+	sumDP := float64(0)
+	sumDN := float64(0)
+	for i := 0; i < conf.AdxAtrLength; i++ {
+		sumTR += candles[i].ADX.TR
+		sumDP += candles[i].DmPositive
+		sumDN += candles[i].DmNegative
 	}
-	sum := float64(0)
-	for _, candle := range conf.Candles[rangeCounter:adxCounter] {
-		sum += candle.ADX.DX
+	candles[conf.AdxAtrLength-1].ADX.TR = sumTR
+	candles[conf.AdxAtrLength-1].ADX.DmPositive = sumDP
+	candles[conf.AdxAtrLength-1].ADX.DmNegative = sumDN
+	candles[conf.AdxAtrLength-1].ADX.DIPositive = 100 * sumDP / sumTR
+	candles[conf.AdxAtrLength-1].ADX.DINegative = 100 * sumDN / sumTR
+	candles[conf.AdxAtrLength-1].ADX.DX =
+		100 * math.Abs(candles[conf.AdxAtrLength-1].ADX.DIPositive-candles[conf.AdxAtrLength-1].ADX.DINegative) /
+			(candles[conf.AdxAtrLength-1].ADX.DIPositive + candles[conf.AdxAtrLength-1].ADX.DINegative)
+	for i := conf.AdxAtrLength; i < len(candles); i++ {
+		candles[i].ADX.TR = (float64(conf.AdxAtrLength-1)/float64(conf.AdxAtrLength))*candles[i-1].ADX.TR + candles[i].ADX.TR
+		candles[i].DmPositive = (float64(conf.AdxAtrLength-1)/float64(conf.AdxAtrLength))*candles[i-1].DmPositive + candles[i].DmPositive
+		candles[i].DmNegative = (float64(conf.AdxAtrLength-1)/float64(conf.AdxAtrLength))*candles[i-1].DmNegative + candles[i].DmNegative
+		candles[i].ADX.DIPositive = 100 * candles[i].DmPositive / candles[i].ADX.TR
+		candles[i].ADX.DINegative = 100 * candles[i].DmNegative / candles[i].ADX.TR
+		candles[i].ADX.DX = 100 * math.Abs(candles[i].ADX.DIPositive-candles[i].ADX.DINegative) /
+			(candles[i].ADX.DIPositive + candles[i].ADX.DINegative)
 	}
-	conf.Candles[adxCounter-1].ADX.ADX = sum / float64(adxCounter-rangeCounter)
-
-	for i, candle := range conf.Candles[adxCounter:] {
-		candle.ADX.ADX = (float64(conf.Length-1)*conf.Candles[adxCounter-i-1].ADX.ADX + candle.ADX.DX) / float64(conf.Length)
+	sumDX := float64(0)
+	for i := conf.AdxAtrLength; i < 2*conf.AdxAtrLength; i++ {
+		sumDX += candles[i].ADX.DX
+	}
+	candles[2*conf.AdxAtrLength-1].ADX.ADX = sumDX / float64(conf.AdxAtrLength)
+	for i := 2 * conf.AdxAtrLength; i < len(candles); i++ {
+		candles[i].ADX.ADX = (candles[i-1].ADX.ADX*float64(conf.AdxAtrLength-1) + candles[i].DX) / float64(conf.AdxAtrLength)
 	}
 	return nil
 }
 
-func (conf *IndicatorConfig) UpdateADX() {
-	lastIndex := len(conf.Candles) - 1
-	length := float64(conf.Length)
-	lastCandle := conf.Candles[lastIndex]
-	preLastCandle := conf.Candles[lastIndex-1]
-
-	lastCandle.ADX.DmPositive = lastCandle.High - preLastCandle.High
-	lastCandle.ADX.DmNegative = preLastCandle.Low - lastCandle.Low
-	if lastCandle.ADX.DmPositive > lastCandle.ADX.DmNegative {
-		lastCandle.ADX.DmNegative = 0
+func (conf *Configuration) UpdateADX(candles []models.Candle) {
+	i := len(candles) - 1
+	upMove := candles[i].High - candles[i-1].High
+	downMove := candles[i-1].Low - candles[i].Low
+	if upMove > downMove && upMove > 0 {
+		candles[i].DmPositive = upMove
 	} else {
-		lastCandle.ADX.DmPositive = 0
+		candles[i].DmPositive = 0
 	}
-	lastCandle.ADX.TR = math.Max(lastCandle.High-lastCandle.Low,
-		math.Max(lastCandle.High-preLastCandle.Close, preLastCandle.Close-lastCandle.Low))
-
-	smoothedDmPositive := ((preLastCandle.ADX.DmPositive * (length - 1)) + lastCandle.ADX.DmPositive) / length
-	smoothedDmNegative := ((preLastCandle.ADX.DmNegative * (length - 1)) + lastCandle.ADX.DmNegative) / length
-	smoothedTR := ((preLastCandle.ADX.TR * (length - 1)) + lastCandle.ADX.TR) / length
-	smoothedDmPositive = smoothedDmPositive - (smoothedDmPositive / length) + lastCandle.ADX.DmPositive
-	smoothedDmNegative = smoothedDmNegative - (smoothedDmNegative / length) + lastCandle.ADX.DmNegative
-	smoothedTR = smoothedTR - (smoothedTR / length) + lastCandle.ADX.TR
-
-	lastCandle.ADX.DIPositive = 100 * smoothedDmPositive / smoothedTR
-	lastCandle.ADX.DINegative = 100 * smoothedDmNegative / smoothedTR
-	lastCandle.ADX.DX = 100 * math.Abs(lastCandle.ADX.DIPositive-lastCandle.ADX.DINegative) / (lastCandle.ADX.DIPositive + lastCandle.ADX.DINegative)
-
-	lastCandle.ADX.ADX = ((length-1)*preLastCandle.ADX.ADX + lastCandle.ADX.DX) / length
-
-	indicatorLock.Lock()
-	conf.Candles[lastIndex] = lastCandle
-	indicatorLock.Unlock()
+	if downMove > upMove && downMove > 0 {
+		candles[i].DmNegative = downMove
+	} else {
+		candles[i].DmNegative = 0
+	}
+	conf.UpdateATR(candles)
+	sumTR := float64((conf.AdxAtrLength-1)/conf.AdxAtrLength)*candles[i-1].ADX.TR + candles[i].ADX.TR
+	sumDP := float64((conf.AdxAtrLength-1)/conf.AdxAtrLength)*candles[i-1].DmNegative + candles[i].DmPositive
+	sumDN := float64((conf.AdxAtrLength-1)/conf.AdxAtrLength)*candles[i-1].DmNegative + candles[i].DmNegative
+	candles[i].ADX.DIPositive = 100 * sumDP / sumTR
+	candles[i].ADX.DINegative = 100 * sumDN / sumTR
+	candles[i].ADX.DX = 100 * math.Abs(candles[i].ADX.DIPositive-candles[i].ADX.DINegative) /
+		(candles[i].ADX.DIPositive + candles[i].ADX.DINegative)
+	candles[i].ADX.ADX = float64((conf.AdxAtrLength-1)/conf.AdxAtrLength)*candles[i-1].ADX.ADX + candles[i].DX
 }
 
-func (conf *IndicatorConfig) validateADX() error {
-	if len(conf.Candles) < conf.Length*2 {
-		return errors.New(fmt.Sprintf("candles length must be bigger or equal than %d", conf.Length*2))
+func (conf *Configuration) validateADX(length int) error {
+	if length < conf.AdxAtrLength*2 {
+		return errors.New(fmt.Sprintf("candles length must be bigger or equal than %d", conf.AdxAtrLength*2))
 	}
 	return nil
 }

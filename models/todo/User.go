@@ -1,4 +1,4 @@
-package models
+package todo
 
 type User struct {
 	FirstName string
