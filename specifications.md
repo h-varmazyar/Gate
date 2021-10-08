@@ -39,4 +39,4 @@ an [issue](https://github.com/mrNobody95/Gate/issues/new) if your desired featur
     - Calculating EMA and SMA indicators
     - Check MACD indicator
     - Implement [coinex](https://github.com/coinexcom/coinex_exchange_api) API endpoints
-    
+  
