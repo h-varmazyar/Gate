@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/fatih/color v1.7.0
+	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/gosuri/uilive v0.0.4
 	github.com/jinzhu/copier v0.3.2
 	github.com/joho/godotenv v1.3.0

@@ -1,9 +1,14 @@
 package models
 
-import "time"
+import (
+	"gorm.io/gorm"
+	"strings"
+	"time"
+)
 
 type Market struct {
-	Id              uint16
+	gorm.Model
+	Id              uint16    `gorm:"primarykey"`
 	Name            string    `gorm:"size:50"`
 	Brokerage       Brokerage `gorm:"foreignKey:BrokerageRefer;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	StartTime       time.Time
@@ -22,11 +27,11 @@ type Market struct {
 }
 
 func (market *Market) CreateOrLoad() error {
-	err := db.Model(&Market{}).
+	err := db.
 		Where("brokerage_refer = ?", market.BrokerageRefer).
-		Where("name LIKE ?", market.Name).
+		Where("name LIKE ?", strings.TrimSpace(market.Name)).
 		First(&market).Error
-	if err != nil && err.Error() == "record not found" {
+	if err != nil && err == gorm.ErrRecordNotFound {
 		return db.Model(&Market{}).Create(&market).Error
 	}
 	return err

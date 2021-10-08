@@ -17,8 +17,8 @@ type Candle struct {
 	Open            float64
 	High            float64
 	Close           float64
-	Market          Market     `gorm:"foreignKey:MarketRefer;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	Resolution      Resolution `gorm:"foreignKey:ResolutionRefer;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Market          *Market     `gorm:"foreignKey:MarketRefer;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Resolution      *Resolution `gorm:"foreignKey:ResolutionRefer;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	MarketRefer     uint16
 	ResolutionRefer uint
 	Indicators      `gorm:"-"`
@@ -32,14 +32,14 @@ func (c *Candle) LoadLast() error {
 		Last(&c).Error
 }
 
-func (c *Candle) LoadList() ([]Candle, error) {
+func LoadCandleList(marketId uint16, resolutionId uint, time int64) ([]Candle, error) {
 	var candles []Candle
 	return candles, db.Model(&Candle{}).
-		Where("market_refer = ?", c.Market.Id).
-		Where("resolution_refer = ?", c.Resolution.Id).
-		Where("time >= ?", c.Time).
+		Where("market_refer = ?", marketId).
+		Where("resolution_refer = ?", resolutionId).
+		Where("time > ?", time).
 		Order("time ASC").
-		Limit(500).Find(&c).Error
+		Limit(500).Find(&candles).Error
 }
 
 func (c *Candle) Load() error {
@@ -49,12 +49,12 @@ func (c *Candle) Load() error {
 }
 
 func (c *Candle) CreateOrUpdate() error {
-	found := Candle{}
+	found := new(Candle)
 	err := db.Model(&Candle{}).
 		Where("market_refer = ?", c.Market.Id).
 		Where("resolution_refer = ?", c.Resolution.Id).
 		Where("time = ?", c.Time).
-		First(&found).Error
+		First(found).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return db.Model(&Candle{}).Create(&c).Error

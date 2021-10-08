@@ -2,13 +2,12 @@ package indicators
 
 import (
 	"github.com/mrNobody95/Gate/models"
-	"sync"
 )
 
 type Source string
 
 type Configuration struct {
-	Candles []models.Candle `copier:"-"`
+	//Candles []models.Candle `copier:"-"`
 	//moving average
 	MovingAverageSource Source `yaml:"MovingAverageSource"`
 	MovingAverageLength int    `yaml:"MovingAverageLength"`
@@ -47,7 +46,7 @@ const (
 	SourceHL2    Source = "hl2"
 )
 
-var indicatorLock sync.Mutex
+//var indicatorLock sync.Mutex
 
 func DefaultConfig() *Configuration {
 	return &Configuration{}

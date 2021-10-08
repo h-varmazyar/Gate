@@ -19,8 +19,11 @@ func main() {
 	signal.Notify(exit, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		core.Stop()
-		done <- true
+		select {
+		case <-exit:
+			core.Stop()
+			done <- true
+		}
 	}()
 	core.StartNewNode("coinex", "")
 

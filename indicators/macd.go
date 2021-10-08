@@ -3,59 +3,56 @@ package indicators
 import (
 	"errors"
 	"fmt"
+	"github.com/mrNobody95/Gate/models"
 )
 
-func (conf *Configuration) CalculateMACD() error {
-	if err := conf.validateMACD(); err != nil {
+func (conf *Configuration) CalculateMACD(candles []models.Candle) error {
+	if err := conf.validateMACD(len(candles)); err != nil {
 		return err
 	}
 	slowEMA := Configuration{
 		MovingAverageSource: conf.MacdSource,
 		MovingAverageLength: conf.MacdSlowLength,
 		MacdSlowLength:      conf.MacdSlowLength,
-		Candles:             cloneCandles(conf.Candles),
 	}
+	slowCandles := cloneCandles(candles)
 	fastEMA := Configuration{
 		MovingAverageSource: conf.MacdSource,
 		MovingAverageLength: conf.MacdFastLength,
 		MacdFastLength:      conf.MacdFastLength,
-		Candles:             cloneCandles(conf.Candles),
 	}
+	fastCandles := cloneCandles(candles)
 	signalEMA := Configuration{
 		MovingAverageSource: SourceClose,
 		MovingAverageLength: conf.MacdSignalLength,
 		MacdSignalLength:    conf.MacdSignalLength,
-		Candles:             cloneCandles(conf.Candles),
 		From:                conf.MacdSlowLength - 1,
 	}
-	if err := slowEMA.CalculateEMA(); err != nil {
+	signalCandles := cloneCandles(candles)
+	if err := slowEMA.CalculateEMA(slowCandles); err != nil {
 		return err
 	}
-	if err := fastEMA.CalculateEMA(); err != nil {
+	if err := fastEMA.CalculateEMA(fastCandles); err != nil {
 		return err
 	}
 
-	indicatorLock.Lock()
-	for i := conf.MacdSlowLength - 1; i < len(conf.Candles); i++ {
-		conf.Candles[i].MACD.FastEMA = fastEMA.Candles[i].Exponential
-		conf.Candles[i].MACD.SlowEMA = slowEMA.Candles[i].Exponential
-		conf.Candles[i].MACD.MACD = fastEMA.Candles[i].Exponential - slowEMA.Candles[i].Exponential
-		signalEMA.Candles[i].Close = conf.Candles[i].MACD.MACD
+	for i := conf.MacdSlowLength - 1; i < len(candles); i++ {
+		candles[i].MACD.FastEMA = fastCandles[i].Exponential
+		candles[i].MACD.SlowEMA = slowCandles[i].Exponential
+		candles[i].MACD.MACD = fastCandles[i].Exponential - slowCandles[i].Exponential
+		signalCandles[i].Close = candles[i].MACD.MACD
 	}
-	indicatorLock.Unlock()
-	if err := signalEMA.CalculateEMA(); err != nil {
+	if err := signalEMA.CalculateEMA(signalCandles); err != nil {
 		return err
 	}
-	indicatorLock.Lock()
-	for i := conf.MacdSlowLength + conf.MacdSignalLength - 2; i < len(conf.Candles); i++ {
-		conf.Candles[i].MACD.Signal = signalEMA.Candles[i].Exponential
+	for i := conf.MacdSlowLength + conf.MacdSignalLength - 2; i < len(candles); i++ {
+		candles[i].MACD.Signal = signalCandles[i].Exponential
 	}
-	indicatorLock.Unlock()
 	return nil
 }
 
-func (conf *Configuration) UpdateMACD() error {
-	lastIndex := len(conf.Candles) - 1
+func (conf *Configuration) UpdateMACD(candles []models.Candle) {
+	lastIndex := len(candles) - 1
 
 	price := float64(0)
 	fastFactor := 2 / float64(conf.MacdFastLength+1)
@@ -63,35 +60,32 @@ func (conf *Configuration) UpdateMACD() error {
 	signalFactor := 2 / float64(conf.MacdSignalLength+1)
 	switch conf.MovingAverageSource {
 	case SourceClose:
-		price = conf.Candles[lastIndex].Close
+		price = candles[lastIndex].Close
 	case SourceOpen:
-		price = conf.Candles[lastIndex].Open
+		price = candles[lastIndex].Open
 	case SourceHigh:
-		price = conf.Candles[lastIndex].High
+		price = candles[lastIndex].High
 	case SourceLow:
-		price = conf.Candles[lastIndex].Low
+		price = candles[lastIndex].Low
 	case SourceHL2:
-		price = (conf.Candles[lastIndex].High + conf.Candles[lastIndex].Low) / 2
+		price = (candles[lastIndex].High + candles[lastIndex].Low) / 2
 	case SourceHLC3:
-		price = (conf.Candles[lastIndex].High + conf.Candles[lastIndex].Low + conf.Candles[lastIndex].Close) / 3
+		price = (candles[lastIndex].High + candles[lastIndex].Low + candles[lastIndex].Close) / 3
 	case SourceOHLC4:
-		price = (conf.Candles[lastIndex].Open + conf.Candles[lastIndex].Close + conf.Candles[lastIndex].High + conf.Candles[lastIndex].Low) / 4
+		price = (candles[lastIndex].Open + candles[lastIndex].Close + candles[lastIndex].High + candles[lastIndex].Low) / 4
 	}
 
-	indicatorLock.Lock()
-	conf.Candles[lastIndex].FastEMA = price*fastFactor + conf.Candles[lastIndex-1].FastEMA*(1-fastFactor)
-	conf.Candles[lastIndex].SlowEMA = price*slowFactor + conf.Candles[lastIndex-1].SlowEMA*(1-slowFactor)
-	conf.Candles[lastIndex].MACD.MACD = conf.Candles[lastIndex].FastEMA - conf.Candles[lastIndex].SlowEMA
-	conf.Candles[lastIndex].Signal = conf.Candles[lastIndex].MACD.MACD*signalFactor + conf.Candles[lastIndex-1].Signal*(1-signalFactor)
-	indicatorLock.Unlock()
-	return nil
+	candles[lastIndex].FastEMA = price*fastFactor + candles[lastIndex-1].FastEMA*(1-fastFactor)
+	candles[lastIndex].SlowEMA = price*slowFactor + candles[lastIndex-1].SlowEMA*(1-slowFactor)
+	candles[lastIndex].MACD.MACD = candles[lastIndex].FastEMA - candles[lastIndex].SlowEMA
+	candles[lastIndex].Signal = candles[lastIndex].MACD.MACD*signalFactor + candles[lastIndex-1].Signal*(1-signalFactor)
 }
 
-func (conf *Configuration) validateMACD() error {
+func (conf *Configuration) validateMACD(length int) error {
 	if conf.MacdSlowLength < conf.MacdFastLength {
 		return errors.New("slow length must be bigger than fast length")
 	}
-	if len(conf.Candles) < conf.MacdSlowLength {
+	if length < conf.MacdSlowLength {
 		return errors.New(fmt.Sprintf("candles length must be grater or equal than %d", conf.MacdSlowLength))
 	}
 	if conf.MacdSource == "" {

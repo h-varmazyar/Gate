@@ -5,88 +5,112 @@ import (
 	"github.com/mrNobody95/Gate/brokerages"
 	"github.com/mrNobody95/Gate/indicators"
 	"github.com/mrNobody95/Gate/models"
+	"github.com/mrNobody95/Gate/storage"
 	log "github.com/sirupsen/logrus"
-	"sync"
+	"gorm.io/gorm"
 	"time"
 )
 
 type MarketThread struct {
 	*Node
-	Market                       models.Market
-	StartFrom                    time.Time
-	IndicatorConfigPerResolution map[uint]*indicators.Configuration
+	Market          *models.Market
+	StartFrom       time.Time
+	Resolution      *models.Resolution
+	IndicatorConfig *indicators.Configuration
+	CandlePool      *storage.CandlePool
 }
 
-func (thread *MarketThread) CollectPrimaryData() {
+func (thread *MarketThread) CollectPrimaryData() error {
 	color.HiGreen("Collecting primary data for: %s", thread.Market.Name)
-	wg := sync.WaitGroup{}
-	wg.Add(len(thread.Resolutions))
-	for _, resolution := range thread.Resolutions {
-		go func(resolution models.Resolution) {
-			defer wg.Done()
-			conf, ok := thread.IndicatorConfigPerResolution[resolution.Id]
-			if !ok {
-				conf = indicators.DefaultConfig()
+
+	if thread.IndicatorConfig == nil {
+		thread.IndicatorConfig = indicators.DefaultConfig()
+	}
+	lastTime := thread.StartFrom.Unix()
+	var list []models.Candle
+	for {
+		tmpList, err := models.LoadCandleList(thread.Market.Id, thread.PivotResolution.Id, lastTime)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				break
+			} else {
+				return err
 			}
-			lastTime, err := conf.PreCalculation(thread.Market, resolution, thread.StartFrom, thread.Strategy.BufferedCandleCount)
-			if err != nil {
-				log.Errorf("fetch first candle failed: %v", err)
-				return
-			}
-			count := (time.Now().Unix() - lastTime) / int64(resolution.Duration/time.Second)
-			j := count / 500
-			if count%500 != 0 {
-				j++
-			}
-			for i := int64(1); i <= j; i++ {
-				from := lastTime + 500*(i-1)*int64(resolution.Duration/time.Second)
-				to := lastTime + 500*i*int64(resolution.Duration/time.Second)
-				if err := thread.makeOHLCRequest(conf, resolution, from, to); err != nil {
-					log.Errorf("ohlc request failed: %s", err.Error())
+		}
+		if len(tmpList) > 0 {
+			list = append(list, tmpList...)
+			lastTime = tmpList[len(tmpList)-1].Time.Unix()
+		} else {
+			break
+		}
+	}
+	if len(list) > 0 {
+		if err := thread.IndicatorConfig.CalculateIndicators(list); err != nil {
+			return err
+		}
+		if err := thread.CandlePool.ImportNewCandles(list); err != nil {
+			return err
+		}
+	}
+
+	count := (time.Now().Unix() - lastTime) / int64(thread.PivotResolution.Duration/time.Second)
+	j := count / 500
+	if count%500 != 0 {
+		j++
+	}
+	for i := int64(1); i <= j; i++ {
+		from := lastTime + 500*(i-1)*int64(thread.PivotResolution.Duration/time.Second)
+		to := lastTime + 500*i*int64(thread.PivotResolution.Duration/time.Second)
+		if candles, err := thread.makeOHLCRequest(thread.PivotResolution, from, to); err != nil {
+			return err
+		} else {
+			if thread.CandlePool.Size() == 0 {
+				err = thread.IndicatorConfig.CalculateIndicators(candles)
+				if err != nil {
+					return err
+				}
+			} else {
+				for _, candle := range candles {
+					if err = thread.CandlePool.UpdateLastCandle(candle); err != nil {
+						return err
+					}
+					thread.IndicatorConfig.UpdateIndicators(thread.CandlePool)
 				}
 			}
-			//todo: check next line
-			//thread.IndicatorConfigPerResolution[resolution.Id]=conf
-		}(resolution)
+		}
 	}
-	wg.Wait()
+	return nil
 }
 
 func (thread *MarketThread) PeriodicOHLC() {
 	color.HiGreen("Making Periodic ohlc for: %s", thread.Market.Name)
-	for _, resolution := range thread.Resolutions {
-		go func(resolution models.Resolution) {
-			conf, ok := thread.IndicatorConfigPerResolution[resolution.Id]
-			if !ok {
-				conf = indicators.DefaultConfig()
+	for {
+		start := time.Now()
+		if candles, err := thread.makeOHLCRequest(thread.PivotResolution, thread.CandlePool.GetLastCandle().Time.Unix(), time.Now().Unix()); err != nil {
+			log.Errorf("ohlc request failed: %s", err.Error())
+		} else {
+			for _, candle := range candles {
+				if poolErr := thread.CandlePool.UpdateLastCandle(candle); poolErr != nil {
+					log.WithError(poolErr).Error("update pool failed for market %s in timeframe %s",
+						candle.Market.Name, candle.Resolution.Label)
+					continue
+				}
+				thread.IndicatorConfig.UpdateIndicators(thread.CandlePool)
 			}
-			for {
-				start := time.Now()
-				err := thread.makeOHLCRequest(conf, resolution, conf.Candles[len(conf.Candles)-1].Time.Unix(), time.Now().Unix())
-				if err != nil {
-					log.Errorf("ohlc request failed: %s", err.Error())
-				}
-				//todo: check next line
-				//thread.IndicatorConfigPerResolution[resolution.Id]=conf
-				//data:=conf.Candles[len(conf.Candles)-1]
-				//fmt.Printf("| %-7.3f | %-7.3f | %-7.3f | %-7.3f | %-7.3f |\n",
-				//	data.Open, data.High, data.LowerBond, data.Close, data.Vol)
-				thread.dataChannel <- conf.Candles[len(conf.Candles)-1]
-				if thread.EnableTrading || thread.FakeTrading {
-					thread.checkForSignals()
-				}
-				end := time.Now()
-				idealTime := thread.Strategy.IndicatorUpdatePeriod - end.Sub(start)
-				if idealTime > 0 {
-					time.Sleep(idealTime)
-				}
-			}
-
-		}(resolution)
+		}
+		thread.dataChannel <- *thread.CandlePool.GetLastCandle()
+		if thread.EnableTrading || thread.FakeTrading {
+			thread.checkForSignals()
+		}
+		end := time.Now()
+		idealTime := thread.Strategy.IndicatorUpdatePeriod - end.Sub(start)
+		if idealTime > 0 {
+			time.Sleep(idealTime)
+		}
 	}
 }
 
-func (thread *MarketThread) makeOHLCRequest(conf *indicators.Configuration, resolution models.Resolution, from, to int64) error {
+func (thread *MarketThread) makeOHLCRequest(resolution *models.Resolution, from, to int64) ([]models.Candle, error) {
 	response := thread.Requests.OHLC(brokerages.OHLCParams{
 		Resolution: resolution,
 		Market:     thread.Market,
@@ -94,26 +118,10 @@ func (thread *MarketThread) makeOHLCRequest(conf *indicators.Configuration, reso
 		To:         to,
 	})
 	if response.Error != nil {
-		return response.Error
+		return nil, response.Error
 	}
-	if len(response.Candles) == 0 {
-		return nil
-	}
-	conf.CalculateIndicators(response.Candles, thread.Strategy.BufferedCandleCount)
-	go func(symbol string, brokerage models.BrokerageName, candles []models.Candle) {
-		for _, candle := range candles {
-			if err := candle.CreateOrUpdate(); err != nil {
-				log.Errorf("creating candle failed for %s in %s at %s",
-					symbol, brokerage, candle.Time.Format("02/01/2006, 15:04:05"))
-			}
-		}
-	}(thread.Market.Name, thread.Brokerage.Name, response.Candles)
-	return nil
+	return response.Candles, nil
 }
 
 func (thread *MarketThread) checkForSignals() {
-	for _, resolution := range thread.Resolutions {
-		thread.IndicatorConfigPerResolution[resolution.Id].CheckIndicatorSignals()
-		//todo: calculate lines and patterns
-	}
 }

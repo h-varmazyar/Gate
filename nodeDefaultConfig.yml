@@ -3,7 +3,7 @@ loadMarketsOnline: false
 markets:
   #  - value: BTCUSDT
   #    startTime: 1606780800
-  - value: KAVAUSDT
+  - name: KAVAUSDT
     startTime: 1606780800
 resolutions:
   #  - value: 60

@@ -2,30 +2,48 @@ package indicators
 
 import (
 	"errors"
+	"github.com/mrNobody95/Gate/models"
 	"math"
 )
 
-func (conf *Configuration) CalculateRSI() error {
-	if err := conf.validateRSI(); err != nil {
+func (conf *Configuration) CalculateRSI(candles []models.Candle) error {
+	if err := conf.validateRSI(len(candles)); err != nil {
 		return err
 	}
-	conf.firstRsi()
-	for i := conf.RsiLength + 1; i < len(conf.Candles); i++ {
-		conf.smoothedRs(i)
+	conf.firstRsi(candles)
+	for i := conf.RsiLength + 1; i < len(candles); i++ {
+		conf.UpdateRSI(candles[len(candles)-2:])
 	}
 	return nil
 }
 
-func (conf *Configuration) UpdateRSI() {
-	conf.smoothedRs(len(conf.Candles) - 1)
+func (conf *Configuration) UpdateRSI(candles []models.Candle) {
+	i := len(candles) - 1
+
+	gain := float64(0)
+	loss := float64(0)
+	change := candles[i].Close - candles[i-1].Close
+
+	if change > 0 {
+		gain = change
+	} else {
+		loss = change * -1
+	}
+
+	gain = (candles[i-1].RSI.Gain*(float64(conf.RsiLength-1)) + gain) / float64(conf.RsiLength)
+	loss = (candles[i-1].RSI.Loss*(float64(conf.RsiLength-1)) + loss) / float64(conf.RsiLength)
+
+	candles[i].RSI.Gain = gain
+	candles[i].RSI.Loss = loss
+	candles[i].RSI.RSI = 100 - (100 / (1 + gain/loss))
 }
 
-func (conf *Configuration) firstRsi() {
+func (conf *Configuration) firstRsi(candles []models.Candle) {
 	gain := float64(0)
 	loss := float64(0)
 
 	for i := 1; i <= conf.RsiLength; i++ {
-		change := conf.Candles[i].Close - conf.Candles[i-1].Close
+		change := candles[i].Close - candles[i-1].Close
 		if change > 0 {
 			gain += change
 		} else {
@@ -36,36 +54,13 @@ func (conf *Configuration) firstRsi() {
 	loss = math.Abs(loss)
 	rs := gain / loss
 
-	indicatorLock.Lock()
-	conf.Candles[conf.RsiLength].RSI.Gain = gain / float64(conf.RsiLength)
-	conf.Candles[conf.RsiLength].RSI.Loss = loss / float64(conf.RsiLength)
-	conf.Candles[conf.RsiLength].RSI.RSI = 100 - (100 / (1 + rs))
-	indicatorLock.Unlock()
+	candles[conf.RsiLength].RSI.Gain = gain / float64(conf.RsiLength)
+	candles[conf.RsiLength].RSI.Loss = loss / float64(conf.RsiLength)
+	candles[conf.RsiLength].RSI.RSI = 100 - (100 / (1 + rs))
 }
 
-func (conf *Configuration) smoothedRs(index int) {
-	gain := float64(0)
-	loss := float64(0)
-	change := conf.Candles[index].Close - conf.Candles[index-1].Close
-
-	if change > 0 {
-		gain = change
-	} else {
-		loss = change * -1
-	}
-
-	gain = (conf.Candles[index-1].RSI.Gain*(float64(conf.RsiLength-1)) + gain) / float64(conf.RsiLength)
-	loss = (conf.Candles[index-1].RSI.Loss*(float64(conf.RsiLength-1)) + loss) / float64(conf.RsiLength)
-
-	indicatorLock.Lock()
-	conf.Candles[index].RSI.Gain = gain
-	conf.Candles[index].RSI.Loss = loss
-	conf.Candles[index].RSI.RSI = 100 - (100 / (1 + gain/loss))
-	indicatorLock.Unlock()
-}
-
-func (conf *Configuration) validateRSI() error {
-	if len(conf.Candles)-1 < conf.RsiLength {
+func (conf *Configuration) validateRSI(length int) error {
+	if length-1 < conf.RsiLength {
 		return errors.New("candles length must bigger than indicator period length")
 	}
 	return nil

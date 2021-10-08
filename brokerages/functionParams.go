@@ -19,8 +19,8 @@ type MarketStatusParams struct {
 }
 
 type OHLCParams struct {
-	Resolution models.Resolution
-	Market     models.Market
+	Resolution *models.Resolution
+	Market     *models.Market
 	From       int64
 	To         int64
 }

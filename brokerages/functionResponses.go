@@ -32,10 +32,10 @@ type MarketStatusResponse struct {
 type OHLCResponse struct {
 	BasicResponse
 	ContinueLast uint
-	Resolution   models.Resolution
+	Resolution   *models.Resolution
 	Candles      []models.Candle
 	Status       string
-	Market       models.Market
+	Market       *models.Market
 }
 
 type UserInfoResponse struct {
