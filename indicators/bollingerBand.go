@@ -10,7 +10,7 @@ func (conf *Configuration) CalculateBollingerBand(candles []models.Candle) error
 	if err := conf.validateBollingerBand(len(candles)); err != nil {
 		return err
 	}
-	err := conf.calculateSMA(candles[len(candles)-conf.MovingAverageLength:])
+	err := conf.calculateSMA(candles)
 	if err != nil {
 		return err
 	}

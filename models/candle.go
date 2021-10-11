@@ -1,7 +1,6 @@
 package models
 
 import (
-	"gorm.io/gorm"
 	"time"
 )
 
@@ -21,6 +20,7 @@ type Candle struct {
 	Resolution      *Resolution `gorm:"foreignKey:ResolutionRefer;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	MarketRefer     uint16
 	ResolutionRefer uint
+	FromDb          bool `gorm:"-"`
 	Indicators      `gorm:"-"`
 }
 
@@ -32,7 +32,7 @@ func (c *Candle) LoadLast() error {
 		Last(&c).Error
 }
 
-func LoadCandleList(marketId uint16, resolutionId uint, time int64) ([]Candle, error) {
+func LoadCandleList(marketId uint16, resolutionId uint, time time.Time) ([]Candle, error) {
 	var candles []Candle
 	return candles, db.Model(&Candle{}).
 		Where("market_refer = ?", marketId).
@@ -49,19 +49,12 @@ func (c *Candle) Load() error {
 }
 
 func (c *Candle) CreateOrUpdate() error {
-	found := new(Candle)
-	err := db.Model(&Candle{}).
-		Where("market_refer = ?", c.Market.Id).
-		Where("resolution_refer = ?", c.Resolution.Id).
-		Where("time = ?", c.Time).
-		First(found).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return db.Model(&Candle{}).Create(&c).Error
-		}
-		return err
+	count := int64(0)
+	db.Model(&Candle{}).Where("id = ?", c.ID).Count(&count)
+	if count == 0 {
+		return db.Model(&Candle{}).Create(&c).Error
 	}
-	return db.Model(&Candle{}).Where("id = ?", found.ID).Updates(&c).Error
+	return db.Model(&Candle{}).Where("id = ?", c.ID).Updates(&c).Error
 }
 
 func (c *Candle) Update() error {

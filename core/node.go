@@ -67,7 +67,7 @@ func (node *Node) Start() error {
 				CandlePool:      pool,
 			}
 			if err = thread.CollectPrimaryData(); err != nil {
-				log.WithError(err).Errorf("faile to collect primary data for %s in timeframe %s",
+				log.WithError(err).Errorf("failed to collect primary data for %s in timeframe %s",
 					thread.Market.Name, thread.PivotResolution.Label)
 				return
 			}

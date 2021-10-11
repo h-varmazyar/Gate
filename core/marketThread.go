@@ -26,58 +26,51 @@ func (thread *MarketThread) CollectPrimaryData() error {
 	if thread.IndicatorConfig == nil {
 		thread.IndicatorConfig = indicators.DefaultConfig()
 	}
-	lastTime := thread.StartFrom.Unix()
+	lastTime := thread.StartFrom
 	var list []models.Candle
 	for {
-		tmpList, err := models.LoadCandleList(thread.Market.Id, thread.PivotResolution.Id, lastTime)
-		if err != nil {
+		time.Sleep(time.Second)
+		if tmpList, err := models.LoadCandleList(thread.Market.Id, thread.PivotResolution.Id, lastTime); err != nil {
 			if err == gorm.ErrRecordNotFound {
 				break
 			} else {
 				return err
 			}
-		}
-		if len(tmpList) > 0 {
+		} else if len(tmpList) > 0 {
 			list = append(list, tmpList...)
-			lastTime = tmpList[len(tmpList)-1].Time.Unix()
+			lastTime = tmpList[len(tmpList)-1].Time
 		} else {
 			break
 		}
 	}
-	if len(list) > 0 {
-		if err := thread.IndicatorConfig.CalculateIndicators(list); err != nil {
-			return err
-		}
-		if err := thread.CandlePool.ImportNewCandles(list); err != nil {
-			return err
-		}
+	for i := 0; i < len(list); i++ {
+		list[i].FromDb = true
 	}
 
-	count := (time.Now().Unix() - lastTime) / int64(thread.PivotResolution.Duration/time.Second)
+	count := (time.Now().Unix() - lastTime.Unix()) / int64(thread.PivotResolution.Duration/time.Second)
 	j := count / 500
 	if count%500 != 0 {
 		j++
 	}
 	for i := int64(1); i <= j; i++ {
-		from := lastTime + 500*(i-1)*int64(thread.PivotResolution.Duration/time.Second)
-		to := lastTime + 500*i*int64(thread.PivotResolution.Duration/time.Second)
+		from := lastTime.Unix() + 500*(i-1)*int64(thread.PivotResolution.Duration/time.Second)
+		to := lastTime.Unix() + 500*i*int64(thread.PivotResolution.Duration/time.Second)
 		if candles, err := thread.makeOHLCRequest(thread.PivotResolution, from, to); err != nil {
 			return err
 		} else {
-			if thread.CandlePool.Size() == 0 {
-				err = thread.IndicatorConfig.CalculateIndicators(candles)
-				if err != nil {
-					return err
-				}
+			if len(list) > 0 && list[len(list)-1].Time == candles[0].Time {
+				candles[0].ID = list[len(list)-1].ID
+				list = append(list[:len(list)-1], candles...)
 			} else {
-				for _, candle := range candles {
-					if err = thread.CandlePool.UpdateLastCandle(candle); err != nil {
-						return err
-					}
-					thread.IndicatorConfig.UpdateIndicators(thread.CandlePool)
-				}
+				list = append(list, candles...)
 			}
 		}
+	}
+	if err := thread.IndicatorConfig.CalculateIndicators(list); err != nil {
+		return err
+	}
+	if err := thread.CandlePool.ImportNewCandles(list); err != nil {
+		return err
 	}
 	return nil
 }
@@ -91,7 +84,7 @@ func (thread *MarketThread) PeriodicOHLC() {
 		} else {
 			for _, candle := range candles {
 				if poolErr := thread.CandlePool.UpdateLastCandle(candle); poolErr != nil {
-					log.WithError(poolErr).Error("update pool failed for market %s in timeframe %s",
+					log.WithError(poolErr).Errorf("update pool failed for market %s in timeframe %s",
 						candle.Market.Name, candle.Resolution.Label)
 					continue
 				}
