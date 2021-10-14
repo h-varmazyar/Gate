@@ -424,15 +424,15 @@ func (config Config) WalletList() *brokerages.WalletListResponse {
 				if err != nil {
 					continue
 				}
-				tmp.ActiveBalance, err = strconv.ParseFloat(wallet.ActiveBalance, 64)
-				if err != nil {
+				if tmp.ActiveBalance, err = strconv.ParseFloat(wallet.ActiveBalance, 64); err != nil {
 					continue
 				}
-				tmp.TotalBalance, err = strconv.ParseFloat(wallet.Balance, 64)
-				if err != nil {
+				if tmp.TotalBalance, err = strconv.ParseFloat(wallet.Balance, 64); err != nil {
 					continue
 				}
-				tmp.Currency = wallet.Currency
+				if tmp.Asset, err = models.GetAssetBySymbol(wallet.Currency); err != nil {
+					continue
+				}
 				tmp.ID = wallet.Id
 				wallets = append(wallets, tmp)
 			}
@@ -490,15 +490,15 @@ func (config Config) WalletInfo(params brokerages.WalletInfoParams) *brokerages.
 		if respStr.Status == "ok" {
 			wallet := models.Wallet{}
 			wallet.ID = respStr.Wallets[strings.ToUpper(params.WalletName)].Id
-			wallet.BlockedBalance, err = strconv.ParseFloat(respStr.Wallets[strings.ToUpper(params.WalletName)].Blocked, 64)
-			if err != nil {
+			if wallet.BlockedBalance, err = strconv.ParseFloat(respStr.Wallets[strings.ToUpper(params.WalletName)].Blocked, 64); err != nil {
 				return &brokerages.WalletResponse{BasicResponse: brokerages.BasicResponse{Error: err}}
 			}
-			wallet.TotalBalance, err = strconv.ParseFloat(respStr.Wallets[strings.ToUpper(params.WalletName)].Balance, 64)
-			if err != nil {
+			if wallet.TotalBalance, err = strconv.ParseFloat(respStr.Wallets[strings.ToUpper(params.WalletName)].Balance, 64); err != nil {
 				return &brokerages.WalletResponse{BasicResponse: brokerages.BasicResponse{Error: err}}
 			}
-			wallet.Currency = params.WalletName
+			if wallet.Asset, err = models.GetAssetBySymbol(params.WalletName); err != nil {
+				return &brokerages.WalletResponse{BasicResponse: brokerages.BasicResponse{Error: err}}
+			}
 			return &brokerages.WalletResponse{Wallet: wallet}
 		} else {
 			return &brokerages.WalletResponse{
@@ -620,8 +620,8 @@ func (config Config) NewOrder(params brokerages.NewOrderParams) *brokerages.Orde
 	body["price"] = params.Price
 	body["amount"] = params.Amount
 	body["type"] = params.BuyOrSell
-	body["srcCurrency"] = params.Market.Source
-	body["destCurrency"] = params.Market.Destination
+	body["srcCurrency"] = params.Market.Source.Symbol
+	body["destCurrency"] = params.Market.Destination.Symbol
 	req := networkManager.Request{
 		Method:   networkManager.POST,
 		Endpoint: "https://api.nobitex.ir/market/orders/add",
@@ -655,20 +655,32 @@ func (config Config) NewOrder(params brokerages.NewOrderParams) *brokerages.Orde
 			} `json:"transactions"`
 			Message string `json:"message"`
 		}{}
-		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
+		if e := json.Unmarshal(resp.Body, &respStr); e != nil {
 			return &brokerages.OrderResponse{
-				BasicResponse: brokerages.BasicResponse{Error: err},
+				BasicResponse: brokerages.BasicResponse{Error: e},
 			}
 		}
 		if respStr.Status == "ok" {
-			price, err := strconv.ParseFloat(respStr.Order.Price, 64)
-			if err != nil {
+			price, e := strconv.ParseFloat(respStr.Order.Price, 64)
+			if e != nil {
 				return &brokerages.OrderResponse{
-					BasicResponse: brokerages.BasicResponse{Error: err},
+					BasicResponse: brokerages.BasicResponse{Error: e},
+				}
+			}
+			source, sErr := models.GetAssetBySymbol(respStr.Order.Src)
+			if sErr != nil {
+				return &brokerages.OrderResponse{
+					BasicResponse: brokerages.BasicResponse{Error: sErr},
+				}
+			}
+			destination, dErr := models.GetAssetBySymbol(respStr.Order.Dest)
+			if dErr != nil {
+				return &brokerages.OrderResponse{
+					BasicResponse: brokerages.BasicResponse{Error: dErr},
 				}
 			}
 			order := models.Order{
-				ClientUUID:       strings.ReplaceAll(params.ClientUUID.String(), "-", ""),
+				ClientUUID:       strings.ReplaceAll(params.ClientUUID, "-", ""),
 				ServerOrderId:    int64(respStr.Order.Id),
 				CreatedAt:        respStr.Order.CreatedAt,
 				AssetFee:         respStr.Order.Fee,
@@ -676,8 +688,8 @@ func (config Config) NewOrder(params brokerages.NewOrderParams) *brokerages.Orde
 				AveragePrice:     price,
 				Status:           models.OrderStatus(respStr.Order.Status),
 				SellOrBuy:        models.OrderType(respStr.Order.Type),
-				SourceAsset:      models.Asset(respStr.Order.Src),
-				DestinationAsset: models.Asset(respStr.Order.Dest),
+				SourceAsset:      source,
+				DestinationAsset: destination,
 			}
 			if respStr.Order.Amount != "" {
 				tmp, parseErr := strconv.ParseFloat(respStr.Order.Amount, 64)
@@ -762,20 +774,32 @@ func (config Config) OrderStatus(params brokerages.OrderStatusParams) *brokerage
 			} `json:"transactions"`
 			Message string `json:"message"`
 		}{}
-		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
+		if e := json.Unmarshal(resp.Body, &respStr); e != nil {
 			return &brokerages.OrderResponse{
-				BasicResponse: brokerages.BasicResponse{Error: err},
+				BasicResponse: brokerages.BasicResponse{Error: e},
 			}
 		}
 		if respStr.Status == "ok" {
-			price, err := strconv.ParseFloat(respStr.Order.Price, 64)
-			if err != nil {
+			price, e := strconv.ParseFloat(respStr.Order.Price, 64)
+			if e != nil {
 				return &brokerages.OrderResponse{
-					BasicResponse: brokerages.BasicResponse{Error: err},
+					BasicResponse: brokerages.BasicResponse{Error: e},
+				}
+			}
+			source, sErr := models.GetAssetBySymbol(respStr.Order.Src)
+			if sErr != nil {
+				return &brokerages.OrderResponse{
+					BasicResponse: brokerages.BasicResponse{Error: sErr},
+				}
+			}
+			destination, dErr := models.GetAssetBySymbol(respStr.Order.Dest)
+			if dErr != nil {
+				return &brokerages.OrderResponse{
+					BasicResponse: brokerages.BasicResponse{Error: dErr},
 				}
 			}
 			order := models.Order{
-				ClientUUID:       strings.ReplaceAll(params.ClientUUID.String(), "-", ""),
+				ClientUUID:       strings.ReplaceAll(params.ClientUUID, "-", ""),
 				ServerOrderId:    int64(respStr.Order.Id),
 				CreatedAt:        respStr.Order.CreatedAt,
 				AssetFee:         respStr.Order.Fee,
@@ -783,8 +807,8 @@ func (config Config) OrderStatus(params brokerages.OrderStatusParams) *brokerage
 				AveragePrice:     price,
 				Status:           models.OrderStatus(respStr.Order.Status),
 				SellOrBuy:        models.OrderType(respStr.Order.Type),
-				SourceAsset:      models.Asset(respStr.Order.Src),
-				DestinationAsset: models.Asset(respStr.Order.Dest),
+				SourceAsset:      source,
+				DestinationAsset: destination,
 			}
 			if respStr.Order.Amount != "" {
 				tmp, parseErr := strconv.ParseFloat(respStr.Order.Amount, 64)
@@ -843,15 +867,15 @@ func (config Config) OrderList(params brokerages.OrderListParams) *brokerages.Or
 	if params.Type != "" {
 		body["type"] = params.Type
 	}
-	if params.Market.Source != "" {
-		body["srcCurrency"] = params.Market.Source
+	if params.Market.Source != nil {
+		body["srcCurrency"] = params.Market.Source.Symbol
 	} else {
 		return &brokerages.OrderListResponse{
 			BasicResponse: brokerages.BasicResponse{Error: errors.New("please specify Source Currency")},
 		}
 	}
-	if params.Market.Destination != "" {
-		body["dstCurrency"] = params.Market.Destination
+	if params.Market.Destination != nil {
+		body["dstCurrency"] = params.Market.Destination.Symbol
 	} else {
 		return &brokerages.OrderListResponse{
 			BasicResponse: brokerages.BasicResponse{Error: errors.New("please specify Destination Currency")},
@@ -896,16 +920,24 @@ func (config Config) OrderList(params brokerages.OrderListParams) *brokerages.Or
 			} `json:"transactions"`
 			Message string `json:"message"`
 		}{}
-		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
+		if e := json.Unmarshal(resp.Body, &respStr); e != nil {
 			return &brokerages.OrderListResponse{
-				BasicResponse: brokerages.BasicResponse{Error: err},
+				BasicResponse: brokerages.BasicResponse{Error: e},
 			}
 		}
 		if respStr.Status == "ok" {
 			orders := make([]models.Order, len(respStr.Orders))
 			for i, order := range respStr.Orders {
-				price, err := strconv.ParseFloat(order.Price, 64)
-				if err != nil {
+				price, e := strconv.ParseFloat(order.Price, 64)
+				if e != nil {
+					continue
+				}
+				source, sErr := models.GetAssetBySymbol(order.Src)
+				if sErr != nil {
+					continue
+				}
+				destination, dErr := models.GetAssetBySymbol(order.Dest)
+				if dErr != nil {
 					continue
 				}
 				orders[i] = models.Order{
@@ -917,8 +949,8 @@ func (config Config) OrderList(params brokerages.OrderListParams) *brokerages.Or
 					AveragePrice:     price,
 					Status:           models.OrderStatus(order.Status),
 					SellOrBuy:        models.OrderType(order.Type),
-					SourceAsset:      models.Asset(order.Src),
-					DestinationAsset: models.Asset(order.Dest),
+					SourceAsset:      source,
+					DestinationAsset: destination,
 				}
 				if order.Amount != "" {
 					tmp, parseErr := strconv.ParseFloat(order.Amount, 64)

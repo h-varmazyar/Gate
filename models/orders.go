@@ -21,9 +21,9 @@ type Order struct {
 	OrderKind        OrderKind
 	AveragePrice     float64
 	TransactionFee   float64
-	SourceAsset      Asset
-	DestinationAsset Asset
-	FeeAsset         Asset
+	SourceAsset      *Asset
+	DestinationAsset *Asset
+	FeeAsset         *Asset
 	FeeDiscount      float64
 	AssetFee         float64
 	MoneyFee         float64
@@ -43,7 +43,8 @@ type OrderType string
 type OrderKind string
 type OrderOption string
 type OrderStatus string
-type Asset string
+
+//type Asset string
 
 const (
 	Ask  OrderType = "ask"
@@ -62,10 +63,11 @@ const (
 )
 
 const (
-	New            OrderStatus = "new"
-	Done           OrderStatus = "done"
-	PartlyExecuted OrderStatus = "part_deal"
-	UnExecuted     OrderStatus = "not_deal"
+	NewOrderStatus            OrderStatus = "new"
+	DoneOrderStatus           OrderStatus = "done"
+	CanceledOrderStatus       OrderStatus = "cancel"
+	UnExecutedOrderStatus     OrderStatus = "not_deal"
+	PartlyExecutedOrderStatus OrderStatus = "part_deal"
 )
 
 const (
@@ -74,3 +76,11 @@ const (
 	OptionNormal    OrderOption = "NORMAL"
 	OptionMakerOnly OrderOption = "MAKER_ONLY"
 )
+
+func (order *Order) Create() error {
+	return db.Model(&Order{}).Create(order).Error
+}
+
+func (order *Order) Update() error {
+	return db.Updates(order).Error
+}

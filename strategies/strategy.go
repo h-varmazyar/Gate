@@ -10,8 +10,9 @@ type Strategy struct {
 	HFT                   bool `yaml:"hft"`
 	Markets               []models.Market
 	StopLoss              float64
-	MinBenefit            float64
-	MaxBenefit            float64
+	MinGainPercent        float64 //between 0-100
+	LossPercent           float64 //between 0-100
+	MaxGainPercent        float64 //between 0-100
 	PrimaryAmount         float64
 	CurrentAmount         float64
 	PrimaryCurrency       models.Currency

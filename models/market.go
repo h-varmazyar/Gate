@@ -22,8 +22,8 @@ type Market struct {
 	TradingName     string  `json:"trading_name"`
 	MinAmount       float64 `json:"min_amount"`
 	IsAMM           bool
-	Source          Asset `json:"source"`
-	Destination     Asset `json:"destination"`
+	Source          *Asset `json:"source"`
+	Destination     *Asset `json:"destination"`
 }
 
 func (market *Market) CreateOrLoad() error {

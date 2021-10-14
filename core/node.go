@@ -26,11 +26,6 @@ type Node struct {
 	EnableTrading   bool
 	IndicatorConfig *indicators.Configuration
 	dataChannel     chan models.Candle
-	//NetworkManager   interface{}
-	//IndicatorConfig  indicators.Configuration
-	//PivotResolution  map[models.Market]models.Resolution
-	//HelperResolution map[models.Market]models.Resolution
-	//BufferedCandles  map[models.Market]map[string][]models.Candle
 }
 
 func (node *Node) Validate() error {
@@ -130,31 +125,3 @@ func (node *Node) LoadConfig(path string) error {
 	node.IndicatorConfig = &config.IndicatorConfigs
 	return nil
 }
-
-//func (node *Node) cliPrinter() {
-//	dataMap := make(map[uint16]map[uint]models.Candle)
-//	writer := uilive.New()
-//	writer.Start()
-//	for candle := range node.dataChannel {
-//		_, ok := dataMap[candle.Market.Id][candle.Resolution.Id]
-//		if !ok {
-//			dataMap[candle.Market.Id] = make(map[uint]models.Candle)
-//		}
-//		dataMap[candle.Market.Id][candle.Resolution.Id] = candle
-//		output := "+------------+------------+--------------------+--------------------+--------------------+--------------------+--------------------+\n"
-//		output += "|   Market   | Resolution |         RSI        |     Stochastic     | Bollinger band(Up) |Bollinger band(Down)|Bollinger band(Midl)|\n"
-//		output += "+------------+------------+--------------------+--------------------+--------------------+--------------------+--------------------+\n"
-//
-//		for _, resolution := range dataMap {
-//			for _, data := range resolution {
-//				output += fmt.Sprintf("| %-10s | %-10s | %-18f | %-18f | %-18f | %-18f | %-18f |\n+------------+------------+--------------------+--------------------+--------------------+--------------------+--------------------+\n",
-//					data.Market.Name, data.Resolution.Label,
-//					data.MACD.MACD, data.MACD.Signal, data.ADX.DIPositive, data.ADX.DX, data.MA)
-//			}
-//		}
-//
-//		fmt.Fprint(writer, output)
-//	}
-//	color.Blue("closing printer channel")
-//	writer.Stop()
-//}

@@ -2,12 +2,14 @@ package core
 
 import (
 	"github.com/fatih/color"
+	"github.com/gofrs/uuid"
 	"github.com/mrNobody95/Gate/brokerages"
 	"github.com/mrNobody95/Gate/indicators"
 	"github.com/mrNobody95/Gate/models"
 	"github.com/mrNobody95/Gate/storage"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"strings"
 	"time"
 )
 
@@ -29,7 +31,6 @@ func (thread *MarketThread) CollectPrimaryData() error {
 	lastTime := thread.StartFrom
 	var list []models.Candle
 	for {
-		time.Sleep(time.Second)
 		if tmpList, err := models.LoadCandleList(thread.Market.Id, thread.PivotResolution.Id, lastTime); err != nil {
 			if err == gorm.ErrRecordNotFound {
 				break
@@ -91,7 +92,6 @@ func (thread *MarketThread) PeriodicOHLC() {
 				thread.IndicatorConfig.UpdateIndicators(thread.CandlePool)
 			}
 		}
-		thread.dataChannel <- *thread.CandlePool.GetLastCandle()
 		if thread.EnableTrading || thread.FakeTrading {
 			thread.checkForSignals()
 		}
@@ -117,4 +117,149 @@ func (thread *MarketThread) makeOHLCRequest(resolution *models.Resolution, from,
 }
 
 func (thread *MarketThread) checkForSignals() {
+	walletResponse := thread.Requests.WalletInfo(brokerages.WalletInfoParams{
+		WalletName: thread.Market.Destination.Symbol,
+	})
+	if walletResponse.Error != nil {
+		return
+	}
+	if walletResponse.Wallet.ActiveBalance > 0 {
+		candles := thread.CandlePool.GetLastNCandle(2)
+		rsi := thread.Strategy.RsiSignal(candles[0], candles[1])
+		bb := thread.Strategy.BollingerBandSignal(candles[0], candles[1], thread.Market.MakerFeeRate, thread.Market.TakerFeeRate)
+		stochastic := thread.Strategy.StochasticSignal(candles[0], candles[1])
+		if rsi && bb && stochastic {
+			id, _ := uuid.NewV4()
+			price := thread.CandlePool.GetLastCandle().Close
+			newOrderResponse := thread.Requests.NewOrder(brokerages.NewOrderParams{
+				OrderKind:  models.LimitOrderKind,
+				ClientUUID: strings.ReplaceAll(id.String(), "-", ""),
+				BuyOrSell:  models.Buy,
+				Price:      price,
+				Market:     *thread.Market,
+				Amount:     walletResponse.Wallet.ActiveBalance / price,
+				Option:     models.OptionNormal,
+			})
+			if newOrderResponse.Error != nil {
+				log.WithError(newOrderResponse.Error).Error("new order failed")
+				return
+			}
+			if newOrderResponse.Order.Status == models.NewOrderStatus {
+				if err := newOrderResponse.Order.Create(); err != nil {
+					log.WithError(err).Error("save new order failed")
+					return
+				}
+				thread.checkOrder(newOrderResponse.Order)
+			}
+		}
+	}
+}
+
+func (thread *MarketThread) cancelOrder(order models.Order) bool {
+	isBuy := true
+	if order.SellOrBuy == models.Sell {
+		isBuy = false
+	}
+	response := thread.Requests.CancelOrder(brokerages.CancelOrderParams{
+		ServerOrderId: order.ServerOrderId,
+		Market:        *thread.Market,
+		IsBuy:         isBuy,
+		ClientUUID:    order.ClientUUID,
+		AllOrders:     false,
+	})
+	if response.Error != nil {
+		log.WithError(response.Error).Error("cancel order failed")
+		return false
+	}
+	if err := response.Order.Update(); err != nil {
+		log.WithError(response.Error).Error("cancel order failed")
+		return false
+	}
+	return true
+}
+
+func (thread *MarketThread) checkOrder(order models.Order) {
+	func() {
+		checked := false
+		for {
+			start := time.Now()
+			response := thread.Requests.OrderStatus(brokerages.OrderStatusParams{
+				ServerOrderId: order.ServerOrderId,
+				Market:        *thread.Market,
+				ClientUUID:    order.ClientUUID,
+			})
+			if response.Error != nil {
+				log.WithError(response.Error).Error("check order status failed")
+			} else {
+				if checked {
+					switch response.Order.Status {
+					case models.DoneOrderStatus:
+						if err := response.Order.Update(); err != nil {
+							log.WithError(err).Error("update done order failed")
+						}
+						checked = true
+					case models.NewOrderStatus,
+						models.PartlyExecutedOrderStatus,
+						models.UnExecutedOrderStatus:
+						if response.Order.CreatedAt.Add(time.Minute * 15).Before(time.Now()) {
+							if err := response.Order.Update(); err != nil {
+								log.WithError(err).Error("update un executed order failed")
+							}
+							if thread.cancelOrder(order) {
+								checked = true
+							}
+						}
+					}
+				}
+				if thread.checkPrice(response.Order) {
+					return
+				}
+			}
+			sleep := time.Second - time.Now().Sub(start)
+			if sleep > 0 {
+				time.Sleep(sleep)
+			}
+		}
+	}()
+}
+
+func (thread *MarketThread) checkPrice(order models.Order) bool {
+	candle := thread.CandlePool.GetLastCandle()
+	upperPrice := order.AveragePrice * (1 + thread.Market.MakerFeeRate/100) * (1 + thread.Strategy.MinGainPercent/100) * (1 + thread.Market.TakerFeeRate/100)
+	lowerPrice := order.AveragePrice * (1 - thread.Market.MakerFeeRate/100) * (1 - thread.Strategy.LossPercent/100) * (1 - thread.Market.TakerFeeRate/100)
+	if candle.Close <= lowerPrice {
+		id, _ := uuid.NewV4()
+		response := thread.Requests.NewOrder(brokerages.NewOrderParams{
+			OrderKind:  models.LimitOrderKind,
+			ClientUUID: strings.ReplaceAll(id.String(), "-", ""),
+			BuyOrSell:  models.Sell,
+			Price:      candle.Close,
+			Market:     *thread.Market,
+			Amount:     order.ExecutedAmount,
+			Option:     models.OptionNormal,
+		})
+		if response.Error != nil {
+			log.WithError(response.Error).Error("check price order sell failed")
+		} else {
+			return true
+		}
+	}
+	if candle.Close >= upperPrice {
+		id, _ := uuid.NewV4()
+		response := thread.Requests.NewOrder(brokerages.NewOrderParams{
+			OrderKind:  models.LimitOrderKind,
+			ClientUUID: strings.ReplaceAll(id.String(), "-", ""),
+			BuyOrSell:  models.Buy,
+			Price:      candle.Close,
+			Market:     *thread.Market,
+			Amount:     order.ExecutedAmount,
+			Option:     models.OptionNormal,
+		})
+		if response.Error != nil {
+			log.WithError(response.Error).Error("check price order buy failed")
+		} else {
+			return true
+		}
+	}
+	return false
 }

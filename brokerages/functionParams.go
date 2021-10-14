@@ -39,7 +39,7 @@ type TransactionListParams struct {
 
 type NewOrderParams struct {
 	OrderKind  models.OrderKind
-	ClientUUID uuid.UUID
+	ClientUUID string
 	BuyOrSell  models.OrderType
 	Price      float64
 	StopPrice  float64
@@ -53,14 +53,14 @@ type CancelOrderParams struct {
 	ServerOrderId int64
 	Market        models.Market
 	IsBuy         bool
-	ClientUUID    uuid.UUID
+	ClientUUID    string
 	AllOrders     bool
 }
 
 type OrderStatusParams struct {
-	ServerOrderId uint64
+	ServerOrderId int64
 	Market        models.Market
-	ClientUUID    uuid.UUID
+	ClientUUID    string
 }
 
 type OrderListParams struct {

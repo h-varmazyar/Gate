@@ -32,7 +32,6 @@ func (config Config) OrderBook(brokerages.OrderBookParams) *brokerages.OrderBook
 	return &brokerages.OrderBookResponse{BasicResponse: brokerages.BasicResponse{Error: ErrMustBeImplemented}}
 }
 
-//market endpoints
 func (config Config) OHLC(params brokerages.OHLCParams) *brokerages.OHLCResponse {
 	req := networkManager.Request{
 		Method:   networkManager.GET,
@@ -241,7 +240,6 @@ func (config Config) MarketInfo(params brokerages.MarketInfoParams) *brokerages.
 	return &marketInfo
 }
 
-//account endpoints
 func (config Config) WalletList() *brokerages.WalletListResponse {
 	req := networkManager.Request{
 		Method:   networkManager.GET,
@@ -280,7 +278,10 @@ func (config Config) WalletList() *brokerages.WalletListResponse {
 			var wallets []models.Wallet
 			for key, value := range respStr.Data {
 				wallet := models.Wallet{}
-				wallet.Currency = key
+				wallet.Asset, err = models.GetAssetBySymbol(key)
+				if err != nil {
+					continue
+				}
 				wallet.BlockedBalance, err = strconv.ParseFloat(value.Frozen, 64)
 				if err != nil {
 					continue
@@ -310,10 +311,12 @@ func (config Config) WalletList() *brokerages.WalletListResponse {
 	}
 }
 
-//trading endpoints
 func (config Config) NewOrder(params brokerages.NewOrderParams) *brokerages.OrderResponse {
 	endpoint := ""
 	var queryParams map[string]interface{}
+	if len(params.ClientUUID) > 32 {
+		return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{Error: errors.New("client id length must be 32 byte or less")}}
+	}
 	switch params.OrderKind {
 	case models.LimitOrderKind:
 		endpoint = "https://api.coinex.com/v1/order/limit"
@@ -325,7 +328,7 @@ func (config Config) NewOrder(params brokerages.NewOrderParams) *brokerages.Orde
 			"option":    params.Option,
 			"price":     fmt.Sprintf("%f", params.Price),
 			"tonce":     time.Now().UnixNano() / 1000,
-			"client_id": strings.ReplaceAll(params.ClientUUID.String(), "-", ""),
+			"client_id": params.ClientUUID,
 			"type":      params.BuyOrSell,
 			"hide":      params.HideOrder,
 		}
@@ -337,7 +340,7 @@ func (config Config) NewOrder(params brokerages.NewOrderParams) *brokerages.Orde
 			"type":      params.BuyOrSell,
 			"amount":    fmt.Sprintf("%f", params.Amount),
 			"tonce":     time.Now().UnixNano() / 1000,
-			"client_id": strings.ReplaceAll(params.ClientUUID.String(), "-", ""),
+			"client_id": params.ClientUUID,
 			"source_id": fmt.Sprintf("%d", rand.Int()),
 		}
 	case models.StopLimitOrderKind:
@@ -352,7 +355,7 @@ func (config Config) NewOrder(params brokerages.NewOrderParams) *brokerages.Orde
 			"source_id":  fmt.Sprintf("%d", rand.Int()),
 			"option":     params.Option,
 			"tonce":      time.Now().UnixNano() / 1000,
-			"client_id":  strings.ReplaceAll(params.ClientUUID.String(), "-", ""),
+			"client_id":  params.ClientUUID,
 			"hide":       params.HideOrder,
 		}
 	case models.IOCOrderKind:
@@ -365,7 +368,7 @@ func (config Config) NewOrder(params brokerages.NewOrderParams) *brokerages.Orde
 			"price":     fmt.Sprintf("%f", params.Price),
 			"source_id": fmt.Sprintf("%d", rand.Int()),
 			"tonce":     time.Now().UnixNano() / 1000,
-			"client_id": strings.ReplaceAll(params.ClientUUID.String(), "-", ""),
+			"client_id": params.ClientUUID,
 		}
 	case models.MultipleLimitOrderKind:
 		//todo: must be implemented
@@ -413,8 +416,14 @@ func (config Config) NewOrder(params brokerages.NewOrderParams) *brokerages.Orde
 			} `json:"data"`
 			Message string `json:"message"`
 		}{}
-		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{Error: err}}
+		if e := json.Unmarshal(resp.Body, &respStr); e != nil {
+			return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{Error: e}}
+		}
+		asset, sErr := models.GetAssetBySymbol(respStr.Data.FeeAsset)
+		if sErr != nil {
+			return &brokerages.OrderResponse{
+				BasicResponse: brokerages.BasicResponse{Error: sErr},
+			}
 		}
 		if respStr.Code == ResponseSuccess {
 			order := models.Order{
@@ -426,7 +435,7 @@ func (config Config) NewOrder(params brokerages.NewOrderParams) *brokerages.Orde
 				Market:        params.Market,
 				SellOrBuy:     models.OrderType(respStr.Data.Type),
 				OrderKind:     models.OrderKind(respStr.Data.OrderType),
-				FeeAsset:      models.Asset(respStr.Data.FeeAsset),
+				FeeAsset:      asset,
 			}
 			if respStr.Data.Amount != "" {
 				tmp, parseErr := strconv.ParseFloat(respStr.Data.Amount, 64)
@@ -564,7 +573,7 @@ func (config Config) CancelOrder(params brokerages.CancelOrderParams) *brokerage
 		"account_id": 0,
 		"market":     params.Market.Name,
 		"tonce":      time.Now().UnixNano() / 1000,
-		"client_id":  strings.ReplaceAll(params.ClientUUID.String(), "-", ""),
+		"client_id":  strings.ReplaceAll(params.ClientUUID, "-", ""),
 	}
 	if !params.AllOrders {
 		queryParams["id"] = params.ServerOrderId
@@ -611,10 +620,16 @@ func (config Config) CancelOrder(params brokerages.CancelOrderParams) *brokerage
 			} `json:"data"`
 			Message string `json:"message"`
 		}{}
-		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{Error: err}}
+		if e := json.Unmarshal(resp.Body, &respStr); e != nil {
+			return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{Error: e}}
 		}
 		if respStr.Code == ResponseSuccess {
+			asset, sErr := models.GetAssetBySymbol(respStr.Data.FeeAsset)
+			if sErr != nil {
+				return &brokerages.OrderResponse{
+					BasicResponse: brokerages.BasicResponse{Error: sErr},
+				}
+			}
 			order := models.Order{
 				ClientUUID:    respStr.Data.ClientId,
 				ServerOrderId: respStr.Data.Id,
@@ -624,7 +639,7 @@ func (config Config) CancelOrder(params brokerages.CancelOrderParams) *brokerage
 				Market:        params.Market,
 				SellOrBuy:     models.OrderType(respStr.Data.Type),
 				OrderKind:     models.OrderKind(respStr.Data.OrderType),
-				FeeAsset:      models.Asset(respStr.Data.FeeAsset),
+				FeeAsset:      asset,
 			}
 			if respStr.Data.Amount != "" {
 				tmp, parseErr := strconv.ParseFloat(respStr.Data.Amount, 64)
@@ -765,7 +780,7 @@ func (config Config) OrderStatus(params brokerages.OrderStatusParams) *brokerage
 			"id":        params.ServerOrderId,
 			"market":    params.Market.Name,
 			"tonce":     time.Now().UnixNano() / 1000,
-			"client_id": strings.ReplaceAll(params.ClientUUID.String(), "-", ""),
+			"client_id": strings.ReplaceAll(params.ClientUUID, "-", ""),
 		},
 	}
 
@@ -802,10 +817,16 @@ func (config Config) OrderStatus(params brokerages.OrderStatusParams) *brokerage
 			} `json:"data"`
 			Message string `json:"message"`
 		}{}
-		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{Error: err}}
+		if e := json.Unmarshal(resp.Body, &respStr); e != nil {
+			return &brokerages.OrderResponse{BasicResponse: brokerages.BasicResponse{Error: e}}
 		}
 		if respStr.Code == ResponseSuccess {
+			asset, sErr := models.GetAssetBySymbol(respStr.Data.FeeAsset)
+			if sErr != nil {
+				return &brokerages.OrderResponse{
+					BasicResponse: brokerages.BasicResponse{Error: sErr},
+				}
+			}
 			order := models.Order{
 				ClientUUID:    respStr.Data.ClientId,
 				ServerOrderId: respStr.Data.Id,
@@ -815,7 +836,7 @@ func (config Config) OrderStatus(params brokerages.OrderStatusParams) *brokerage
 				Market:        params.Market,
 				SellOrBuy:     models.OrderType(respStr.Data.Type),
 				OrderKind:     models.OrderKind(respStr.Data.OrderType),
-				FeeAsset:      models.Asset(respStr.Data.FeeAsset),
+				FeeAsset:      asset,
 			}
 			if respStr.Data.Amount != "" {
 				tmp, parseErr := strconv.ParseFloat(respStr.Data.Amount, 64)
@@ -1002,12 +1023,18 @@ func (config Config) OrderList(params brokerages.OrderListParams) *brokerages.Or
 			} `json:"data"`
 			Message string `json:"message"`
 		}{}
-		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
-			return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{Error: err}}
+		if e := json.Unmarshal(resp.Body, &respStr); e != nil {
+			return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{Error: e}}
 		}
 		if respStr.Code == ResponseSuccess {
 			var orders []models.Order
 			for _, data := range respStr.Data {
+				asset, e := models.GetAssetBySymbol(data.FeeAsset)
+				if e != nil {
+					return &brokerages.OrderListResponse{BasicResponse: brokerages.BasicResponse{
+						Error: e},
+					}
+				}
 				order := models.Order{
 					ClientUUID:    data.ClientId,
 					ServerOrderId: data.Id,
@@ -1017,7 +1044,7 @@ func (config Config) OrderList(params brokerages.OrderListParams) *brokerages.Or
 					Market:        params.Market,
 					SellOrBuy:     models.OrderType(data.Type),
 					OrderKind:     models.OrderKind(data.OrderType),
-					FeeAsset:      models.Asset(data.FeeAsset),
+					FeeAsset:      asset,
 				}
 				if data.Amount != "" {
 					tmp, parseErr := strconv.ParseFloat(data.Amount, 64)
@@ -1150,7 +1177,7 @@ func (config Config) OrderList(params brokerages.OrderListParams) *brokerages.Or
 	}
 }
 
-//todo: must be implement next methods
+// RecentTrades todo: must be implement next methods
 func (config Config) RecentTrades(brokerages.OrderBookParams) *brokerages.RecentTradesResponse {
 	return &brokerages.RecentTradesResponse{BasicResponse: brokerages.BasicResponse{Error: ErrMustBeImplemented}}
 }
