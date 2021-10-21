@@ -7,6 +7,7 @@ import (
 	"github.com/mrNobody95/Gate/brokerages"
 	"github.com/mrNobody95/Gate/models"
 	"github.com/mrNobody95/Gate/networkManager"
+	"gorm.io/gorm"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -189,21 +190,24 @@ func (config Config) MarketInfo(params brokerages.MarketInfoParams) *brokerages.
 	marketInfo := brokerages.MarketInfoResponse{}
 	if resp.Code == 200 {
 		respStr := struct {
-			Code           int    `json:"code"`
-			Message        string `json:"message"`
-			TackerFeeRate  string `json:"tacker_fee_rate"`
-			MakerFeeRate   string `json:"maker_fee_rate"`
-			MinAmount      string `json:"min_amount"`
-			TradingName    string `json:"trading_name"`
-			TradingDecimal int    `json:"trading_decimal"`
-			PricingName    string `json:"pricing_name"`
-			PricingDecimal int    `json:"pricing_decimal"`
+			Code    int    `json:"code"`
+			Message string `json:"message"`
+			Data    struct {
+				TakerFeeRate   string `json:"taker_fee_rate"`
+				MakerFeeRate   string `json:"maker_fee_rate"`
+				MinAmount      string `json:"min_amount"`
+				TradingName    string `json:"trading_name"`
+				TradingDecimal int    `json:"trading_decimal"`
+				PricingName    string `json:"pricing_name"`
+				PricingDecimal int    `json:"pricing_decimal"`
+			} `json:"data"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
 			marketInfo.Error = err
 		}
 		if respStr.Code == ResponseSuccess {
-			marketInfo.Market.TakerFeeRate, err = strconv.ParseFloat(respStr.TackerFeeRate, 64)
+			marketInfo.Market.Name = params.MarketName
+			marketInfo.Market.TakerFeeRate, err = strconv.ParseFloat(respStr.Data.TakerFeeRate, 64)
 			if err != nil {
 				return &brokerages.MarketInfoResponse{
 					BasicResponse: brokerages.BasicResponse{
@@ -211,7 +215,7 @@ func (config Config) MarketInfo(params brokerages.MarketInfoParams) *brokerages.
 					},
 				}
 			}
-			marketInfo.Market.MakerFeeRate, err = strconv.ParseFloat(respStr.MakerFeeRate, 64)
+			marketInfo.Market.MakerFeeRate, err = strconv.ParseFloat(respStr.Data.MakerFeeRate, 64)
 			if err != nil {
 				return &brokerages.MarketInfoResponse{
 					BasicResponse: brokerages.BasicResponse{
@@ -219,7 +223,7 @@ func (config Config) MarketInfo(params brokerages.MarketInfoParams) *brokerages.
 					},
 				}
 			}
-			marketInfo.Market.MinAmount, err = strconv.ParseFloat(respStr.MinAmount, 64)
+			marketInfo.Market.MinAmount, err = strconv.ParseFloat(respStr.Data.MinAmount, 64)
 			if err != nil {
 				return &brokerages.MarketInfoResponse{
 					BasicResponse: brokerages.BasicResponse{
@@ -227,10 +231,39 @@ func (config Config) MarketInfo(params brokerages.MarketInfoParams) *brokerages.
 					},
 				}
 			}
-			marketInfo.Market.TradingName = respStr.TradingName
-			marketInfo.Market.TradingDecimal = respStr.TradingDecimal
-			marketInfo.Market.PricingName = respStr.PricingName
-			marketInfo.Market.PricingDecimal = respStr.PricingDecimal
+			marketInfo.Market.TradingDecimal = respStr.Data.TradingDecimal
+			marketInfo.Market.PricingDecimal = respStr.Data.PricingDecimal
+
+			dest, err := models.GetAssetBySymbol(respStr.Data.PricingName)
+			if err != nil {
+				if err == gorm.ErrRecordNotFound {
+					dest, err = models.CreateAsset(respStr.Data.PricingName)
+				}
+				if err != nil {
+					return &brokerages.MarketInfoResponse{
+						BasicResponse: brokerages.BasicResponse{
+							Error: err,
+						},
+					}
+				}
+			}
+			marketInfo.Market.Destination = dest
+			marketInfo.Market.DestinationRefer = dest.ID
+			source, err := models.GetAssetBySymbol(respStr.Data.TradingName)
+			if err != nil {
+				if err == gorm.ErrRecordNotFound {
+					source, err = models.CreateAsset(respStr.Data.TradingName)
+				}
+				if err != nil {
+					return &brokerages.MarketInfoResponse{
+						BasicResponse: brokerages.BasicResponse{
+							Error: err,
+						},
+					}
+				}
+			}
+			marketInfo.Market.Source = source
+			marketInfo.Market.SourceRefer = source.ID
 		} else {
 			marketInfo.Error = errors.New("coinex response error: " + respStr.Message)
 		}

@@ -2,6 +2,7 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"github.com/fatih/color"
 	"github.com/mrNobody95/Gate/brokerages"
 	"github.com/mrNobody95/Gate/indicators"
@@ -43,10 +44,10 @@ func (node *Node) Validate() error {
 }
 
 func (node *Node) Start() error {
-	color.HiGreen("Starting node for %s", node.Brokerage.Name)
+	color.HiGreen("Starting node for %s(markets: %d)", node.Brokerage.Name, len(node.Markets))
 	node.dataChannel = make(chan models.Candle, 100)
 	for _, market := range node.Markets {
-		go func(market *models.Market) {
+		go func(market models.Market) {
 			pool, err := storage.NewPool(node.Strategy.BufferedCandleCount, market.Id, node.PivotResolution.Id)
 			if err != nil {
 				color.Red("create candle pool failed for market %s in timeframe %s: %v",
@@ -55,7 +56,7 @@ func (node *Node) Start() error {
 			}
 			thread := MarketThread{
 				Node:            node,
-				Market:          market,
+				Market:          &market,
 				StartFrom:       market.StartTime,
 				Resolution:      node.PivotResolution,
 				IndicatorConfig: node.IndicatorConfig,
@@ -67,7 +68,7 @@ func (node *Node) Start() error {
 				return
 			}
 			thread.PeriodicOHLC()
-		}(&market)
+		}(market)
 	}
 	return nil
 }
@@ -91,8 +92,28 @@ func (node *Node) LoadConfig(path string) error {
 			return resp.Error
 		}
 		config.Markets = resp.Markets
+	} else {
+		fmt.Println("offline markets")
+		config.Markets, err = models.GetBrokerageMarkets(node.Brokerage.Id)
+		if err != nil {
+			return err
+		}
 	}
+	if len(config.Markets) == 0 {
+		return errors.New("no market available")
+	}
+	fmt.Println("loaded markets: ", len(config.Markets))
 	for _, market := range config.Markets {
+		marketName := market.Name
+		if config.LoadMarketsOnline {
+			resp := node.Requests.MarketInfo(brokerages.MarketInfoParams{
+				MarketName: marketName,
+			})
+			if resp.Error != nil {
+				return resp.Error
+			}
+			market = resp.Market
+		}
 		if market.StartTimeString != "" {
 			t, err := strconv.ParseInt(market.StartTimeString, 10, 64)
 			if err != nil {
@@ -103,12 +124,15 @@ func (node *Node) LoadConfig(path string) error {
 			market.StartTime = time.Unix(1594512000, 0)
 		}
 		market.BrokerageRefer = node.Brokerage.Id
+		market.Brokerage = *node.Brokerage
 		err = market.CreateOrLoad()
 		if err != nil {
+			fmt.Println("market load failed")
 			return err
 		}
 		node.Markets = append(node.Markets, market)
 	}
+	fmt.Println(config.Resolutions)
 	for _, resolution := range config.Resolutions {
 		resolution.BrokerageRefer = node.Brokerage.Id
 		err = resolution.CreateOrLoad()

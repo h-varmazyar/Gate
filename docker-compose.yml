@@ -1,0 +1,33 @@
+version: "3"
+
+networks:
+  infra:
+
+volumes:
+  maria_data:
+
+services:
+  mariadb:
+    container_name: mariadb
+    image: mariadb
+    environment:
+      - MARIADB_ROOT_PASSWORD=postgres
+    volumes:
+      - maria_data:/var/lib/mysql
+    networks:
+      - gate
+    ports:
+      - 3306:3306
+    restart: always
+  gate:
+    container_name: gate
+    image: mariadb
+    environment:
+      - MARIADB_ROOT_PASSWORD=postgres
+    volumes:
+      - maria_data:/var/lib/mysql
+    networks:
+      - gate
+    ports:
+      - 3306:3306
+    restart: always

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -18,7 +19,7 @@ func (resolution *Resolution) CreateOrLoad() error {
 		Where("brokerage_refer = ?", resolution.BrokerageRefer).
 		Where("value LIKE ?", resolution.Value).
 		First(&resolution).Error
-	if err != nil && err.Error() == "record not found" {
+	if err != nil && err == gorm.ErrRecordNotFound {
 		return db.Model(&Resolution{}).Create(&resolution).Error
 	}
 	return err

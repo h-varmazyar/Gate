@@ -14,16 +14,20 @@ type Order struct {
 	UnExecutedAmount float64
 	Status           OrderStatus
 	ExecutedPrice    float64
-	Market           Market
+	Market           Market `gorm:"foreignKey:MarketRefer;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	MarketRefer      uint16
 	MakerFeeRate     float64
 	TakerFeeRate     float64
 	SellOrBuy        OrderType
 	OrderKind        OrderKind
 	AveragePrice     float64
 	TransactionFee   float64
-	SourceAsset      *Asset
-	DestinationAsset *Asset
-	FeeAsset         *Asset
+	SourceAsset      *Asset `gorm:"foreignKey:SourceRefer;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	DestinationAsset *Asset `gorm:"foreignKey:DestinationRefer;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	FeeAsset         *Asset `gorm:"foreignKey:FeeAssetRefer;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	SourceRefer      uint
+	DestinationRefer uint
+	FeeAssetRefer    uint
 	FeeDiscount      float64
 	AssetFee         float64
 	MoneyFee         float64

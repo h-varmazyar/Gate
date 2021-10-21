@@ -20,6 +20,9 @@ type MarketThread struct {
 	Resolution      *models.Resolution
 	IndicatorConfig *indicators.Configuration
 	CandlePool      *storage.CandlePool
+	//todo: remove after test
+	totalBalanced  float64
+	activeBalanced float64
 }
 
 func (thread *MarketThread) CollectPrimaryData() error {
@@ -77,7 +80,7 @@ func (thread *MarketThread) CollectPrimaryData() error {
 }
 
 func (thread *MarketThread) PeriodicOHLC() {
-	color.HiGreen("Making Periodic ohlc for: %s", thread.Market.Name)
+	color.HiGreen("Making Periodic OHLC for: %s", thread.Market.Name)
 	for {
 		start := time.Now()
 		if candles, err := thread.makeOHLCRequest(thread.PivotResolution, thread.CandlePool.GetLastCandle().Time.Unix(), time.Now().Unix()); err != nil {
@@ -123,7 +126,9 @@ func (thread *MarketThread) checkForSignals() {
 	if walletResponse.Error != nil {
 		return
 	}
-	if walletResponse.Wallet.ActiveBalance > 0 {
+	if thread.activeBalanced > 0 {
+		//todo: uncomment next line
+		//if walletResponse.Wallet.ActiveBalance > 0 {
 		candles := thread.CandlePool.GetLastNCandle(2)
 		rsi := thread.Strategy.RsiSignal(candles[0], candles[1])
 		bb := thread.Strategy.BollingerBandSignal(candles[0], candles[1], thread.Market.MakerFeeRate, thread.Market.TakerFeeRate)
@@ -137,7 +142,7 @@ func (thread *MarketThread) checkForSignals() {
 				BuyOrSell:  models.Buy,
 				Price:      price,
 				Market:     *thread.Market,
-				Amount:     walletResponse.Wallet.ActiveBalance / price,
+				Amount:     thread.totalBalanced / (price * 3),
 				Option:     models.OptionNormal,
 			})
 			if newOrderResponse.Error != nil {
@@ -145,6 +150,7 @@ func (thread *MarketThread) checkForSignals() {
 				return
 			}
 			if newOrderResponse.Order.Status == models.NewOrderStatus {
+				thread.activeBalanced -= thread.totalBalanced / 3
 				if err := newOrderResponse.Order.Create(); err != nil {
 					log.WithError(err).Error("save new order failed")
 					return
@@ -241,6 +247,8 @@ func (thread *MarketThread) checkPrice(order models.Order) bool {
 		if response.Error != nil {
 			log.WithError(response.Error).Error("check price order sell failed")
 		} else {
+			thread.activeBalanced += (thread.totalBalanced / 3) - (order.AveragePrice-lowerPrice)*order.Amount
+			thread.totalBalanced -= (order.AveragePrice - lowerPrice) * order.Amount
 			return true
 		}
 	}
@@ -249,7 +257,7 @@ func (thread *MarketThread) checkPrice(order models.Order) bool {
 		response := thread.Requests.NewOrder(brokerages.NewOrderParams{
 			OrderKind:  models.LimitOrderKind,
 			ClientUUID: strings.ReplaceAll(id.String(), "-", ""),
-			BuyOrSell:  models.Buy,
+			BuyOrSell:  models.Sell,
 			Price:      candle.Close,
 			Market:     *thread.Market,
 			Amount:     order.ExecutedAmount,
@@ -258,6 +266,8 @@ func (thread *MarketThread) checkPrice(order models.Order) bool {
 		if response.Error != nil {
 			log.WithError(response.Error).Error("check price order buy failed")
 		} else {
+			thread.activeBalanced += (thread.totalBalanced / 3) + (upperPrice-order.AveragePrice)*order.Amount
+			thread.totalBalanced += (upperPrice - order.AveragePrice) * order.Amount
 			return true
 		}
 	}

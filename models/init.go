@@ -29,7 +29,7 @@ func init() {
 		LogLevel:                  logger.Silent,
 		ColorfulLog:               true,
 		IgnoreRecordNotFoundError: false,
-	}).Initialize(&Brokerage{}, &Market{}, &Resolution{}, &Candle{})
+	}).Initialize(&Brokerage{}, &Asset{}, &Market{}, &Order{}, &Resolution{}, &Candle{})
 
 	if err != nil {
 		log.Panicf("initializing db failed:%v", err)

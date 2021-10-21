@@ -12,15 +12,11 @@ an [issue](https://github.com/mrNobody95/Gate/issues/new) if your desired featur
 
 
 - v0.0.3:
-    - Multi threading on multiple resolution per market
+    - Switch to microservice
 
 ## Doing
 
 - v0.0.2:
-    - Check for signal of indicators
-    - Create a buy or sell order
-    - Check for placed orders
-    - Cancel orders
     - Accounting process
     - Implement fake dealing
 
@@ -39,4 +35,10 @@ an [issue](https://github.com/mrNobody95/Gate/issues/new) if your desired featur
     - Calculating EMA and SMA indicators
     - Check MACD indicator
     - Implement [coinex](https://github.com/coinexcom/coinex_exchange_api) API endpoints
-  
+
+
+- v0.0.2:
+    - Check for signal of indicators
+    - Create a buy or sell order
+    - Check for placed orders
+    - Cancel orders
