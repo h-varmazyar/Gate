@@ -33,7 +33,8 @@ func (conf *Configuration) CalculateStochastic(candles []models.Candle) error {
 	for i := conf.StochasticLength - 1; i < len(candles); i++ {
 		lowest := math.MaxFloat64
 		highest := float64(0)
-		for j := i - (conf.StochasticLength - 1); j < conf.StochasticLength; j++ {
+		from := i - (conf.StochasticLength - 1)
+		for j := from; j < from+conf.StochasticLength; j++ {
 			if candles[j].Low < lowest {
 				lowest = candles[j].Low
 			}

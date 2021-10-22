@@ -8,6 +8,7 @@ import (
 	"github.com/mrNobody95/Gate/models"
 	"github.com/mrNobody95/Gate/networkManager"
 	"gorm.io/gorm"
+	"math"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -34,14 +35,28 @@ func (config Config) OrderBook(brokerages.OrderBookParams) *brokerages.OrderBook
 }
 
 func (config Config) OHLC(params brokerages.OHLCParams) *brokerages.OHLCResponse {
-	req := networkManager.Request{
-		Method:   networkManager.GET,
-		Endpoint: "https://www.coinex.com/res/market/kline",
-		Params: map[string]interface{}{
+	reqParams := make(map[string]interface{})
+	endpoint := ""
+	count := params.To - params.From/int64(params.Resolution.Duration)
+	if count > 1000 {
+		reqParams = map[string]interface{}{
 			"market":     params.Market.Name,
 			"interval":   params.Resolution.Value,
 			"start_time": params.From,
-			"end_time":   params.To},
+			"end_time":   params.To}
+		endpoint = "https://www.coinex.com/res/market/kline"
+	} else {
+		reqParams = map[string]interface{}{
+			"market":   params.Market.Name,
+			"type":     params.Resolution.Label,
+			"limit":    math.Floor(float64(params.To - params.From/int64(params.Resolution.Duration))),
+			"end_time": params.To}
+		endpoint = "https://api.coinex.com/v1/market/kline"
+	}
+	req := networkManager.Request{
+		Method:   networkManager.GET,
+		Endpoint: endpoint,
+		Params:   reqParams,
 	}
 	resp, err := req.Execute()
 	if err != nil {

@@ -12,7 +12,7 @@ func (conf *Configuration) CalculateRSI(candles []models.Candle) error {
 	}
 	conf.firstRsi(candles)
 	for i := conf.RsiLength + 1; i < len(candles); i++ {
-		conf.UpdateRSI(candles[len(candles)-2:])
+		conf.UpdateRSI(candles[:i+1])
 	}
 	return nil
 }

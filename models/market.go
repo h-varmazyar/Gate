@@ -39,5 +39,5 @@ func (market *Market) CreateOrLoad() error {
 
 func GetBrokerageMarkets(brokerageId uint8) ([]Market, error) {
 	markets := make([]Market, 0)
-	return markets, db.Model(&Market{}).Where("brokerage_refer = ?", brokerageId).Limit(10).Offset(20).Find(&markets).Error
+	return markets, db.Model(&Market{}).Where("brokerage_refer = ?", brokerageId).Limit(1000).Find(&markets).Error
 }

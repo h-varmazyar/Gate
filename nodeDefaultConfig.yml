@@ -15,9 +15,9 @@ resolutions:
   #  - value: 300
   #    label: 5min
   #    duration: 300000000000
-  - value: 900
-    label: 15min
-    duration: 900000000000
+  #  - value: 900
+  #    label: 15min
+  #    duration: 900000000000
   #  - value: 1800
   #    label: 30min
   #    duration: 1800000000000
@@ -33,12 +33,12 @@ resolutions:
   #  - value: 21600
   #    label: 6hour
   #    duration: 21600000000000
-#  - value: 43200
-#    label: 12hour
-#    duration: 43200000000000
-#  - value: 86400
-#    label: 1day
-#    duration: 86400000000000
+  #  - value: 43200
+  #    label: 12hour
+  #    duration: 43200000000000
+  - value: 86400
+    label: 1day
+    duration: 86400000000000
 fakeTrading: false
 enableTrading: false
 strategy:

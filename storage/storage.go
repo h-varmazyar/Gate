@@ -2,7 +2,6 @@ package storage
 
 import (
 	"errors"
-	"fmt"
 	"github.com/mrNobody95/Gate/models"
 	log "github.com/sirupsen/logrus"
 	"sync"
@@ -80,19 +79,20 @@ func (pool *CandlePool) ImportNewCandles(candles []models.Candle) error {
 			return errors.New("candles are not ascending")
 		}
 	}
-	go func(candles []models.Candle) {
-		fmt.Println("import to db:", len(candles))
-		count := 0
-		for _, candle := range candles {
-			if !candle.FromDb {
-				count++
-				if err := candle.CreateOrUpdate(); err != nil {
-					log.WithError(err).Error("saving new candle failed")
-				}
-			}
-		}
-		fmt.Printf("imported candles: %d\n", count)
-	}(candles)
+	//go func(candles []models.Candle) {
+	//	fmt.Println("import to db:", len(candles))
+	//	count := 0
+	for _, candle := range candles {
+		dbQueue <- candle
+		//if !candle.FromDb {
+		//	count++
+		//	if err := candle.CreateOrUpdate(); err != nil {
+		//		log.WithError(err).Error("saving new candle failed")
+		//	}
+		//}
+	}
+	//	fmt.Printf("imported candles: %d\n", count)
+	//}(candles)
 	pool.lock.Lock()
 	defer pool.lock.Unlock()
 	if len(candles) > pool.Capacity {
