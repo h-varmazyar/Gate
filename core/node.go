@@ -9,7 +9,7 @@ import (
 	"github.com/mrNobody95/Gate/models"
 	"github.com/mrNobody95/Gate/storage"
 	"github.com/mrNobody95/Gate/strategies"
-	log "github.com/sirupsen/logrus"
+	"github.com/mrNobody95/Gate/wallets"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"strconv"
@@ -17,16 +17,17 @@ import (
 )
 
 type Node struct {
-	Markets         []models.Market
-	Strategy        *strategies.Strategy
-	Requests        brokerages.BrokerageRequests
-	Brokerage       *models.Brokerage
-	Resolutions     []models.Resolution
-	PivotResolution *models.Resolution
-	FakeTrading     bool
-	EnableTrading   bool
-	IndicatorConfig *indicators.Configuration
-	dataChannel     chan models.Candle
+	Markets           []models.Market
+	Strategy          *strategies.Strategy
+	Requests          brokerages.BrokerageRequests
+	Brokerage         *models.Brokerage
+	Resolutions       []models.Resolution
+	PivotResolution   *models.Resolution
+	FakeTrading       bool
+	EnableTrading     bool
+	IndicatorConfig   *indicators.Configuration
+	dataChannel       chan models.Candle
+	WalletsController *wallets.Controller
 }
 
 func (node *Node) Validate() error {
@@ -47,28 +48,30 @@ func (node *Node) Start() error {
 	color.HiGreen("Starting node for %s(markets: %d)", node.Brokerage.Name, len(node.Markets))
 	node.dataChannel = make(chan models.Candle, 100)
 	for _, market := range node.Markets {
-		go func(market models.Market) {
-			pool, err := storage.NewPool(node.Strategy.BufferedCandleCount, market.Id, node.PivotResolution.Id)
-			if err != nil {
-				color.Red("create candle pool failed for market %s in timeframe %s: %v",
-					market.Name, node.PivotResolution.Label, err.Error())
-				return
-			}
-			thread := MarketThread{
-				Node:            node,
-				Market:          &market,
-				StartFrom:       market.StartTime,
-				Resolution:      node.PivotResolution,
-				IndicatorConfig: node.IndicatorConfig,
-				CandlePool:      pool,
-			}
-			if err = thread.CollectPrimaryData(); err != nil {
-				log.WithError(err).Errorf("failed to collect primary data for %s in timeframe %s",
-					thread.Market.Name, thread.PivotResolution.Label)
-				return
-			}
-			thread.PeriodicOHLC()
-		}(market)
+		pool, err := storage.NewPool(node.Strategy.BufferedCandleCount, market.Id, node.PivotResolution.Id)
+		if err != nil {
+			//color.Red("create candle pool failed for market %s in timeframe %s: %v",
+			//	market.Name, node.PivotResolution.Label, err.Error())
+			return err
+		}
+		thread := MarketThread{
+			Node:            node,
+			Market:          &market,
+			StartFrom:       market.StartTime,
+			Resolution:      node.PivotResolution,
+			IndicatorConfig: node.IndicatorConfig,
+			CandlePool:      pool,
+		}
+		if err = thread.CollectPrimaryData(); err != nil {
+			//log.WithError(err).Errorf("failed to collect primary data for %s in timeframe %s",
+			//	thread.Market.Name, thread.PivotResolution.Label)
+			return err
+		}
+		//node.WalletsController = wallets.NewController(node.Requests)
+		//time.Sleep(time.Minute)
+		//go func(market models.Market) {
+		//	thread.PeriodicOHLC()
+		//}(market)
 	}
 	return nil
 }
@@ -102,18 +105,7 @@ func (node *Node) LoadConfig(path string) error {
 	if len(config.Markets) == 0 {
 		return errors.New("no market available")
 	}
-	fmt.Println("loaded markets: ", len(config.Markets))
 	for _, market := range config.Markets {
-		marketName := market.Name
-		if config.LoadMarketsOnline {
-			resp := node.Requests.MarketInfo(brokerages.MarketInfoParams{
-				MarketName: marketName,
-			})
-			if resp.Error != nil {
-				return resp.Error
-			}
-			market = resp.Market
-		}
 		if market.StartTimeString != "" {
 			t, err := strconv.ParseInt(market.StartTimeString, 10, 64)
 			if err != nil {

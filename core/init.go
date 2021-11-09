@@ -3,7 +3,6 @@ package core
 import (
 	"github.com/fatih/color"
 	"github.com/mrNobody95/Gate/brokerages/coinex"
-	"github.com/mrNobody95/Gate/brokerages/nobitex"
 	"github.com/mrNobody95/Gate/models"
 )
 
@@ -21,13 +20,11 @@ func StartNewNode(brokerageName, configPath string) {
 		color.Red("brokerage loading error: ", err.Error())
 		return
 	}
-	node := Node{
-		Brokerage: brokerage,
-	}
+	node := new(Node)
+	node.Brokerage = brokerage
 	switch models.BrokerageName(brokerageName) {
 	case models.Nobitex:
-		node.Requests = nobitex.Config{Token: brokerage.Token}
-	case models.Binance:
+		//node.Requests = nobitex.Config{Token: brokerage.Token}
 	case models.Coinex:
 		node.Requests = coinex.Config{
 			AccessId:  "",
@@ -45,7 +42,7 @@ func StartNewNode(brokerageName, configPath string) {
 		color.Red("brokerage not valid: %s", err.Error())
 		return
 	}
-	nodeArr = append(nodeArr, &node)
+	nodeArr = append(nodeArr, node)
 	err = node.Start()
 	if err != nil {
 		color.Red("brokerage starting failed: %s", err.Error())

@@ -5,12 +5,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var dbQueue chan models.Candle
+var DbQueue chan models.Candle
 
 func init() {
-	dbQueue = make(chan models.Candle, 10000)
+	DbQueue = make(chan models.Candle, 100000)
 	go func() {
-		for candle := range dbQueue {
+		for candle := range DbQueue {
 			if err := candle.CreateOrUpdate(); err != nil {
 				log.WithError(err).Error("saving new candle failed")
 			}

@@ -4,8 +4,9 @@ type BrokerageRequests interface {
 	Validate() error
 	//market endpoints
 	OHLC(OHLCParams) *OHLCResponse
-	MarketList() *MarketListResponse                 //coinex
-	MarketInfo(MarketInfoParams) *MarketInfoResponse //coinex
+	MarketList() *MarketListResponse                             //coinex
+	MarketInfo(MarketInfoParams) *MarketInfoResponse             //coinex
+	MarketStatistics(MarketInfoParams) *MarketStatisticsResponse //coinex
 	//account endpoints
 	WalletList() *WalletListResponse
 	//trading endpoints

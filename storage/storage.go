@@ -2,6 +2,7 @@ package storage
 
 import (
 	"errors"
+	"fmt"
 	"github.com/mrNobody95/Gate/models"
 	log "github.com/sirupsen/logrus"
 	"sync"
@@ -76,21 +77,21 @@ func (pool *CandlePool) UpdateLastCandle(candle models.Candle) error {
 func (pool *CandlePool) ImportNewCandles(candles []models.Candle) error {
 	for i := 1; i < len(candles); i++ {
 		if candles[i-1].Time.After(candles[i].Time) {
-			return errors.New("candles are not ascending")
+			return errors.New(fmt.Sprintf("candles are not ascending(%v -> %v)", candles[i-1].Time, candles[i].Time))
 		}
 	}
 	//go func(candles []models.Candle) {
 	//	fmt.Println("import to db:", len(candles))
 	//	count := 0
-	for _, candle := range candles {
-		dbQueue <- candle
-		//if !candle.FromDb {
-		//	count++
-		//	if err := candle.CreateOrUpdate(); err != nil {
-		//		log.WithError(err).Error("saving new candle failed")
-		//	}
-		//}
-	}
+	//for _, candle := range candles {
+	//	DbQueue <- candle
+	//	//if !candle.FromDb {
+	//	//	count++
+	//	//	if err := candle.CreateOrUpdate(); err != nil {
+	//	//		log.WithError(err).Error("saving new candle failed")
+	//	//	}
+	//	//}
+	//}
 	//	fmt.Printf("imported candles: %d\n", count)
 	//}(candles)
 	pool.lock.Lock()

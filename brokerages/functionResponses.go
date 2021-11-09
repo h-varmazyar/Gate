@@ -84,3 +84,8 @@ type MarketInfoResponse struct {
 	BasicResponse
 	Market models.Market
 }
+
+type MarketStatisticsResponse struct {
+	BasicResponse
+	Candle models.Candle
+}

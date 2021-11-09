@@ -7,7 +7,7 @@ import (
 type Currency string
 
 type Candle struct {
-	ID              uint64 `gorm:"primarykey"`
+	ID              uint32 `gorm:"primarykey"`
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	Time            time.Time
@@ -20,26 +20,26 @@ type Candle struct {
 	Resolution      *Resolution `gorm:"foreignKey:ResolutionRefer;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	MarketRefer     uint16
 	ResolutionRefer uint
-	FromDb          bool `gorm:"-"`
-	Indicators      `gorm:"-"`
+	//FromDb          bool `gorm:"-"`
+	Indicators `gorm:"-"`
 }
 
 func (c *Candle) LoadLast() error {
 	return db.Model(&Candle{}).
-		Where("market_refer = ?", c.Market.Id).
-		Where("resolution_refer = ?", c.Resolution.Id).
+		Where("market_refer = ?", c.MarketRefer).
+		Where("resolution_refer = ?", c.ResolutionRefer).
 		Order("time ASC").
 		Last(&c).Error
 }
 
-func LoadCandleList(marketId uint16, resolutionId uint, time time.Time) ([]Candle, error) {
+func LoadCandleList(marketId uint16, resolutionId uint, lastTime time.Time, limit int) ([]Candle, error) {
 	var candles []Candle
 	return candles, db.Model(&Candle{}).
 		Where("market_refer = ?", marketId).
 		Where("resolution_refer = ?", resolutionId).
-		Where("time > ?", time).
+		Where("time > ?", lastTime).
 		Order("time ASC").
-		Limit(500).Find(&candles).Error
+		Limit(limit).Find(&candles).Error
 }
 
 func (c *Candle) Load() error {
@@ -52,9 +52,9 @@ func (c *Candle) CreateOrUpdate() error {
 	count := int64(0)
 	db.Model(&Candle{}).Where("id = ?", c.ID).Count(&count)
 	if count == 0 {
-		return db.Model(&Candle{}).Create(&c).Error
+		return db.Model(&Candle{}).Create(c).Error
 	}
-	return db.Model(&Candle{}).Where("id = ?", c.ID).Updates(&c).Error
+	return db.Save(c).Error
 }
 
 func (c *Candle) Update() error {

@@ -37,7 +37,8 @@ func (config Config) OrderBook(brokerages.OrderBookParams) *brokerages.OrderBook
 func (config Config) OHLC(params brokerages.OHLCParams) *brokerages.OHLCResponse {
 	reqParams := make(map[string]interface{})
 	endpoint := ""
-	count := params.To - params.From/int64(params.Resolution.Duration)
+	count := (params.To - params.From) / int64(params.Resolution.Duration/time.Second)
+	fmt.Println(count)
 	if count > 1000 {
 		reqParams = map[string]interface{}{
 			"market":     params.Market.Name,
@@ -47,10 +48,12 @@ func (config Config) OHLC(params brokerages.OHLCParams) *brokerages.OHLCResponse
 		endpoint = "https://www.coinex.com/res/market/kline"
 	} else {
 		reqParams = map[string]interface{}{
-			"market":   params.Market.Name,
-			"type":     params.Resolution.Label,
-			"limit":    math.Floor(float64(params.To - params.From/int64(params.Resolution.Duration))),
-			"end_time": params.To}
+			"market":     params.Market.Name,
+			"type":       params.Resolution.Label,
+			"limit":      int64(math.Ceil(float64(count))),
+			"start_time": params.From,
+			"end_time":   params.To,
+		}
 		endpoint = "https://api.coinex.com/v1/market/kline"
 	}
 	req := networkManager.Request{
@@ -156,7 +159,7 @@ func (config Config) OHLC(params brokerages.OHLCParams) *brokerages.OHLCResponse
 func (config Config) MarketList() *brokerages.MarketListResponse {
 	req := networkManager.Request{
 		Method:   networkManager.GET,
-		Endpoint: "https://api.coinex.com/v1/market/list/",
+		Endpoint: "https://api.coinex.com/v1/market/info",
 	}
 
 	resp, err := req.Execute()
@@ -168,17 +171,66 @@ func (config Config) MarketList() *brokerages.MarketListResponse {
 	marketList := brokerages.MarketListResponse{}
 	if resp.Code == 200 {
 		respStr := struct {
-			Code    int      `json:"code"`
-			Markets []string `json:"data"`
-			Message string   `json:"message"`
+			Code    int `json:"code"`
+			Markets map[string]struct {
+				Name           string `json:"name"`
+				MinAmount      string `json:"min_amount"`
+				MakerFeeRate   string `json:"maker_fee_rate"`
+				TakerFeeRate   string `json:"taker_fee_rate"`
+				PricingName    string `json:"pricing_name"`
+				PricingDecimal int    `json:"pricing_decimal"`
+				TradingName    string `json:"trading_name"`
+				TradingDecimal int    `json:"trading_decimal"`
+			} `json:"data"`
+			Message string `json:"message"`
 		}{}
 		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
 			marketList.Error = err
 		}
 		if respStr.Code == ResponseSuccess {
-			marketList.Markets = make([]models.Market, len(respStr.Markets))
-			for i, market := range respStr.Markets {
-				marketList.Markets[i].Name = market
+			marketList.Markets = make([]models.Market, 0)
+			for _, tmp := range respStr.Markets {
+				market := models.Market{}
+				market.Name = tmp.Name
+				market.TakerFeeRate, err = strconv.ParseFloat(tmp.TakerFeeRate, 64)
+				if err != nil {
+					continue
+				}
+				market.MakerFeeRate, err = strconv.ParseFloat(tmp.MakerFeeRate, 64)
+				if err != nil {
+					continue
+				}
+				market.MinAmount, err = strconv.ParseFloat(tmp.MinAmount, 64)
+				if err != nil {
+					continue
+				}
+				market.TradingDecimal = tmp.TradingDecimal
+				market.PricingDecimal = tmp.PricingDecimal
+
+				dest, err := models.GetAssetBySymbol(tmp.PricingName)
+				if err != nil {
+					if err == gorm.ErrRecordNotFound {
+						dest, err = models.CreateAsset(tmp.PricingName)
+					}
+					if err != nil {
+						continue
+					}
+				}
+				market.Destination = dest
+				market.DestinationRefer = dest.ID
+				source, err := models.GetAssetBySymbol(tmp.TradingName)
+				if err != nil {
+					if err == gorm.ErrRecordNotFound {
+						source, err = models.CreateAsset(tmp.TradingName)
+					}
+					if err != nil {
+						continue
+					}
+				}
+				market.Source = source
+				market.SourceRefer = source.ID
+
+				marketList.Markets = append(marketList.Markets, market)
 			}
 		} else {
 			marketList.Error = errors.New("coinex response error: " + respStr.Message)
@@ -286,6 +338,93 @@ func (config Config) MarketInfo(params brokerages.MarketInfoParams) *brokerages.
 		marketInfo.Error = errors.New(resp.Status)
 	}
 	return &marketInfo
+}
+
+func (config Config) MarketStatistics(params brokerages.MarketInfoParams) *brokerages.MarketStatisticsResponse {
+	req := networkManager.Request{
+		Method:   networkManager.GET,
+		Endpoint: "https://api.coinex.com/v1/market/ticker",
+		Params:   map[string]interface{}{"market": params.MarketName},
+	}
+
+	resp, err := req.Execute()
+	if err != nil {
+		return &brokerages.MarketStatisticsResponse{
+			BasicResponse: brokerages.BasicResponse{Error: err},
+		}
+	}
+	candle := brokerages.MarketStatisticsResponse{}
+	if resp.Code == 200 {
+		respStr := struct {
+			Code    int    `json:"code"`
+			Message string `json:"message"`
+			Data    struct {
+				Date   int64 `json:"date"`
+				Ticker struct {
+					Vol        string `json:"vol"`
+					Low        string `json:"low"`
+					Open       string `json:"open"`
+					High       string `json:"high"`
+					Last       string `json:"last"`
+					Buy        string `json:"buy"`
+					BuyAmount  string `json:"buy_amount"`
+					Sell       string `json:"sell"`
+					SellAmount string `json:"sell_amount"`
+				} `json:"ticker"`
+			} `json:"data"`
+		}{}
+		if err := json.Unmarshal(resp.Body, &respStr); err != nil {
+			candle.Error = err
+		}
+		if respStr.Code == ResponseSuccess {
+			candle.Candle.Vol, err = strconv.ParseFloat(respStr.Data.Ticker.Vol, 64)
+			if err != nil {
+				return &brokerages.MarketStatisticsResponse{
+					BasicResponse: brokerages.BasicResponse{
+						Error: err,
+					},
+				}
+			}
+			candle.Candle.Open, err = strconv.ParseFloat(respStr.Data.Ticker.Open, 64)
+			if err != nil {
+				return &brokerages.MarketStatisticsResponse{
+					BasicResponse: brokerages.BasicResponse{
+						Error: err,
+					},
+				}
+			}
+			candle.Candle.High, err = strconv.ParseFloat(respStr.Data.Ticker.High, 64)
+			if err != nil {
+				return &brokerages.MarketStatisticsResponse{
+					BasicResponse: brokerages.BasicResponse{
+						Error: err,
+					},
+				}
+			}
+			candle.Candle.Low, err = strconv.ParseFloat(respStr.Data.Ticker.Low, 64)
+			if err != nil {
+				return &brokerages.MarketStatisticsResponse{
+					BasicResponse: brokerages.BasicResponse{
+						Error: err,
+					},
+				}
+			}
+			candle.Candle.Close, err = strconv.ParseFloat(respStr.Data.Ticker.Last, 64)
+			if err != nil {
+				return &brokerages.MarketStatisticsResponse{
+					BasicResponse: brokerages.BasicResponse{
+						Error: err,
+					},
+				}
+			}
+			candle.Candle.Time = time.Unix(respStr.Data.Date, 0)
+		} else {
+			candle.Error = errors.New("coinex response error: " + respStr.Message)
+		}
+	} else {
+		candle.Error = errors.New(resp.Status)
+	}
+	return &candle
 }
 
 func (config Config) WalletList() *brokerages.WalletListResponse {

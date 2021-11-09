@@ -68,6 +68,7 @@ func (r *Request) get() (*Response, error) {
 		URL:    url,
 		Header: r.Headers,
 	}
+	fmt.Println(endpoint)
 	resp, err := (&http.Client{}).Do(req)
 	if err != nil {
 		return nil, err

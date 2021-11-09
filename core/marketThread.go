@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"github.com/fatih/color"
 	"github.com/gofrs/uuid"
 	"github.com/mrNobody95/Gate/brokerages"
@@ -20,10 +21,9 @@ type MarketThread struct {
 	Resolution      *models.Resolution
 	IndicatorConfig *indicators.Configuration
 	CandlePool      *storage.CandlePool
-	//todo: remove after test
-	totalBalanced  float64
-	activeBalanced float64
 }
+
+const limit = 1000
 
 func (thread *MarketThread) CollectPrimaryData() error {
 	color.HiGreen("Collecting primary data for: %s", thread.Market.Name)
@@ -34,7 +34,7 @@ func (thread *MarketThread) CollectPrimaryData() error {
 	lastTime := thread.StartFrom
 	var list []models.Candle
 	for {
-		if tmpList, err := models.LoadCandleList(thread.Market.Id, thread.PivotResolution.Id, lastTime); err != nil {
+		if tmpList, err := models.LoadCandleList(thread.Market.Id, thread.PivotResolution.Id, lastTime, limit); err != nil {
 			if err == gorm.ErrRecordNotFound {
 				break
 			} else {
@@ -47,18 +47,19 @@ func (thread *MarketThread) CollectPrimaryData() error {
 			break
 		}
 	}
-	for i := 0; i < len(list); i++ {
-		list[i].FromDb = true
-	}
 
-	count := (time.Now().Unix() - lastTime.Unix()) / int64(thread.PivotResolution.Duration/time.Second)
-	j := count / 500
-	if count%500 != 0 {
+	count := int64(time.Now().Sub(lastTime) / thread.PivotResolution.Duration)
+	fmt.Println("count:", count)
+	j := count / limit
+	if count%limit != 0 {
 		j++
 	}
 	for i := int64(1); i <= j; i++ {
-		from := lastTime.Unix() + 500*(i-1)*int64(thread.PivotResolution.Duration/time.Second)
-		to := lastTime.Unix() + 500*i*int64(thread.PivotResolution.Duration/time.Second)
+		from := lastTime.Unix() + limit*(i-1)*int64(thread.PivotResolution.Duration/time.Second)
+		to := lastTime.Unix() + limit*i*int64(thread.PivotResolution.Duration/time.Second)
+		if to > time.Now().Unix() {
+			to = time.Now().Unix()
+		}
 		if candles, err := thread.makeOHLCRequest(thread.PivotResolution, from, to); err != nil {
 			return err
 		} else {
@@ -68,7 +69,11 @@ func (thread *MarketThread) CollectPrimaryData() error {
 			} else {
 				list = append(list, candles...)
 			}
+			for _, candle := range candles {
+				storage.DbQueue <- candle
+			}
 		}
+		time.Sleep(time.Millisecond * time.Duration(len(storage.DbQueue)))
 	}
 	if err := thread.IndicatorConfig.CalculateIndicators(list); err != nil {
 		return err
@@ -126,9 +131,7 @@ func (thread *MarketThread) checkForSignals() {
 	if walletResponse.Error != nil {
 		return
 	}
-	if thread.activeBalanced > 0 {
-		//todo: uncomment next line
-		//if walletResponse.Wallet.ActiveBalance > 0 {
+	if walletResponse.Wallet.ActiveBalance > 0 {
 		candles := thread.CandlePool.GetLastNCandle(2)
 		rsi := thread.Strategy.RsiSignal(candles[0], candles[1])
 		bb := thread.Strategy.BollingerBandSignal(candles[0], candles[1], thread.Market.MakerFeeRate, thread.Market.TakerFeeRate)
@@ -142,7 +145,7 @@ func (thread *MarketThread) checkForSignals() {
 				BuyOrSell:  models.Buy,
 				Price:      price,
 				Market:     *thread.Market,
-				Amount:     thread.totalBalanced / (price * 3),
+				Amount:     thread.Node.WalletsController.UsdtValue() / (price * 3),
 				Option:     models.OptionNormal,
 			})
 			if newOrderResponse.Error != nil {
@@ -150,7 +153,6 @@ func (thread *MarketThread) checkForSignals() {
 				return
 			}
 			if newOrderResponse.Order.Status == models.NewOrderStatus {
-				thread.activeBalanced -= thread.totalBalanced / 3
 				if err := newOrderResponse.Order.Create(); err != nil {
 					log.WithError(err).Error("save new order failed")
 					return
@@ -246,10 +248,6 @@ func (thread *MarketThread) checkPrice(order models.Order) bool {
 		})
 		if response.Error != nil {
 			log.WithError(response.Error).Error("check price order sell failed")
-		} else {
-			thread.activeBalanced += (thread.totalBalanced / 3) - (order.AveragePrice-lowerPrice)*order.Amount
-			thread.totalBalanced -= (order.AveragePrice - lowerPrice) * order.Amount
-			return true
 		}
 	}
 	if candle.Close >= upperPrice {
@@ -265,10 +263,6 @@ func (thread *MarketThread) checkPrice(order models.Order) bool {
 		})
 		if response.Error != nil {
 			log.WithError(response.Error).Error("check price order buy failed")
-		} else {
-			thread.activeBalanced += (thread.totalBalanced / 3) + (upperPrice-order.AveragePrice)*order.Amount
-			thread.totalBalanced += (upperPrice - order.AveragePrice) * order.Amount
-			return true
 		}
 	}
 	return false

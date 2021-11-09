@@ -14,10 +14,8 @@ func rec(arr []int) {
 }
 
 func main() {
-	//cli.Execute()
-	//arr:=[]int{1,2,3,4,5,6,7}
-	//rec(arr[4:])
-	//fmt.Println(arr)
+	//diff:=time.Now().AddDate(0, 0, 1).Sub(time.Now())/time.Hour
+	//fmt.Println(diff)
 	//return
 
 	exit := make(chan os.Signal, 1)
