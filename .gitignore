@@ -1,2 +1,18 @@
-.env
+# IDE
 .idea
+.metals
+# Secret files
+*.secret
+
+# System files
+.DS_Store
+.docker
+
+# Auto generated
+logs
+build
+*.dat
+
+#other
+tmp
+old
