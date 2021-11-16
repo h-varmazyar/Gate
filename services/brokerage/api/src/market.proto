@@ -1,0 +1,54 @@
+syntax = "proto3";
+package brokerageApi;
+option go_package = "github.com/mrNobody95/Gate/services/brokerage/api";
+import "api/src/misc.proto";
+import "services/brokerage/api/src/brokerage.proto";
+import "services/brokerage/api/src/asset.proto";
+
+service MarketService {
+  rpc Get(MarketRequest) returns (Market);
+  rpc List(api.Void) returns (Markets);
+}
+
+message MarketRequest {
+  // @inject_tag: json:"brokerage"
+  Brokerage Brokerage = 1;
+  // @inject_tag: json:"market_name"
+  string MarketName = 2;
+}
+
+message Market {
+  // @inject_tag: json:"pricing_decimal"
+  float PricingDecimal = 1;
+  // @inject_tag: json:"trading_decimal"
+  float TradingDecimal = 2;
+  // @inject_tag: json:"brokerage"
+  Brokerage Brokerage = 3;
+  // @inject_tag: json:"taker_fee_rate"
+  float TakerFeeRate = 4;
+  // @inject_tag: json:"maker_fee_rate"
+  float MakerFeeRate = 5;
+  // @inject_tag: json:"destination"
+  Asset Destination = 6;
+  // @inject_tag: json:"start_time"
+  int64 StartTime = 7;
+  // @inject_tag: json:"min_amount"
+  float MinAmount = 8;
+  // @inject_tag: json:"created_at"
+  int64 CreatedAt = 9;
+  // @inject_tag: json:"updated_at"
+  int64 UpdatedAt = 10;
+  // @inject_tag: json:"source"
+  Asset Source = 11;
+  // @inject_tag: json:"is_amm"
+  float IsAMM = 12;
+  // @inject_tag: json:"name"
+  string Name = 13;
+  // @inject_tag: json:"id"
+  uint32 ID = 14;
+}
+
+message Markets {
+  // @inject_tag: json:"markets"
+  repeated Market Markets = 1;
+}

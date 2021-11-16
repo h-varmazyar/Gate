@@ -1,0 +1,37 @@
+syntax = "proto3";
+package brokerageApi;
+option go_package = "github.com/mrNobody95/Gate/services/brokerage/api";
+import "api/src/misc.proto";
+import "services/network/api/src/request.proto";
+
+service BrokerageService {
+  rpc Add(Brokerage) returns (api.Void);
+  rpc ChangeStatus(api.Void) returns (BrokerageStatus);
+}
+
+enum Names {
+  UnknownBrokerage = 0;
+  Coinex = 1;
+}
+
+enum Status {
+  UnknownStatus = 0;
+  Enable = 1;
+  Disable = 2 ;
+}
+
+message Brokerage {
+  // @inject_tag: json:"auth"
+  networkApi.Auth Auth = 1;
+  // @inject_tag: json:"name"
+  Names Name = 2;
+  // @inject_tag: json:"status"
+  Status Status = 3;
+}
+
+message BrokerageStatus {
+  // @inject_tag: json:"status"
+  Status Status = 1;
+}
+
+

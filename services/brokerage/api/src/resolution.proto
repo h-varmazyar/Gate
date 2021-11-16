@@ -1,0 +1,28 @@
+syntax = "proto3";
+package brokerageApi;
+option go_package = "github.com/mrNobody95/Gate/services/brokerage/api";
+import "api/src/misc.proto";
+import "services/brokerage/api/src/brokerage.proto";
+
+service ResolutionService {
+  rpc Set(Resolution) returns(api.Void);
+  rpc GetByID(GetResolutionRequest) returns (Resolution);
+}
+
+message Resolution {
+  // @inject_tag: json:"brokerage"
+  Brokerage Brokerage = 1;
+  // @inject_tag: json:"duration"
+  int64 Duration = 2;
+  // @inject_tag: json:"label"
+  string Label = 3;
+  // @inject_tag: json:"value"
+  string Value = 4;
+  // @inject_tag: json:"id"
+  string ID = 5;
+}
+
+message GetResolutionRequest {
+  // @inject_tag: json:"id"
+  string ID = 1;
+}

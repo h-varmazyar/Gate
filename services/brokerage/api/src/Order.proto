@@ -1,0 +1,38 @@
+syntax = "proto3";
+package brokerageApi;
+option go_package = "github.com/mrNobody95/Gate/services/brokerage/api";
+
+service OrderService {
+  rpc New(NewOrderRequest) returns (Order);
+  rpc Cancel(CancelOrderRequest) returns (Order);
+  rpc Status(OrderStatusRequest) returns (OrderStatus);
+  rpc List(OrderListRequest) returns (Orders);
+}
+
+message Order {
+
+}
+
+message Orders {
+  repeated Order Orders = 1;
+}
+
+message NewOrderRequest {
+
+}
+
+message CancelOrderRequest {
+
+}
+
+message OrderStatus {
+
+}
+
+message OrderStatusRequest {
+
+}
+
+message OrderListRequest {
+
+}
