@@ -8,6 +8,7 @@ import (
 	"github.com/mrNobody95/Gate/pkg/muxext"
 	"github.com/mrNobody95/Gate/pkg/service"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/app/assets"
+	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"net"
@@ -31,14 +32,15 @@ import (
 **/
 
 type Configs struct {
-	GrpcPort       uint16 `env:"GRPC_PORT,required"`
-	HttpPort       uint16 `env:"HTTP_PORT,required"`
-	MaxLogsPerPage int64  `env:"MAX_LOGS_PER_PAGE,required"`
+	GrpcPort           uint16 `env:"GRPC_PORT,required"`
+	HttpPort           uint16 `env:"HTTP_PORT,required"`
+	MaxLogsPerPage     int64  `env:"MAX_LOGS_PER_PAGE,required"`
+	DatabaseConnection string `env:"DATABASE_CONNECTION,required,file"`
 }
 
 var (
 	Name    = "brokerage"
-	Version = "v0.1.0"
+	Version = "v0.1.1"
 )
 
 func loadConfig() (*Configs, error) {
@@ -54,7 +56,7 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal("can not load service configs")
 	}
-
+	repository.LoadRepositories(configs.DatabaseConnection)
 	service.Serve(configs.GrpcPort, func(lst net.Listener) error {
 		server := grpc.NewServer()
 		assets.NewService().RegisterServer(server)

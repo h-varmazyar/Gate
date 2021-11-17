@@ -31,6 +31,9 @@ func LoadRepositories(dsn string) {
 	if err != nil {
 		log.WithError(err).Fatal("can not load repository configs")
 	}
+	if err := db.AutoMigrate(new(Asset)); err != nil {
+		log.WithError(err).Fatal("migration failed for asset")
+	}
 	Assets = &AssetRepository{db: db}
 	Brokerages = &BrokerageRepository{db: db}
 }

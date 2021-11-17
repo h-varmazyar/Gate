@@ -48,8 +48,11 @@ func (c *Controller) RegisterRouter(router *mux.Router) {
 }
 
 func (c *Controller) Set(res http.ResponseWriter, req *http.Request) {
-	asset := new(brokerageApi.Asset)
-	if _, err := c.assetsService.Set(req.Context(), asset); err != nil {
+	model := new(brokerageApi.Asset)
+	if err := httpext.BindModel(req, model); err != nil {
+		httpext.SendError(res, req, err)
+	}
+	if _, err := c.assetsService.Set(req.Context(), model); err != nil {
 		httpext.SendError(res, req, err)
 	} else {
 		httpext.SendCode(res, req, http.StatusOK)

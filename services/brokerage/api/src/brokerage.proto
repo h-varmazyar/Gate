@@ -2,7 +2,7 @@ syntax = "proto3";
 package brokerageApi;
 option go_package = "github.com/mrNobody95/Gate/services/brokerage/api";
 import "api/src/misc.proto";
-import "services/network/api/src/request.proto";
+import "services/network/api/src/variable.proto";
 
 service BrokerageService {
   rpc Add(Brokerage) returns (api.Void);
