@@ -2,6 +2,7 @@ package httpext
 
 import (
 	"encoding/json"
+	"github.com/mrNobody95/Gate/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )
@@ -23,7 +24,8 @@ import (
 **/
 
 func SendError(res http.ResponseWriter, req *http.Request, err error) {
-	SendModel(res, req, 0, err)
+	errModel := errors.Cast(req.Context(), err)
+	SendModel(res, req, errModel.HttpStatus(), errModel)
 }
 
 func SendModel(res http.ResponseWriter, req *http.Request, code int, model interface{}) {
