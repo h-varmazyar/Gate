@@ -32,8 +32,8 @@ type Configs struct {
 }
 
 var (
-	Name    = "tracking"
-	Version = "v0.1.0"
+	Name    = "network"
+	Version = "v0.1.1"
 )
 
 func loadConfig() (*Configs, error) {

@@ -44,6 +44,7 @@ func New(Type networkAPI.Type, endpoint string) *Request {
 	case networkAPI.Type_Get:
 		req.httpRequest.Method = http.MethodGet
 	}
+	req.Endpoint = endpoint
 	return req
 }
 

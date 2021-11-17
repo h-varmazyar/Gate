@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.1.0
 // - protoc             v3.6.1
-// source: services/network/api/src/requests.proto
+// source: services/network/api/src/variable.proto
 
 package api
 
@@ -35,7 +35,7 @@ func NewRequestServiceClient(cc grpc.ClientConnInterface) RequestServiceClient {
 
 func (c *requestServiceClient) Do(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
 	out := new(Response)
-	err := c.cc.Invoke(ctx, "/decisions_api.RequestService/Do", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/networkApi.RequestService/Do", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func _RequestService_Do_Handler(srv interface{}, ctx context.Context, dec func(i
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/decisions_api.RequestService/Do",
+		FullMethod: "/networkApi.RequestService/Do",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RequestServiceServer).Do(ctx, req.(*Request))
@@ -90,7 +90,7 @@ func _RequestService_Do_Handler(srv interface{}, ctx context.Context, dec func(i
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var RequestService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "decisions_api.RequestService",
+	ServiceName: "networkApi.RequestService",
 	HandlerType: (*RequestServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -99,5 +99,5 @@ var RequestService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "services/network/api/src/requests.proto",
+	Metadata: "services/network/api/src/variable.proto",
 }

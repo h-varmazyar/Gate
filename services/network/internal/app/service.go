@@ -24,17 +24,25 @@ import (
 * Email: hossein.varmazyar@yahoo.com
 **/
 
-func NewService() Service {
-	return Service{}
+type Service struct {
 }
 
-type Service struct{}
+var (
+	GrpcService *Service
+)
 
-func (s Service) RegisterServer(server *grpc.Server) {
+func NewService() *Service {
+	if GrpcService == nil {
+		GrpcService = new(Service)
+	}
+	return GrpcService
+}
+
+func (s *Service) RegisterServer(server *grpc.Server) {
 	networkAPI.RegisterRequestServiceServer(server, s)
 }
 
-func (s Service) Do(ctx context.Context, req *networkAPI.Request) (*networkAPI.Response, error) {
+func (s *Service) Do(ctx context.Context, req *networkAPI.Request) (*networkAPI.Response, error) {
 	request := requests.New(req.Type, req.Endpoint)
 	if err := request.SetAuth(req.Auth); err != nil {
 		return nil, err
