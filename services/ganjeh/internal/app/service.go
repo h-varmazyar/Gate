@@ -43,14 +43,17 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 	ganjehAPI.RegisterVariableServiceServer(server, s)
 }
 
-func (s *Service) Set(ctx context.Context, req *ganjehAPI.SetVariableRequest) (*api.Void, error) {
-	err := consul.Set(&ganjehAPI.Variable{
+func (s *Service) Set(ctx context.Context, req *ganjehAPI.SetVariableRequest) (*ganjehAPI.Variable, error) {
+	variable := &ganjehAPI.Variable{
 		Key:       req.Key,
 		Value:     req.Value,
 		Namespace: req.Namespace,
 		UpdatedAt: time.Now().Unix(),
-	})
-	return &api.Void{}, err
+	}
+	if err := consul.Set(variable); err != nil {
+		return nil, err
+	}
+	return variable, nil
 }
 
 func (s *Service) Get(ctx context.Context, req *ganjehAPI.GetVariableRequest) (*ganjehAPI.Variable, error) {
@@ -60,4 +63,9 @@ func (s *Service) Get(ctx context.Context, req *ganjehAPI.GetVariableRequest) (*
 
 func (s *Service) List(ctx context.Context, req *ganjehAPI.GetVariablesRequest) (*ganjehAPI.Variables, error) {
 	return consul.GetList(ctx, req.Namespace)
+}
+
+func (s *Service) Delete(ctx context.Context, req *ganjehAPI.DeleteVariableRequest) (*api.Void, error) {
+	err := consul.Delete(req.Namespace, req.Key)
+	return new(api.Void), err
 }

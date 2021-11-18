@@ -4,9 +4,10 @@ option go_package = "github.com/mrNobody95/Gate/services/ganjeh/api";
 import "api/src/misc.proto";
 
 service VariableService {
-  rpc Set(SetVariableRequest) returns (api.Void);
+  rpc Set(SetVariableRequest) returns (Variable);
   rpc Get(GetVariableRequest) returns (Variable);
   rpc List(GetVariablesRequest) returns (Variables);
+  rpc Delete(DeleteVariableRequest) returns (api.Void);
 }
 
 message Variable {
@@ -35,6 +36,14 @@ message SetVariableRequest {
 }
 
 message GetVariableRequest {
+  // @inject_tag: json:"key"
+  string key = 1;
+  // @inject_tag: json:"namespace"
+  string Namespace = 2;
+
+}
+
+message DeleteVariableRequest {
   // @inject_tag: json:"key"
   string key = 1;
   // @inject_tag: json:"namespace"

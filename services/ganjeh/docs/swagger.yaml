@@ -1,0 +1,211 @@
+openapi: 3.0.1
+info:
+  title: Ganjeh API
+  version: v0.1.0
+servers:
+  - url: 'http://localhost:11000'
+
+paths:
+  /variables:
+    put:
+      operationId: variable_set
+      summary: Create or update a variable
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Variable'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Variable'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
+  /variables/namespace/{namespace}:
+    get:
+      operationId: variable_list
+      summary: Return list of variables
+      parameters:
+        - $ref: '#/components/parameters/namespace'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Variables'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
+  /variables/namespace/{namespace}/key/{key}:
+    get:
+      operationId: variable_return
+      summary: Return a variable by key in a namespace
+      parameters:
+        - $ref: '#/components/parameters/namespace'
+        - $ref: '#/components/parameters/key'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Variable'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+    delete:
+      operationId: variables_delete
+      summary: delete a variable by key in a namespace
+      parameters:
+        - $ref: '#/components/parameters/namespace'
+        - $ref: '#/components/parameters/key'
+      responses:
+        '204':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+components:
+  parameters:
+    namespace:
+      name: namespace
+      in: path
+      required: true
+      schema:
+        type: string
+    key:
+      name: key
+      in: path
+      required: true
+      schema:
+        type: string
+    include:
+      in: query
+      name: include
+      schema:
+        type: string
+      description: Embed related entities comma separated
+    filter:
+      in: query
+      name: filter
+      schema:
+        type: string
+      description: Filter entities with fields
+    take:
+      in: query
+      name: take
+      schema:
+        type: integer
+      description: Take records count
+    skip:
+      in: query
+      name: skip
+      schema:
+        type: integer
+      description: Skip records from top
+  responses:
+    '400':
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '403':
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '404':
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '409':
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '500':
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '503':
+      description: Unavailable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      readOnly: true
+      properties:
+        message:
+          type: string
+          description: Localized error message
+        details:
+          type: array
+          items:
+            type: string
+          description: Systematic error details
+    Variable:
+      type: object
+      properties:
+        key:
+          type: string
+          readOnly: true
+          description: variable key
+        value:
+          type: string
+          maxLength: 250
+          description: variable value
+        namespace:
+          type: string
+          maxLength: 250
+          description: variable namespace
+        updated_at:
+          type: number
+          format: 'date-time'
+          readOnly: true
+          description: variable latest update time
+    Variables:
+      type: object
+      readOnly: true
+      properties:
+        elements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Variable'
+        count:
+          type: integer
+          description: List of namespace variable

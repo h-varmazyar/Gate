@@ -44,6 +44,7 @@ func (c *Controller) RegisterRouter(router *mux.Router) {
 	router.HandleFunc("/variables", c.Set).Methods(http.MethodPut)
 	router.HandleFunc("/variables/namespace/{namespace}", c.List).Methods(http.MethodGet)
 	router.HandleFunc("/variables/namespace/{namespace}/key/{key}", c.Get).Methods(http.MethodGet)
+	router.HandleFunc("/variables/namespace/{namespace}/key/{key}", c.Delete).Methods(http.MethodDelete)
 }
 
 func (c *Controller) Set(res http.ResponseWriter, req *http.Request) {
@@ -76,5 +77,16 @@ func (c Controller) List(res http.ResponseWriter, req *http.Request) {
 		httpext.SendError(res, req, err)
 	} else {
 		httpext.SendModel(res, req, http.StatusOK, list)
+	}
+}
+
+func (c Controller) Delete(res http.ResponseWriter, req *http.Request) {
+	deleteReq := new(ganjehAPI.DeleteVariableRequest)
+	deleteReq.Namespace = muxext.PathParam(req, "namespace")
+	deleteReq.Key = muxext.PathParam(req, "key")
+	if list, err := c.ganjehService.Delete(req.Context(), deleteReq); err != nil {
+		httpext.SendError(res, req, err)
+	} else {
+		httpext.SendModel(res, req, http.StatusNoContent, list)
 	}
 }

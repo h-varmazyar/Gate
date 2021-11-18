@@ -38,7 +38,7 @@ type Configs struct {
 
 var (
 	Name    = "ganjeh"
-	Version = "v0.1.0"
+	Version = "v0.1.1"
 )
 
 func loadConfig() (*Configs, error) {

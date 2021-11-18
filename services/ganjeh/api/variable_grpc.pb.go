@@ -23,9 +23,10 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type VariableServiceClient interface {
-	Set(ctx context.Context, in *SetVariableRequest, opts ...grpc.CallOption) (*api.Void, error)
+	Set(ctx context.Context, in *SetVariableRequest, opts ...grpc.CallOption) (*Variable, error)
 	Get(ctx context.Context, in *GetVariableRequest, opts ...grpc.CallOption) (*Variable, error)
 	List(ctx context.Context, in *GetVariablesRequest, opts ...grpc.CallOption) (*Variables, error)
+	Delete(ctx context.Context, in *DeleteVariableRequest, opts ...grpc.CallOption) (*api.Void, error)
 }
 
 type variableServiceClient struct {
@@ -36,8 +37,8 @@ func NewVariableServiceClient(cc grpc.ClientConnInterface) VariableServiceClient
 	return &variableServiceClient{cc}
 }
 
-func (c *variableServiceClient) Set(ctx context.Context, in *SetVariableRequest, opts ...grpc.CallOption) (*api.Void, error) {
-	out := new(api.Void)
+func (c *variableServiceClient) Set(ctx context.Context, in *SetVariableRequest, opts ...grpc.CallOption) (*Variable, error) {
+	out := new(Variable)
 	err := c.cc.Invoke(ctx, "/networkApi.VariableService/Set", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -63,20 +64,30 @@ func (c *variableServiceClient) List(ctx context.Context, in *GetVariablesReques
 	return out, nil
 }
 
+func (c *variableServiceClient) Delete(ctx context.Context, in *DeleteVariableRequest, opts ...grpc.CallOption) (*api.Void, error) {
+	out := new(api.Void)
+	err := c.cc.Invoke(ctx, "/networkApi.VariableService/Delete", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // VariableServiceServer is the server API for VariableService service.
 // All implementations should embed UnimplementedVariableServiceServer
 // for forward compatibility
 type VariableServiceServer interface {
-	Set(context.Context, *SetVariableRequest) (*api.Void, error)
+	Set(context.Context, *SetVariableRequest) (*Variable, error)
 	Get(context.Context, *GetVariableRequest) (*Variable, error)
 	List(context.Context, *GetVariablesRequest) (*Variables, error)
+	Delete(context.Context, *DeleteVariableRequest) (*api.Void, error)
 }
 
 // UnimplementedVariableServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedVariableServiceServer struct {
 }
 
-func (UnimplementedVariableServiceServer) Set(context.Context, *SetVariableRequest) (*api.Void, error) {
+func (UnimplementedVariableServiceServer) Set(context.Context, *SetVariableRequest) (*Variable, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Set not implemented")
 }
 func (UnimplementedVariableServiceServer) Get(context.Context, *GetVariableRequest) (*Variable, error) {
@@ -84,6 +95,9 @@ func (UnimplementedVariableServiceServer) Get(context.Context, *GetVariableReque
 }
 func (UnimplementedVariableServiceServer) List(context.Context, *GetVariablesRequest) (*Variables, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
+}
+func (UnimplementedVariableServiceServer) Delete(context.Context, *DeleteVariableRequest) (*api.Void, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
 
 // UnsafeVariableServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -151,6 +165,24 @@ func _VariableService_List_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _VariableService_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteVariableRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VariableServiceServer).Delete(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/networkApi.VariableService/Delete",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VariableServiceServer).Delete(ctx, req.(*DeleteVariableRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // VariableService_ServiceDesc is the grpc.ServiceDesc for VariableService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -169,6 +201,10 @@ var VariableService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "List",
 			Handler:    _VariableService_List_Handler,
+		},
+		{
+			MethodName: "Delete",
+			Handler:    _VariableService_Delete_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

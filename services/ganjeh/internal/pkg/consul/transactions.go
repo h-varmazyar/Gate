@@ -75,3 +75,8 @@ func GetList(ctx context.Context, namespace string) (*ganjehAPI.Variables, error
 	}
 	return variables, nil
 }
+
+func Delete(namespace, key string) error {
+	_, err := client.KV().Delete(formatKey(namespace, key), nil)
+	return err
+}
