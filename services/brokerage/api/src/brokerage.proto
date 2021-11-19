@@ -7,18 +7,12 @@ service BrokerageService {
   rpc Add(Brokerage) returns (Brokerage);
   rpc Get(BrokerageIDReq) returns (GetBrokerage);
   rpc Delete(BrokerageIDReq) returns (api.Void);
-  rpc ChangeStatus(BrokerageStatusChangeRequest) returns (BrokerageStatus);
+  rpc ChangeStatus(api.StatusChangeRequest) returns (api.Status);
 }
 
 enum Names {
   UnknownBrokerage = 0;
   Coinex = 1;
-}
-
-enum Status {
-  UnknownStatus = 0;
-  Enable = 1;
-  Disable = 2 ;
 }
 
 message Brokerage {
@@ -29,7 +23,7 @@ message Brokerage {
   // @inject_tag: json:"name"
   Names Name = 3;
   // @inject_tag: json:"status"
-  Status Status = 4;
+  api.StatusType Status = 4;
 }
 
 message GetBrokerage {
@@ -46,16 +40,6 @@ message GetBrokerage {
 message BrokerageIDReq {
   // @inject_tag: json:"id"
   string ID = 1;
-}
-
-message BrokerageStatusChangeRequest {
-  // @inject_tag: json:"id"
-  string ID = 1;
-}
-
-message BrokerageStatus {
-  // @inject_tag: json:"status"
-  Status Status = 1;
 }
 
 

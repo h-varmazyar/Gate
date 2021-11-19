@@ -8,6 +8,12 @@ enum AuthType {
   UsernamePassword = 2;
 }
 
+enum StatusType {
+  UnknownStatus = 0;
+  Enable = 1;
+  Disable = 2 ;
+}
+
 message Auth {
   // @inject_tag: json:"type"
   AuthType Type = 1;
@@ -17,6 +23,16 @@ message Auth {
   string Password = 3;
   // @inject_tag: json:"static_token"
   string StaticToken = 4;
+}
+
+message StatusChangeRequest {
+  // @inject_tag: json:"id"
+  string ID = 1;
+}
+
+message Status {
+  // @inject_tag: json:"status"
+  StatusType Status = 1;
 }
 
 message Void {

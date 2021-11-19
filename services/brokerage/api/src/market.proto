@@ -6,15 +6,22 @@ import "services/brokerage/api/src/brokerage.proto";
 import "services/brokerage/api/src/asset.proto";
 
 service MarketService {
+  rpc Set(Market) returns (Market);
   rpc Get(MarketRequest) returns (Market);
-  rpc List(api.Void) returns (Markets);
+  rpc List(MarketListRequest) returns (Markets);
+  rpc ChangeStatus(api.StatusChangeRequest) returns (api.Status);
 }
 
 message MarketRequest {
-  // @inject_tag: json:"brokerage"
-  Brokerage Brokerage = 1;
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 1;
   // @inject_tag: json:"market_name"
   string MarketName = 2;
+}
+
+message MarketListRequest {
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 1;
 }
 
 message Market {
@@ -22,14 +29,16 @@ message Market {
   float PricingDecimal = 1;
   // @inject_tag: json:"trading_decimal"
   float TradingDecimal = 2;
-  // @inject_tag: json:"brokerage"
-  Brokerage Brokerage = 3;
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 3;
   // @inject_tag: json:"taker_fee_rate"
   float TakerFeeRate = 4;
   // @inject_tag: json:"maker_fee_rate"
   float MakerFeeRate = 5;
   // @inject_tag: json:"destination"
   Asset Destination = 6;
+  // @inject_tag: json:"destination_id"
+  string DestinationID = 16;
   // @inject_tag: json:"start_time"
   int64 StartTime = 7;
   // @inject_tag: json:"min_amount"
@@ -40,12 +49,16 @@ message Market {
   int64 UpdatedAt = 10;
   // @inject_tag: json:"source"
   Asset Source = 11;
+  // @inject_tag: json:"source_id"
+  string SourceID = 17;
   // @inject_tag: json:"is_amm"
-  float IsAMM = 12;
+  bool IsAMM = 12;
   // @inject_tag: json:"name"
   string Name = 13;
   // @inject_tag: json:"id"
-  uint32 ID = 14;
+  string ID = 14;
+  // @inject_tag: json:"status"
+  api.StatusType Status = 15;
 }
 
 message Markets {

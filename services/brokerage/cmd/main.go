@@ -7,7 +7,10 @@ import (
 	"github.com/mrNobody95/Gate/pkg/httpext"
 	"github.com/mrNobody95/Gate/pkg/muxext"
 	"github.com/mrNobody95/Gate/pkg/service"
+	"github.com/mrNobody95/Gate/services/brokerage/configs"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/app/assets"
+	brokerages "github.com/mrNobody95/Gate/services/brokerage/internal/app/brokerages"
+	markets "github.com/mrNobody95/Gate/services/brokerage/internal/app/markets"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -31,20 +34,13 @@ import (
 * Email: hossein.varmazyar@yahoo.com
 **/
 
-type Configs struct {
-	GrpcPort           uint16 `env:"GRPC_PORT,required"`
-	HttpPort           uint16 `env:"HTTP_PORT,required"`
-	MaxLogsPerPage     int64  `env:"MAX_LOGS_PER_PAGE,required"`
-	DatabaseConnection string `env:"DATABASE_CONNECTION,required,file"`
-}
-
 var (
 	Name    = "brokerage"
-	Version = "v0.1.1"
+	Version = "v0.2.0"
 )
 
-func loadConfig() (*Configs, error) {
-	configs := new(Configs)
+func loadConfig() (*configs.Configs, error) {
+	configs := new(configs.Configs)
 	if err := envext.Load(configs); err != nil {
 		return nil, err
 	}
@@ -60,6 +56,8 @@ func main() {
 	service.Serve(configs.GrpcPort, func(lst net.Listener) error {
 		server := grpc.NewServer()
 		assets.NewService().RegisterServer(server)
+		brokerages.NewService().RegisterServer(server)
+		markets.NewService(configs).RegisterServer(server)
 		return server.Serve(lst)
 	})
 
@@ -67,6 +65,8 @@ func main() {
 		connection := grpcext.NewConnection(fmt.Sprintf(":%v", configs.GrpcPort))
 		router := muxext.NewRouter(true)
 		assets.NewController(connection).RegisterRouter(router)
+		brokerages.NewController(connection).RegisterRouter(router)
+		markets.NewController(connection).RegisterRouter(router)
 		return http.Serve(lst, httpext.DefaultCors.Handler(router))
 	})
 

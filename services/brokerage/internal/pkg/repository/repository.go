@@ -23,6 +23,7 @@ import (
 
 var (
 	Assets     *AssetRepository
+	Markets    *MarketRepository
 	Brokerages *BrokerageRepository
 )
 
@@ -35,8 +36,12 @@ func LoadRepositories(dsn string) {
 		log.WithError(err).Fatal("migration failed for asset")
 	}
 	if err := db.AutoMigrate(new(Brokerage)); err != nil {
-		log.WithError(err).Fatal("migration failed for asset")
+		log.WithError(err).Fatal("migration failed for brokerage")
+	}
+	if err := db.AutoMigrate(new(Market)); err != nil {
+		log.WithError(err).Fatal("migration failed for market")
 	}
 	Assets = &AssetRepository{db: db}
+	Markets = &MarketRepository{db: db}
 	Brokerages = &BrokerageRepository{db: db}
 }

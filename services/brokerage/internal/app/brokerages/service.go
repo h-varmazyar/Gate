@@ -75,10 +75,10 @@ func (s *Service) Add(ctx context.Context, brokerage *brokerageApi.Brokerage) (*
 	default:
 		return nil, errors.NewWithSlug(ctx, codes.InvalidArgument, "invalid auth type")
 	}
-	if brokerage.Status == brokerageApi.Status_Enable || brokerage.Status == brokerageApi.Status_Disable {
+	if brokerage.Status == api.StatusType_Enable || brokerage.Status == api.StatusType_Disable {
 		br.Status = brokerage.Status.String()
 	} else {
-		br.Status = brokerageApi.Status_Disable.String()
+		br.Status = api.StatusType_Disable.String()
 	}
 	if brokerage.ID == "" {
 		br.ID = uuid.New()
@@ -126,7 +126,7 @@ func (s *Service) Delete(_ context.Context, req *brokerageApi.BrokerageIDReq) (*
 	return new(api.Void), err
 }
 
-func (s *Service) ChangeStatus(_ context.Context, req *brokerageApi.BrokerageStatusChangeRequest) (*brokerageApi.BrokerageStatus, error) {
+func (s *Service) ChangeStatus(_ context.Context, req *api.StatusChangeRequest) (*api.Status, error) {
 	id, err := uuid.Parse(req.ID)
 	if err != nil {
 		return nil, err
@@ -136,13 +136,13 @@ func (s *Service) ChangeStatus(_ context.Context, req *brokerageApi.BrokerageSta
 		return nil, err
 	}
 	switch brokerage.Status {
-	case brokerageApi.Status_Enable.String():
-		brokerage.Status = brokerageApi.Status_Disable.String()
-	case brokerageApi.Status_Disable.String():
-		brokerage.Status = brokerageApi.Status_Enable.String()
+	case api.StatusType_Enable.String():
+		brokerage.Status = api.StatusType_Disable.String()
+	case api.StatusType_Disable.String():
+		brokerage.Status = api.StatusType_Enable.String()
 	}
 	if err := repository.Brokerages.Update(brokerage); err != nil {
 		return nil, err
 	}
-	return &brokerageApi.BrokerageStatus{Status: brokerageApi.Status(brokerageApi.Status_value[brokerage.Status])}, nil
+	return &api.Status{Status: api.StatusType(api.StatusType_value[brokerage.Status])}, nil
 }

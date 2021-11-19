@@ -2,6 +2,7 @@ package assets
 
 import (
 	"github.com/gorilla/mux"
+	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/pkg/httpext"
 	"github.com/mrNobody95/Gate/pkg/muxext"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
@@ -81,7 +82,7 @@ func (c Controller) Delete(res http.ResponseWriter, req *http.Request) {
 }
 
 func (c Controller) ChangeStatus(res http.ResponseWriter, req *http.Request) {
-	statusReq := new(brokerageApi.BrokerageStatusChangeRequest)
+	statusReq := new(api.StatusChangeRequest)
 	statusReq.ID = muxext.PathParam(req, "id")
 	if status, err := c.brokerageService.ChangeStatus(req.Context(), statusReq); err != nil {
 		httpext.SendError(res, req, err)

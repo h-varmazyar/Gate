@@ -3,7 +3,7 @@ info:
   title: Brokerage API
   version: v0.2.0
 servers:
-  - url: 'http://localhost:40001'
+  - url: 'http://localhost:11001'
 
 paths:
   /brokerages:
@@ -16,8 +16,8 @@ paths:
             schema:
               $ref: '#/components/schemas/Brokerage'
       responses:
-        '201':
-          description: Created
+        '200':
+          description: OK
           content:
             application/json:
               schema:
@@ -75,7 +75,104 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BrokerageStatus'
+                $ref: '#/components/schemas/Status'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
+  /markets:
+    put:
+      operationId: market_set
+      summary: Create or update a market
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Market'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Market'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
+  /markets/{id}:
+    delete:
+      operationId: market_delete
+      summary: delete a market
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '204':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+  /markets/brokerages/{brokerage_id}:
+    get:
+      operationId: market_list
+      summary: get markets
+      parameters:
+        - $ref: '#/components/parameters/brokerage_id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Markets'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
+  /markets/names/{name}/brokerages/{brokerage_id}:
+    get:
+      operationId: market_get
+      summary: get market
+      parameters:
+        - $ref: '#/components/parameters/name'
+        - $ref: '#/components/parameters/brokerage_id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Market'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
+  /markets/{id}/change-status:
+    get:
+      operationId: market_status_change
+      summary: change market status
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
         '400':
           $ref: '#/components/responses/400'
         '401':
@@ -92,6 +189,13 @@ components:
         type: string
     id:
       name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    brokerage_id:
+      name: brokerage_id
       in: path
       required: true
       schema:
@@ -199,7 +303,7 @@ components:
               type: string
               description: password
         status:
-          type: string
+          type: number
           description: brokerage status
     GetBrokerage:
       type: object
@@ -207,17 +311,21 @@ components:
         id:
           type: string
           description: brokerage id
+          readOnly: true
           format: uuid
         name:
           type: string
+          readOnly: true
           description: brokerage name
         auth_type:
           type: string
+          readOnly: true
           description: authentication type
         status:
           type: string
+          readOnly: true
           description: brokerage status
-    BrokerageStatus:
+    Status:
       type: object
       readOnly: true
       properties:
@@ -225,3 +333,61 @@ components:
           type: string
           readOnly: true
           description: brokerage status
+    Market:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          description: market id
+          format: uuid
+        name:
+          type: string
+          description: market name
+        status:
+          type: number
+          description: market status
+        pricing_decimal:
+          type: number
+          description: pricing decimal
+        trading_decimal:
+          type: number
+          description: trading decimal
+        maker_fee_rate:
+          type: number
+          description: maker fee rate
+        taker_fee_rate:
+          type: number
+          description: taker fee rate
+        brokerage_id:
+          type: string
+          description: brokerage id
+        destination_id:
+          type: string
+          description: destination id
+        start_time:
+          type: number
+          format: 'date-time'
+          description: start time
+        min_amount:
+          type: number
+          description: min amount
+        updated_at:
+          type: number
+          format: 'date-time'
+          readOnly: true
+          description: updated at
+        source_id:
+          type: string
+          description: source id
+        is_amm:
+          type: boolean
+          description: is amm market
+    Markets:
+      type: object
+      readOnly: true
+      properties:
+        elements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Market'
