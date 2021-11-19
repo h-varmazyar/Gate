@@ -20,6 +20,130 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type AuthType int32
+
+const (
+	AuthType_None             AuthType = 0
+	AuthType_StaticToken      AuthType = 1
+	AuthType_UsernamePassword AuthType = 2
+)
+
+// Enum value maps for AuthType.
+var (
+	AuthType_name = map[int32]string{
+		0: "None",
+		1: "StaticToken",
+		2: "UsernamePassword",
+	}
+	AuthType_value = map[string]int32{
+		"None":             0,
+		"StaticToken":      1,
+		"UsernamePassword": 2,
+	}
+)
+
+func (x AuthType) Enum() *AuthType {
+	p := new(AuthType)
+	*p = x
+	return p
+}
+
+func (x AuthType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AuthType) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_src_misc_proto_enumTypes[0].Descriptor()
+}
+
+func (AuthType) Type() protoreflect.EnumType {
+	return &file_api_src_misc_proto_enumTypes[0]
+}
+
+func (x AuthType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AuthType.Descriptor instead.
+func (AuthType) EnumDescriptor() ([]byte, []int) {
+	return file_api_src_misc_proto_rawDescGZIP(), []int{0}
+}
+
+type Auth struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// @inject_tag: json:"type"
+	Type AuthType `protobuf:"varint,1,opt,name=Type,proto3,enum=api.AuthType" json:"type"`
+	// @inject_tag: json:"username"
+	Username string `protobuf:"bytes,2,opt,name=Username,proto3" json:"username"`
+	// @inject_tag: json:"password"
+	Password string `protobuf:"bytes,3,opt,name=Password,proto3" json:"password"`
+	// @inject_tag: json:"static_token"
+	StaticToken string `protobuf:"bytes,4,opt,name=StaticToken,proto3" json:"static_token"`
+}
+
+func (x *Auth) Reset() {
+	*x = Auth{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_api_src_misc_proto_msgTypes[0]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Auth) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Auth) ProtoMessage() {}
+
+func (x *Auth) ProtoReflect() protoreflect.Message {
+	mi := &file_api_src_misc_proto_msgTypes[0]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Auth.ProtoReflect.Descriptor instead.
+func (*Auth) Descriptor() ([]byte, []int) {
+	return file_api_src_misc_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *Auth) GetType() AuthType {
+	if x != nil {
+		return x.Type
+	}
+	return AuthType_None
+}
+
+func (x *Auth) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *Auth) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+func (x *Auth) GetStaticToken() string {
+	if x != nil {
+		return x.StaticToken
+	}
+	return ""
+}
+
 type Void struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -29,7 +153,7 @@ type Void struct {
 func (x *Void) Reset() {
 	*x = Void{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_src_misc_proto_msgTypes[0]
+		mi := &file_api_src_misc_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -42,7 +166,7 @@ func (x *Void) String() string {
 func (*Void) ProtoMessage() {}
 
 func (x *Void) ProtoReflect() protoreflect.Message {
-	mi := &file_api_src_misc_proto_msgTypes[0]
+	mi := &file_api_src_misc_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -55,17 +179,29 @@ func (x *Void) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Void.ProtoReflect.Descriptor instead.
 func (*Void) Descriptor() ([]byte, []int) {
-	return file_api_src_misc_proto_rawDescGZIP(), []int{0}
+	return file_api_src_misc_proto_rawDescGZIP(), []int{1}
 }
 
 var File_api_src_misc_proto protoreflect.FileDescriptor
 
 var file_api_src_misc_proto_rawDesc = []byte{
 	0x0a, 0x12, 0x61, 0x70, 0x69, 0x2f, 0x73, 0x72, 0x63, 0x2f, 0x6d, 0x69, 0x73, 0x63, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x12, 0x03, 0x61, 0x70, 0x69, 0x22, 0x06, 0x0a, 0x04, 0x56, 0x6f, 0x69,
-	0x64, 0x42, 0x20, 0x5a, 0x1e, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f,
-	0x6d, 0x72, 0x4e, 0x6f, 0x62, 0x6f, 0x64, 0x79, 0x39, 0x35, 0x2f, 0x47, 0x61, 0x74, 0x65, 0x2f,
-	0x61, 0x70, 0x69, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x72, 0x6f, 0x74, 0x6f, 0x12, 0x03, 0x61, 0x70, 0x69, 0x22, 0x83, 0x01, 0x0a, 0x04, 0x41, 0x75,
+	0x74, 0x68, 0x12, 0x21, 0x0a, 0x04, 0x54, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e,
+	0x32, 0x0d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x41, 0x75, 0x74, 0x68, 0x54, 0x79, 0x70, 0x65, 0x52,
+	0x04, 0x54, 0x79, 0x70, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x55, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d,
+	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x55, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d,
+	0x65, 0x12, 0x1a, 0x0a, 0x08, 0x50, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x08, 0x50, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x12, 0x20, 0x0a,
+	0x0b, 0x53, 0x74, 0x61, 0x74, 0x69, 0x63, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x04, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x0b, 0x53, 0x74, 0x61, 0x74, 0x69, 0x63, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x22,
+	0x06, 0x0a, 0x04, 0x56, 0x6f, 0x69, 0x64, 0x2a, 0x3b, 0x0a, 0x08, 0x41, 0x75, 0x74, 0x68, 0x54,
+	0x79, 0x70, 0x65, 0x12, 0x08, 0x0a, 0x04, 0x4e, 0x6f, 0x6e, 0x65, 0x10, 0x00, 0x12, 0x0f, 0x0a,
+	0x0b, 0x53, 0x74, 0x61, 0x74, 0x69, 0x63, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x10, 0x01, 0x12, 0x14,
+	0x0a, 0x10, 0x55, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d, 0x65, 0x50, 0x61, 0x73, 0x73, 0x77, 0x6f,
+	0x72, 0x64, 0x10, 0x02, 0x42, 0x20, 0x5a, 0x1e, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63,
+	0x6f, 0x6d, 0x2f, 0x6d, 0x72, 0x4e, 0x6f, 0x62, 0x6f, 0x64, 0x79, 0x39, 0x35, 0x2f, 0x47, 0x61,
+	0x74, 0x65, 0x2f, 0x61, 0x70, 0x69, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -80,16 +216,20 @@ func file_api_src_misc_proto_rawDescGZIP() []byte {
 	return file_api_src_misc_proto_rawDescData
 }
 
-var file_api_src_misc_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_api_src_misc_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_api_src_misc_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_api_src_misc_proto_goTypes = []interface{}{
-	(*Void)(nil), // 0: api.Void
+	(AuthType)(0), // 0: api.AuthType
+	(*Auth)(nil),  // 1: api.Auth
+	(*Void)(nil),  // 2: api.Void
 }
 var file_api_src_misc_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: api.Auth.Type:type_name -> api.AuthType
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_api_src_misc_proto_init() }
@@ -99,6 +239,18 @@ func file_api_src_misc_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_api_src_misc_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Auth); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_api_src_misc_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Void); i {
 			case 0:
 				return &v.state
@@ -116,13 +268,14 @@ func file_api_src_misc_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_api_src_misc_proto_rawDesc,
-			NumEnums:      0,
-			NumMessages:   1,
+			NumEnums:      1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_api_src_misc_proto_goTypes,
 		DependencyIndexes: file_api_src_misc_proto_depIdxs,
+		EnumInfos:         file_api_src_misc_proto_enumTypes,
 		MessageInfos:      file_api_src_misc_proto_msgTypes,
 	}.Build()
 	File_api_src_misc_proto = out.File

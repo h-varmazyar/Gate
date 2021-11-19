@@ -1,0 +1,227 @@
+openapi: 3.0.1
+info:
+  title: Brokerage API
+  version: v0.2.0
+servers:
+  - url: 'http://localhost:40001'
+
+paths:
+  /brokerages:
+    post:
+      operationId: brokerage_add
+      summary: Create a new brokerage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Brokerage'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brokerage'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
+  /brokerages/{id}:
+    get:
+      operationId: brokerage_get
+      summary: Return a brokerage
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetBrokerage'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
+    delete:
+      operationId: brokerage_delete
+      summary: delete a brokerage
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '204':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+  /brokerages/{id}/change-status:
+    get:
+      operationId: brokerage_status_change
+      summary: change brokerage status
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrokerageStatus'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
+components:
+  parameters:
+    name:
+      name: name
+      in: path
+      required: true
+      schema:
+        type: string
+    id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    include:
+      in: query
+      name: include
+      schema:
+        type: string
+      description: Embed related entities comma separated
+    filter:
+      in: query
+      name: filter
+      schema:
+        type: string
+      description: Filter entities with fields
+    take:
+      in: query
+      name: take
+      schema:
+        type: integer
+      description: Take records count
+    skip:
+      in: query
+      name: skip
+      schema:
+        type: integer
+      description: Skip records from top
+  responses:
+    '400':
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '403':
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '404':
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '409':
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '500':
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '503':
+      description: Unavailable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      readOnly: true
+      properties:
+        message:
+          type: string
+          description: Localized error message
+        details:
+          type: array
+          items:
+            type: string
+          description: Systematic error details
+    Brokerage:
+      type: object
+      properties:
+        name:
+          type: integer
+          description: brokerage name code
+        auth:
+          type: object
+          properties:
+            type:
+              type: integer
+              description: authentication type code
+            static_token:
+              type: string
+              description: authentication token
+            username:
+              type: string
+              description: username
+            password:
+              type: string
+              description: password
+        status:
+          type: string
+          description: brokerage status
+    GetBrokerage:
+      type: object
+      properties:
+        id:
+          type: string
+          description: brokerage id
+          format: uuid
+        name:
+          type: string
+          description: brokerage name
+        auth_type:
+          type: string
+          description: authentication type
+        status:
+          type: string
+          description: brokerage status
+    BrokerageStatus:
+      type: object
+      readOnly: true
+      properties:
+        status:
+          type: string
+          readOnly: true
+          description: brokerage status

@@ -2,11 +2,12 @@ syntax = "proto3";
 package brokerageApi;
 option go_package = "github.com/mrNobody95/Gate/services/brokerage/api";
 import "api/src/misc.proto";
-import "services/network/api/src/variable.proto";
 
 service BrokerageService {
-  rpc Add(Brokerage) returns (api.Void);
-  rpc ChangeStatus(api.Void) returns (BrokerageStatus);
+  rpc Add(Brokerage) returns (Brokerage);
+  rpc Get(BrokerageIDReq) returns (GetBrokerage);
+  rpc Delete(BrokerageIDReq) returns (api.Void);
+  rpc ChangeStatus(BrokerageStatusChangeRequest) returns (BrokerageStatus);
 }
 
 enum Names {
@@ -21,12 +22,35 @@ enum Status {
 }
 
 message Brokerage {
+  // @inject_tag: json:"id"
+  string ID = 1;
   // @inject_tag: json:"auth"
-  networkApi.Auth Auth = 1;
+  api.Auth Auth = 2;
   // @inject_tag: json:"name"
-  Names Name = 2;
+  Names Name = 3;
   // @inject_tag: json:"status"
-  Status Status = 3;
+  Status Status = 4;
+}
+
+message GetBrokerage {
+  // @inject_tag: json:"id"
+  string ID = 1;
+  // @inject_tag: json:"auth_type"
+  string AuthType = 2;
+  // @inject_tag: json:"name"
+  string Name = 3;
+  // @inject_tag: json:"status"
+  string Status = 4;
+}
+
+message BrokerageIDReq {
+  // @inject_tag: json:"id"
+  string ID = 1;
+}
+
+message BrokerageStatusChangeRequest {
+  // @inject_tag: json:"id"
+  string ID = 1;
 }
 
 message BrokerageStatus {
