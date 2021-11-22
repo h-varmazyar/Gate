@@ -3,11 +3,10 @@ package requests
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-	"fmt"
 	networkAPI "github.com/mrNobody95/Gate/services/network/api"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -27,92 +26,79 @@ import (
 * Email: hossein.varmazyar@yahoo.com
 **/
 
+const (
+	ContentTypeJson = "application/json"
+	UserAgent       = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36"
+)
+
 type Request struct {
 	Endpoint    string
-	httpRequest *http.Request
 	httpClient  *http.Client
-	Response    []byte
+	headers     http.Header
+	queryParams string
+	body        *bytes.Buffer
+	method      networkAPI.Type
 }
 
 func New(Type networkAPI.Type, endpoint string) *Request {
-	req := new(Request)
-	req.httpRequest = new(http.Request)
-	req.httpClient = new(http.Client)
-	switch Type {
-	case networkAPI.Type_Post:
-		req.httpRequest.Method = http.MethodPost
-	case networkAPI.Type_Get:
-		req.httpRequest.Method = http.MethodGet
+	return &Request{
+		Endpoint:   endpoint,
+		httpClient: new(http.Client),
+		method:     Type,
+		body:       new(bytes.Buffer),
+		headers:    http.Header{},
 	}
-	req.Endpoint = endpoint
-	return req
 }
 
-func (req *Request) SetAuth(auth *networkAPI.Auth) error {
-	switch auth.Type {
-	case networkAPI.AuthType_None:
-		return nil
-	case networkAPI.AuthType_StaticToken:
-	case networkAPI.AuthType_UsernamePassword:
-	default:
-		return errors.New("auth type not supported")
-	}
-	return nil
-}
-
-func (req *Request) SetHeaders(headers []*networkAPI.KV) error {
+func (req *Request) AddHeaders(headers []*networkAPI.KV) {
 	for _, header := range headers {
-		req.httpRequest.Header.Set(header.Key, header.Value)
-	}
-	return nil
-}
-
-func (req *Request) SetParams(params []*networkAPI.KV) error {
-	switch req.httpRequest.Method {
-	case http.MethodPost:
-		if err := req.marshalParams(params); err != nil {
-			return err
-		}
-	case http.MethodGet:
-		req.appendParamsToEndpoint(params)
-	}
-	return nil
-}
-
-func (req *Request) Do() ([]byte, error) {
-	resp, err := req.httpClient.Do(req.httpRequest)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	switch resp.StatusCode {
-	case http.StatusOK:
-		return ioutil.ReadAll(resp.Body)
-	default:
-		return nil, fmt.Errorf("request failed with status: %d", resp.StatusCode)
+		req.headers.Add(header.Key, header.Value)
 	}
 }
 
-func (req *Request) appendParamsToEndpoint(params []*networkAPI.KV) {
-	req.Endpoint = strings.Trim(strings.TrimSuffix(strings.TrimSpace(req.Endpoint), "/"), "?")
-	req.Endpoint = req.Endpoint + "?"
+func (req *Request) AddQueryParams(params []*networkAPI.KV) {
+	qParams := url.Values{}
 	for _, param := range params {
-		if param.Key != "" && param.Value != "" {
-			req.Endpoint = fmt.Sprintf("%s%s=%s&", req.Endpoint, param.Key, param.Value)
-		}
+		qParams.Add(param.Key, param.Value)
 	}
-	req.Endpoint = strings.Trim(strings.TrimSuffix(strings.TrimSpace(req.Endpoint), "?"), "&")
+	req.queryParams = qParams.Encode()
 }
 
-func (req *Request) marshalParams(params []*networkAPI.KV) error {
+func (req *Request) AddBody(bodyParams []*networkAPI.KV) error {
 	bodyMap := make(map[string]string)
-	for _, param := range params {
+	for _, param := range bodyParams {
 		bodyMap[param.Key] = param.Value
 	}
 	jsonBody, err := json.Marshal(bodyMap)
 	if err != nil {
 		return err
 	}
-	req.httpRequest.Body = ioutil.NopCloser(bytes.NewReader(jsonBody))
+	req.body = bytes.NewBuffer(jsonBody)
 	return nil
+}
+
+func (req *Request) Do() (*networkAPI.Response, error) {
+	request, err := http.NewRequest(strings.ToUpper(req.method.String()), req.Endpoint, req.body)
+	if err != nil {
+		return nil, err
+	}
+	request.Header = req.headers
+	request.Header.Set("Content-Type", ContentTypeJson)
+	request.Header.Set("User-Agent", UserAgent)
+	if req.method == networkAPI.Type_Get {
+		request.URL.RawQuery = req.queryParams
+	}
+	response, err := req.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+	return &networkAPI.Response{
+		Code:     int32(response.StatusCode),
+		Response: string(body),
+	}, nil
 }

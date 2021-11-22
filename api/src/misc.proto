@@ -21,8 +21,10 @@ message Auth {
   string Username = 2;
   // @inject_tag: json:"password"
   string Password = 3;
-  // @inject_tag: json:"static_token"
-  string StaticToken = 4;
+  // @inject_tag: json:"access_id"
+  string AccessID = 4;
+  // @inject_tag: json:"secret_key"
+  string SecretKey = 5;
 }
 
 message StatusChangeRequest {

@@ -26,14 +26,12 @@ import (
 **/
 
 type Configs struct {
-	GrpcPort       uint16 `env:"GRPC_PORT,required"`
-	HttpPort       uint16 `env:"HTTP_PORT,required"`
-	MaxLogsPerPage int64  `env:"MAX_LOGS_PER_PAGE,required"`
+	GrpcPort uint16 `env:"GRPC_PORT,required"`
 }
 
 var (
 	Name    = "network"
-	Version = "v0.1.1"
+	Version = "v0.2.0"
 )
 
 func loadConfig() (*Configs, error) {

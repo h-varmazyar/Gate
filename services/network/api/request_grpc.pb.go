@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.1.0
 // - protoc             v3.6.1
-// source: services/network/api/src/variable.proto
+// source: services/network/api/src/request.proto
 
 package api
 
@@ -99,5 +99,5 @@ var RequestService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "services/network/api/src/variable.proto",
+	Metadata: "services/network/api/src/request.proto",
 }

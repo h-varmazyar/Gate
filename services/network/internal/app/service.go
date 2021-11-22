@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	networkAPI "github.com/mrNobody95/Gate/services/network/api"
 	"github.com/mrNobody95/Gate/services/network/internal/pkg/requests"
 	"google.golang.org/grpc"
@@ -44,19 +43,13 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 
 func (s *Service) Do(ctx context.Context, req *networkAPI.Request) (*networkAPI.Response, error) {
 	request := requests.New(req.Type, req.Endpoint)
-	if err := request.SetAuth(req.Auth); err != nil {
-		return nil, err
+
+	request.AddHeaders(req.Headers)
+	switch req.Type {
+	case networkAPI.Type_Post:
+		request.AddBody(req.Params)
+	case networkAPI.Type_Get:
+		request.AddQueryParams(req.Params)
 	}
-	if err := request.SetHeaders(req.Headers); err != nil {
-		return nil, err
-	}
-	if err := request.SetParams(req.Params); err != nil {
-		return nil, err
-	}
-	responseBody, err := request.Do()
-	if err != nil {
-		return nil, err
-	}
-	response := new(networkAPI.Response)
-	return response, json.Unmarshal(responseBody, response)
+	return request.Do()
 }
