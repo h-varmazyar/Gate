@@ -11,6 +11,7 @@ import (
 	"github.com/mrNobody95/Gate/services/brokerage/internal/app/assets"
 	brokerages "github.com/mrNobody95/Gate/services/brokerage/internal/app/brokerages"
 	markets "github.com/mrNobody95/Gate/services/brokerage/internal/app/markets"
+	wallets "github.com/mrNobody95/Gate/services/brokerage/internal/app/wallets"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -36,7 +37,7 @@ import (
 
 var (
 	Name    = "brokerage"
-	Version = "v0.2.0"
+	Version = "v0.3.1"
 )
 
 func loadConfig() (*configs.Configs, error) {
@@ -57,7 +58,8 @@ func main() {
 		server := grpc.NewServer()
 		assets.NewService().RegisterServer(server)
 		brokerages.NewService().RegisterServer(server)
-		markets.NewService(configs).RegisterServer(server)
+		markets.NewService().RegisterServer(server)
+		wallets.NewService(configs).RegisterServer(server)
 		return server.Serve(lst)
 	})
 
@@ -67,6 +69,7 @@ func main() {
 		assets.NewController(connection).RegisterRouter(router)
 		brokerages.NewController(connection).RegisterRouter(router)
 		markets.NewController(connection).RegisterRouter(router)
+		wallets.NewController(connection).RegisterRouter(router)
 		return http.Serve(lst, httpext.DefaultCors.Handler(router))
 	})
 

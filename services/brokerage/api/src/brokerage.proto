@@ -6,6 +6,7 @@ import "api/src/misc.proto";
 service BrokerageService {
   rpc Add(Brokerage) returns (Brokerage);
   rpc Get(BrokerageIDReq) returns (GetBrokerage);
+  rpc GetInternal(BrokerageIDReq) returns (Brokerage);
   rpc Delete(BrokerageIDReq) returns (api.Void);
   rpc ChangeStatus(api.StatusChangeRequest) returns (api.Status);
 }

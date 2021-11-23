@@ -1,4 +1,6 @@
-package configs
+package repository
+
+import "gorm.io/gorm"
 
 /**
 * Dear programmer:
@@ -11,15 +13,20 @@ package configs
 * total_hours_wasted_here = 0 !!!
 *
 * Best regards, mr-nobody
-* Date: 19.11.21
+* Date: 20.11.21
 * Github: https://github.com/mrNobody95
 * Email: hossein.varmazyar@yahoo.com
 **/
 
-type Configs struct {
-	GrpcPort           uint16 `env:"GRPC_PORT,required"`
-	NetworkGrpcPort    uint16 `env:"NETWORK_GRPC_PORT,required"`
-	HttpPort           uint16 `env:"HTTP_PORT,required"`
-	MaxLogsPerPage     int64  `env:"MAX_LOGS_PER_PAGE,required"`
-	DatabaseConnection string `env:"DATABASE_CONNECTION,required,file"`
+type Wallet struct {
+	ReferenceCurrencyBalance float64
+	BlockedBalance           float64
+	ActiveBalance            float64
+	TotalBalance             float64
+	Asset                    string
+	ID                       string
+}
+
+type WalletRepository struct {
+	db *gorm.DB
 }

@@ -10,12 +10,13 @@ type BrokerageName string
 
 type Brokerage struct {
 	gormext.UniversalModel
-	Name     BrokerageName `gorm:"size:50"`
-	AuthType string
-	Token    string `gorm:"size:150"`
-	Username string `gorm:"size:50"`
-	Password string `gorm:"size:100"`
-	Status   string
+	Name      BrokerageName `gorm:"size:50"`
+	AuthType  string
+	AccessID  string `gorm:"size:150"`
+	SecretKey string `gorm:"size:150"`
+	Username  string `gorm:"size:50"`
+	Password  string `gorm:"size:100"`
+	Status    string
 }
 
 type BrokerageRepository struct {

@@ -2,13 +2,10 @@ package assets
 
 import (
 	"context"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/mrNobody95/Gate/api"
-	"github.com/mrNobody95/Gate/pkg/grpcext"
 	"github.com/mrNobody95/Gate/pkg/mapper"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
-	"github.com/mrNobody95/Gate/services/brokerage/configs"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
 	"google.golang.org/grpc"
 )
@@ -30,18 +27,15 @@ import (
 **/
 
 type Service struct {
-	BrokeragesService brokerageApi.BrokerageServiceClient
 }
 
 var (
 	GrpcService *Service
 )
 
-func NewService(configs *configs.Configs) *Service {
+func NewService() *Service {
 	if GrpcService == nil {
-		connection := grpcext.NewConnection(fmt.Sprintf("%d", configs.GrpcPort))
 		GrpcService = new(Service)
-		GrpcService.BrokeragesService = brokerageApi.NewBrokerageServiceClient(connection)
 	}
 	return GrpcService
 }

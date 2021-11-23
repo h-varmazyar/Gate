@@ -59,10 +59,14 @@ func (s *Service) Add(ctx context.Context, brokerage *brokerageApi.Brokerage) (*
 	br.AuthType = brokerage.Auth.Type.String()
 	switch br.AuthType {
 	case api.AuthType_StaticToken.String():
-		if brokerage.Auth.StaticToken == "" {
-			return nil, errors.NewWithSlug(ctx, codes.InvalidArgument, "static token not set")
+		if brokerage.Auth.AccessID == "" {
+			return nil, errors.NewWithSlug(ctx, codes.InvalidArgument, "access id not set")
 		}
-		br.Token = brokerage.Auth.StaticToken
+		br.AccessID = brokerage.Auth.AccessID
+		if brokerage.Auth.SecretKey == "" {
+			return nil, errors.NewWithSlug(ctx, codes.InvalidArgument, "secret key not set")
+		}
+		br.SecretKey = brokerage.Auth.SecretKey
 	case api.AuthType_UsernamePassword.String():
 		if brokerage.Auth.Username == "" {
 			return nil, errors.NewWithSlug(ctx, codes.InvalidArgument, "username not set")
@@ -112,6 +116,30 @@ func (s *Service) Get(_ context.Context, req *brokerageApi.BrokerageIDReq) (*bro
 		AuthType: brokerage.AuthType,
 		Name:     string(brokerage.Name),
 		Status:   brokerage.Status,
+	}, err
+}
+
+func (s *Service) GetInternal(_ context.Context, req *brokerageApi.BrokerageIDReq) (*brokerageApi.Brokerage, error) {
+	id, err := uuid.Parse(req.ID)
+	if err != nil {
+		return nil, err
+	}
+	brokerage, err := repository.Brokerages.ReturnByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &brokerageApi.Brokerage{
+		ID: brokerage.ID.String(),
+		Auth: &api.Auth{
+			Type:      api.AuthType(api.AuthType_value[brokerage.AuthType]),
+			Username:  brokerage.Username,
+			Password:  brokerage.Password,
+			AccessID:  brokerage.AccessID,
+			SecretKey: brokerage.SecretKey,
+		},
+		Name:   brokerageApi.Names(brokerageApi.Names_value[string(brokerage.Name)]),
+		Status: api.StatusType(api.StatusType_value[brokerage.Status]),
 	}, err
 }
 

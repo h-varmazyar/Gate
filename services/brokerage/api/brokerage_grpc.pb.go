@@ -25,6 +25,7 @@ const _ = grpc.SupportPackageIsVersion7
 type BrokerageServiceClient interface {
 	Add(ctx context.Context, in *Brokerage, opts ...grpc.CallOption) (*Brokerage, error)
 	Get(ctx context.Context, in *BrokerageIDReq, opts ...grpc.CallOption) (*GetBrokerage, error)
+	GetInternal(ctx context.Context, in *BrokerageIDReq, opts ...grpc.CallOption) (*Brokerage, error)
 	Delete(ctx context.Context, in *BrokerageIDReq, opts ...grpc.CallOption) (*api.Void, error)
 	ChangeStatus(ctx context.Context, in *api.StatusChangeRequest, opts ...grpc.CallOption) (*api.Status, error)
 }
@@ -55,6 +56,15 @@ func (c *brokerageServiceClient) Get(ctx context.Context, in *BrokerageIDReq, op
 	return out, nil
 }
 
+func (c *brokerageServiceClient) GetInternal(ctx context.Context, in *BrokerageIDReq, opts ...grpc.CallOption) (*Brokerage, error) {
+	out := new(Brokerage)
+	err := c.cc.Invoke(ctx, "/brokerageApi.BrokerageService/GetInternal", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *brokerageServiceClient) Delete(ctx context.Context, in *BrokerageIDReq, opts ...grpc.CallOption) (*api.Void, error) {
 	out := new(api.Void)
 	err := c.cc.Invoke(ctx, "/brokerageApi.BrokerageService/Delete", in, out, opts...)
@@ -79,6 +89,7 @@ func (c *brokerageServiceClient) ChangeStatus(ctx context.Context, in *api.Statu
 type BrokerageServiceServer interface {
 	Add(context.Context, *Brokerage) (*Brokerage, error)
 	Get(context.Context, *BrokerageIDReq) (*GetBrokerage, error)
+	GetInternal(context.Context, *BrokerageIDReq) (*Brokerage, error)
 	Delete(context.Context, *BrokerageIDReq) (*api.Void, error)
 	ChangeStatus(context.Context, *api.StatusChangeRequest) (*api.Status, error)
 }
@@ -92,6 +103,9 @@ func (UnimplementedBrokerageServiceServer) Add(context.Context, *Brokerage) (*Br
 }
 func (UnimplementedBrokerageServiceServer) Get(context.Context, *BrokerageIDReq) (*GetBrokerage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+}
+func (UnimplementedBrokerageServiceServer) GetInternal(context.Context, *BrokerageIDReq) (*Brokerage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetInternal not implemented")
 }
 func (UnimplementedBrokerageServiceServer) Delete(context.Context, *BrokerageIDReq) (*api.Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
@@ -147,6 +161,24 @@ func _BrokerageService_Get_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BrokerageService_GetInternal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BrokerageIDReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BrokerageServiceServer).GetInternal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/brokerageApi.BrokerageService/GetInternal",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BrokerageServiceServer).GetInternal(ctx, req.(*BrokerageIDReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _BrokerageService_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(BrokerageIDReq)
 	if err := dec(in); err != nil {
@@ -197,6 +229,10 @@ var BrokerageService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Get",
 			Handler:    _BrokerageService_Get_Handler,
+		},
+		{
+			MethodName: "GetInternal",
+			Handler:    _BrokerageService_GetInternal_Handler,
 		},
 		{
 			MethodName: "Delete",
