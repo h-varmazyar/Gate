@@ -46,9 +46,9 @@ func (s *Service) Do(ctx context.Context, req *networkAPI.Request) (*networkAPI.
 
 	request.AddHeaders(req.Headers)
 	switch req.Type {
-	case networkAPI.Type_Post:
+	case networkAPI.Type_POST:
 		request.AddBody(req.Params)
-	case networkAPI.Type_Get:
+	case networkAPI.Type_GET:
 		request.AddQueryParams(req.Params)
 	}
 	return request.Do()

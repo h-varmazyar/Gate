@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 /**
@@ -42,11 +43,16 @@ type Request struct {
 
 func New(Type networkAPI.Type, endpoint string) *Request {
 	return &Request{
-		Endpoint:   endpoint,
-		httpClient: new(http.Client),
-		method:     Type,
-		body:       new(bytes.Buffer),
-		headers:    http.Header{},
+		Endpoint: endpoint,
+		httpClient: &http.Client{
+			Timeout: 20 * time.Second,
+			Transport: &http.Transport{
+				TLSHandshakeTimeout: 30 * time.Second,
+			},
+		},
+		method:  Type,
+		body:    new(bytes.Buffer),
+		headers: http.Header{},
 	}
 }
 
@@ -85,7 +91,7 @@ func (req *Request) Do() (*networkAPI.Response, error) {
 	request.Header = req.headers
 	request.Header.Set("Content-Type", ContentTypeJson)
 	request.Header.Set("User-Agent", UserAgent)
-	if req.method == networkAPI.Type_Get {
+	if req.method == networkAPI.Type_GET {
 		request.URL.RawQuery = req.queryParams
 	}
 	response, err := req.httpClient.Do(request)

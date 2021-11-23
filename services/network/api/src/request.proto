@@ -1,5 +1,5 @@
 syntax = "proto3";
-package networkApi;
+package networkAPI;
 option go_package = "github.com/mrNobody95/Gate/services/network/api";
 
 service RequestService {
