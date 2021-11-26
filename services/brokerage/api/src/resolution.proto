@@ -2,16 +2,17 @@ syntax = "proto3";
 package brokerageApi;
 option go_package = "github.com/mrNobody95/Gate/services/brokerage/api";
 import "api/src/misc.proto";
-import "services/brokerage/api/src/brokerage.proto";
 
 service ResolutionService {
   rpc Set(Resolution) returns(api.Void);
-  rpc GetByID(GetResolutionRequest) returns (Resolution);
+  rpc GetByID(GetResolutionByIDRequest) returns (Resolution);
+  rpc GetByDuration(GetResolutionByDurationRequest) returns (Resolution);
+  rpc List(GetResolutionListRequest) returns (Resolutions);
 }
 
 message Resolution {
-  // @inject_tag: json:"brokerage"
-  Brokerage Brokerage = 1;
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 1;
   // @inject_tag: json:"duration"
   int64 Duration = 2;
   // @inject_tag: json:"label"
@@ -22,7 +23,24 @@ message Resolution {
   string ID = 5;
 }
 
-message GetResolutionRequest {
+message Resolutions {
+  // @inject_tag: json:"resolutions"
+  repeated Resolution Resolutions = 1;
+}
+
+message GetResolutionByIDRequest {
   // @inject_tag: json:"id"
   string ID = 1;
+}
+
+message GetResolutionByDurationRequest {
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 1;
+  // @inject_tag: json:"duration"
+  int64 Duration = 2;
+}
+
+message GetResolutionListRequest {
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 1;
 }

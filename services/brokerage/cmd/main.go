@@ -9,9 +9,10 @@ import (
 	"github.com/mrNobody95/Gate/pkg/service"
 	"github.com/mrNobody95/Gate/services/brokerage/configs"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/app/assets"
-	brokerages "github.com/mrNobody95/Gate/services/brokerage/internal/app/brokerages"
-	markets "github.com/mrNobody95/Gate/services/brokerage/internal/app/markets"
-	wallets "github.com/mrNobody95/Gate/services/brokerage/internal/app/wallets"
+	"github.com/mrNobody95/Gate/services/brokerage/internal/app/brokerages"
+	"github.com/mrNobody95/Gate/services/brokerage/internal/app/markets"
+	"github.com/mrNobody95/Gate/services/brokerage/internal/app/resolutions"
+	"github.com/mrNobody95/Gate/services/brokerage/internal/app/wallets"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -37,7 +38,7 @@ import (
 
 var (
 	Name    = "brokerage"
-	Version = "v0.3.1"
+	Version = "v0.4.0"
 )
 
 func loadConfig() (*configs.Configs, error) {
@@ -60,6 +61,7 @@ func main() {
 		brokerages.NewService().RegisterServer(server)
 		markets.NewService().RegisterServer(server)
 		wallets.NewService(configs).RegisterServer(server)
+		resolutions.NewService().RegisterServer(server)
 		return server.Serve(lst)
 	})
 
@@ -70,6 +72,7 @@ func main() {
 		brokerages.NewController(connection).RegisterRouter(router)
 		markets.NewController(connection).RegisterRouter(router)
 		wallets.NewController(connection).RegisterRouter(router)
+		resolutions.NewController(connection).RegisterRouter(router)
 		return http.Serve(lst, httpext.DefaultCors.Handler(router))
 	})
 

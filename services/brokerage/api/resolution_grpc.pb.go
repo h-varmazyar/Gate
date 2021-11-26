@@ -24,7 +24,9 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ResolutionServiceClient interface {
 	Set(ctx context.Context, in *Resolution, opts ...grpc.CallOption) (*api.Void, error)
-	GetByID(ctx context.Context, in *GetResolutionRequest, opts ...grpc.CallOption) (*Resolution, error)
+	GetByID(ctx context.Context, in *GetResolutionByIDRequest, opts ...grpc.CallOption) (*Resolution, error)
+	GetByDuration(ctx context.Context, in *GetResolutionByDurationRequest, opts ...grpc.CallOption) (*Resolution, error)
+	List(ctx context.Context, in *GetResolutionListRequest, opts ...grpc.CallOption) (*Resolutions, error)
 }
 
 type resolutionServiceClient struct {
@@ -44,9 +46,27 @@ func (c *resolutionServiceClient) Set(ctx context.Context, in *Resolution, opts 
 	return out, nil
 }
 
-func (c *resolutionServiceClient) GetByID(ctx context.Context, in *GetResolutionRequest, opts ...grpc.CallOption) (*Resolution, error) {
+func (c *resolutionServiceClient) GetByID(ctx context.Context, in *GetResolutionByIDRequest, opts ...grpc.CallOption) (*Resolution, error) {
 	out := new(Resolution)
 	err := c.cc.Invoke(ctx, "/brokerageApi.ResolutionService/GetByID", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resolutionServiceClient) GetByDuration(ctx context.Context, in *GetResolutionByDurationRequest, opts ...grpc.CallOption) (*Resolution, error) {
+	out := new(Resolution)
+	err := c.cc.Invoke(ctx, "/brokerageApi.ResolutionService/GetByDuration", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resolutionServiceClient) List(ctx context.Context, in *GetResolutionListRequest, opts ...grpc.CallOption) (*Resolutions, error) {
+	out := new(Resolutions)
+	err := c.cc.Invoke(ctx, "/brokerageApi.ResolutionService/List", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +78,9 @@ func (c *resolutionServiceClient) GetByID(ctx context.Context, in *GetResolution
 // for forward compatibility
 type ResolutionServiceServer interface {
 	Set(context.Context, *Resolution) (*api.Void, error)
-	GetByID(context.Context, *GetResolutionRequest) (*Resolution, error)
+	GetByID(context.Context, *GetResolutionByIDRequest) (*Resolution, error)
+	GetByDuration(context.Context, *GetResolutionByDurationRequest) (*Resolution, error)
+	List(context.Context, *GetResolutionListRequest) (*Resolutions, error)
 }
 
 // UnimplementedResolutionServiceServer should be embedded to have forward compatible implementations.
@@ -68,8 +90,14 @@ type UnimplementedResolutionServiceServer struct {
 func (UnimplementedResolutionServiceServer) Set(context.Context, *Resolution) (*api.Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Set not implemented")
 }
-func (UnimplementedResolutionServiceServer) GetByID(context.Context, *GetResolutionRequest) (*Resolution, error) {
+func (UnimplementedResolutionServiceServer) GetByID(context.Context, *GetResolutionByIDRequest) (*Resolution, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetByID not implemented")
+}
+func (UnimplementedResolutionServiceServer) GetByDuration(context.Context, *GetResolutionByDurationRequest) (*Resolution, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetByDuration not implemented")
+}
+func (UnimplementedResolutionServiceServer) List(context.Context, *GetResolutionListRequest) (*Resolutions, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 
 // UnsafeResolutionServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -102,7 +130,7 @@ func _ResolutionService_Set_Handler(srv interface{}, ctx context.Context, dec fu
 }
 
 func _ResolutionService_GetByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetResolutionRequest)
+	in := new(GetResolutionByIDRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -114,7 +142,43 @@ func _ResolutionService_GetByID_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: "/brokerageApi.ResolutionService/GetByID",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResolutionServiceServer).GetByID(ctx, req.(*GetResolutionRequest))
+		return srv.(ResolutionServiceServer).GetByID(ctx, req.(*GetResolutionByIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResolutionService_GetByDuration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetResolutionByDurationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResolutionServiceServer).GetByDuration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/brokerageApi.ResolutionService/GetByDuration",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResolutionServiceServer).GetByDuration(ctx, req.(*GetResolutionByDurationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResolutionService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetResolutionListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResolutionServiceServer).List(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/brokerageApi.ResolutionService/List",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResolutionServiceServer).List(ctx, req.(*GetResolutionListRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -133,6 +197,14 @@ var ResolutionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetByID",
 			Handler:    _ResolutionService_GetByID_Handler,
+		},
+		{
+			MethodName: "GetByDuration",
+			Handler:    _ResolutionService_GetByDuration_Handler,
+		},
+		{
+			MethodName: "List",
+			Handler:    _ResolutionService_List_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

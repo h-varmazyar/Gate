@@ -1,4 +1,4 @@
-package assets
+package brokerages
 
 import (
 	"github.com/gorilla/mux"

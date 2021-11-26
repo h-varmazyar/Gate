@@ -1,4 +1,4 @@
-package assets
+package wallets
 
 import (
 	"github.com/gorilla/mux"
