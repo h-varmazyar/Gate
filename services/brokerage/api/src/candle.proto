@@ -5,32 +5,30 @@ import "services/brokerage/api/src/resolution.proto";
 import "services/brokerage/api/src/market.proto";
 
 service CandleService {
-  rpc OHLC(OhlcRequest) returns (Ohlc);
+  rpc OHLC(OhlcRequest) returns (Candles);
 }
 
 message Candle {
-  // @inject_tag: json:"resolution"
-  Resolution Resolution = 1;
   // @inject_tag: json:"updated_at"
-  int64 UpdatedAt = 2;
+  int64 UpdatedAt = 1;
   // @inject_tag: json:"created_at"
-  int64 CreatedAt = 3;
-  // @inject_tag: json:"market"
-  Market Market = 4;
+  int64 CreatedAt = 2;
   // @inject_tag: json:"volume"
-  float Volume = 5;
+  double Volume = 3;
+  // @inject_tag: json:"amount"
+  double Amount = 4;
   // @inject_tag: json:"close"
-  float Close = 6;
+  double Close = 5;
   // @inject_tag: json:"open"
-  float Open = 7;
+  double Open = 6;
   // @inject_tag: json:"time"
-  int64 Time = 8;
+  int64 Time = 7;
   // @inject_tag: json:"high"
-  float High = 9;
+  double High = 8;
   // @inject_tag: json:"low"
-  float Low = 10;
+  double Low = 9;
   // @inject_tag: json:"id"
-  string ID = 11;
+  string ID = 10;
 }
 
 message OhlcRequest {
@@ -44,11 +42,7 @@ message OhlcRequest {
   int64 To = 4;
 }
 
-message Ohlc {
+message Candles {
   // @inject_tag: json:"candles"
   repeated Candle Candles = 1;
-  // @inject_tag: json:"resolution"
-  Resolution Resolution = 2;
-  // @inject_tag: json:"market"
-  Market Market = 3;
 }

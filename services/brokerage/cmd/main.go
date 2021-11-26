@@ -10,6 +10,7 @@ import (
 	"github.com/mrNobody95/Gate/services/brokerage/configs"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/app/assets"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/app/brokerages"
+	"github.com/mrNobody95/Gate/services/brokerage/internal/app/candles"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/app/markets"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/app/resolutions"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/app/wallets"
@@ -38,7 +39,7 @@ import (
 
 var (
 	Name    = "brokerage"
-	Version = "v0.4.0"
+	Version = "v0.5.0"
 )
 
 func loadConfig() (*configs.Configs, error) {
@@ -62,6 +63,7 @@ func main() {
 		markets.NewService().RegisterServer(server)
 		wallets.NewService(configs).RegisterServer(server)
 		resolutions.NewService().RegisterServer(server)
+		candles.NewService(configs).RegisterServer(server)
 		return server.Serve(lst)
 	})
 

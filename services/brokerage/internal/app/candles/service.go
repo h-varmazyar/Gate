@@ -1,4 +1,4 @@
-package wallets
+package candles
 
 import (
 	"context"
@@ -7,9 +7,12 @@ import (
 	"github.com/mrNobody95/Gate/pkg/mapper"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
 	"github.com/mrNobody95/Gate/services/brokerage/configs"
+	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/brokerages"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/brokerages/coinex"
+	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
 	networkAPI "github.com/mrNobody95/Gate/services/network/api"
 	"google.golang.org/grpc"
+	"time"
 )
 
 /**
@@ -29,8 +32,7 @@ import (
 **/
 
 type Service struct {
-	brokerageService brokerageApi.BrokerageServiceClient
-	networkService   networkAPI.RequestServiceClient
+	networkService networkAPI.RequestServiceClient
 }
 
 var (
@@ -40,33 +42,36 @@ var (
 func NewService(configs *configs.Configs) *Service {
 	if GrpcService == nil {
 		GrpcService = new(Service)
-		brokerageConnection := grpcext.NewConnection(fmt.Sprintf(":%d", configs.GrpcPort))
 		networkConnection := grpcext.NewConnection(fmt.Sprintf(":%d", configs.NetworkGrpcPort))
-		GrpcService.brokerageService = brokerageApi.NewBrokerageServiceClient(brokerageConnection)
 		GrpcService.networkService = networkAPI.NewRequestServiceClient(networkConnection)
 	}
 	return GrpcService
 }
 
 func (s *Service) RegisterServer(server *grpc.Server) {
-	brokerageApi.RegisterWalletServiceServer(server, s)
+	brokerageApi.RegisterCandleServiceServer(server, s)
 }
 
-func (s *Service) List(ctx context.Context, req *brokerageApi.WalletListRequest) (*brokerageApi.Wallets, error) {
-	br, err := s.brokerageService.GetInternal(ctx, &brokerageApi.BrokerageIDReq{ID: req.BrokerageID})
-	if err != nil {
-		return nil, err
+func (s *Service) OHLC(ctx context.Context, req *brokerageApi.OhlcRequest) (*brokerageApi.Candles, error) {
+	br := new(coinex.Service)
+	resolution := new(repository.Resolution)
+	mapper.Struct(req.Resolution, resolution)
+
+	market := new(repository.Market)
+	mapper.Struct(req.Market, market)
+	inputs := brokerages.OHLCParams{
+		Resolution: resolution,
+		Market:     market,
+		From:       time.Unix(req.From, 0),
+		To:         time.Unix(req.To, 0),
 	}
-	brokerage := new(coinex.Service)
-	brokerage.Auth = br.Auth
-	wallets, err := brokerage.WalletList(ctx, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
+	candles, err := br.OHLC(ctx, inputs, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
 		resp, err := s.networkService.Do(ctx, request)
 		return resp, err
 	})
 	if err != nil {
+		fmt.Println("after net failed")
 		return nil, err
 	}
-	response := make([]*brokerageApi.Wallet, 0)
-	mapper.Slice(wallets, response)
-	return &brokerageApi.Wallets{Wallets: response}, nil
+	return &brokerageApi.Candles{Candles: candles}, nil
 }
