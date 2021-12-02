@@ -3,6 +3,7 @@ package requests
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	networkAPI "github.com/mrNobody95/Gate/services/network/api"
 	"io/ioutil"
 	"net/http"
@@ -99,6 +100,7 @@ func (req *Request) Do() (*networkAPI.Response, error) {
 		return nil, err
 	}
 	defer response.Body.Close()
+	fmt.Println(response.Request.URL)
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return nil, err

@@ -66,7 +66,7 @@ func (c *Service) OHLC(ctx context.Context, inputs brokerages.OHLCParams, runner
 	if int64((inputs.To.Sub(inputs.From))%inputs.Resolution.Duration) > 0 {
 		count++
 	}
-	if int64(count) > 1000 {
+	if int64(count) >= 1000 {
 		request.Params = []*networkAPI.KV{
 			{Key: "market", Value: inputs.Market.Name},
 			{Key: "interval", Value: inputs.Resolution.Value},

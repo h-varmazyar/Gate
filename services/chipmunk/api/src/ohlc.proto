@@ -1,0 +1,34 @@
+syntax = "proto3";
+package chipmunkApi;
+option go_package = "github.com/mrNobody95/Gate/services/chipmunk/api";
+import "services/brokerage/api/src/resolution.proto";
+import "services/brokerage/api/src/market.proto";
+import "services/brokerage/api/src/candle.proto";
+import "api/src/misc.proto";
+
+service ohlcService {
+  rpc AddMarket(AddMarketRequest) returns (api.Void);
+  rpc ReturnBufferedCandles(BufferedCandlesRequest) returns (brokerageApi.Candles);
+  rpc CancelWorker(CancelWorkerRequest) returns (api.Void);
+}
+
+message AddMarketRequest {
+  // @inject_tag: json:"resolution"
+  brokerageApi.Resolution Resolution = 1;
+  // @inject_tag: json:"market"
+  brokerageApi.Market Market = 2;
+}
+
+message BufferedCandlesRequest {
+  // @inject_tag: json:"resolution_id"
+  string ResolutionID = 1;
+  // @inject_tag: json:"market_id"
+  string MarketID = 2;
+}
+
+message CancelWorkerRequest {
+  // @inject_tag: json:"resolution_id"
+  string ResolutionID = 1;
+  // @inject_tag: json:"market_id"
+  string MarketID = 2;
+}
