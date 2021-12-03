@@ -44,7 +44,7 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 	brokerageApi.RegisterMarketServiceServer(server, s)
 }
 
-func (s *Service) Set(_ context.Context, req *brokerageApi.Market) (*brokerageApi.Market, error) {
+func (s *Service) Set(_ context.Context, req *api.Market) (*api.Market, error) {
 	market := new(repository.Market)
 	mapper.Struct(req, market)
 	if req.ID == "" {
@@ -90,7 +90,7 @@ func (s *Service) Set(_ context.Context, req *brokerageApi.Market) (*brokerageAp
 	return req, nil
 }
 
-func (s *Service) Get(_ context.Context, req *brokerageApi.MarketRequest) (*brokerageApi.Market, error) {
+func (s *Service) Get(_ context.Context, req *brokerageApi.MarketRequest) (*api.Market, error) {
 	//brokerage, err := s.BrokeragesService.Get(ctx, &brokerageApi.BrokerageIDReq{ID: req.BrokerageID})
 	//if err != nil {
 	//	return nil, err
@@ -99,7 +99,7 @@ func (s *Service) Get(_ context.Context, req *brokerageApi.MarketRequest) (*brok
 	if err != nil {
 		return nil, err
 	}
-	response := new(brokerageApi.Market)
+	response := new(api.Market)
 	//if req.WithUpdate {
 	//	var br Interface.Brokerage
 	//	br = new(Interface.Coinex)
@@ -124,12 +124,12 @@ func (s *Service) Get(_ context.Context, req *brokerageApi.MarketRequest) (*brok
 	return response, nil
 }
 
-func (s *Service) List(_ context.Context, req *brokerageApi.MarketListRequest) (*brokerageApi.Markets, error) {
+func (s *Service) List(_ context.Context, req *brokerageApi.MarketListRequest) (*api.Markets, error) {
 	response, err := repository.Markets.List(req.BrokerageID)
 	if err != nil {
 		return nil, err
 	}
-	markets := new(brokerageApi.Markets)
+	markets := new(api.Markets)
 	mapper.Slice(response, &markets.Markets)
 	for i, market := range response {
 		switch market.Status {

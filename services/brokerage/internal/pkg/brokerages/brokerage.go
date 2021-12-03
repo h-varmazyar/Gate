@@ -2,7 +2,7 @@ package brokerages
 
 import (
 	"context"
-	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
+	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
 	networkAPI "github.com/mrNobody95/Gate/services/network/api"
 )
@@ -27,5 +27,5 @@ type Handler func(ctx context.Context, request *networkAPI.Request) (*networkAPI
 
 type Brokerage interface {
 	WalletList(context.Context, Handler) ([]*repository.Wallet, error)
-	OHLC(context.Context, OHLCParams, Handler) ([]*brokerageApi.Candle, error)
+	OHLC(context.Context, OHLCParams, Handler) ([]*api.Candle, error)
 }

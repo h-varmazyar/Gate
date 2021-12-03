@@ -2,6 +2,7 @@ package resolutions
 
 import (
 	"github.com/gorilla/mux"
+	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/pkg/httpext"
 	"github.com/mrNobody95/Gate/pkg/muxext"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
@@ -49,7 +50,7 @@ func (c *Controller) RegisterRouter(router *mux.Router) {
 }
 
 func (c *Controller) Set(res http.ResponseWriter, req *http.Request) {
-	model := new(brokerageApi.Resolution)
+	model := new(api.Resolution)
 	if err := httpext.BindModel(req, model); err != nil {
 		httpext.SendError(res, req, err)
 		return

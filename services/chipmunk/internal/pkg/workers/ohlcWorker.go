@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/pkg/grpcext"
 	"github.com/mrNobody95/Gate/pkg/mapper"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
@@ -39,8 +40,8 @@ type ohlcWorker struct {
 
 type Settings struct {
 	Context    context.Context
-	Market     *brokerageApi.Market
-	Resolution *brokerageApi.Resolution
+	Market     *api.Market
+	Resolution *api.Resolution
 }
 
 var (

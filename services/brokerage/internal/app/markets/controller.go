@@ -50,7 +50,7 @@ func (c *Controller) RegisterRouter(router *mux.Router) {
 }
 
 func (c *Controller) Set(res http.ResponseWriter, req *http.Request) {
-	model := new(brokerageApi.Market)
+	model := new(api.Market)
 	if err := httpext.BindModel(req, model); err != nil {
 		httpext.SendError(res, req, err)
 		return

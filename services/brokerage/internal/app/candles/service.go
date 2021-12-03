@@ -3,6 +3,7 @@ package candles
 import (
 	"context"
 	"fmt"
+	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/pkg/grpcext"
 	"github.com/mrNobody95/Gate/pkg/mapper"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
@@ -52,7 +53,7 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 	brokerageApi.RegisterCandleServiceServer(server, s)
 }
 
-func (s *Service) OHLC(ctx context.Context, req *brokerageApi.OhlcRequest) (*brokerageApi.Candles, error) {
+func (s *Service) OHLC(ctx context.Context, req *brokerageApi.OhlcRequest) (*api.Candles, error) {
 	br := new(coinex.Service)
 	resolution := new(repository.Resolution)
 	mapper.Struct(req.Resolution, resolution)
@@ -73,5 +74,5 @@ func (s *Service) OHLC(ctx context.Context, req *brokerageApi.OhlcRequest) (*bro
 		fmt.Println("after net failed")
 		return nil, err
 	}
-	return &brokerageApi.Candles{Candles: candles}, nil
+	return &api.Candles{Candles: candles}, nil
 }

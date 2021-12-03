@@ -47,7 +47,7 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 	brokerageApi.RegisterResolutionServiceServer(server, s)
 }
 
-func (s *Service) Set(ctx context.Context, req *brokerageApi.Resolution) (*api.Void, error) {
+func (s *Service) Set(ctx context.Context, req *api.Resolution) (*api.Void, error) {
 	resolution := new(repository.Resolution)
 	mapper.Struct(req, resolution)
 	if req.BrokerageID == "" {
@@ -70,11 +70,11 @@ func (s *Service) Set(ctx context.Context, req *brokerageApi.Resolution) (*api.V
 	return new(api.Void), nil
 }
 
-func (s *Service) GetByID(ctx context.Context, req *brokerageApi.GetResolutionByIDRequest) (*brokerageApi.Resolution, error) {
+func (s *Service) GetByID(ctx context.Context, _ *brokerageApi.GetResolutionByIDRequest) (*api.Resolution, error) {
 	return nil, errors.New(ctx, codes.Unimplemented)
 }
 
-func (s *Service) GetByDuration(ctx context.Context, req *brokerageApi.GetResolutionByDurationRequest) (*brokerageApi.Resolution, error) {
+func (s *Service) GetByDuration(_ context.Context, req *brokerageApi.GetResolutionByDurationRequest) (*api.Resolution, error) {
 	id, err := uuid.Parse(req.BrokerageID)
 	if err != nil {
 		return nil, err
@@ -83,12 +83,12 @@ func (s *Service) GetByDuration(ctx context.Context, req *brokerageApi.GetResolu
 	if err != nil {
 		return nil, err
 	}
-	response := new(brokerageApi.Resolution)
+	response := new(api.Resolution)
 	mapper.Struct(resolution, response)
 	return response, nil
 }
 
-func (s *Service) List(ctx context.Context, req *brokerageApi.GetResolutionListRequest) (*brokerageApi.Resolutions, error) {
+func (s *Service) List(_ context.Context, req *brokerageApi.GetResolutionListRequest) (*api.Resolutions, error) {
 	id, err := uuid.Parse(req.BrokerageID)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func (s *Service) List(ctx context.Context, req *brokerageApi.GetResolutionListR
 	if err != nil {
 		return nil, err
 	}
-	response := new(brokerageApi.Resolutions)
+	response := new(api.Resolutions)
 	mapper.Slice(resolutions, response.Resolutions)
 	return response, nil
 }

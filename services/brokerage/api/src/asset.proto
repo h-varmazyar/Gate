@@ -2,27 +2,12 @@ syntax = "proto3";
 package brokerageApi;
 option go_package = "github.com/mrNobody95/Gate/services/brokerage/api";
 import "api/src/misc.proto";
+import "api/src/models.proto";
 
 service AssetService {
-  rpc Set(Asset) returns (api.Void);
-  rpc GetByName(GetAssetRequest) returns (Asset);
-  rpc List(GetAssetListRequest) returns (Assets);
-}
-
-message Asset {
-  // @inject_tag: json:"id"
-  string ID = 1;
-  // @inject_tag: json:"name"
-  string Name = 2;
-  // @inject_tag: json:"symbol"
-  string Symbol = 3;
-  // @inject_tag: json:"issue_date"
-  int64 IssueDate = 4;
-}
-
-message Assets {
-  // @inject_tag: json:"assets"
-  repeated Asset Assets = 1;
+  rpc Set(api.Asset) returns (api.Void);
+  rpc GetByName(GetAssetRequest) returns (api.Asset);
+  rpc List(GetAssetListRequest) returns (api.Assets);
 }
 
 message GetAssetRequest {

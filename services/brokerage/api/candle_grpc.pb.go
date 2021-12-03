@@ -8,6 +8,7 @@ package api
 
 import (
 	context "context"
+	api "github.com/mrNobody95/Gate/api"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -22,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CandleServiceClient interface {
-	OHLC(ctx context.Context, in *OhlcRequest, opts ...grpc.CallOption) (*Candles, error)
+	OHLC(ctx context.Context, in *OhlcRequest, opts ...grpc.CallOption) (*api.Candles, error)
 }
 
 type candleServiceClient struct {
@@ -33,8 +34,8 @@ func NewCandleServiceClient(cc grpc.ClientConnInterface) CandleServiceClient {
 	return &candleServiceClient{cc}
 }
 
-func (c *candleServiceClient) OHLC(ctx context.Context, in *OhlcRequest, opts ...grpc.CallOption) (*Candles, error) {
-	out := new(Candles)
+func (c *candleServiceClient) OHLC(ctx context.Context, in *OhlcRequest, opts ...grpc.CallOption) (*api.Candles, error) {
+	out := new(api.Candles)
 	err := c.cc.Invoke(ctx, "/brokerageApi.CandleService/OHLC", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -46,14 +47,14 @@ func (c *candleServiceClient) OHLC(ctx context.Context, in *OhlcRequest, opts ..
 // All implementations should embed UnimplementedCandleServiceServer
 // for forward compatibility
 type CandleServiceServer interface {
-	OHLC(context.Context, *OhlcRequest) (*Candles, error)
+	OHLC(context.Context, *OhlcRequest) (*api.Candles, error)
 }
 
 // UnimplementedCandleServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedCandleServiceServer struct {
 }
 
-func (UnimplementedCandleServiceServer) OHLC(context.Context, *OhlcRequest) (*Candles, error) {
+func (UnimplementedCandleServiceServer) OHLC(context.Context, *OhlcRequest) (*api.Candles, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method OHLC not implemented")
 }
 

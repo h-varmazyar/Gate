@@ -23,9 +23,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AssetServiceClient interface {
-	Set(ctx context.Context, in *Asset, opts ...grpc.CallOption) (*api.Void, error)
-	GetByName(ctx context.Context, in *GetAssetRequest, opts ...grpc.CallOption) (*Asset, error)
-	List(ctx context.Context, in *GetAssetListRequest, opts ...grpc.CallOption) (*Assets, error)
+	Set(ctx context.Context, in *api.Asset, opts ...grpc.CallOption) (*api.Void, error)
+	GetByName(ctx context.Context, in *GetAssetRequest, opts ...grpc.CallOption) (*api.Asset, error)
+	List(ctx context.Context, in *GetAssetListRequest, opts ...grpc.CallOption) (*api.Assets, error)
 }
 
 type assetServiceClient struct {
@@ -36,7 +36,7 @@ func NewAssetServiceClient(cc grpc.ClientConnInterface) AssetServiceClient {
 	return &assetServiceClient{cc}
 }
 
-func (c *assetServiceClient) Set(ctx context.Context, in *Asset, opts ...grpc.CallOption) (*api.Void, error) {
+func (c *assetServiceClient) Set(ctx context.Context, in *api.Asset, opts ...grpc.CallOption) (*api.Void, error) {
 	out := new(api.Void)
 	err := c.cc.Invoke(ctx, "/brokerageApi.AssetService/Set", in, out, opts...)
 	if err != nil {
@@ -45,8 +45,8 @@ func (c *assetServiceClient) Set(ctx context.Context, in *Asset, opts ...grpc.Ca
 	return out, nil
 }
 
-func (c *assetServiceClient) GetByName(ctx context.Context, in *GetAssetRequest, opts ...grpc.CallOption) (*Asset, error) {
-	out := new(Asset)
+func (c *assetServiceClient) GetByName(ctx context.Context, in *GetAssetRequest, opts ...grpc.CallOption) (*api.Asset, error) {
+	out := new(api.Asset)
 	err := c.cc.Invoke(ctx, "/brokerageApi.AssetService/GetByName", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -54,8 +54,8 @@ func (c *assetServiceClient) GetByName(ctx context.Context, in *GetAssetRequest,
 	return out, nil
 }
 
-func (c *assetServiceClient) List(ctx context.Context, in *GetAssetListRequest, opts ...grpc.CallOption) (*Assets, error) {
-	out := new(Assets)
+func (c *assetServiceClient) List(ctx context.Context, in *GetAssetListRequest, opts ...grpc.CallOption) (*api.Assets, error) {
+	out := new(api.Assets)
 	err := c.cc.Invoke(ctx, "/brokerageApi.AssetService/List", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -67,22 +67,22 @@ func (c *assetServiceClient) List(ctx context.Context, in *GetAssetListRequest, 
 // All implementations should embed UnimplementedAssetServiceServer
 // for forward compatibility
 type AssetServiceServer interface {
-	Set(context.Context, *Asset) (*api.Void, error)
-	GetByName(context.Context, *GetAssetRequest) (*Asset, error)
-	List(context.Context, *GetAssetListRequest) (*Assets, error)
+	Set(context.Context, *api.Asset) (*api.Void, error)
+	GetByName(context.Context, *GetAssetRequest) (*api.Asset, error)
+	List(context.Context, *GetAssetListRequest) (*api.Assets, error)
 }
 
 // UnimplementedAssetServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedAssetServiceServer struct {
 }
 
-func (UnimplementedAssetServiceServer) Set(context.Context, *Asset) (*api.Void, error) {
+func (UnimplementedAssetServiceServer) Set(context.Context, *api.Asset) (*api.Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Set not implemented")
 }
-func (UnimplementedAssetServiceServer) GetByName(context.Context, *GetAssetRequest) (*Asset, error) {
+func (UnimplementedAssetServiceServer) GetByName(context.Context, *GetAssetRequest) (*api.Asset, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetByName not implemented")
 }
-func (UnimplementedAssetServiceServer) List(context.Context, *GetAssetListRequest) (*Assets, error) {
+func (UnimplementedAssetServiceServer) List(context.Context, *GetAssetListRequest) (*api.Assets, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 
@@ -98,7 +98,7 @@ func RegisterAssetServiceServer(s grpc.ServiceRegistrar, srv AssetServiceServer)
 }
 
 func _AssetService_Set_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Asset)
+	in := new(api.Asset)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func _AssetService_Set_Handler(srv interface{}, ctx context.Context, dec func(in
 		FullMethod: "/brokerageApi.AssetService/Set",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AssetServiceServer).Set(ctx, req.(*Asset))
+		return srv.(AssetServiceServer).Set(ctx, req.(*api.Asset))
 	}
 	return interceptor(ctx, in, info, handler)
 }

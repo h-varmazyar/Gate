@@ -9,7 +9,6 @@ package api
 import (
 	context "context"
 	api "github.com/mrNobody95/Gate/api"
-	api1 "github.com/mrNobody95/Gate/services/brokerage/api"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -25,7 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type OhlcServiceClient interface {
 	AddMarket(ctx context.Context, in *AddMarketRequest, opts ...grpc.CallOption) (*api.Void, error)
-	ReturnBufferedCandles(ctx context.Context, in *BufferedCandlesRequest, opts ...grpc.CallOption) (*api1.Candles, error)
+	ReturnBufferedCandles(ctx context.Context, in *BufferedCandlesRequest, opts ...grpc.CallOption) (*api.Candles, error)
 	CancelWorker(ctx context.Context, in *CancelWorkerRequest, opts ...grpc.CallOption) (*api.Void, error)
 }
 
@@ -46,8 +45,8 @@ func (c *ohlcServiceClient) AddMarket(ctx context.Context, in *AddMarketRequest,
 	return out, nil
 }
 
-func (c *ohlcServiceClient) ReturnBufferedCandles(ctx context.Context, in *BufferedCandlesRequest, opts ...grpc.CallOption) (*api1.Candles, error) {
-	out := new(api1.Candles)
+func (c *ohlcServiceClient) ReturnBufferedCandles(ctx context.Context, in *BufferedCandlesRequest, opts ...grpc.CallOption) (*api.Candles, error) {
+	out := new(api.Candles)
 	err := c.cc.Invoke(ctx, "/chipmunkApi.ohlcService/ReturnBufferedCandles", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -69,7 +68,7 @@ func (c *ohlcServiceClient) CancelWorker(ctx context.Context, in *CancelWorkerRe
 // for forward compatibility
 type OhlcServiceServer interface {
 	AddMarket(context.Context, *AddMarketRequest) (*api.Void, error)
-	ReturnBufferedCandles(context.Context, *BufferedCandlesRequest) (*api1.Candles, error)
+	ReturnBufferedCandles(context.Context, *BufferedCandlesRequest) (*api.Candles, error)
 	CancelWorker(context.Context, *CancelWorkerRequest) (*api.Void, error)
 }
 
@@ -80,7 +79,7 @@ type UnimplementedOhlcServiceServer struct {
 func (UnimplementedOhlcServiceServer) AddMarket(context.Context, *AddMarketRequest) (*api.Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddMarket not implemented")
 }
-func (UnimplementedOhlcServiceServer) ReturnBufferedCandles(context.Context, *BufferedCandlesRequest) (*api1.Candles, error) {
+func (UnimplementedOhlcServiceServer) ReturnBufferedCandles(context.Context, *BufferedCandlesRequest) (*api.Candles, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReturnBufferedCandles not implemented")
 }
 func (UnimplementedOhlcServiceServer) CancelWorker(context.Context, *CancelWorkerRequest) (*api.Void, error) {

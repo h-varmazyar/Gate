@@ -1,0 +1,108 @@
+syntax = "proto3";
+package api;
+option go_package = "github.com/mrNobody95/Gate/api";
+import "api/src/misc.proto";
+
+message Asset {
+  // @inject_tag: json:"id"
+  string ID = 1;
+  // @inject_tag: json:"name"
+  string Name = 2;
+  // @inject_tag: json:"symbol"
+  string Symbol = 3;
+  // @inject_tag: json:"issue_date"
+  int64 IssueDate = 4;
+}
+
+message Assets {
+  // @inject_tag: json:"assets"
+  repeated Asset Assets = 1;
+}
+
+message Candle {
+  // @inject_tag: json:"updated_at"
+  int64 UpdatedAt = 1;
+  // @inject_tag: json:"created_at"
+  int64 CreatedAt = 2;
+  // @inject_tag: json:"volume"
+  double Volume = 3;
+  // @inject_tag: json:"amount"
+  double Amount = 4;
+  // @inject_tag: json:"close"
+  double Close = 5;
+  // @inject_tag: json:"open"
+  double Open = 6;
+  // @inject_tag: json:"time"
+  int64 Time = 7;
+  // @inject_tag: json:"high"
+  double High = 8;
+  // @inject_tag: json:"low"
+  double Low = 9;
+  // @inject_tag: json:"id"
+  string ID = 10;
+}
+
+message Candles {
+  // @inject_tag: json:"candles"
+  repeated Candle Candles = 1;
+}
+
+message Market {
+  // @inject_tag: json:"pricing_decimal"
+  float PricingDecimal = 1;
+  // @inject_tag: json:"trading_decimal"
+  float TradingDecimal = 2;
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 3;
+  // @inject_tag: json:"taker_fee_rate"
+  float TakerFeeRate = 4;
+  // @inject_tag: json:"maker_fee_rate"
+  float MakerFeeRate = 5;
+  // @inject_tag: json:"destination"
+  Asset Destination = 6;
+  // @inject_tag: json:"destination_id"
+  string DestinationID = 16;
+  // @inject_tag: json:"start_time"
+  int64 StartTime = 7;
+  // @inject_tag: json:"min_amount"
+  float MinAmount = 8;
+  // @inject_tag: json:"created_at"
+  int64 CreatedAt = 9;
+  // @inject_tag: json:"updated_at"
+  int64 UpdatedAt = 10;
+  // @inject_tag: json:"source"
+  Asset Source = 11;
+  // @inject_tag: json:"source_id"
+  string SourceID = 17;
+  // @inject_tag: json:"is_amm"
+  bool IsAMM = 12;
+  // @inject_tag: json:"name"
+  string Name = 13;
+  // @inject_tag: json:"id"
+  string ID = 14;
+  // @inject_tag: json:"status"
+  StatusType Status = 15;
+}
+
+message Markets {
+  // @inject_tag: json:"markets"
+  repeated Market Markets = 1;
+}
+
+message Resolution {
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 1;
+  // @inject_tag: json:"duration"
+  int64 Duration = 2;
+  // @inject_tag: json:"label"
+  string Label = 3;
+  // @inject_tag: json:"value"
+  string Value = 4;
+  // @inject_tag: json:"id"
+  string ID = 5;
+}
+
+message Resolutions {
+  // @inject_tag: json:"resolutions"
+  repeated Resolution Resolutions = 1;
+}

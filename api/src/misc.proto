@@ -39,5 +39,3 @@ message Status {
 
 message Void {
 }
-
-

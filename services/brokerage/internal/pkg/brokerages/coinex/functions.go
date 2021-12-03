@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/pkg/errors"
-	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/brokerages"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
 	networkAPI "github.com/mrNobody95/Gate/services/network/api"
@@ -59,7 +58,7 @@ func (c *Service) WalletList(ctx context.Context, runner brokerages.Handler) ([]
 	return nil, nil
 }
 
-func (c *Service) OHLC(ctx context.Context, inputs brokerages.OHLCParams, runner brokerages.Handler) ([]*brokerageApi.Candle, error) {
+func (c *Service) OHLC(ctx context.Context, inputs brokerages.OHLCParams, runner brokerages.Handler) ([]*api.Candle, error) {
 	request := new(networkAPI.Request)
 	request.Type = networkAPI.Type_GET
 	count := (inputs.To.Sub(inputs.From)) / inputs.Resolution.Duration
@@ -93,9 +92,9 @@ func (c *Service) OHLC(ctx context.Context, inputs brokerages.OHLCParams, runner
 	if err := parseResponse(resp.Response, &data); err != nil {
 		return nil, err
 	}
-	candles := make([]*brokerageApi.Candle, 0)
+	candles := make([]*api.Candle, 0)
 	for _, item := range data {
-		c := new(brokerageApi.Candle)
+		c := new(api.Candle)
 		var err error
 		c.Time = int64(item[0].(float64))
 		c.Open, err = strconv.ParseFloat(item[1].(string), 64)

@@ -5,7 +5,6 @@ import (
 	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/pkg/errors"
 	"github.com/mrNobody95/Gate/pkg/mapper"
-	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
 	chipmunkApi "github.com/mrNobody95/Gate/services/chipmunk/api"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/workers"
@@ -61,10 +60,10 @@ func (s *Service) AddMarket(ctx context.Context, req *chipmunkApi.AddMarketReque
 	return &api.Void{}, nil
 }
 
-func (s *Service) ReturnBufferedCandles(_ context.Context, req *chipmunkApi.BufferedCandlesRequest) (*brokerageApi.Candles, error) {
+func (s *Service) ReturnBufferedCandles(_ context.Context, req *chipmunkApi.BufferedCandlesRequest) (*api.Candles, error) {
 	candles := buffer.Candles.List(req.MarketID, req.ResolutionID)
-	response := new(brokerageApi.Candles)
-	response.Candles = make([]*brokerageApi.Candle, 0)
+	response := new(api.Candles)
+	response.Candles = make([]*api.Candle, 0)
 	mapper.Slice(candles, &response.Candles)
 	return response, nil
 }

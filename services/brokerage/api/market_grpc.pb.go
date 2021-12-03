@@ -23,9 +23,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MarketServiceClient interface {
-	Set(ctx context.Context, in *Market, opts ...grpc.CallOption) (*Market, error)
-	Get(ctx context.Context, in *MarketRequest, opts ...grpc.CallOption) (*Market, error)
-	List(ctx context.Context, in *MarketListRequest, opts ...grpc.CallOption) (*Markets, error)
+	Set(ctx context.Context, in *api.Market, opts ...grpc.CallOption) (*api.Market, error)
+	Get(ctx context.Context, in *MarketRequest, opts ...grpc.CallOption) (*api.Market, error)
+	List(ctx context.Context, in *MarketListRequest, opts ...grpc.CallOption) (*api.Markets, error)
 	ChangeStatus(ctx context.Context, in *api.StatusChangeRequest, opts ...grpc.CallOption) (*api.Status, error)
 }
 
@@ -37,8 +37,8 @@ func NewMarketServiceClient(cc grpc.ClientConnInterface) MarketServiceClient {
 	return &marketServiceClient{cc}
 }
 
-func (c *marketServiceClient) Set(ctx context.Context, in *Market, opts ...grpc.CallOption) (*Market, error) {
-	out := new(Market)
+func (c *marketServiceClient) Set(ctx context.Context, in *api.Market, opts ...grpc.CallOption) (*api.Market, error) {
+	out := new(api.Market)
 	err := c.cc.Invoke(ctx, "/brokerageApi.MarketService/Set", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -46,8 +46,8 @@ func (c *marketServiceClient) Set(ctx context.Context, in *Market, opts ...grpc.
 	return out, nil
 }
 
-func (c *marketServiceClient) Get(ctx context.Context, in *MarketRequest, opts ...grpc.CallOption) (*Market, error) {
-	out := new(Market)
+func (c *marketServiceClient) Get(ctx context.Context, in *MarketRequest, opts ...grpc.CallOption) (*api.Market, error) {
+	out := new(api.Market)
 	err := c.cc.Invoke(ctx, "/brokerageApi.MarketService/Get", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -55,8 +55,8 @@ func (c *marketServiceClient) Get(ctx context.Context, in *MarketRequest, opts .
 	return out, nil
 }
 
-func (c *marketServiceClient) List(ctx context.Context, in *MarketListRequest, opts ...grpc.CallOption) (*Markets, error) {
-	out := new(Markets)
+func (c *marketServiceClient) List(ctx context.Context, in *MarketListRequest, opts ...grpc.CallOption) (*api.Markets, error) {
+	out := new(api.Markets)
 	err := c.cc.Invoke(ctx, "/brokerageApi.MarketService/List", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -77,9 +77,9 @@ func (c *marketServiceClient) ChangeStatus(ctx context.Context, in *api.StatusCh
 // All implementations should embed UnimplementedMarketServiceServer
 // for forward compatibility
 type MarketServiceServer interface {
-	Set(context.Context, *Market) (*Market, error)
-	Get(context.Context, *MarketRequest) (*Market, error)
-	List(context.Context, *MarketListRequest) (*Markets, error)
+	Set(context.Context, *api.Market) (*api.Market, error)
+	Get(context.Context, *MarketRequest) (*api.Market, error)
+	List(context.Context, *MarketListRequest) (*api.Markets, error)
 	ChangeStatus(context.Context, *api.StatusChangeRequest) (*api.Status, error)
 }
 
@@ -87,13 +87,13 @@ type MarketServiceServer interface {
 type UnimplementedMarketServiceServer struct {
 }
 
-func (UnimplementedMarketServiceServer) Set(context.Context, *Market) (*Market, error) {
+func (UnimplementedMarketServiceServer) Set(context.Context, *api.Market) (*api.Market, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Set not implemented")
 }
-func (UnimplementedMarketServiceServer) Get(context.Context, *MarketRequest) (*Market, error) {
+func (UnimplementedMarketServiceServer) Get(context.Context, *MarketRequest) (*api.Market, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
-func (UnimplementedMarketServiceServer) List(context.Context, *MarketListRequest) (*Markets, error) {
+func (UnimplementedMarketServiceServer) List(context.Context, *MarketListRequest) (*api.Markets, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 func (UnimplementedMarketServiceServer) ChangeStatus(context.Context, *api.StatusChangeRequest) (*api.Status, error) {
@@ -112,7 +112,7 @@ func RegisterMarketServiceServer(s grpc.ServiceRegistrar, srv MarketServiceServe
 }
 
 func _MarketService_Set_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Market)
+	in := new(api.Market)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func _MarketService_Set_Handler(srv interface{}, ctx context.Context, dec func(i
 		FullMethod: "/brokerageApi.MarketService/Set",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MarketServiceServer).Set(ctx, req.(*Market))
+		return srv.(MarketServiceServer).Set(ctx, req.(*api.Market))
 	}
 	return interceptor(ctx, in, info, handler)
 }
