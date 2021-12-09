@@ -6,7 +6,7 @@ import "api/src/models.proto";
 
 service ohlcService {
   rpc AddMarket(AddMarketRequest) returns (api.Void);
-  rpc ReturnBufferedCandles(BufferedCandlesRequest) returns (api.Candles);
+  rpc ReturnCandles(BufferedCandlesRequest) returns (api.Candles);
   rpc ReturnLastCandle(BufferedCandlesRequest) returns (api.Candle);
   rpc CancelWorker(CancelWorkerRequest) returns (api.Void);
 }

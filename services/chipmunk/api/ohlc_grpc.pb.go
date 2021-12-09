@@ -24,7 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type OhlcServiceClient interface {
 	AddMarket(ctx context.Context, in *AddMarketRequest, opts ...grpc.CallOption) (*api.Void, error)
-	ReturnBufferedCandles(ctx context.Context, in *BufferedCandlesRequest, opts ...grpc.CallOption) (*api.Candles, error)
+	ReturnCandles(ctx context.Context, in *BufferedCandlesRequest, opts ...grpc.CallOption) (*api.Candles, error)
 	ReturnLastCandle(ctx context.Context, in *BufferedCandlesRequest, opts ...grpc.CallOption) (*api.Candle, error)
 	CancelWorker(ctx context.Context, in *CancelWorkerRequest, opts ...grpc.CallOption) (*api.Void, error)
 }
@@ -46,9 +46,9 @@ func (c *ohlcServiceClient) AddMarket(ctx context.Context, in *AddMarketRequest,
 	return out, nil
 }
 
-func (c *ohlcServiceClient) ReturnBufferedCandles(ctx context.Context, in *BufferedCandlesRequest, opts ...grpc.CallOption) (*api.Candles, error) {
+func (c *ohlcServiceClient) ReturnCandles(ctx context.Context, in *BufferedCandlesRequest, opts ...grpc.CallOption) (*api.Candles, error) {
 	out := new(api.Candles)
-	err := c.cc.Invoke(ctx, "/chipmunkApi.ohlcService/ReturnBufferedCandles", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/chipmunkApi.ohlcService/ReturnCandles", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (c *ohlcServiceClient) CancelWorker(ctx context.Context, in *CancelWorkerRe
 // for forward compatibility
 type OhlcServiceServer interface {
 	AddMarket(context.Context, *AddMarketRequest) (*api.Void, error)
-	ReturnBufferedCandles(context.Context, *BufferedCandlesRequest) (*api.Candles, error)
+	ReturnCandles(context.Context, *BufferedCandlesRequest) (*api.Candles, error)
 	ReturnLastCandle(context.Context, *BufferedCandlesRequest) (*api.Candle, error)
 	CancelWorker(context.Context, *CancelWorkerRequest) (*api.Void, error)
 }
@@ -90,8 +90,8 @@ type UnimplementedOhlcServiceServer struct {
 func (UnimplementedOhlcServiceServer) AddMarket(context.Context, *AddMarketRequest) (*api.Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddMarket not implemented")
 }
-func (UnimplementedOhlcServiceServer) ReturnBufferedCandles(context.Context, *BufferedCandlesRequest) (*api.Candles, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReturnBufferedCandles not implemented")
+func (UnimplementedOhlcServiceServer) ReturnCandles(context.Context, *BufferedCandlesRequest) (*api.Candles, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReturnCandles not implemented")
 }
 func (UnimplementedOhlcServiceServer) ReturnLastCandle(context.Context, *BufferedCandlesRequest) (*api.Candle, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReturnLastCandle not implemented")
@@ -129,20 +129,20 @@ func _OhlcService_AddMarket_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _OhlcService_ReturnBufferedCandles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _OhlcService_ReturnCandles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(BufferedCandlesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(OhlcServiceServer).ReturnBufferedCandles(ctx, in)
+		return srv.(OhlcServiceServer).ReturnCandles(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/chipmunkApi.ohlcService/ReturnBufferedCandles",
+		FullMethod: "/chipmunkApi.ohlcService/ReturnCandles",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OhlcServiceServer).ReturnBufferedCandles(ctx, req.(*BufferedCandlesRequest))
+		return srv.(OhlcServiceServer).ReturnCandles(ctx, req.(*BufferedCandlesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -195,8 +195,8 @@ var OhlcService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _OhlcService_AddMarket_Handler,
 		},
 		{
-			MethodName: "ReturnBufferedCandles",
-			Handler:    _OhlcService_ReturnBufferedCandles_Handler,
+			MethodName: "ReturnCandles",
+			Handler:    _OhlcService_ReturnCandles_Handler,
 		},
 		{
 			MethodName: "ReturnLastCandle",

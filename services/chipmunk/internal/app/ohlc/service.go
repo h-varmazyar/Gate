@@ -7,6 +7,7 @@ import (
 	"github.com/mrNobody95/Gate/pkg/mapper"
 	chipmunkApi "github.com/mrNobody95/Gate/services/chipmunk/api"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/buffer"
+	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/workers"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -60,12 +61,21 @@ func (s *Service) AddMarket(ctx context.Context, req *chipmunkApi.AddMarketReque
 	return &api.Void{}, nil
 }
 
-func (s *Service) ReturnBufferedCandles(_ context.Context, req *chipmunkApi.BufferedCandlesRequest) (*api.Candles, error) {
-	candles := buffer.Candles.List(req.MarketID, req.ResolutionID)
-	response := new(api.Candles)
-	response.Candles = make([]*api.Candle, 0)
-	mapper.Slice(candles, &response.Candles)
-	return response, nil
+func (s *Service) ReturnCandles(_ context.Context, req *chipmunkApi.BufferedCandlesRequest) (*api.Candles, error) {
+	candles := make([]*api.Candle, 0)
+	for i := 0; ; i += 1000 {
+		list, err := repository.Candles.ReturnList(req.MarketID, req.ResolutionID, i)
+		if err != nil {
+			return nil, err
+		}
+		tmp := make([]*api.Candle, 0)
+		mapper.Slice(list, tmp)
+		candles = append(candles, tmp...)
+		if len(list) < 1000 {
+			break
+		}
+	}
+	return &api.Candles{Candles: candles}, nil
 }
 
 func (s *Service) ReturnLastCandle(_ context.Context, req *chipmunkApi.BufferedCandlesRequest) (*api.Candle, error) {

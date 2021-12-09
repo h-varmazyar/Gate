@@ -43,10 +43,6 @@ func (buffer *candleBuffer) RemoveList(marketID, resolutionID string) {
 	delete(buffer.candles, key(marketID, resolutionID))
 }
 
-func (buffer *candleBuffer) List(marketID, resolutionID string) []*candles.Candle {
-	return buffer.candles[key(marketID, resolutionID)]
-}
-
 func (buffer *candleBuffer) Last(marketID, resolutionID string) *candles.Candle {
 	list := buffer.candles[key(marketID, resolutionID)]
 	return list[len(list)-1]

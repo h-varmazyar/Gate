@@ -37,4 +37,5 @@ type Candle struct {
 type Candles interface {
 	Save(*Candle) error
 	ReturnLast(marketID, resolutionID string) (*Candle, error)
+	ReturnList(marketID, resolutionID string, offset int) ([]*Candle, error)
 }

@@ -48,5 +48,14 @@ func (r *CandleMariadbRepository) ReturnLast(marketID, resolutionID string) (*Ca
 	item := new(Candle)
 	return item, r.DB.Model(new(Candle)).
 		Where("market_id LIKE ?", marketID).
-		Where("resolution_id LIKE ?", resolutionID).Order("time desc").First(item).Error
+		Where("resolution_id LIKE ?", resolutionID).
+		Order("time desc").First(item).Error
+}
+
+func (r *CandleMariadbRepository) ReturnList(marketID, resolutionID string, offset int) ([]*Candle, error) {
+	items := make([]*Candle, 0)
+	return items, r.DB.Model(new(Candle)).
+		Where("market_id LIKE ?", marketID).
+		Where("resolution_id LIKE ?", resolutionID).
+		Order("time desc").Offset(offset).Limit(1000).Find(items).Error
 }
