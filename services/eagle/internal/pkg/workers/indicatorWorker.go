@@ -76,11 +76,6 @@ func (worker *indicatorWorker) CancelWorker(marketID, resolutionID string) error
 func (worker *indicatorWorker) run(settings *Settings) {
 	ticker := time.NewTicker(worker.heartbeatInterval)
 
-	if err := worker.initiateBuffer(settings); err != nil {
-		log.WithError(err).Error("initiate buffer")
-		return
-	}
-
 	if err := worker.initiateIndicators(settings); err != nil {
 		log.WithError(err).Error("initiate indicators")
 		return
@@ -100,19 +95,10 @@ LOOP:
 	}
 }
 
-func (worker *indicatorWorker) initiateBuffer(settings *Settings) error {
-	candles, err := worker.ohlcService.ReturnBufferedCandles(settings.Context, &chipmunkApi.BufferedCandlesRequest{
-		ResolutionID: settings.Resolution.ID,
-		MarketID:     settings.Market.ID,
-	})
-	if err != nil {
-		return err
-	}
+func (worker *indicatorWorker) initiateBuffer(candles []*models.Candle, settings *Settings) error {
 	buffers.Candles.AddList(settings.Market.ID, settings.Resolution.ID)
-	for _, candle := range candles.Candles {
-		tmp := new(models.Candle)
-		mapper.Struct(candle, tmp)
-		buffers.Candles.Enqueue(tmp)
+	for _, candle := range candles {
+		buffers.Candles.Enqueue(candle)
 	}
 	return nil
 }
@@ -132,16 +118,27 @@ func (worker *indicatorWorker) updateBuffer(settings *Settings) error {
 }
 
 func (worker *indicatorWorker) initiateIndicators(settings *Settings) error {
-	if err := settings.Config.CalculateBollingerBand(buffers.Candles.List(settings.Market.ID, settings.Resolution.ID)); err != nil {
+	list, err := worker.ohlcService.ReturnCandles(settings.Context, &chipmunkApi.BufferedCandlesRequest{
+		ResolutionID: settings.Resolution.ID,
+		MarketID:     settings.Market.ID,
+	})
+	if err != nil {
 		return err
 	}
-	if err := settings.Config.CalculateRSI(buffers.Candles.List(settings.Market.ID, settings.Resolution.ID)); err != nil {
+
+	candles := make([]*models.Candle, 0)
+	mapper.Slice(list.Candles, candles)
+
+	if err := settings.Config.CalculateBollingerBand(candles); err != nil {
 		return err
 	}
-	if err := settings.Config.CalculateStochastic(buffers.Candles.List(settings.Market.ID, settings.Resolution.ID)); err != nil {
+	if err := settings.Config.CalculateRSI(candles); err != nil {
 		return err
 	}
-	return nil
+	if err := settings.Config.CalculateStochastic(candles); err != nil {
+		return err
+	}
+	return worker.initiateBuffer(candles, settings)
 }
 
 func (worker *indicatorWorker) calculateIndicators(settings *Settings) {
