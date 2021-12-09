@@ -38,7 +38,7 @@ type indicatorWorker struct {
 	ohlcService       chipmunkApi.OhlcServiceClient
 }
 
-type Settings struct {
+type IndicatorsSettings struct {
 	Context    context.Context
 	Market     *api.Market
 	Resolution *api.Resolution
@@ -46,34 +46,34 @@ type Settings struct {
 }
 
 var (
-	IndicatorWorker     *indicatorWorker
-	workerCancellations map[string]context.CancelFunc
+	IndicatorWorker               *indicatorWorker
+	indicatorsWorkerCancellations map[string]context.CancelFunc
 )
 
 func init() {
-	workerCancellations = make(map[string]context.CancelFunc)
+	indicatorsWorkerCancellations = make(map[string]context.CancelFunc)
 	IndicatorWorker = new(indicatorWorker)
 	IndicatorWorker.heartbeatInterval = configs.Variables.IndicatorsWorkerHeartbeat
 	candleConnection := grpcext.NewConnection(fmt.Sprintf(":%v", configs.Variables.GrpcAddresses.Chipmunk))
 	IndicatorWorker.ohlcService = chipmunkApi.NewOhlcServiceClient(candleConnection)
 }
 
-func (worker *indicatorWorker) AddMarket(settings *Settings) {
+func (worker *indicatorWorker) AddMarket(settings *IndicatorsSettings) {
 	go worker.run(settings)
 }
 
 func (worker *indicatorWorker) CancelWorker(marketID, resolutionID string) error {
-	fn, ok := workerCancellations[fmt.Sprintf("%s > %s", marketID, resolutionID)]
+	fn, ok := indicatorsWorkerCancellations[fmt.Sprintf("%s > %s", marketID, resolutionID)]
 	if !ok {
 		return errors.New("worker stopped before")
 	}
 	fn()
-	delete(workerCancellations, fmt.Sprintf("%s > %s", marketID, resolutionID))
+	delete(indicatorsWorkerCancellations, fmt.Sprintf("%s > %s", marketID, resolutionID))
 	buffers.Candles.RemoveList(marketID, resolutionID)
 	return nil
 }
 
-func (worker *indicatorWorker) run(settings *Settings) {
+func (worker *indicatorWorker) run(settings *IndicatorsSettings) {
 	ticker := time.NewTicker(worker.heartbeatInterval)
 
 	if err := worker.initiateIndicators(settings); err != nil {
@@ -95,7 +95,7 @@ LOOP:
 	}
 }
 
-func (worker *indicatorWorker) initiateBuffer(candles []*models.Candle, settings *Settings) error {
+func (worker *indicatorWorker) initiateBuffer(candles []*models.Candle, settings *IndicatorsSettings) error {
 	buffers.Candles.AddList(settings.Market.ID, settings.Resolution.ID)
 	for _, candle := range candles {
 		buffers.Candles.Enqueue(candle)
@@ -103,7 +103,7 @@ func (worker *indicatorWorker) initiateBuffer(candles []*models.Candle, settings
 	return nil
 }
 
-func (worker *indicatorWorker) updateBuffer(settings *Settings) error {
+func (worker *indicatorWorker) updateBuffer(settings *IndicatorsSettings) error {
 	candle, err := worker.ohlcService.ReturnLastCandle(settings.Context, &chipmunkApi.BufferedCandlesRequest{
 		ResolutionID: settings.Resolution.ID,
 		MarketID:     settings.Market.ID,
@@ -117,7 +117,7 @@ func (worker *indicatorWorker) updateBuffer(settings *Settings) error {
 	return nil
 }
 
-func (worker *indicatorWorker) initiateIndicators(settings *Settings) error {
+func (worker *indicatorWorker) initiateIndicators(settings *IndicatorsSettings) error {
 	list, err := worker.ohlcService.ReturnCandles(settings.Context, &chipmunkApi.BufferedCandlesRequest{
 		ResolutionID: settings.Resolution.ID,
 		MarketID:     settings.Market.ID,
@@ -141,7 +141,7 @@ func (worker *indicatorWorker) initiateIndicators(settings *Settings) error {
 	return worker.initiateBuffer(candles, settings)
 }
 
-func (worker *indicatorWorker) calculateIndicators(settings *Settings) {
+func (worker *indicatorWorker) calculateIndicators(settings *IndicatorsSettings) {
 	var wg sync.WaitGroup
 	wg.Add(3)
 	go func(wg *sync.WaitGroup) {

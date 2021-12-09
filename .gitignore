@@ -9,6 +9,8 @@
 .docker
 
 # Auto generated
+node_modules
+public/assets
 logs
 build
 *.dat

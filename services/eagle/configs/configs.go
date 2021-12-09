@@ -28,6 +28,7 @@ type Configs struct {
 	ServiceName               string        `env:"SERVICE_NAME,required"`
 	Version                   string        `env:"VERSION,required"`
 	IndicatorsWorkerHeartbeat time.Duration `env:"INDICATORS_WORKER_HEARTBEAT,required"`
+	SignalsWorkerHeartbeat    time.Duration `env:"SIGNALS_WORKER_HEARTBEAT,required"`
 	CandleBufferLength        int           `env:"CANDLE_BUFFER_LENGTH,required"`
 	GrpcAddresses             struct {
 		Vault    uint16 `env:"VAULT_GRPC,required"`

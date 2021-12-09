@@ -47,6 +47,11 @@ func (buffer *candleBuffer) List(marketID, resolutionID string) []*models.Candle
 	return buffer.candles[key(marketID, resolutionID)]
 }
 
+func (buffer *candleBuffer) GetLastNCandle(number int, marketID, resolutionID string) []*models.Candle {
+	list := buffer.candles[key(marketID, resolutionID)]
+	return list[len(list)-number:]
+}
+
 func (buffer *candleBuffer) Enqueue(candle *models.Candle) {
 	list, ok := buffer.candles[key(candle.MarketID, candle.ResolutionID)]
 	if !ok {

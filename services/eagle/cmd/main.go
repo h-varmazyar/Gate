@@ -4,6 +4,7 @@ import (
 	"github.com/mrNobody95/Gate/pkg/service"
 	"github.com/mrNobody95/Gate/services/eagle/configs"
 	"github.com/mrNobody95/Gate/services/eagle/internal/app/indicators"
+	"github.com/mrNobody95/Gate/services/eagle/internal/app/signals"
 	"google.golang.org/grpc"
 	"net"
 )
@@ -28,6 +29,7 @@ func main() {
 	service.Serve(configs.Variables.GrpcAddresses.Eagle, func(lst net.Listener) error {
 		server := grpc.NewServer()
 		indicators.NewService().RegisterServer(server)
+		signals.NewService().RegisterServer(server)
 		return server.Serve(lst)
 	})
 

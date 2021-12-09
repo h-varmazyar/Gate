@@ -1,11 +1,11 @@
-package indicators
+package signals
 
 import (
 	"context"
 	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/pkg/errors"
 	eagleApi "github.com/mrNobody95/Gate/services/eagle/api"
-	"github.com/mrNobody95/Gate/services/eagle/internal/pkg/indicators"
+	"github.com/mrNobody95/Gate/services/eagle/internal/pkg/strategies/automatedStrategy"
 	"github.com/mrNobody95/Gate/services/eagle/internal/pkg/workers"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -42,11 +42,11 @@ func NewService() *Service {
 }
 
 func (s *Service) RegisterServer(server *grpc.Server) {
-	eagleApi.RegisterIndicatorsServiceServer(server, s)
+	eagleApi.RegisterSignalsServiceServer(server, s)
 }
 
-func (s *Service) NewWorker(ctx context.Context, req *eagleApi.AddWorkerRequest) (*api.Void, error) {
-	settings := new(workers.IndicatorsSettings)
+func (s *Service) NewWorker(ctx context.Context, req *eagleApi.AddSignalsWorkerRequest) (*api.Void, error) {
+	settings := new(workers.SignalsSettings)
 	if req.Market == nil {
 		return nil, errors.NewWithSlug(ctx, codes.InvalidArgument, "market is nil")
 	}
@@ -55,22 +55,11 @@ func (s *Service) NewWorker(ctx context.Context, req *eagleApi.AddWorkerRequest)
 	}
 	settings.Market = req.Market
 	settings.Resolution = req.Resolution
-	settings.Config = &indicators.Configuration{
-		MovingAverageSource: indicators.SourceClose,
-		MovingAverageLength: 20,
-		BollingerDeviation:  2,
-		BollingerLength:     20,
-		RsiLength:           14,
-		StochasticLength:    14,
-		StochasticSmoothK:   3,
-		StochasticSmoothD:   10,
-		AdxAtrLength:        14,
-		Acceleration:        0.02,
-	}
-	workers.IndicatorWorker.AddMarket(settings)
+	settings.Strategy = &automatedStrategy.Automated{MinGainPercentage: 1}
+	workers.SignalsWorker.AddMarket(settings)
 	return &api.Void{}, nil
 }
 
-func (s *Service) CancelWorker(_ context.Context, req *eagleApi.CancelWorkerRequest) (*api.Void, error) {
-	return new(api.Void), workers.IndicatorWorker.CancelWorker(req.MarketID, req.ResolutionID)
+func (s *Service) CancelWorker(_ context.Context, req *eagleApi.CancelSignalsWorkerRequest) (*api.Void, error) {
+	return new(api.Void), workers.SignalsWorker.CancelWorker(req.MarketID, req.ResolutionID)
 }
