@@ -91,7 +91,7 @@ func (worker *signalsWorker) checkForSignals(settings *SignalsSettings) bool {
 	//if walletResponse.Wallet.ActiveBalance > 0 {
 	candles := buffers.Candles.GetLastNCandle(2, settings.Market.ID, settings.Resolution.ID)
 	rsi := settings.Strategy.RsiSignal(candles[0], candles[1])
-	bb := settings.Strategy.BollingerBandSignal(settings.Market.MakerFeeRate, settings.Market.TakerFeeRate, candles[0], candles[1])
+	bb := settings.Strategy.BollingerBandSignal(float64(settings.Market.MakerFeeRate), float64(settings.Market.TakerFeeRate), candles[0], candles[1])
 	stochastic := settings.Strategy.StochasticSignal(candles[0], candles[1])
 	return rsi+bb+stochastic == 3
 	//}
