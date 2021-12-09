@@ -25,6 +25,7 @@ const _ = grpc.SupportPackageIsVersion7
 type OhlcServiceClient interface {
 	AddMarket(ctx context.Context, in *AddMarketRequest, opts ...grpc.CallOption) (*api.Void, error)
 	ReturnBufferedCandles(ctx context.Context, in *BufferedCandlesRequest, opts ...grpc.CallOption) (*api.Candles, error)
+	ReturnLastCandle(ctx context.Context, in *BufferedCandlesRequest, opts ...grpc.CallOption) (*api.Candle, error)
 	CancelWorker(ctx context.Context, in *CancelWorkerRequest, opts ...grpc.CallOption) (*api.Void, error)
 }
 
@@ -54,6 +55,15 @@ func (c *ohlcServiceClient) ReturnBufferedCandles(ctx context.Context, in *Buffe
 	return out, nil
 }
 
+func (c *ohlcServiceClient) ReturnLastCandle(ctx context.Context, in *BufferedCandlesRequest, opts ...grpc.CallOption) (*api.Candle, error) {
+	out := new(api.Candle)
+	err := c.cc.Invoke(ctx, "/chipmunkApi.ohlcService/ReturnLastCandle", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *ohlcServiceClient) CancelWorker(ctx context.Context, in *CancelWorkerRequest, opts ...grpc.CallOption) (*api.Void, error) {
 	out := new(api.Void)
 	err := c.cc.Invoke(ctx, "/chipmunkApi.ohlcService/CancelWorker", in, out, opts...)
@@ -69,6 +79,7 @@ func (c *ohlcServiceClient) CancelWorker(ctx context.Context, in *CancelWorkerRe
 type OhlcServiceServer interface {
 	AddMarket(context.Context, *AddMarketRequest) (*api.Void, error)
 	ReturnBufferedCandles(context.Context, *BufferedCandlesRequest) (*api.Candles, error)
+	ReturnLastCandle(context.Context, *BufferedCandlesRequest) (*api.Candle, error)
 	CancelWorker(context.Context, *CancelWorkerRequest) (*api.Void, error)
 }
 
@@ -81,6 +92,9 @@ func (UnimplementedOhlcServiceServer) AddMarket(context.Context, *AddMarketReque
 }
 func (UnimplementedOhlcServiceServer) ReturnBufferedCandles(context.Context, *BufferedCandlesRequest) (*api.Candles, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReturnBufferedCandles not implemented")
+}
+func (UnimplementedOhlcServiceServer) ReturnLastCandle(context.Context, *BufferedCandlesRequest) (*api.Candle, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReturnLastCandle not implemented")
 }
 func (UnimplementedOhlcServiceServer) CancelWorker(context.Context, *CancelWorkerRequest) (*api.Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelWorker not implemented")
@@ -133,6 +147,24 @@ func _OhlcService_ReturnBufferedCandles_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OhlcService_ReturnLastCandle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BufferedCandlesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OhlcServiceServer).ReturnLastCandle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/chipmunkApi.ohlcService/ReturnLastCandle",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OhlcServiceServer).ReturnLastCandle(ctx, req.(*BufferedCandlesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _OhlcService_CancelWorker_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CancelWorkerRequest)
 	if err := dec(in); err != nil {
@@ -165,6 +197,10 @@ var OhlcService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReturnBufferedCandles",
 			Handler:    _OhlcService_ReturnBufferedCandles_Handler,
+		},
+		{
+			MethodName: "ReturnLastCandle",
+			Handler:    _OhlcService_ReturnLastCandle_Handler,
 		},
 		{
 			MethodName: "CancelWorker",

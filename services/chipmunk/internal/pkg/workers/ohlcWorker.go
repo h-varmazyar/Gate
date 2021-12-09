@@ -149,7 +149,7 @@ func (worker *ohlcWorker) getCandle(ws *Settings, from, to int64) error {
 		if err != nil {
 			log.WithError(err).Error("save candle failed")
 		}
-		buffer.Candles.Enqueue(*tmp)
+		buffer.Candles.Enqueue(tmp)
 	}
 	return nil
 }

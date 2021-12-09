@@ -68,6 +68,13 @@ func (s *Service) ReturnBufferedCandles(_ context.Context, req *chipmunkApi.Buff
 	return response, nil
 }
 
+func (s *Service) ReturnLastCandle(_ context.Context, req *chipmunkApi.BufferedCandlesRequest) (*api.Candle, error) {
+	candle := buffer.Candles.Last(req.MarketID, req.ResolutionID)
+	response := new(api.Candle)
+	mapper.Struct(candle, &response)
+	return response, nil
+}
+
 func (s *Service) CancelWorker(_ context.Context, req *chipmunkApi.CancelWorkerRequest) (*api.Void, error) {
 	return new(api.Void), workers.OHLCWorker.CancelWorker(req.MarketID, req.ResolutionID)
 }
