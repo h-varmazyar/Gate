@@ -1,0 +1,20 @@
+@import "aside.scss";
+@import "font.scss";
+@import "header.scss";
+@import "main.scss";
+
+::-webkit-scrollbar { /* width */
+	width: 6px;
+}
+::-webkit-scrollbar-track { /* Track */
+	background: transparent;
+}
+::-webkit-scrollbar-thumb { /* Handle */
+	background-color: #ccc;
+	border: 0px solid transparent;
+	border-radius: 10px;
+	background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { /* Handle on hover */
+	background-color: #888;
+}
