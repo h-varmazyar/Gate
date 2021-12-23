@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/google/uuid"
+	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/pkg/gormext"
 	"gorm.io/gorm"
 	"time"
@@ -25,9 +26,9 @@ import (
 
 type Market struct {
 	gormext.UniversalModel
+	BrokerageName  string
 	PricingDecimal float64
 	TradingDecimal float64
-	BrokerageID    uuid.UUID
 	TakerFeeRate   float64
 	MakerFeeRate   float64
 	DestinationID  uuid.UUID
@@ -36,25 +37,25 @@ type Market struct {
 	SourceID       uuid.UUID
 	IsAMM          bool
 	Name           string
-	Status         string
+	Status         api.Status
 }
 
 type MarketRepository struct {
 	db *gorm.DB
 }
 
-func (repository *MarketRepository) Info(brokerageId, marketName string) (*Market, error) {
+func (repository *MarketRepository) Info(brokerageName, marketName string) (*Market, error) {
 	market := new(Market)
 	return market, repository.db.Model(new(Market)).
-		Where("brokerage_id LIKE ?", brokerageId).
+		Where("brokerage_name LIKE ?", brokerageName).
 		Where("name LIKE ?", marketName).
 		First(market).Error
 }
 
-func (repository *MarketRepository) List(brokerageId string) ([]*Market, error) {
+func (repository *MarketRepository) List(brokerageName string) ([]*Market, error) {
 	markets := make([]*Market, 0)
 	return markets, repository.db.Model(new(Market)).
-		Where("brokerage_id LIKE ?", brokerageId).
+		Where("brokerage_name LIKE ?", brokerageName).
 		Find(&markets).Error
 }
 

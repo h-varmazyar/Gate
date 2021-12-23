@@ -5,10 +5,28 @@ import "api/src/misc.proto";
 import "api/src/models.proto";
 
 service ResolutionService {
-  rpc Set(api.Resolution) returns(api.Void);
-  rpc GetByID(GetResolutionByIDRequest) returns (api.Resolution);
-  rpc GetByDuration(GetResolutionByDurationRequest) returns (api.Resolution);
-  rpc List(GetResolutionListRequest) returns (api.Resolutions);
+  rpc Set(Resolution) returns(api.Void);
+  rpc GetByID(GetResolutionByIDRequest) returns (Resolution);
+  rpc GetByDuration(GetResolutionByDurationRequest) returns (Resolution);
+  rpc List(GetResolutionListRequest) returns (Resolutions);
+}
+
+message Resolution {
+  // @inject_tag: json:"brokerage_name"
+  string BrokerageName = 1;
+  // @inject_tag: json:"duration"
+  int64 Duration = 2;
+  // @inject_tag: json:"label"
+  string Label = 3;
+  // @inject_tag: json:"value"
+  string Value = 4;
+  // @inject_tag: json:"id"
+  uint32 ID = 5;
+}
+
+message Resolutions {
+  // @inject_tag: json:"resolutions"
+  repeated Resolution Resolutions = 1;
 }
 
 message GetResolutionByIDRequest {
@@ -17,13 +35,13 @@ message GetResolutionByIDRequest {
 }
 
 message GetResolutionByDurationRequest {
-  // @inject_tag: json:"brokerage_id"
-  string BrokerageID = 1;
+  // @inject_tag: json:"brokerage_name"
+  string BrokerageName = 1;
   // @inject_tag: json:"duration"
   int64 Duration = 2;
 }
 
 message GetResolutionListRequest {
-  // @inject_tag: json:"brokerage_id"
-  string BrokerageID = 1;
+  // @inject_tag: json:"brokerage_name"
+  string BrokerageName = 1;
 }

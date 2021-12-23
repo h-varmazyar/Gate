@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"github.com/google/uuid"
 	"github.com/mrNobody95/Gate/pkg/gormext"
 	"gorm.io/gorm"
 	"time"
@@ -24,11 +23,11 @@ import (
 **/
 
 type Resolution struct {
-	gormext.UniversalModel
-	BrokerageID uuid.UUID
-	Duration    time.Duration
-	Label       string
-	Value       string
+	gormext.IncrementalModel
+	BrokerageName string
+	Duration      time.Duration
+	Label         string
+	Value         string
 }
 
 type ResolutionRepository struct {
@@ -46,17 +45,17 @@ func (r *ResolutionRepository) Set(resolution *Resolution) error {
 	return r.db.Model(new(Resolution)).Where("id LIKE ?", resolution.ID).Save(resolution).Error
 }
 
-func (r *ResolutionRepository) GetByDuration(duration time.Duration, brokerageID uuid.UUID) (*Resolution, error) {
+func (r *ResolutionRepository) GetByDuration(duration time.Duration, brokerageName string) (*Resolution, error) {
 	resolution := new(Resolution)
 	return resolution, r.db.Model(new(Resolution)).
 		Where("duration = ", duration).
-		Where("brokerage_id = ?", brokerageID).
+		Where("brokerage_name = ?", brokerageName).
 		First(resolution).Error
 }
 
-func (r *ResolutionRepository) List(brokerageID uuid.UUID) ([]*Resolution, error) {
+func (r *ResolutionRepository) List(brokerageName string) ([]*Resolution, error) {
 	resolutions := make([]*Resolution, 0)
 	return resolutions, r.db.Model(new(Resolution)).
-		Where("brokerage_id = ?", brokerageID).
-		Find(resolutions).Error
+		Where("brokerage_Name LIKE ?", brokerageName).
+		Find(&resolutions).Error
 }

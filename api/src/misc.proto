@@ -8,10 +8,9 @@ enum AuthType {
   UsernamePassword = 2;
 }
 
-enum StatusType {
-  UnknownStatus = 0;
+enum Status {
+  Disable = 0;
   Enable = 1;
-  Disable = 2 ;
 }
 
 message Auth {
@@ -32,10 +31,10 @@ message StatusChangeRequest {
   string ID = 1;
 }
 
-message Status {
-  // @inject_tag: json:"status"
-  StatusType Status = 1;
-}
+//message Status {
+//  // @inject_tag: json:"status"
+//  StatusType Status = 1;
+//}
 
 message Void {
 }

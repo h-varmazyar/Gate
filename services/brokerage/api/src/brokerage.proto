@@ -2,40 +2,72 @@ syntax = "proto3";
 package brokerageApi;
 option go_package = "github.com/mrNobody95/Gate/services/brokerage/api";
 import "api/src/misc.proto";
+import "services/brokerage/api/src/market.proto";
+import "services/brokerage/api/src/resolution.proto";
 
 service BrokerageService {
-  rpc Add(Brokerage) returns (Brokerage);
-  rpc Get(BrokerageIDReq) returns (GetBrokerage);
+  rpc Create(CreateBrokerageReq) returns (Brokerage);
+  rpc Get(BrokerageIDReq) returns (Brokerage);
+  rpc List(api.Void) returns (Brokerages);
   rpc GetInternal(BrokerageIDReq) returns (Brokerage);
   rpc Delete(BrokerageIDReq) returns (api.Void);
-  rpc ChangeStatus(api.StatusChangeRequest) returns (api.Status);
+  rpc ChangeStatus(api.StatusChangeRequest) returns (BrokerageStatus);
 }
 
 enum Names {
   UnknownBrokerage = 0;
   Coinex = 1;
+  Nobitex = 2;
+}
+
+message CreateBrokerageReq {
+  // @inject_tag: json:"title"
+  string Title = 1;
+  // @inject_tag: json:"description"
+  string Description = 2;
+  // @inject_tag: json:"auth"
+  api.Auth Auth = 3;
+  // @inject_tag: json:"name"
+  Names Name = 4;
+  // @inject_tag: json:"markets"
+  Markets Markets = 5;
+  // @inject_tag: json:"resolution_id"
+  string ResolutionID = 6;
+  // @inject_tag: json:"strategy_id"
+  string StrategyID = 7;
 }
 
 message Brokerage {
   // @inject_tag: json:"id"
   string ID = 1;
+  // @inject_tag: json:"title"
+  string Title = 2;
+  // @inject_tag: json:"description"
+  string Description = 3;
   // @inject_tag: json:"auth"
-  api.Auth Auth = 2;
+  api.Auth Auth = 4;
   // @inject_tag: json:"name"
-  Names Name = 3;
+  Names Name = 5;
+  // @inject_tag: json:"markets"
+  Markets Markets = 6;
+  // @inject_tag: json:"resolution_id"
+  string ResolutionID = 7;
+  // @inject_tag: json:"resolution"
+  Resolution Resolution = 8;
+  // @inject_tag: json:"strategy_id"
+  string StrategyID = 9;
   // @inject_tag: json:"status"
-  api.StatusType Status = 4;
+  api.Status Status = 10;
 }
 
-message GetBrokerage {
-  // @inject_tag: json:"id"
-  string ID = 1;
-  // @inject_tag: json:"auth_type"
-  string AuthType = 2;
-  // @inject_tag: json:"name"
-  string Name = 3;
+message Brokerages {
+  // @inject_tag: json:"brokerages"
+  repeated Brokerage Brokerages = 1;
+}
+
+message BrokerageStatus {
   // @inject_tag: json:"status"
-  string Status = 4;
+  api.Status Status = 1;
 }
 
 message BrokerageIDReq {

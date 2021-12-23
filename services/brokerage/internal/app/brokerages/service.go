@@ -6,10 +6,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/pkg/errors"
+	"github.com/mrNobody95/Gate/pkg/mapper"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"strconv"
 )
 
 /**
@@ -46,62 +48,58 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 	brokerageApi.RegisterBrokerageServiceServer(server, s)
 }
 
-func (s *Service) Add(ctx context.Context, brokerage *brokerageApi.Brokerage) (*brokerageApi.Brokerage, error) {
+func (s *Service) Create(ctx context.Context, brokerage *brokerageApi.CreateBrokerageReq) (*brokerageApi.Brokerage, error) {
+	//todo: validation on auth and other fields
 	br := new(repository.Brokerage)
-	name := brokerage.Name.String()
-	if name == fmt.Sprintf("%d", brokerage.Name) || name == brokerageApi.Names_UnknownBrokerage.String() {
-		return nil, errors.NewWithSlug(ctx, codes.InvalidArgument, "invalid brokerage")
-	}
-	br.Name = repository.BrokerageName(brokerage.Name.String())
-	if brokerage.Auth == nil {
-		return nil, errors.NewWithSlug(ctx, codes.InvalidArgument, "authentication not set")
-	}
-	br.AuthType = brokerage.Auth.Type.String()
-	switch br.AuthType {
-	case api.AuthType_StaticToken.String():
-		if brokerage.Auth.AccessID == "" {
-			return nil, errors.NewWithSlug(ctx, codes.InvalidArgument, "access id not set")
-		}
-		br.AccessID = brokerage.Auth.AccessID
-		if brokerage.Auth.SecretKey == "" {
-			return nil, errors.NewWithSlug(ctx, codes.InvalidArgument, "secret key not set")
-		}
-		br.SecretKey = brokerage.Auth.SecretKey
-	case api.AuthType_UsernamePassword.String():
-		if brokerage.Auth.Username == "" {
-			return nil, errors.NewWithSlug(ctx, codes.InvalidArgument, "username not set")
-		}
-		br.Username = brokerage.Auth.Username
-		if brokerage.Auth.Password == "" {
-			return nil, errors.NewWithSlug(ctx, codes.InvalidArgument, "password not set")
-		}
-		br.Password = brokerage.Auth.Password
-	default:
-		return nil, errors.NewWithSlug(ctx, codes.InvalidArgument, "invalid auth type")
-	}
-	if brokerage.Status == api.StatusType_Enable || brokerage.Status == api.StatusType_Disable {
-		br.Status = brokerage.Status.String()
+	if _, ok := brokerageApi.Names_value[brokerage.Name.String()]; !ok {
+		return nil, errors.NewWithSlug(ctx, codes.FailedPrecondition, "wrong_name")
 	} else {
-		br.Status = api.StatusType_Disable.String()
+		br.Name = brokerage.Name.String()
 	}
-	if brokerage.ID == "" {
-		br.ID = uuid.New()
+	if _, ok := api.AuthType_value[brokerage.Auth.Type.String()]; !ok {
+		return nil, errors.NewWithSlug(ctx, codes.FailedPrecondition, "wrong_auth_type")
 	} else {
-		var err error
-		br.ID, err = uuid.Parse(brokerage.ID)
+		br.AuthType = brokerage.Auth.Type.String()
+	}
+	br.Status = api.Status_Disable.String()
+	br.ID = uuid.New()
+	fmt.Println("before res")
+	resID, err := strconv.Atoi(brokerage.ResolutionID)
+	if err != nil {
+		return nil, errors.NewWithSlug(ctx, codes.FailedPrecondition, "invalid_resolution")
+	}
+	br.ResolutionID = uint(resID)
+	mapper.Struct(brokerage, br)
+
+	for _, market := range brokerage.Markets.Markets {
+		id, err := uuid.Parse(market.ID)
 		if err != nil {
 			return nil, err
 		}
+		tmp := new(repository.Market)
+		tmp.ID = id
+		br.Markets = append(br.Markets, tmp)
 	}
-
 	if err := repository.Brokerages.Create(br); err != nil {
 		return nil, err
 	}
-	brokerage.ID = br.ID.String()
-	return brokerage, nil
+	response := new(brokerageApi.Brokerage)
+	mapper.Struct(br, response)
+	return response, nil
 }
 
-func (s *Service) Get(_ context.Context, req *brokerageApi.BrokerageIDReq) (*brokerageApi.GetBrokerage, error) {
+func (s *Service) List(_ context.Context, _ *api.Void) (*brokerageApi.Brokerages, error) {
+	bb, err := repository.Brokerages.List()
+	if err != nil {
+		return nil, err
+	}
+
+	response := new(brokerageApi.Brokerages)
+	mapper.Slice(bb, &response.Brokerages)
+	return response, err
+}
+
+func (s *Service) Get(_ context.Context, req *brokerageApi.BrokerageIDReq) (*brokerageApi.Brokerage, error) {
 	id, err := uuid.Parse(req.ID)
 	if err != nil {
 		return nil, err
@@ -110,13 +108,10 @@ func (s *Service) Get(_ context.Context, req *brokerageApi.BrokerageIDReq) (*bro
 	if err != nil {
 		return nil, err
 	}
-
-	return &brokerageApi.GetBrokerage{
-		ID:       brokerage.ID.String(),
-		AuthType: brokerage.AuthType,
-		Name:     string(brokerage.Name),
-		Status:   brokerage.Status,
-	}, err
+	response := new(brokerageApi.Brokerage)
+	response.Name = brokerageApi.Names(brokerageApi.Names_value[brokerage.Name])
+	mapper.Struct(brokerage, response)
+	return response, err
 }
 
 func (s *Service) GetInternal(_ context.Context, req *brokerageApi.BrokerageIDReq) (*brokerageApi.Brokerage, error) {
@@ -139,7 +134,7 @@ func (s *Service) GetInternal(_ context.Context, req *brokerageApi.BrokerageIDRe
 			SecretKey: brokerage.SecretKey,
 		},
 		Name:   brokerageApi.Names(brokerageApi.Names_value[string(brokerage.Name)]),
-		Status: api.StatusType(api.StatusType_value[brokerage.Status]),
+		Status: api.Status(api.Status_value[brokerage.Status]),
 	}, err
 }
 
@@ -154,7 +149,7 @@ func (s *Service) Delete(_ context.Context, req *brokerageApi.BrokerageIDReq) (*
 	return new(api.Void), err
 }
 
-func (s *Service) ChangeStatus(_ context.Context, req *api.StatusChangeRequest) (*api.Status, error) {
+func (s *Service) ChangeStatus(_ context.Context, req *api.StatusChangeRequest) (*brokerageApi.BrokerageStatus, error) {
 	id, err := uuid.Parse(req.ID)
 	if err != nil {
 		return nil, err
@@ -164,13 +159,13 @@ func (s *Service) ChangeStatus(_ context.Context, req *api.StatusChangeRequest) 
 		return nil, err
 	}
 	switch brokerage.Status {
-	case api.StatusType_Enable.String():
-		brokerage.Status = api.StatusType_Disable.String()
-	case api.StatusType_Disable.String():
-		brokerage.Status = api.StatusType_Enable.String()
+	case api.Status_Enable.String():
+		brokerage.Status = api.Status_Disable.String()
+	case api.Status_Disable.String():
+		brokerage.Status = api.Status_Enable.String()
 	}
 	if err := repository.Brokerages.Update(brokerage); err != nil {
 		return nil, err
 	}
-	return &api.Status{Status: api.StatusType(api.StatusType_value[brokerage.Status])}, nil
+	return &brokerageApi.BrokerageStatus{Status: api.Status(api.Status_value[brokerage.Status])}, nil
 }

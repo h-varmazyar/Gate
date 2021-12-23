@@ -70,11 +70,7 @@ func main() {
 	service.Serve(configs.HttpPort, func(lst net.Listener) error {
 		connection := grpcext.NewConnection(fmt.Sprintf(":%v", configs.GrpcPort))
 		router := muxext.NewRouter(true)
-		assets.NewController(connection).RegisterRouter(router)
-		brokerages.NewController(connection).RegisterRouter(router)
-		markets.NewController(connection).RegisterRouter(router)
 		wallets.NewController(connection).RegisterRouter(router)
-		resolutions.NewController(connection).RegisterRouter(router)
 		return http.Serve(lst, httpext.DefaultCors.Handler(router))
 	})
 

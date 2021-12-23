@@ -45,7 +45,7 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 	brokerageApi.RegisterAssetServiceServer(server, s)
 }
 
-func (s *Service) Set(_ context.Context, asset *api.Asset) (*api.Void, error) {
+func (s *Service) Set(_ context.Context, asset *brokerageApi.Asset) (*api.Void, error) {
 	tmp := new(repository.Asset)
 	tmp.Name = asset.Name
 	tmp.Symbol = asset.Symbol
@@ -63,12 +63,12 @@ func (s *Service) Set(_ context.Context, asset *api.Asset) (*api.Void, error) {
 	return &api.Void{}, err
 }
 
-func (s *Service) GetByName(_ context.Context, req *brokerageApi.GetAssetRequest) (*api.Asset, error) {
+func (s *Service) GetByName(_ context.Context, req *brokerageApi.GetAssetRequest) (*brokerageApi.Asset, error) {
 	asset, err := repository.Assets.ReturnBySymbol(req.Name)
 	if err != nil {
 		return nil, err
 	}
-	return &api.Asset{
+	return &brokerageApi.Asset{
 		ID:        asset.ID.String(),
 		Name:      asset.Name,
 		Symbol:    asset.Symbol,
@@ -76,14 +76,14 @@ func (s *Service) GetByName(_ context.Context, req *brokerageApi.GetAssetRequest
 	}, nil
 }
 
-func (s *Service) List(_ context.Context, req *brokerageApi.GetAssetListRequest) (*api.Assets, error) {
+func (s *Service) List(_ context.Context, req *brokerageApi.GetAssetListRequest) (*brokerageApi.Assets, error) {
 	if list, err := repository.Assets.List(int(req.Page)); err != nil {
 		return nil, err
 	} else {
-		assets := new(api.Assets)
-		assetList := make([]*api.Asset, len(list))
+		assets := new(brokerageApi.Assets)
+		assetList := make([]*brokerageApi.Asset, len(list))
 		for i, asset := range list {
-			assetList[i] = &api.Asset{
+			assetList[i] = &brokerageApi.Asset{
 				ID:        asset.ID.String(),
 				Name:      asset.Name,
 				Symbol:    asset.Symbol,

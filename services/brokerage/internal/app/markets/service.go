@@ -3,7 +3,6 @@ package markets
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/pkg/mapper"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
@@ -44,7 +43,7 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 	brokerageApi.RegisterMarketServiceServer(server, s)
 }
 
-func (s *Service) Set(_ context.Context, req *api.Market) (*api.Market, error) {
+func (s *Service) Set(_ context.Context, req *brokerageApi.Market) (*brokerageApi.Market, error) {
 	market := new(repository.Market)
 	mapper.Struct(req, market)
 	if req.ID == "" {
@@ -56,15 +55,15 @@ func (s *Service) Set(_ context.Context, req *api.Market) (*api.Market, error) {
 		}
 		market.ID = id
 	}
-	brokerageID, err := uuid.Parse(req.BrokerageID)
-	if err != nil {
-		return nil, err
-	}
-	market.BrokerageID = brokerageID
+	//brokerageID, err := uuid.Parse(req.BrokerageID)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//market.BrokerageID = brokerageID
 	//if req.Destination == nil {
 	//	return nil, errors.NewWithSlug(ctx, codes.InvalidArgument, "destination not set")
 	//}
-	destinationID, err := uuid.Parse(req.DestinationID)
+	destinationID, err := uuid.Parse(req.Destination.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -72,16 +71,12 @@ func (s *Service) Set(_ context.Context, req *api.Market) (*api.Market, error) {
 	//if req.Source == nil {
 	//	return nil, errors.NewWithSlug(ctx, codes.InvalidArgument, "source not set")
 	//}
-	sourceID, err := uuid.Parse(req.SourceID)
+	sourceID, err := uuid.Parse(req.Source.ID)
 	if err != nil {
 		return nil, err
 	}
 	market.SourceID = sourceID
-	if req.Status == api.StatusType_Enable || req.Status == api.StatusType_Disable {
-		market.Status = req.Status.String()
-	} else {
-		market.Status = api.StatusType_Disable.String()
-	}
+	market.Status = req.Status
 	if err := repository.Markets.Update(market); err != nil {
 		return nil, err
 	}
@@ -90,77 +85,22 @@ func (s *Service) Set(_ context.Context, req *api.Market) (*api.Market, error) {
 	return req, nil
 }
 
-func (s *Service) Get(_ context.Context, req *brokerageApi.MarketRequest) (*api.Market, error) {
-	//brokerage, err := s.BrokeragesService.Get(ctx, &brokerageApi.BrokerageIDReq{ID: req.BrokerageID})
-	//if err != nil {
-	//	return nil, err
-	//}
-	info, err := repository.Markets.Info(req.BrokerageID, req.MarketName)
+func (s *Service) Get(_ context.Context, req *brokerageApi.MarketRequest) (*brokerageApi.Market, error) {
+	info, err := repository.Markets.Info(req.BrokerageName, req.MarketName)
 	if err != nil {
 		return nil, err
 	}
-	response := new(api.Market)
-	//if req.WithUpdate {
-	//	var br Interface.Brokerage
-	//	br = new(Interface.Coinex)
-	//	info, err = br.MarketInfo(func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
-	//		return s.NetworkService.Do(ctx, request)
-	//	})
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	mapper.Struct(response, info)
-	//	info.BrokerageID = req.BrokerageID
-	//}
+	response := new(brokerageApi.Market)
 	mapper.Struct(info, response)
-	switch info.Status {
-	case api.StatusType_Disable.String():
-		response.Status = api.StatusType_Disable
-	case api.StatusType_Enable.String():
-		response.Status = api.StatusType_Enable
-	default:
-		response.Status = api.StatusType_UnknownStatus
-	}
 	return response, nil
 }
 
-func (s *Service) List(_ context.Context, req *brokerageApi.MarketListRequest) (*api.Markets, error) {
-	response, err := repository.Markets.List(req.BrokerageID)
+func (s *Service) List(_ context.Context, req *brokerageApi.MarketListRequest) (*brokerageApi.Markets, error) {
+	response, err := repository.Markets.List(req.BrokerageName)
 	if err != nil {
 		return nil, err
 	}
-	markets := new(api.Markets)
+	markets := new(brokerageApi.Markets)
 	mapper.Slice(response, &markets.Markets)
-	for i, market := range response {
-		switch market.Status {
-		case api.StatusType_Disable.String():
-			markets.Markets[i].Status = api.StatusType_Disable
-		case api.StatusType_Enable.String():
-			markets.Markets[i].Status = api.StatusType_Enable
-		default:
-			markets.Markets[i].Status = api.StatusType_UnknownStatus
-		}
-	}
 	return markets, nil
-}
-
-func (s *Service) ChangeStatus(_ context.Context, req *api.StatusChangeRequest) (*api.Status, error) {
-	id, err := uuid.Parse(req.ID)
-	if err != nil {
-		return nil, err
-	}
-	market, err := repository.Markets.ReturnByID(id)
-	if err != nil {
-		return nil, err
-	}
-	switch market.Status {
-	case api.StatusType_Disable.String():
-		market.Status = api.StatusType_Enable.String()
-	default:
-		market.Status = api.StatusType_Disable.String()
-	}
-	if err := repository.Markets.Update(market); err != nil {
-		return nil, err
-	}
-	return &api.Status{Status: api.StatusType(api.StatusType_value[market.Status])}, nil
 }
