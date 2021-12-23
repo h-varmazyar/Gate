@@ -41,7 +41,7 @@ func (c *brokerageController) show(ctx app.Context) error {
 	}
 
 	ctx.Set("brokerage", brokerage)
-	return ctx.Render(http.StatusOK, "brokerages/show", viewHelpers.ResolutionLabel)
+	return ctx.Render(http.StatusOK, "brokerages/show", viewHelpers.Sum, viewHelpers.ResolutionLabel)
 }
 
 func (c *brokerageController) overview(ctx app.Context) error {
@@ -81,10 +81,3 @@ func (c *brokerageController) add(ctx app.Context) error {
 	}
 	return ctx.Redirect("/brokerages/list")
 }
-
-//func (c *brokerageController) getResolution(ctx app.Context) error {
-//	resolutions, err := c.resolutionService.List(ctx, &brokerageApi.GetResolutionListRequest{BrokerageName: brokerageApi.Names_Coinex.String()})
-//	if err != nil {
-//		return ctx.Error(http.StatusBadRequest, err)
-//	}
-//}

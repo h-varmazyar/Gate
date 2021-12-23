@@ -57,9 +57,9 @@
                                             </tr>
                                             </thead>
                                             <tbody>
-                                            {{ range $index, $market := .brokerage.Markets }}
+                                            {{ range $index, $market := .brokerage.Markets.Markets }}
                                             <tr>
-                                                <td>{{ $index 1 }}</td>
+                                                <td>{{ Sum $index 1 }}</td>
                                                 <td>{{ $market.Name }}</td>
                                             </tr>
                                             {{ end }}
@@ -81,7 +81,7 @@
                                         </thead>
                                         <tbody>
                                         <tr>
-                                            <td>{{ ResolutionLabel .brokerage.Resolution.Label }}</td>
+                                            <td>{{ ResolutionLabel .brokerage.Resolution }}</td>
                                             <td>{{ .brokerage.Resolution.Value }}</td>
                                             <td>{{ .brokerage.Resolution.Duration }}</td>
                                         </tr>

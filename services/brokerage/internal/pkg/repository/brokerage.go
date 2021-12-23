@@ -39,7 +39,7 @@ func (repository *BrokerageRepository) Delete(id uuid.UUID) error {
 func (repository *BrokerageRepository) ReturnByID(id uuid.UUID) (*Brokerage, error) {
 	brokerage := new(Brokerage)
 	return brokerage, repository.db.Joins("Resolution").Preload("Markets").
-		Where("id LIKE ?", id).First(brokerage).Error
+		Where("brokerages.id = ?", id).First(brokerage).Error
 }
 
 func (repository *BrokerageRepository) List() ([]*Brokerage, error) {

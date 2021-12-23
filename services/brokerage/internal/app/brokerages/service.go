@@ -111,6 +111,7 @@ func (s *Service) Get(_ context.Context, req *brokerageApi.BrokerageIDReq) (*bro
 	response := new(brokerageApi.Brokerage)
 	response.Name = brokerageApi.Names(brokerageApi.Names_value[brokerage.Name])
 	mapper.Struct(brokerage, response)
+	mapper.Slice(brokerage.Markets, &response.Markets.Markets)
 	return response, err
 }
 
