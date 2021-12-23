@@ -31,18 +31,13 @@ type Configs struct {
 	TLS              bool   `env:"TLS,required"`
 	Environment      string `env:"GO_ENV,required"`
 	ApiPrefix        string `env:"API_PREFIX,required"`
-	UsersFilePath    string `env:"USERS,required,file"`
 	AssetsAgeVarName int64  `env:"ASSETS_MAX_AGE,required"`
 	LogLevel         string `env:"LOG_LEVEL"`
 	GrpcAddresses    struct {
-		Vault    uint16 `env:"VAULT_GRPC,required"`
-		Chipmunk uint16 `env:"CHIPMUNK_GRPC,required"`
-		Eagle    uint16 `env:"EAGLE_GRPC,required"`
-	}
-	Users map[string]struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-		Role     string `json:"role"`
+		Brokerage string `env:"BROKERAGE_GRPC,required"`
+		Vault     string `env:"VAULT_GRPC,required"`
+		Chipmunk  string `env:"CHIPMUNK_GRPC,required"`
+		Eagle     string `env:"EAGLE_GRPC,required"`
 	}
 }
 

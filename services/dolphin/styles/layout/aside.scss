@@ -1,0 +1,26 @@
+aside {
+    padding: 20px 0;
+
+    ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        white-space: nowrap;
+    }
+    a {
+        display: block;
+        padding: 20px;
+        padding-right: 50px;
+        border-left: 8px solid transparent;
+        transition: all .2s;
+        font-weight: 500;
+
+        &:hover, &.current {
+            border-left-color: #7314a8;
+            color: #6d20ac;
+        }
+        &:hover {
+            background-color: #f4f7fb;
+        }
+    }
+}

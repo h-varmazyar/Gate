@@ -1,0 +1,162 @@
+{{ template "base" . }}
+
+{{ define "title" }}افزودن صرافی{{ end }}
+
+{{ define "main" }}
+<!--<main>-->
+
+<!-- Page wrapper start -->
+<main class="page-wrapper">
+    <!-- Main container start -->
+    <div class="main-container">
+
+        <div class="row gutters">
+            <div class="col-12">
+                <h3>افزودن صرافی جدید</h3>
+
+                <form action="" method="post">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="padding-a-1">
+                                <div class="title base">اطلاعات اولیه</div>
+
+                                <div class="input-group-m col-4">
+                                    <label class="subtitle" for="br-title">عنوان</label>
+                                    <input class="form-control" id="br-title" name="br-title"
+                                           placeholder="وارد کردن عنوان" type="text">
+                                </div>
+                                <div class="input-group-m col-4">
+                                    <label class="subtitle" for="description">توضیحات</label>
+                                    <textarea class="form-control" id="description" name="description"
+                                              placeholder="وارد کردن توضیحات" rows="5"></textarea>
+                                </div>
+
+                                <div class="input-group-m col-4">
+                                    <div class="subtitle">صرافی</div>
+                                    <div class="custom-control custom-radio custom-control-inline">
+                                        <input class="custom-control-input" id="coinex-radio" name="brokerageRadio"
+                                               type="radio" value="Coinex">
+                                        <label class="custom-control-label" for="coinex-radio">کوینکس</label>
+                                    </div>
+                                    <div class="custom-control custom-radio custom-control-inline">
+                                        <input class="custom-control-input" id="nobitex-radio" name="brokerageRadio"
+                                               type="radio"
+                                               value="Nobitex">
+                                        <label class="custom-control-label" for="nobitex-radio">نوبیتکس</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="padding-a-1">
+                                <div class="title base">اطلاعات اتصال</div>
+                                <div class="input-group-m col-6">
+                                    <label class="subtitle" for="secret-key">کلید خصوصی</label>
+                                    <input class="form-control" id="secret-key" name="secret-key"
+                                           placeholder="وارد کردن کلید خصوصی"
+                                           type="text">
+                                </div>
+
+                                <div class="input-group-m col-6">
+                                    <label class="subtitle" for="access-id">شناسه دسترسی</label>
+                                    <input class="form-control" id="access-id" name="access-id"
+                                           placeholder="وارد کردن شناسه دسترسی"
+                                           type="text">
+                                </div>
+                            </div>
+
+                            <div class="padding-a-1" hidden id="market-info">
+                                <div class="title base">اطلاعات بازار</div>
+                                <div class="inline-grid">
+                                    <div class="input-group-m col-4">
+                                        <div class="title">بازارها</div>
+                                        <div class="table-responsive" id="markets-table"></div>
+                                    </div>
+                                    <div class="input-group-m col-6">
+                                        <div class="title">بازه های زمانی</div>
+                                        <div class="table-responsive" id="resolution-table"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="padding-a-1">
+                                <div class="title base">استراتژی های معاملاتی</div>
+                                <div class="inline-grid">
+                                    <div class="card col-4 margin-r-1">
+                                        <div class="inline-grid stretch-center">
+                                            <div class="custom-control custom-radio custom-control-inline">
+                                                <input checked class="custom-control-input" id="strategy1"
+                                                       name="strategyRadio"
+                                                       type="radio" value="strategy1">
+                                                <label class="custom-control-label" for="strategy1"></label>
+                                            </div>
+                                            <div>
+                                                <div class="title">استراتژی اول</div>
+                                                <p>این متن تستی برای نمایش محتوای استراتژی اول است</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card col-4 margin-r-1">
+                                        <div class="inline-grid stretch-center">
+                                            <div class="custom-control custom-radio custom-control-inline">
+                                                <input class="custom-control-input" id="strategy2" name="strategyRadio"
+                                                       type="radio"
+                                                       value="strategy2">
+                                                <label class="custom-control-label" for="strategy2"></label>
+                                            </div>
+                                            <div>
+                                                <div class="title">استراتژی دوم</div>
+                                                <p>این متن تستی برای نمایش محتوای استراتژی دوم است</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="padding-a-1 custom-btn-group margin-t-1">
+                                <button class="btn btn-success" type="submit">افزودن</button>
+                            </div>
+
+                        </div>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+    <!-- Main container end -->
+
+    <!-- Required jQuery first, then Bootstrap Bundle JS -->
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/moment.js"></script>
+
+    <!-- Input Tags JS -->
+    <script src="/vendor/input-tags/tagsinput.min.js"></script>
+    <script src="/vendor/input-tags/typeahead.js"></script>
+    <script src="/vendor/input-tags/tagsinput-custom.js"></script>
+    <!-- Main Js Required -->
+    <script src="/js/main.js"></script>
+
+    <script>
+        $(document).ready(function () {
+
+            function RefreshTable() {
+                let name = "Coinex"
+                if ($("#nobitex-radio")[0].checked) {
+                    name = "Nobitex"
+                }
+                $("#market-info").removeAttr("hidden")
+                $("#resolution-table").load(`/resolutions/${name}/list #resolution-table`);
+                $("#markets-table").load(`/markets/${name}/list #markets-table`);
+            }
+
+            $("#coinex-radio").on("click", RefreshTable);
+            $("#nobitex-radio").on("click", RefreshTable);
+        });
+    </script>
+</main>
+<!-- Page wrapper end -->
+
+<!--</main>-->
+{{ end }}

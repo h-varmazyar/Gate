@@ -1,0 +1,129 @@
+{{ template "base" .}}
+
+{{ define "title" }}brokerage list{{ end }}
+
+{{ define "main" }}
+
+<!-- Page wrapper start -->
+<main class="page-wrapper">
+    <!-- Main container start -->
+    <div class="main-container">
+
+        <div class="row gutters">
+            <div class="col-12">
+                <div class="inline-grid space-between">
+                    <h3>صرافی {{.brokerage.Title}}</h3>
+
+                    <a href="/brokerages/list">
+                        <div class="inline-grid center-items clickable">
+                            <div>بازگشت</div>
+                            <span class="icon-arrow_back"></span>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="padding-a-1">
+                            <div class="title base">اطلاعات اولیه</div>
+
+                            <div class="inline-grid">
+                                <div class="input-group-m col-4">
+                                    <div class="subtitle bold">عنوان:</div>
+                                    <div class="subtitle margin-r-1">{{ .brokerage.Title }}</div>
+                                </div>
+                                <div class="input-group-m col-4">
+                                    <div class="subtitle bold">نام:</div>
+                                    <div class="subtitle margin-r-1">{{ .brokerage.Name }}</div>
+                                </div>
+                            </div>
+                            <div class="input-group-m col-4">
+                                <div class="subtitle bold">توضیحات:</div>
+                                <div class="subtitle margin-r-1">{{ .brokerage.Description }}</div>
+                            </div>
+                        </div>
+
+                        <div class="padding-a-1">
+                            <div class="title base">اطلاعات بازار</div>
+                            <div class="inline-grid">
+                                <div class="input-group-m col-4">
+                                    <div class="subtitle bold">بازارها</div>
+                                    <div class="table-responsive">
+                                        <table class="table custom-table">
+                                            <thead>
+                                            <tr>
+                                                <th width="1">#</th>
+                                                <th>نام</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {{ range $index, $market := .brokerage.Markets }}
+                                            <tr>
+                                                <td>{{ $index 1 }}</td>
+                                                <td>{{ $market.Name }}</td>
+                                            </tr>
+                                            {{ end }}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="input-group-m col-4">
+                                <div class="subtitle bold">بازه زمانی:</div>
+                                <div class="table-responsive">
+                                    <table class="table custom-table">
+                                        <thead>
+                                        <tr>
+                                            <th>برچسب</th>
+                                            <th>مقدار</th>
+                                            <th>مدت زمان</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr>
+                                            <td>{{ ResolutionLabel .brokerage.Resolution.Label }}</td>
+                                            <td>{{ .brokerage.Resolution.Value }}</td>
+                                            <td>{{ .brokerage.Resolution.Duration }}</td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="padding-a-1">
+                            <div class="title base">استراتژی های معاملاتی</div>
+                            <div class="card col-4 margin-r-1">
+                                <div class="stretch-center">
+                                    <div>
+                                        <div class="title">استراتژی اول</div>
+                                        <p>این متن تستی برای نمایش محتوای استراتژی اول است</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="padding-a-1 custom-btn-group margin-t-1">
+                            <button class="btn btn-info" type="submit">ویرایش</button>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+    <!-- Main container end -->
+
+    <!-- Required jQuery first, then Bootstrap Bundle JS -->
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/moment.js"></script>
+
+    <!-- Main Js Required -->
+    <script src="/js/main.js"></script>
+</main>
+<!-- Page wrapper end -->
+
+{{ end }}

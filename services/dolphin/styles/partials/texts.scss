@@ -1,0 +1,19 @@
+.title {
+    padding: 0.5em 0em 1em 0em;
+
+    &.base {
+        font-size: 1.5em;
+    }
+}
+
+.subtitle {
+
+    &.bold {
+        font-size: 1.2rem;
+    }
+    padding-bottom: 0.5em;
+}
+
+.clickable {
+    color: #28a745;
+}

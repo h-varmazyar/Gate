@@ -2,6 +2,9 @@ package actions
 
 import (
 	"fmt"
+	"github.com/mrNobody95/Gate/services/dolphin/actions/brokerages"
+	"github.com/mrNobody95/Gate/services/dolphin/actions/markets"
+	"github.com/mrNobody95/Gate/services/dolphin/actions/resolutions"
 	"github.com/mrNobody95/Gate/services/dolphin/configs"
 	"github.com/mrNobody95/Gate/services/dolphin/internal/pkg/app"
 	"log"
@@ -72,6 +75,10 @@ func App() *app.App {
 			fmt.Println("in dashboard")
 			return c.Render(200, "dashboard")
 		})
+
+		brokerages.RegisterRoutes(application)
+		resolutions.RegisterRoutes(application)
+		markets.RegisterRoutes(application)
 
 		//dashboard.RegisterRoutes(application)
 		//finance.RegisterRoutes(application.Group("/finance"))
