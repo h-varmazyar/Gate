@@ -4,6 +4,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/pkg/gormext"
+	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
 	"gorm.io/gorm"
 	"time"
 )
@@ -26,18 +27,20 @@ import (
 
 type Market struct {
 	gormext.UniversalModel
-	BrokerageName  string
-	PricingDecimal float64
-	TradingDecimal float64
-	TakerFeeRate   float64
-	MakerFeeRate   float64
-	DestinationID  uuid.UUID
-	StartTime      time.Time
-	MinAmount      float64
-	SourceID       uuid.UUID
-	IsAMM          bool
-	Name           string
-	Status         api.Status
+	BrokerageName   string
+	PricingDecimal  int
+	TradingDecimal  int
+	TakerFeeRate    float64
+	MakerFeeRate    float64
+	DestinationID   uuid.UUID
+	StartTime       time.Time
+	MinAmount       float64
+	SourceID        uuid.UUID
+	IsAMM           bool
+	Name            string
+	Status          api.Status
+	SourceName      string `gorm:"-"`
+	DestinationName string `gorm:"-"`
 }
 
 type MarketRepository struct {
@@ -54,9 +57,11 @@ func (repository *MarketRepository) Info(brokerageName, marketName string) (*Mar
 
 func (repository *MarketRepository) List(brokerageName string) ([]*Market, error) {
 	markets := make([]*Market, 0)
-	return markets, repository.db.Model(new(Market)).
-		Where("brokerage_name LIKE ?", brokerageName).
-		Find(&markets).Error
+	tx := repository.db.Model(new(Market))
+	if brokerageName != brokerageApi.Names_All.String() {
+		tx = tx.Where("brokerage_name LIKE ?", brokerageName)
+	}
+	return markets, tx.Find(&markets).Error
 }
 
 func (repository *MarketRepository) ReturnByID(id uuid.UUID) (*Market, error) {
@@ -66,6 +71,14 @@ func (repository *MarketRepository) ReturnByID(id uuid.UUID) (*Market, error) {
 		Find(market).Error
 }
 
-func (repository *MarketRepository) Update(market *Market) error {
-	return repository.db.Save(market).Error
+func (repository *MarketRepository) SaveOrUpdate(market *Market) error {
+	count := int64(0)
+	err := repository.db.Model(new(Market)).Where("name LIKE ?", market.Name).Count(&count).Error
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return repository.db.Model(new(Market)).Create(market).Error
+	}
+	return repository.db.Updates(market).Error
 }

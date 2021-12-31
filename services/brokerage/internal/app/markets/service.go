@@ -2,11 +2,22 @@ package markets
 
 import (
 	"context"
+	"fmt"
 	"github.com/google/uuid"
+	"github.com/mrNobody95/Gate/api"
+	"github.com/mrNobody95/Gate/pkg/errors"
+	"github.com/mrNobody95/Gate/pkg/grpcext"
 	"github.com/mrNobody95/Gate/pkg/mapper"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
+	"github.com/mrNobody95/Gate/services/brokerage/configs"
+	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/brokerages/coinex"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
+	networkAPI "github.com/mrNobody95/Gate/services/network/api"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"gorm.io/gorm"
+	"time"
 )
 
 /**
@@ -26,15 +37,18 @@ import (
 **/
 
 type Service struct {
+	networkService networkAPI.RequestServiceClient
 }
 
 var (
 	GrpcService *Service
 )
 
-func NewService() *Service {
+func NewService(configs *configs.Configs) *Service {
 	if GrpcService == nil {
 		GrpcService = new(Service)
+		networkConnection := grpcext.NewConnection(fmt.Sprintf(":%d", configs.NetworkGrpcPort))
+		GrpcService.networkService = networkAPI.NewRequestServiceClient(networkConnection)
 	}
 	return GrpcService
 }
@@ -77,7 +91,7 @@ func (s *Service) Set(_ context.Context, req *brokerageApi.Market) (*brokerageAp
 	}
 	market.SourceID = sourceID
 	market.Status = req.Status
-	if err := repository.Markets.Update(market); err != nil {
+	if err := repository.Markets.SaveOrUpdate(market); err != nil {
 		return nil, err
 	}
 	mapper.Struct(market, req)
@@ -103,4 +117,66 @@ func (s *Service) List(_ context.Context, req *brokerageApi.MarketListRequest) (
 	markets := new(brokerageApi.Markets)
 	mapper.Slice(response, &markets.Markets)
 	return markets, nil
+}
+
+func (s *Service) UpdateMarkets(ctx context.Context, req *brokerageApi.UpdateMarketsReq) (*api.Void, error) {
+	switch req.BrokerageName {
+	case brokerageApi.Names_Coinex.String():
+		br := new(coinex.Service)
+		markets, err := br.UpdateMarket(ctx, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
+			resp, err := s.networkService.Do(ctx, request)
+			return resp, err
+		})
+		if err != nil {
+			return nil, err
+		}
+		for _, market := range markets {
+			source, err := repository.Assets.ReturnBySymbol(market.SourceName)
+			if err != nil {
+				if err == gorm.ErrRecordNotFound {
+					asset := new(repository.Asset)
+					asset.ID = uuid.New()
+					asset.Name = market.SourceName
+					asset.Symbol = market.SourceName
+					asset.IssueDate = time.Now()
+					asset, err = repository.Assets.Create(asset)
+					if err != nil {
+						log.WithError(err).WithField("source_name", market.SourceName).Error("failed to create asset")
+						continue
+					}
+				}
+				log.WithError(err).WithField("source_name", market.SourceName).Error("failed to get asset")
+				continue
+			}
+			market.SourceID = source.ID
+			destination, err := repository.Assets.ReturnBySymbol(market.DestinationName)
+			if err != nil {
+				if err == gorm.ErrRecordNotFound {
+					asset := new(repository.Asset)
+					asset.ID = uuid.New()
+					asset.Name = market.DestinationName
+					asset.Symbol = market.DestinationName
+					asset.IssueDate = time.Now()
+					asset, err = repository.Assets.Create(asset)
+					if err != nil {
+						log.WithError(err).WithField("destination_name", market.DestinationName).Error("failed to create asset")
+						continue
+					}
+				}
+				log.WithError(err).WithField("destination_name", market.DestinationName).Error("failed to get asset")
+				continue
+			}
+			market.DestinationID = destination.ID
+			err = repository.Markets.SaveOrUpdate(market)
+			if err != nil {
+				log.WithError(err).Error("failed to update market")
+				continue
+			}
+		}
+	case brokerageApi.Names_Nobitex.String():
+		return nil, errors.NewWithSlug(ctx, codes.Unimplemented, "not_supported")
+	default:
+		return nil, errors.NewWithSlug(ctx, codes.Unimplemented, "brokerage_not_supported")
+	}
+	return new(api.Void), nil
 }

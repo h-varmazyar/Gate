@@ -28,4 +28,5 @@ type Handler func(ctx context.Context, request *networkAPI.Request) (*networkAPI
 type Brokerage interface {
 	WalletList(context.Context, Handler) ([]*repository.Wallet, error)
 	OHLC(context.Context, OHLCParams, Handler) ([]*api.Candle, error)
+	UpdateMarket(ctx context.Context, handler Handler) ([]*repository.Market, error)
 }

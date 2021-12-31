@@ -5,6 +5,10 @@
     flex-flow:row wrap;
     -ms-flex-align:center;
 
+    &.ltr {
+        justify-content: flex-end;
+    }
+
     &.space-between {
         justify-content: space-between;
     }

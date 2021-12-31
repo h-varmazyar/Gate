@@ -60,7 +60,7 @@ func main() {
 		server := grpc.NewServer()
 		assets.NewService().RegisterServer(server)
 		brokerages.NewService().RegisterServer(server)
-		markets.NewService().RegisterServer(server)
+		markets.NewService(configs).RegisterServer(server)
 		wallets.NewService(configs).RegisterServer(server)
 		resolutions.NewService().RegisterServer(server)
 		candles.NewService(configs).RegisterServer(server)

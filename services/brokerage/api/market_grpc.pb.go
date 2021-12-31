@@ -4,6 +4,7 @@ package api
 
 import (
 	context "context"
+	api "github.com/mrNobody95/Gate/api"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -21,6 +22,7 @@ type MarketServiceClient interface {
 	Set(ctx context.Context, in *Market, opts ...grpc.CallOption) (*Market, error)
 	Get(ctx context.Context, in *MarketRequest, opts ...grpc.CallOption) (*Market, error)
 	List(ctx context.Context, in *MarketListRequest, opts ...grpc.CallOption) (*Markets, error)
+	UpdateMarkets(ctx context.Context, in *UpdateMarketsReq, opts ...grpc.CallOption) (*api.Void, error)
 }
 
 type marketServiceClient struct {
@@ -58,6 +60,15 @@ func (c *marketServiceClient) List(ctx context.Context, in *MarketListRequest, o
 	return out, nil
 }
 
+func (c *marketServiceClient) UpdateMarkets(ctx context.Context, in *UpdateMarketsReq, opts ...grpc.CallOption) (*api.Void, error) {
+	out := new(api.Void)
+	err := c.cc.Invoke(ctx, "/brokerageApi.MarketService/UpdateMarkets", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MarketServiceServer is the server API for MarketService service.
 // All implementations should embed UnimplementedMarketServiceServer
 // for forward compatibility
@@ -65,6 +76,7 @@ type MarketServiceServer interface {
 	Set(context.Context, *Market) (*Market, error)
 	Get(context.Context, *MarketRequest) (*Market, error)
 	List(context.Context, *MarketListRequest) (*Markets, error)
+	UpdateMarkets(context.Context, *UpdateMarketsReq) (*api.Void, error)
 }
 
 // UnimplementedMarketServiceServer should be embedded to have forward compatible implementations.
@@ -79,6 +91,9 @@ func (UnimplementedMarketServiceServer) Get(context.Context, *MarketRequest) (*M
 }
 func (UnimplementedMarketServiceServer) List(context.Context, *MarketListRequest) (*Markets, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
+}
+func (UnimplementedMarketServiceServer) UpdateMarkets(context.Context, *UpdateMarketsReq) (*api.Void, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateMarkets not implemented")
 }
 
 // UnsafeMarketServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -146,6 +161,24 @@ func _MarketService_List_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MarketService_UpdateMarkets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateMarketsReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MarketServiceServer).UpdateMarkets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/brokerageApi.MarketService/UpdateMarkets",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MarketServiceServer).UpdateMarkets(ctx, req.(*UpdateMarketsReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MarketService_ServiceDesc is the grpc.ServiceDesc for MarketService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -164,6 +197,10 @@ var MarketService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "List",
 			Handler:    _MarketService_List_Handler,
+		},
+		{
+			MethodName: "UpdateMarkets",
+			Handler:    _MarketService_UpdateMarkets_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

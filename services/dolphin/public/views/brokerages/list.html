@@ -38,10 +38,60 @@
                                         <td>{{ ResolutionLabel $br.Resolution }}</td>
                                         <td>
                                             {{ if eq $br.Status 1 }}
-                                            <button class="btn btn-danger">خاموش</button>
+                                            <button class="btn btn-danger" data-target="#switchStatus"
+                                                    data-toggle="modal">خاموش
+                                            </button>
                                             {{ else }}
-                                            <button class="btn btn-success">روشن</button>
+                                            <button class="btn btn-success" data-target="#switchStatus"
+                                                    data-toggle="modal">روشن
+                                            </button>
                                             {{ end }}
+                                            <div aria-hidden="true" aria-labelledby="updateOnlineLabel"
+                                                 class="modal fade" id="switchStatus"
+                                                 role="dialog" tabindex="-1">
+                                                <div class="modal-dialog" role="document">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="updateOnlineLabel">دانلود
+                                                                بازارها</h5>
+                                                            <button aria-label="Close" class="close"
+                                                                    data-dismiss="modal" type="button">
+                                                                <span aria-hidden="true">&times;</span>
+                                                            </button>
+                                                        </div>
+                                                        <form action="" method="post">
+                                                            <div class="modal-body">
+                                                                <div class="input-group-m">
+                                                                    <div class="subtitle">صرافی</div>
+                                                                    <div class="custom-control custom-radio custom-control-inline">
+                                                                        <input class="custom-control-input"
+                                                                               id="coinex-radio"
+                                                                               name="brokerageRadio" type="radio"
+                                                                               value="Coinex">
+                                                                        <label class="custom-control-label"
+                                                                               for="coinex-radio">کوینکس</label>
+                                                                    </div>
+                                                                    <div class="custom-control custom-radio custom-control-inline">
+                                                                        <input class="custom-control-input"
+                                                                               id="nobitex-radio"
+                                                                               name="brokerageRadio" type="radio"
+                                                                               value="Nobitex">
+                                                                        <label class="custom-control-label"
+                                                                               for="nobitex-radio">نوبیتکس</label>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button class="btn btn-secondary margin-l-1"
+                                                                        data-dismiss="modal" type="button">بستن
+                                                                </button>
+                                                                <button class="btn btn-primary" type="submit">ذخیره
+                                                                </button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td>
                                             <a class="padding-1" href="/brokerages/{{ $br.ID }}/show"><span

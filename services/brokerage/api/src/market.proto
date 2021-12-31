@@ -8,6 +8,7 @@ service MarketService {
   rpc Set(Market) returns (Market);
   rpc Get(MarketRequest) returns (Market);
   rpc List(MarketListRequest) returns (Markets);
+  rpc UpdateMarkets(UpdateMarketsReq) returns (api.Void);
 }
 
 message Market {
@@ -56,6 +57,11 @@ message MarketRequest {
 }
 
 message MarketListRequest {
+  // @inject_tag: json:"brokerage_name"
+  string BrokerageName = 1;
+}
+
+message UpdateMarketsReq {
   // @inject_tag: json:"brokerage_name"
   string BrokerageName = 1;
 }

@@ -18,6 +18,7 @@ enum Names {
   UnknownBrokerage = 0;
   Coinex = 1;
   Nobitex = 2;
+  All = 99;
 }
 
 message CreateBrokerageReq {

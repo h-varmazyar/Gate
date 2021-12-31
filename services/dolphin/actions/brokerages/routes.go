@@ -8,6 +8,7 @@ func RegisterRoutes(application *app.App) {
 	orders.GET("/list", brokerageController.list)
 	orders.GET("/{brokerage_id}/show", brokerageController.show)
 	orders.GET("/{brokerage_id}/overview", brokerageController.overview)
+	orders.POST("/{brokerage_id}/status", brokerageController.overview)
 	orders.GET("/add", brokerageController.showAddPage)
 	orders.POST("/add", brokerageController.add)
 }

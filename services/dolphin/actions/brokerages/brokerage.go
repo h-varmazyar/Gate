@@ -45,7 +45,10 @@ func (c *brokerageController) show(ctx app.Context) error {
 }
 
 func (c *brokerageController) overview(ctx app.Context) error {
-	fmt.Println("in overview")
+	return ctx.Render(http.StatusOK, "brokerages/overview")
+}
+
+func (c *brokerageController) switchStatus(ctx app.Context) error {
 	return ctx.Render(http.StatusOK, "brokerages/overview")
 }
 

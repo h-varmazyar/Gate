@@ -38,6 +38,10 @@ func (repository *AssetRepository) ReturnBySymbol(symbol string) (*Asset, error)
 	return asset, repository.db.Model(&Asset{}).Where("symbol LIKE ?", symbol).First(asset).Error
 }
 
+func (repository *AssetRepository) Create(asset *Asset) (*Asset, error) {
+	return asset, repository.db.Model(&Asset{}).Create(asset).Error
+}
+
 func (repository *AssetRepository) Set(asset *Asset) (*Asset, error) {
 	return asset, repository.db.Model(&Asset{}).Save(asset).Error
 }

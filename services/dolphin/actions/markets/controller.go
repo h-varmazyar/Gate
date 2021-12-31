@@ -1,6 +1,7 @@
 package markets
 
 import (
+	"fmt"
 	"github.com/mrNobody95/Gate/pkg/grpcext"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
 	"github.com/mrNobody95/Gate/services/dolphin/actions/viewHelpers"
@@ -17,6 +18,30 @@ func newMarketController() marketController {
 	return marketController{
 		marketService: brokerageApi.NewMarketServiceClient(grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)),
 	}
+}
+
+func (c *marketController) add(ctx app.Context) error {
+	req := new(brokerageApi.UpdateMarketsReq)
+	req.BrokerageName = ctx.Request().Form.Get("brokerageRadio")
+	_, err := c.marketService.UpdateMarkets(ctx, req)
+	if err != nil {
+		return ctx.Error(http.StatusBadRequest, err)
+	}
+	return ctx.Redirect("/markets/list")
+}
+
+func (c *marketController) show(ctx app.Context) error {
+	fmt.Println("show market")
+	return ctx.Render(http.StatusOK, "/markets/show")
+}
+
+func (c *marketController) list(ctx app.Context) error {
+	markets, err := c.marketService.List(ctx, &brokerageApi.MarketListRequest{BrokerageName: brokerageApi.Names_All.String()})
+	if err != nil {
+		return ctx.Error(http.StatusBadRequest, err)
+	}
+	ctx.Set("markets", markets.Markets)
+	return ctx.Render(http.StatusOK, "/markets/list", viewHelpers.Sum, viewHelpers.TimeStampFormat)
 }
 
 func (c *marketController) showBrokerageMarkets(ctx app.Context) error {

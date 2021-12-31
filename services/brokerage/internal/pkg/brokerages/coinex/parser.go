@@ -44,6 +44,8 @@ func parseResponse(input string, response interface{}) error {
 		mapper.Slice(tmp.Data, response)
 	case types.Struct:
 		mapper.Struct(tmp.Data, response)
+	case map[string]interface{}:
+		response = tmp.Data.(map[string]interface{})
 	default:
 		return errors.New(fmt.Sprintf("cast data failed: %v", reflect.TypeOf(tmp.Data)))
 	}

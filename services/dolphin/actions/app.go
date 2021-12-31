@@ -39,31 +39,6 @@ func App() *app.App {
 			Level:     logrus.InfoLevel,
 		}
 
-		//application.Use(func(next app.Handler) app.Handler {
-		//	return func(c app.Context) error {
-		//
-		//		s := c.Session()
-		//		if s.Values["username"] != nil {
-		//			return next(c)
-		//		}
-		//
-		//		username := c.Request().Form.Get("username")
-		//		password := c.Request().Form.Get("password")
-		//		if info, ok := configs.Variables.Users[username]; ok {
-		//			if hasher.CheckPasswordHash(password, info.Password) {
-		//				s.Values["username"] = username
-		//				s.Values["role"] = info.Role
-		//				s.Save(c.Request(), c.Response())
-		//				return c.Redirect("/")
-		//			}
-		//		}
-		//		if c.Request().Method == "POST" {
-		//			c.Set("Error", errors.New("invalid Username or Password"))
-		//		}
-		//		return c.Render(200, "login")
-		//	}
-		//})
-
 		application.GET("/logout", func(c app.Context) error {
 			s := c.Session()
 			s.Values["username"] = nil
@@ -72,18 +47,12 @@ func App() *app.App {
 		})
 
 		application.GET("/", func(c app.Context) error {
-			fmt.Println("in dashboard")
 			return c.Render(200, "dashboard")
 		})
 
 		brokerages.RegisterRoutes(application)
 		resolutions.RegisterRoutes(application)
 		markets.RegisterRoutes(application)
-
-		//dashboard.RegisterRoutes(application)
-		//finance.RegisterRoutes(application.Group("/finance"))
-		//marketing.RegisterRoutes(application.Group("/marketing"))
-		//user.RegisterRoutes(application.Group("/user"))
 
 		application.ServeFiles("/", packr.New("../public", "../public"))
 	}

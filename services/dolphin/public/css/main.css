@@ -7909,10 +7909,6 @@ label {
     background: #184b81;
 }
 
-.modal {
-    text-align: left;
-}
-
 .modal .modal-content {
     -webkit-border-radius: 3 pxpx;
     -moz-border-radius: 3 pxpx;
