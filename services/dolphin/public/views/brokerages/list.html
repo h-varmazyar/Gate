@@ -24,11 +24,14 @@
                                         <th>نام</th>
                                         <th>توضیحات</th>
                                         <th>بازه زمانی</th>
-                                        <th>تغییر وضعیت</th>
+                                        <th>وضعیت</th>
                                         <th width="1"></th>
                                     </tr>
                                     </thead>
                                     <tbody>
+
+                                    {{$disable:= .disable}}
+                                    {{$enable:= .enable}}
                                     {{ range $index, $br := .brokerages }}
                                     <tr>
                                         <td>{{ Sum $index 1}}</td>
@@ -37,47 +40,51 @@
                                         <td>{{ $br.Description }}</td>
                                         <td>{{ ResolutionLabel $br.Resolution }}</td>
                                         <td>
-                                            {{ if eq $br.Status 1 }}
-                                            <button class="btn btn-danger" data-target="#switchStatus"
+                                            {{ if eq $br.Status $disable}}
+                                            <button class="btn btn-danger" data-target="#{{ $br.Title }}"
                                                     data-toggle="modal">خاموش
                                             </button>
-                                            {{ else }}
-                                            <button class="btn btn-success" data-target="#switchStatus"
-                                                    data-toggle="modal">روشن
-                                            </button>
+                                            {{ else if eq $br.Status $enable }}
+                                            <form action="./{{$br.ID}}/status" method="post">
+                                                <button class="btn btn-success" type="submit">روشن</button>
+                                            </form>
                                             {{ end }}
                                             <div aria-hidden="true" aria-labelledby="updateOnlineLabel"
-                                                 class="modal fade" id="switchStatus"
+                                                 class="modal fade" id="{{ $br.Title }}"
                                                  role="dialog" tabindex="-1">
                                                 <div class="modal-dialog" role="document">
                                                     <div class="modal-content">
                                                         <div class="modal-header">
-                                                            <h5 class="modal-title" id="updateOnlineLabel">دانلود
-                                                                بازارها</h5>
+                                                            <h5 class="modal-title" id="updateOnlineLabel">فعال سازی
+                                                                صرافی</h5>
                                                             <button aria-label="Close" class="close"
                                                                     data-dismiss="modal" type="button">
                                                                 <span aria-hidden="true">&times;</span>
                                                             </button>
                                                         </div>
-                                                        <form action="" method="post">
+                                                        <form action="./{{$br.ID}}/status" method="post">
                                                             <div class="modal-body">
                                                                 <div class="input-group-m">
-                                                                    <div class="subtitle">صرافی</div>
-                                                                    <div class="custom-control custom-radio custom-control-inline">
-                                                                        <input class="custom-control-input"
-                                                                               id="coinex-radio"
-                                                                               name="brokerageRadio" type="radio"
-                                                                               value="Coinex">
-                                                                        <label class="custom-control-label"
-                                                                               for="coinex-radio">کوینکس</label>
+                                                                    <div class="subtitle">
+                                                                        <p>امکان فعال سازی چند صرافی به صورت همزمان وجود
+                                                                            ندارد. در صورت فعال سازی این صرافی باقی
+                                                                            صرافی ها غیر فعال خواهند شد</p>
                                                                     </div>
-                                                                    <div class="custom-control custom-radio custom-control-inline">
+                                                                    <div class="subtitle bold">تنظیمات فعال سازی</div>
+
+                                                                    <div class="custom-control custom-checkbox">
                                                                         <input class="custom-control-input"
-                                                                               id="nobitex-radio"
-                                                                               name="brokerageRadio" type="radio"
-                                                                               value="Nobitex">
+                                                                               id="ohlc"
+                                                                               name="ohlcCheckbox" type="checkbox">
                                                                         <label class="custom-control-label"
-                                                                               for="nobitex-radio">نوبیتکس</label>
+                                                                               for="ohlc">جمع آوری داده</label>
+                                                                    </div>
+                                                                    <div class="custom-control custom-checkbox">
+                                                                        <input class="custom-control-input"
+                                                                               id="trading"
+                                                                               name="tradingCheckbox" type="checkbox">
+                                                                        <label class="custom-control-label"
+                                                                               for="trading">انجام معامله</label>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -85,7 +92,8 @@
                                                                 <button class="btn btn-secondary margin-l-1"
                                                                         data-dismiss="modal" type="button">بستن
                                                                 </button>
-                                                                <button class="btn btn-primary" type="submit">ذخیره
+                                                                <button class="btn btn-primary" name="{{ $br.Title }}"
+                                                                        type="submit">ذخیره
                                                                 </button>
                                                             </div>
                                                         </form>

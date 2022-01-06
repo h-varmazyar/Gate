@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/google/uuid"
+	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/pkg/gormext"
 	"gorm.io/gorm"
 )
@@ -47,6 +48,12 @@ func (repository *BrokerageRepository) List() ([]*Brokerage, error) {
 	return brokerages, repository.db.Joins("Resolution").Find(&brokerages).Error
 }
 
-func (repository *BrokerageRepository) Update(brokerage *Brokerage) error {
-	return repository.db.Save(brokerage).Error
+func (repository *BrokerageRepository) ChangeStatus(brokerage *Brokerage) error {
+	return repository.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Table("brokerages").Where("status LIKE ?", api.Status_Enable.String()).
+			Update("status", api.Status_Disable.String()).Error; err != nil {
+			return err
+		}
+		return tx.Table("brokerages").Where("id = ?", brokerage.ID).Update("status", brokerage.Status).Error
+	})
 }

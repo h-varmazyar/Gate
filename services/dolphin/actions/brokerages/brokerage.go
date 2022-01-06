@@ -31,6 +31,8 @@ func (c *brokerageController) list(ctx app.Context) error {
 		return ctx.Error(http.StatusBadRequest, err)
 	}
 	ctx.Set("brokerages", brokerages.Brokerages)
+	ctx.Set("enable", api.Status_Enable)
+	ctx.Set("disable", api.Status_Disable)
 	return ctx.Render(http.StatusOK, "brokerages/list", viewHelpers.Sum, viewHelpers.ResolutionLabel)
 }
 
@@ -49,7 +51,24 @@ func (c *brokerageController) overview(ctx app.Context) error {
 }
 
 func (c *brokerageController) switchStatus(ctx app.Context) error {
-	return ctx.Render(http.StatusOK, "brokerages/overview")
+	fmt.Println(ctx.Param("brokerage_id"))
+	ohlc := false
+	trading := false
+	if ctx.Request().Form.Get("ohlcCheckbox") != "" {
+		ohlc = true
+	}
+	if ctx.Request().Form.Get("tradingCheckbox") != "" {
+		trading = true
+	}
+	_, err := c.brokerageService.ChangeStatus(ctx, &brokerageApi.StatusChangeRequest{
+		ID:      ctx.Param("brokerage_id"),
+		Trading: trading,
+		OHLC:    ohlc,
+	})
+	if err != nil {
+		return ctx.Error(http.StatusBadRequest, err)
+	}
+	return ctx.Redirect("/brokerages/list")
 }
 
 func (c *brokerageController) showAddPage(ctx app.Context) error {

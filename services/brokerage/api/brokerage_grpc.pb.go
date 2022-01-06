@@ -24,7 +24,7 @@ type BrokerageServiceClient interface {
 	List(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*Brokerages, error)
 	GetInternal(ctx context.Context, in *BrokerageIDReq, opts ...grpc.CallOption) (*Brokerage, error)
 	Delete(ctx context.Context, in *BrokerageIDReq, opts ...grpc.CallOption) (*api.Void, error)
-	ChangeStatus(ctx context.Context, in *api.StatusChangeRequest, opts ...grpc.CallOption) (*BrokerageStatus, error)
+	ChangeStatus(ctx context.Context, in *StatusChangeRequest, opts ...grpc.CallOption) (*BrokerageStatus, error)
 }
 
 type brokerageServiceClient struct {
@@ -80,7 +80,7 @@ func (c *brokerageServiceClient) Delete(ctx context.Context, in *BrokerageIDReq,
 	return out, nil
 }
 
-func (c *brokerageServiceClient) ChangeStatus(ctx context.Context, in *api.StatusChangeRequest, opts ...grpc.CallOption) (*BrokerageStatus, error) {
+func (c *brokerageServiceClient) ChangeStatus(ctx context.Context, in *StatusChangeRequest, opts ...grpc.CallOption) (*BrokerageStatus, error) {
 	out := new(BrokerageStatus)
 	err := c.cc.Invoke(ctx, "/brokerageApi.BrokerageService/ChangeStatus", in, out, opts...)
 	if err != nil {
@@ -98,7 +98,7 @@ type BrokerageServiceServer interface {
 	List(context.Context, *api.Void) (*Brokerages, error)
 	GetInternal(context.Context, *BrokerageIDReq) (*Brokerage, error)
 	Delete(context.Context, *BrokerageIDReq) (*api.Void, error)
-	ChangeStatus(context.Context, *api.StatusChangeRequest) (*BrokerageStatus, error)
+	ChangeStatus(context.Context, *StatusChangeRequest) (*BrokerageStatus, error)
 }
 
 // UnimplementedBrokerageServiceServer should be embedded to have forward compatible implementations.
@@ -120,7 +120,7 @@ func (UnimplementedBrokerageServiceServer) GetInternal(context.Context, *Brokera
 func (UnimplementedBrokerageServiceServer) Delete(context.Context, *BrokerageIDReq) (*api.Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
-func (UnimplementedBrokerageServiceServer) ChangeStatus(context.Context, *api.StatusChangeRequest) (*BrokerageStatus, error) {
+func (UnimplementedBrokerageServiceServer) ChangeStatus(context.Context, *StatusChangeRequest) (*BrokerageStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ChangeStatus not implemented")
 }
 
@@ -226,7 +226,7 @@ func _BrokerageService_Delete_Handler(srv interface{}, ctx context.Context, dec 
 }
 
 func _BrokerageService_ChangeStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(api.StatusChangeRequest)
+	in := new(StatusChangeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -238,7 +238,7 @@ func _BrokerageService_ChangeStatus_Handler(srv interface{}, ctx context.Context
 		FullMethod: "/brokerageApi.BrokerageService/ChangeStatus",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BrokerageServiceServer).ChangeStatus(ctx, req.(*api.StatusChangeRequest))
+		return srv.(BrokerageServiceServer).ChangeStatus(ctx, req.(*StatusChangeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -26,15 +26,5 @@ message Auth {
   string SecretKey = 5;
 }
 
-message StatusChangeRequest {
-  // @inject_tag: json:"id"
-  string ID = 1;
-}
-
-//message Status {
-//  // @inject_tag: json:"status"
-//  StatusType Status = 1;
-//}
-
 message Void {
 }

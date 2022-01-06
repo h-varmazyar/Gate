@@ -96,6 +96,10 @@ func (s *Service) List(_ context.Context, _ *api.Void) (*brokerageApi.Brokerages
 
 	response := new(brokerageApi.Brokerages)
 	mapper.Slice(bb, &response.Brokerages)
+
+	for i, brokerage := range bb {
+		response.Brokerages[i].Status = api.Status(api.Status_value[brokerage.Status])
+	}
 	return response, err
 }
 
@@ -150,7 +154,7 @@ func (s *Service) Delete(_ context.Context, req *brokerageApi.BrokerageIDReq) (*
 	return new(api.Void), err
 }
 
-func (s *Service) ChangeStatus(_ context.Context, req *api.StatusChangeRequest) (*brokerageApi.BrokerageStatus, error) {
+func (s *Service) ChangeStatus(_ context.Context, req *brokerageApi.StatusChangeRequest) (*brokerageApi.BrokerageStatus, error) {
 	id, err := uuid.Parse(req.ID)
 	if err != nil {
 		return nil, err
@@ -165,7 +169,7 @@ func (s *Service) ChangeStatus(_ context.Context, req *api.StatusChangeRequest) 
 	case api.Status_Disable.String():
 		brokerage.Status = api.Status_Enable.String()
 	}
-	if err := repository.Brokerages.Update(brokerage); err != nil {
+	if err := repository.Brokerages.ChangeStatus(brokerage); err != nil {
 		return nil, err
 	}
 	return &brokerageApi.BrokerageStatus{Status: api.Status(api.Status_value[brokerage.Status])}, nil

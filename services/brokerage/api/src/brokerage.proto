@@ -11,7 +11,7 @@ service BrokerageService {
   rpc List(api.Void) returns (Brokerages);
   rpc GetInternal(BrokerageIDReq) returns (Brokerage);
   rpc Delete(BrokerageIDReq) returns (api.Void);
-  rpc ChangeStatus(api.StatusChangeRequest) returns (BrokerageStatus);
+  rpc ChangeStatus(StatusChangeRequest) returns (BrokerageStatus);
 }
 
 enum Names {
@@ -69,6 +69,15 @@ message Brokerages {
 message BrokerageStatus {
   // @inject_tag: json:"status"
   api.Status Status = 1;
+}
+
+message StatusChangeRequest {
+  // @inject_tag: json:"id"
+  string ID = 1;
+  // @inject_tag: json:"trading"
+  bool Trading = 2;
+  // @inject_tag: json:"ohlc"
+  bool OHLC = 3;
 }
 
 message BrokerageIDReq {
