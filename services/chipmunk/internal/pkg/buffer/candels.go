@@ -35,26 +35,26 @@ func init() {
 	Candles.candles = make(map[string][]*candles.Candle)
 }
 
-func (buffer *candleBuffer) AddList(marketID, resolutionID string) {
+func (buffer *candleBuffer) AddList(marketID string, resolutionID uint32) {
 	buffer.candles[key(marketID, resolutionID)] = make([]*candles.Candle, configs.Variables.CandleBufferLength)
 }
 
-func (buffer *candleBuffer) RemoveList(marketID, resolutionID string) {
+func (buffer *candleBuffer) RemoveList(marketID string, resolutionID uint32) {
 	delete(buffer.candles, key(marketID, resolutionID))
 }
 
-func (buffer *candleBuffer) Last(marketID, resolutionID string) *candles.Candle {
+func (buffer *candleBuffer) Last(marketID string, resolutionID uint32) *candles.Candle {
 	list := buffer.candles[key(marketID, resolutionID)]
 	return list[len(list)-1]
 }
 
 func (buffer *candleBuffer) Enqueue(candle *candles.Candle) {
 	list, ok := buffer.candles[key(candle.MarketID, candle.ResolutionID)]
-	if !ok {
+	if !ok || list == nil || len(list) == 0 {
 		list = make([]*candles.Candle, configs.Variables.CandleBufferLength)
 	}
 	last := len(list) - 1
-	if candle.Time.Equal(list[last].Time) {
+	if list[last] != nil && candle.Time.Equal(list[last].Time) {
 		list[last] = candle
 	} else {
 		list = append(list[1:], candle)
@@ -62,6 +62,6 @@ func (buffer *candleBuffer) Enqueue(candle *candles.Candle) {
 	buffer.candles[key(candle.MarketID, candle.ResolutionID)] = list
 }
 
-func key(marketID, resolutionID string) string {
-	return fmt.Sprintf("%s > %s", marketID, resolutionID)
+func key(marketID string, resolutionID uint32) string {
+	return fmt.Sprintf("%s > %v", marketID, resolutionID)
 }

@@ -1,7 +1,6 @@
 package candles
 
 import (
-	"fmt"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -34,7 +33,6 @@ func (r *CandleMariadbRepository) Save(candle *Candle) error {
 		Where("resolution_id LIKE ?", candle.ResolutionID).First(item).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			fmt.Println("not found:", candle)
 			candle.ID = uuid.New()
 			return r.DB.Model(new(Candle)).Create(candle).Error
 		}
@@ -44,7 +42,7 @@ func (r *CandleMariadbRepository) Save(candle *Candle) error {
 	return r.DB.Save(candle).Error
 }
 
-func (r *CandleMariadbRepository) ReturnLast(marketID, resolutionID string) (*Candle, error) {
+func (r *CandleMariadbRepository) ReturnLast(marketID string, resolutionID uint32) (*Candle, error) {
 	item := new(Candle)
 	return item, r.DB.Model(new(Candle)).
 		Where("market_id LIKE ?", marketID).
@@ -52,7 +50,7 @@ func (r *CandleMariadbRepository) ReturnLast(marketID, resolutionID string) (*Ca
 		Order("time desc").First(item).Error
 }
 
-func (r *CandleMariadbRepository) ReturnList(marketID, resolutionID string, offset int) ([]*Candle, error) {
+func (r *CandleMariadbRepository) ReturnList(marketID string, resolutionID uint32, offset int) ([]*Candle, error) {
 	items := make([]*Candle, 0)
 	return items, r.DB.Model(new(Candle)).
 		Where("market_id LIKE ?", marketID).

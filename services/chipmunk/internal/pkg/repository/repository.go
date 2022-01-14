@@ -36,7 +36,7 @@ const (
 func init() {
 	switch configs.Variables.StorageProvider {
 	case MariaDB:
-		db, err := gormext.Open(gormext.Mariadb, configs.Variables.PostgresConnection)
+		db, err := gormext.Open(gormext.Mariadb, configs.Variables.DatabaseConnection)
 		if err != nil {
 			log.WithError(err).Fatal("can not open db connection")
 		}

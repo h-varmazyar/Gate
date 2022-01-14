@@ -43,6 +43,12 @@ func (repository *BrokerageRepository) ReturnByID(id uuid.UUID) (*Brokerage, err
 		Where("brokerages.id = ?", id).First(brokerage).Error
 }
 
+func (repository *BrokerageRepository) ReturnEnables() ([]*Brokerage, error) {
+	brokerages := make([]*Brokerage, 0)
+	return brokerages, repository.db.Joins("Resolution").Preload("Markets").
+		Where("status LIKE ?", api.Status_Enable.String()).Find(&brokerages).Error
+}
+
 func (repository *BrokerageRepository) List() ([]*Brokerage, error) {
 	brokerages := make([]*Brokerage, 0)
 	return brokerages, repository.db.Joins("Resolution").Find(&brokerages).Error

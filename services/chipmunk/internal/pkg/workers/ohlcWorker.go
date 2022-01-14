@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/pkg/grpcext"
 	"github.com/mrNobody95/Gate/pkg/mapper"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
@@ -40,8 +39,8 @@ type ohlcWorker struct {
 
 type Settings struct {
 	Context    context.Context
-	Market     *api.Market
-	Resolution *api.Resolution
+	Market     *brokerageApi.Market
+	Resolution *brokerageApi.Resolution
 }
 
 var (
@@ -68,42 +67,57 @@ func (worker *ohlcWorker) AddMarket(settings *Settings) {
 		panic("nil ctx2")
 	}
 	settings.Context = ctx
-	workerCancellations[fmt.Sprintf("%s > %s", settings.Market.ID, settings.Resolution.ID)] = fn
+	workerCancellations[fmt.Sprintf("%s > %v", settings.Market.ID, settings.Resolution.ID)] = fn
 	buffer.Candles.AddList(settings.Market.ID, settings.Resolution.ID)
 	go worker.run(settings)
 }
 
-func (worker *ohlcWorker) CancelWorker(marketID, resolutionID string) error {
-	fn, ok := workerCancellations[fmt.Sprintf("%s > %s", marketID, resolutionID)]
+func (worker *ohlcWorker) CancelWorker(marketID string, resolutionID uint32) error {
+	fn, ok := workerCancellations[fmt.Sprintf("%s > %v", marketID, resolutionID)]
 	if !ok {
 		return errors.New("worker stopped before")
 	}
 	fn()
-	delete(workerCancellations, fmt.Sprintf("%s > %s", marketID, resolutionID))
+	delete(workerCancellations, fmt.Sprintf("%s > %v", marketID, resolutionID))
 	buffer.Candles.RemoveList(marketID, resolutionID)
 	return nil
 }
 
 func (worker *ohlcWorker) run(settings *Settings) {
-	worker.loadPrimaryData(settings)
+	if err := worker.loadPrimaryData(settings); err != nil {
+		_ = worker.CancelWorker(settings.Market.ID, settings.Resolution.ID)
+		log.WithError(err).Error("load primary failed")
+		return
+	}
 	ticker := time.NewTicker(worker.heartbeatInterval)
+	last, err := repository.Candles.ReturnLast(settings.Market.ID, settings.Resolution.ID)
+	if err != nil {
+		_ = worker.CancelWorker(settings.Market.ID, settings.Resolution.ID)
+		log.WithError(err).Error("load last failed")
+		return
+	}
+	lastTime := last.Time
 LOOP:
 	for {
 		select {
 		case <-settings.Context.Done():
 			break LOOP
 		case <-ticker.C:
-			from := time.Now().Add(worker.heartbeatInterval * -1).Unix()
-			to := time.Now().Unix()
-			if err := worker.getCandle(settings, from, to); err != nil {
+			to := time.Now()
+			if to.Sub(lastTime) <= time.Second {
+				continue
+			}
+			if err := worker.getCandle(settings, lastTime.Unix(), to.Unix()); err != nil {
+				time.Sleep(time.Minute)
 				log.WithError(err).Error("get candle failed")
-				break LOOP
+			} else {
+				lastTime = to
 			}
 		}
 	}
 }
 
-func (worker *ohlcWorker) loadPrimaryData(ws *Settings) {
+func (worker *ohlcWorker) loadPrimaryData(ws *Settings) error {
 	last, err := repository.Candles.ReturnLast(ws.Market.ID, ws.Resolution.ID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -111,23 +125,25 @@ func (worker *ohlcWorker) loadPrimaryData(ws *Settings) {
 			last.Time = time.Unix(ws.Market.StartTime, 0)
 		} else {
 			log.WithError(err).Error("load last candle failed")
-			return
+			return err
 		}
 	}
 	from := last.Time
 	end := false
 	for !end {
-		to := from.Add(1000 * time.Duration(ws.Resolution.Duration))
+		to := from.Add(time.Duration(1000*ws.Resolution.Duration) * time.Second)
 		if to.After(time.Now()) {
 			to = time.Now()
 			end = true
 		}
 		if err := worker.getCandle(ws, from.Unix(), to.Unix()); err != nil {
+			fmt.Println("from:", from, "to:", to, "duration:", ws.Resolution.Duration)
 			log.WithError(err).Error("save candle failed")
-			return
+			return err
 		}
 		from = to
 	}
+	return nil
 }
 
 func (worker *ohlcWorker) getCandle(ws *Settings, from, to int64) error {

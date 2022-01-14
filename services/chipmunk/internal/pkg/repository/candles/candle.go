@@ -31,11 +31,11 @@ type Candle struct {
 	Volume       float64
 	Amount       float64
 	MarketID     string
-	ResolutionID string
+	ResolutionID uint32
 }
 
 type Candles interface {
 	Save(*Candle) error
-	ReturnLast(marketID, resolutionID string) (*Candle, error)
-	ReturnList(marketID, resolutionID string, offset int) ([]*Candle, error)
+	ReturnLast(marketID string, resolutionID uint32) (*Candle, error)
+	ReturnList(marketID string, resolutionID uint32, offset int) ([]*Candle, error)
 }

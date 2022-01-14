@@ -60,12 +60,11 @@ func (c *brokerageController) switchStatus(ctx app.Context) error {
 	if ctx.Request().Form.Get("tradingCheckbox") != "" {
 		trading = true
 	}
-	_, err := c.brokerageService.ChangeStatus(ctx, &brokerageApi.StatusChangeRequest{
+	if _, err := c.brokerageService.ChangeStatus(ctx, &brokerageApi.StatusChangeRequest{
 		ID:      ctx.Param("brokerage_id"),
-		Trading: trading,
 		OHLC:    ohlc,
-	})
-	if err != nil {
+		Trading: trading,
+	}); err != nil {
 		return ctx.Error(http.StatusBadRequest, err)
 	}
 	return ctx.Redirect("/brokerages/list")

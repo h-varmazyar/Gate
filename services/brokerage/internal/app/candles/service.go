@@ -71,7 +71,6 @@ func (s *Service) OHLC(ctx context.Context, req *brokerageApi.OhlcRequest) (*api
 		return resp, err
 	})
 	if err != nil {
-		fmt.Println("after net failed")
 		return nil, err
 	}
 	return &api.Candles{Candles: candles}, nil

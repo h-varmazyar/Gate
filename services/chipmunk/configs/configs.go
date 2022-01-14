@@ -28,7 +28,7 @@ type Configs struct {
 	ServiceName         string        `env:"SERVICE_NAME,required"`
 	Version             string        `env:"VERSION,required"`
 	StorageProvider     string        `env:"STORAGE_PROVIDER,required"`
-	PostgresConnection  string        `env:"POSTGRES_CONNECTION,required,file"`
+	DatabaseConnection  string        `env:"DATABASE_CONNECTION,required,file"`
 	OHLCWorkerHeartbeat time.Duration `env:"OHLC_WORKER_HEARTBEAT,required"`
 	CandleBufferLength  int           `env:"CANDLE_BUFFER_LENGTH,required"`
 	GrpcAddresses       struct {

@@ -39,7 +39,7 @@ import (
 
 var (
 	Name    = "brokerage"
-	Version = "v0.5.0"
+	Version = "v0.6.0"
 )
 
 func loadConfig() (*configs.Configs, error) {
@@ -59,7 +59,7 @@ func main() {
 	service.Serve(configs.GrpcPort, func(lst net.Listener) error {
 		server := grpc.NewServer()
 		assets.NewService().RegisterServer(server)
-		brokerages.NewService().RegisterServer(server)
+		brokerages.NewService(configs).RegisterServer(server)
 		markets.NewService(configs).RegisterServer(server)
 		wallets.NewService(configs).RegisterServer(server)
 		resolutions.NewService().RegisterServer(server)

@@ -27,19 +27,19 @@
                         <div class="sidebar-submenu">
                             <ul>
                                 <li>
-                                    <a .URL eq if {{ "/brokerages/overview/" }}
+                                    <a{{if eq .URL "/brokerages/overview/" }}
                                     class="current-page"
                                     {{ end }}
                                     href="/brokerages/overview">وضعیت کلی</a>
                                 </li>
                                 <li>
-                                    <a .URL eq if {{ "/brokerages/list/" }}
+                                    <a{{if eq .URL "/brokerages/list/" }}
                                     class="current-page"
                                     {{ end }}
                                     href="/brokerages/list">لیست صرافی ها</a>
                                 </li>
                                 <li>
-                                    <a .URL eq if {{ "/brokerages/add/" }}
+                                    <a{{if eq .URL "/brokerages/add/" }}
                                     class="current-page"
                                     {{ end }}
                                     href="/brokerages/add">افزودن</a>
@@ -47,7 +47,7 @@
                             </ul>
                         </div>
                     </li>
-                    <li .URL eq if {{
+                    <li .URL eq {{if
                     "/markets/list/"}}
                     class="active-page-link"
                     {{ end }}

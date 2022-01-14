@@ -140,16 +140,6 @@ func (service *Service) UpdateMarket(ctx context.Context, runner brokerages.Hand
 	if resp.Code != http.StatusOK {
 		return nil, errors.NewWithSlug(ctx, codes.NotFound, resp.Response)
 	}
-	//data := make(map[string]struct {
-	//	Name           string `json:"name"`
-	//	MinAmount      string `json:"min_amount"`
-	//	MakerFeeRate   string `json:"maker_fee_rate"`
-	//	TakerFeeRate   string `json:"taker_fee_rate"`
-	//	PricingName    string `json:"pricing_name"`
-	//	PricingDecimal int    `json:"pricing_decimal"`
-	//	TradingName    string `json:"trading_name"`
-	//	TradingDecimal int    `json:"trading_decimal"`
-	//})
 	tmp := new(responseModel)
 	if err := json.Unmarshal([]byte(resp.Response), tmp); err != nil {
 		return nil, err

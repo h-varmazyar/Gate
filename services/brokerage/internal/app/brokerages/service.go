@@ -6,9 +6,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/pkg/errors"
+	"github.com/mrNobody95/Gate/pkg/grpcext"
 	"github.com/mrNobody95/Gate/pkg/mapper"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
+	"github.com/mrNobody95/Gate/services/brokerage/configs"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
+	chipmunkApi "github.com/mrNobody95/Gate/services/chipmunk/api"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"strconv"
@@ -31,15 +35,18 @@ import (
 **/
 
 type Service struct {
+	chipmunk chipmunkApi.OhlcServiceClient
 }
 
 var (
 	GrpcService *Service
 )
 
-func NewService() *Service {
+func NewService(configs *configs.Configs) *Service {
 	if GrpcService == nil {
 		GrpcService = new(Service)
+		chipmunkConnection := grpcext.NewConnection(configs.ChipmunkAddress)
+		GrpcService.chipmunk = chipmunkApi.NewOhlcServiceClient(chipmunkConnection)
 	}
 	return GrpcService
 }
@@ -138,7 +145,7 @@ func (s *Service) GetInternal(_ context.Context, req *brokerageApi.BrokerageIDRe
 			AccessID:  brokerage.AccessID,
 			SecretKey: brokerage.SecretKey,
 		},
-		Name:   brokerageApi.Names(brokerageApi.Names_value[string(brokerage.Name)]),
+		Name:   brokerageApi.Names(brokerageApi.Names_value[brokerage.Name]),
 		Status: api.Status(api.Status_value[brokerage.Status]),
 	}, err
 }
@@ -154,10 +161,24 @@ func (s *Service) Delete(_ context.Context, req *brokerageApi.BrokerageIDReq) (*
 	return new(api.Void), err
 }
 
-func (s *Service) ChangeStatus(_ context.Context, req *brokerageApi.StatusChangeRequest) (*brokerageApi.BrokerageStatus, error) {
+func (s *Service) ChangeStatus(ctx context.Context, req *brokerageApi.StatusChangeRequest) (*brokerageApi.BrokerageStatus, error) {
 	id, err := uuid.Parse(req.ID)
 	if err != nil {
 		return nil, err
+	}
+	enables, err := repository.Brokerages.ReturnEnables()
+	if err != nil {
+		return nil, err
+	}
+	for _, enable := range enables {
+		for _, market := range enable.Markets {
+			if _, err := s.chipmunk.CancelWorker(ctx, &chipmunkApi.CancelWorkerRequest{
+				ResolutionID: uint32(enable.ResolutionID),
+				MarketID:     market.ID.String(),
+			}); err != nil {
+				log.WithError(err).WithField("market", market.ID).WithField("brokerage", enable.ID)
+			}
+		}
 	}
 	brokerage, err := repository.Brokerages.ReturnByID(id)
 	if err != nil {
@@ -171,6 +192,26 @@ func (s *Service) ChangeStatus(_ context.Context, req *brokerageApi.StatusChange
 	}
 	if err := repository.Brokerages.ChangeStatus(brokerage); err != nil {
 		return nil, err
+	}
+	if brokerage.Status == api.Status_Enable.String() {
+		if req.OHLC {
+			resolution := new(brokerageApi.Resolution)
+			mapper.Struct(brokerage.Resolution, resolution)
+
+			for _, market := range brokerage.Markets {
+				m := new(brokerageApi.Market)
+				mapper.Struct(market, m)
+				if _, err := s.chipmunk.AddMarket(ctx, &chipmunkApi.AddMarketRequest{
+					Resolution: resolution,
+					Market:     m,
+				}); err != nil {
+					log.WithError(err).WithField("market", market.ID).WithField("brokerage", brokerage.ID)
+				}
+			}
+		}
+		if req.Trading {
+			//todo: add trading worker
+		}
 	}
 	return &brokerageApi.BrokerageStatus{Status: api.Status(api.Status_value[brokerage.Status])}, nil
 }
