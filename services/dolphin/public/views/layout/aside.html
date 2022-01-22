@@ -47,14 +47,22 @@
                             </ul>
                         </div>
                     </li>
-                    <li .URL eq {{if
-                    "/markets/list/"}}
+                    <li {{if eq .URL "/markets/list/"}}
                     class="active-page-link"
                     {{ end }}
                     >
                     <a href="/markets/list">
-                        <i class="icon-message-circle"></i>
+                        <i class="icon-swap"></i>
                         <span class="menu-text">بازارها</span>
+                    </a>
+                    </li>
+                    <li {{if eq .URL "/resolutions/list/"}}
+                    class="active-page-link"
+                    {{ end }}
+                    >
+                    <a href="/resolutions/list">
+                        <i class="icon-timer"></i>
+                        <span class="menu-text">بازه های زمانی</span>
                     </a>
                     </li>
                 </ul>

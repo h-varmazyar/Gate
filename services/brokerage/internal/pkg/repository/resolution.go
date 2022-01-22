@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/mrNobody95/Gate/pkg/gormext"
+	"github.com/mrNobody95/Gate/services/brokerage/api"
 	"gorm.io/gorm"
 	"time"
 )
@@ -36,13 +37,22 @@ type ResolutionRepository struct {
 
 func (r *ResolutionRepository) Set(resolution *Resolution) error {
 	found := new(Resolution)
-	if err := r.db.Model(new(Resolution)).Where("id LIKE ?", resolution.ID).First(found).Error; err != nil {
+	tx := r.db.Model(new(Resolution))
+	if resolution.ID == 0 {
+		tx.Where("value LIKE ?", resolution.Value).
+			Where("brokerage_name LIKE ?", resolution.BrokerageName).
+			Where("duration = ?", resolution.Duration).
+			Where("label LIKE ?", resolution.Label)
+	} else {
+		tx.Where("id = ?", resolution.ID)
+	}
+	if err := tx.First(found).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return r.db.Model(new(Resolution)).Create(resolution).Error
 		}
 		return err
 	}
-	return r.db.Model(new(Resolution)).Where("id LIKE ?", resolution.ID).Save(resolution).Error
+	return r.db.Model(new(Resolution)).Where("id = ?", found.ID).Save(resolution).Error
 }
 
 func (r *ResolutionRepository) GetByDuration(duration time.Duration, brokerageName string) (*Resolution, error) {
@@ -55,7 +65,9 @@ func (r *ResolutionRepository) GetByDuration(duration time.Duration, brokerageNa
 
 func (r *ResolutionRepository) List(brokerageName string) ([]*Resolution, error) {
 	resolutions := make([]*Resolution, 0)
-	return resolutions, r.db.Model(new(Resolution)).
-		Where("brokerage_Name LIKE ?", brokerageName).
-		Find(&resolutions).Error
+	tx := r.db.Model(new(Resolution))
+	if brokerageName != api.Names_All.String() {
+		tx.Where("brokerage_Name LIKE ?", brokerageName)
+	}
+	return resolutions, tx.Find(&resolutions).Error
 }
