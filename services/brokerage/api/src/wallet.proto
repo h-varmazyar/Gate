@@ -7,8 +7,8 @@ service WalletService {
 }
 
 message WalletListRequest {
-  // @inject_tag: json:"brokerage_id"
-  string BrokerageID = 1;
+  // @inject_tag: json:"brokerage_name"
+  string BrokerageName = 1;
 }
 
 message Wallet {

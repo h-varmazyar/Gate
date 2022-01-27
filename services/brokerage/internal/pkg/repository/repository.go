@@ -26,6 +26,7 @@ var (
 	Markets     *MarketRepository
 	Brokerages  *BrokerageRepository
 	Resolutions *ResolutionRepository
+	Wallets     *WalletRepository
 )
 
 func LoadRepositories(dsn string) {
@@ -45,8 +46,12 @@ func LoadRepositories(dsn string) {
 	if err := db.AutoMigrate(new(Resolution)); err != nil {
 		log.WithError(err).Fatal("migration failed for resolution")
 	}
+	if err := db.AutoMigrate(new(Wallet)); err != nil {
+		log.WithError(err).Fatal("migration failed for resolution")
+	}
 	Assets = &AssetRepository{db: db}
 	Markets = &MarketRepository{db: db}
 	Brokerages = &BrokerageRepository{db: db}
 	Resolutions = &ResolutionRepository{db: db}
+	Wallets = &WalletRepository{db: db}
 }

@@ -65,6 +65,15 @@
                         <span class="menu-text">بازه های زمانی</span>
                     </a>
                     </li>
+                    <li {{if eq .URL "/wallets/list/"}}
+                    class="active-page-link"
+                    {{ end }}
+                    >
+                    <a href="/wallets/list">
+                        <i class="icon-wallet"></i>
+                        <span class="menu-text">کیف های پول</span>
+                    </a>
+                    </li>
                 </ul>
             </div>
             <!-- sidebar menu end -->

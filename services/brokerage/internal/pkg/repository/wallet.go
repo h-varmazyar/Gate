@@ -1,6 +1,11 @@
 package repository
 
-import "gorm.io/gorm"
+import (
+	"github.com/google/uuid"
+	"github.com/mrNobody95/Gate/pkg/gormext"
+	"github.com/mrNobody95/Gate/services/brokerage/api"
+	"gorm.io/gorm"
+)
 
 /**
 * Dear programmer:
@@ -19,14 +24,26 @@ import "gorm.io/gorm"
 **/
 
 type Wallet struct {
+	gormext.UniversalModel
 	ReferenceCurrencyBalance float64
 	BlockedBalance           float64
 	ActiveBalance            float64
 	TotalBalance             float64
-	Asset                    string
-	ID                       string
+	AssetRefer               uuid.UUID
+	Asset                    *Asset `gorm:"foreignKey:AssetRefer"`
+	BrokerageRefer           uuid.UUID
+	Brokerage                *Brokerage `gorm:"foreignKey:BrokerageRefer"`
 }
 
 type WalletRepository struct {
 	db *gorm.DB
+}
+
+func (r *WalletRepository) List(brokerageName string) ([]*Wallet, error) {
+	wallets := make([]*Wallet, 0)
+	tx := r.db.Model(new(Wallet)).Joins("Asset").Joins("Brokerage")
+	if brokerageName != api.Names_All.String() {
+		tx.Where("brokerages.name LIKE ?", brokerageName)
+	}
+	return wallets, tx.Find(&wallets).Error
 }

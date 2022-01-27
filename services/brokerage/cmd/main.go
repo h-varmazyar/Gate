@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
 	"github.com/mrNobody95/Gate/pkg/envext"
-	"github.com/mrNobody95/Gate/pkg/grpcext"
 	"github.com/mrNobody95/Gate/pkg/httpext"
 	"github.com/mrNobody95/Gate/pkg/muxext"
 	"github.com/mrNobody95/Gate/pkg/service"
@@ -68,9 +66,7 @@ func main() {
 	})
 
 	service.Serve(configs.HttpPort, func(lst net.Listener) error {
-		connection := grpcext.NewConnection(fmt.Sprintf(":%v", configs.GrpcPort))
 		router := muxext.NewRouter(true)
-		wallets.NewController(connection).RegisterRouter(router)
 		return http.Serve(lst, httpext.DefaultCors.Handler(router))
 	})
 

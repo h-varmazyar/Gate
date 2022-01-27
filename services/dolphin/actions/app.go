@@ -5,6 +5,7 @@ import (
 	"github.com/mrNobody95/Gate/services/dolphin/actions/brokerages"
 	"github.com/mrNobody95/Gate/services/dolphin/actions/markets"
 	"github.com/mrNobody95/Gate/services/dolphin/actions/resolutions"
+	"github.com/mrNobody95/Gate/services/dolphin/actions/wallets"
 	"github.com/mrNobody95/Gate/services/dolphin/configs"
 	"github.com/mrNobody95/Gate/services/dolphin/internal/pkg/app"
 	"log"
@@ -53,6 +54,7 @@ func App() *app.App {
 		brokerages.RegisterRoutes(application)
 		resolutions.RegisterRoutes(application)
 		markets.RegisterRoutes(application)
+		wallets.RegisterRoutes(application)
 
 		application.ServeFiles("/", packr.New("../public", "../public"))
 	}
