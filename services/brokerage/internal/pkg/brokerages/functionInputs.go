@@ -13,9 +13,10 @@ type OrderBookParams struct {
 	Symbol repository.Market
 }
 
-type MarketStatusParams struct {
+type MarketStatisticsParams struct {
 	Destination string
 	Source      string
+	Market      string
 }
 
 type OHLCParams struct {

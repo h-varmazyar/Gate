@@ -12,22 +12,6 @@ import (
 	"time"
 )
 
-/**
-* Dear programmer:
-* When I wrote this code, only god And I know how it worked.
-* Now, only god knows it!
-*
-* Therefore, if you are trying to optimize this code And it fails(most surely),
-* please increase this counter as a warning for the next person:
-*
-* total_hours_wasted_here = 0 !!!
-*
-* Best regards, mr-nobody
-* Date: 12.11.21
-* Github: https://github.com/mrNobody95
-* Email: hossein.varmazyar@yahoo.com
-**/
-
 type Service struct {
 }
 
@@ -46,7 +30,7 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 	brokerageApi.RegisterResolutionServiceServer(server, s)
 }
 
-func (s *Service) Set(ctx context.Context, req *brokerageApi.Resolution) (*api.Void, error) {
+func (s *Service) Set(_ context.Context, req *brokerageApi.Resolution) (*api.Void, error) {
 	resolution := new(repository.Resolution)
 	mapper.Struct(req, resolution)
 	resolution.ID = uint(req.ID)

@@ -1,9 +1,7 @@
 package repository
 
 import (
-	"github.com/google/uuid"
 	"github.com/mrNobody95/Gate/api"
-	"github.com/mrNobody95/Gate/pkg/gormext"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
 	"gorm.io/gorm"
 	"time"
@@ -26,16 +24,18 @@ import (
 **/
 
 type Market struct {
-	gormext.UniversalModel
+	gorm.Model
 	BrokerageName   string
 	PricingDecimal  int
 	TradingDecimal  int
 	TakerFeeRate    float64
 	MakerFeeRate    float64
-	DestinationID   uuid.UUID
+	DestinationID   uint
+	Destination     *Asset `gorm:"foreignKey:DestinationID"`
 	StartTime       time.Time
 	MinAmount       float64
-	SourceID        uuid.UUID
+	SourceID        uint
+	Source          *Asset `gorm:"foreignKey:SourceID"`
 	IsAMM           bool
 	Name            string
 	Status          api.Status
@@ -64,7 +64,14 @@ func (repository *MarketRepository) List(brokerageName string) ([]*Market, error
 	return markets, tx.Find(&markets).Error
 }
 
-func (repository *MarketRepository) ReturnByID(id uuid.UUID) (*Market, error) {
+func (repository *MarketRepository) ListBySource(brokerageName, source string) ([]*Market, error) {
+	markets := make([]*Market, 0)
+	return markets, repository.db.Model(new(Market)).Joins("Source").Preload("Destination").
+		Where("source.name LIKE ?", source).
+		Where("market.brokerage_name LIKE ?", brokerageName).Find(&markets).Error
+}
+
+func (repository *MarketRepository) ReturnByID(id uint) (*Market, error) {
 	market := new(Market)
 	return market, repository.db.Model(new(Market)).
 		Where("id LIKE ?", id).

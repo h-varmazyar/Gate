@@ -31,7 +31,7 @@ message Resolutions {
 
 message GetResolutionByIDRequest {
   // @inject_tag: json:"id"
-  string ID = 1;
+  uint32 ID = 1;
 }
 
 message GetResolutionByDurationRequest {

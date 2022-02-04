@@ -25,16 +25,17 @@ import (
 var Variables *Configs
 
 type Configs struct {
-	ServiceName         string        `env:"SERVICE_NAME,required"`
-	Version             string        `env:"VERSION,required"`
-	StorageProvider     string        `env:"STORAGE_PROVIDER,required"`
-	DatabaseConnection  string        `env:"DATABASE_CONNECTION,required,file"`
-	OHLCWorkerHeartbeat time.Duration `env:"OHLC_WORKER_HEARTBEAT,required"`
-	CandleBufferLength  int           `env:"CANDLE_BUFFER_LENGTH,required"`
-	GrpcAddresses       struct {
-		Brokerage uint16 `env:"BROKERAGE_GRPC,required"`
-		Vault     uint16 `env:"VAULT_GRPC,required"`
-		Chipmunk  uint16 `env:"CHIPMUNK_GRPC,required"`
+	ServiceName           string        `env:"SERVICE_NAME,required"`
+	Version               string        `env:"VERSION,required"`
+	StorageProvider       string        `env:"STORAGE_PROVIDER,required"`
+	DatabaseConnection    string        `env:"DATABASE_CONNECTION,required,file"`
+	OHLCWorkerHeartbeat   time.Duration `env:"OHLC_WORKER_HEARTBEAT,required"`
+	WalletWorkerHeartbeat time.Duration `env:"WALLET_WORKER_HEARTBEAT,required"`
+	CandleBufferLength    int           `env:"CANDLE_BUFFER_LENGTH,required"`
+	GrpcPort              uint16        `env:"GRPC_PORT,required"`
+	GrpcAddresses         struct {
+		Brokerage string `env:"BROKERAGE_GRPC_ADDRESS,required"`
+		Network   string `env:"NETWORK_GRPC_ADDRESS,required"`
 	}
 }
 

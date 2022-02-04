@@ -2,6 +2,7 @@ syntax = "proto3";
 package brokerageApi;
 option go_package = "github.com/mrNobody95/Gate/services/brokerage/api";
 import "api/src/misc.proto";
+import "api/src/models.proto";
 import "services/brokerage/api/src/asset.proto";
 
 service MarketService {
@@ -9,6 +10,8 @@ service MarketService {
   rpc Get(MarketRequest) returns (Market);
   rpc List(MarketListRequest) returns (Markets);
   rpc UpdateMarkets(UpdateMarketsReq) returns (api.Void);
+  rpc MarketStatistics(MarketStatisticsRequest) returns (api.Candle);
+  rpc ReturnBySource(MarketListBySourceRequest) returns (Markets);
 }
 
 message Market {
@@ -37,7 +40,7 @@ message Market {
   // @inject_tag: json:"name"
   string Name = 12;
   // @inject_tag: json:"id"
-  string ID = 13;
+  uint32 ID = 13;
   // @inject_tag: json:"status"
   api.Status Status = 14;
   // @inject_tag: json:"brokerage_name"
@@ -59,6 +62,20 @@ message MarketRequest {
 message MarketListRequest {
   // @inject_tag: json:"brokerage_name"
   string BrokerageName = 1;
+}
+
+message MarketListBySourceRequest {
+  // @inject_tag: json:"brokerage_name"
+  string BrokerageName = 1;
+  // @inject_tag: json:"source"
+  string Source = 2;
+}
+
+message MarketStatisticsRequest {
+  // @inject_tag: json:"brokerage_id"
+  uint32 BrokerageID = 1;
+  // @inject_tag: json:"market_name"
+  string MarketName = 2;
 }
 
 message UpdateMarketsReq {

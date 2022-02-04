@@ -3,27 +3,23 @@ package brokerageApi;
 option go_package = "github.com/mrNobody95/Gate/services/brokerage/api";
 
 service WalletService {
-  rpc List(WalletListRequest) returns (Wallets);
+  rpc UpdateWallets(UpdateWalletRequest) returns (Wallets);
 }
 
-message WalletListRequest {
-  // @inject_tag: json:"brokerage_name"
-  string BrokerageName = 1;
+message UpdateWalletRequest {
+  // @inject_tag: json:"brokerage_id"
+  uint32 BrokerageID = 1;
 }
 
 message Wallet {
-  // @inject_tag: json:"reference_currency_balance"
-  float ReferenceCurrencyBalance = 1;
   // @inject_tag: json:"blocked_balance"
-  float BlockedBalance = 2;
+  double BlockedBalance = 1;
   // @inject_tag: json:"active_balance"
-  float ActiveBalance = 3;
+  double ActiveBalance = 2;
   // @inject_tag: json:"total_balance"
-  float TotalBalance = 4;
-  // @inject_tag: json:"asset"
-  string Asset = 5;
-  // @inject_tag: json:"id"
-  string ID = 6;
+  double TotalBalance = 3;
+  // @inject_tag: json:"asset_name"
+  string AssetName = 4;
 }
 
 message Wallets {

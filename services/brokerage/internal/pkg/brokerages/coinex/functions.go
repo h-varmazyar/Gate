@@ -5,7 +5,6 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/pkg/errors"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
@@ -42,7 +41,7 @@ type Service struct {
 	Auth *api.Auth
 }
 
-func (service *Service) WalletList(ctx context.Context, runner brokerages.Handler) ([]*repository.Wallet, error) {
+func (service *Service) WalletList(ctx context.Context, runner brokerages.Handler) (*brokerageApi.Wallets, error) {
 	request := new(networkAPI.Request)
 	request.Type = networkAPI.Type_GET
 	request.Endpoint = "https://api.coinex.com/v1/balance/info"
@@ -54,11 +53,33 @@ func (service *Service) WalletList(ctx context.Context, runner brokerages.Handle
 		{Key: "authorization", Value: service.generateAuthorization(request.Params)},
 		{Key: "tonce", Value: fmt.Sprintf("%d", time.Now().UnixNano()/1e6)},
 	}
-	_, err := runner(ctx, request)
+	resp, err := runner(ctx, request)
 	if err != nil {
 		return nil, err
 	}
-	return nil, nil
+	if resp.Code != http.StatusOK {
+		return nil, errors.NewWithSlug(ctx, codes.Unknown, resp.Response)
+	}
+	data := make(map[string]interface{})
+	if err := parseResponse(resp.Response, &data); err != nil {
+		return nil, err
+	}
+	response := new(brokerageApi.Wallets)
+	response.Wallets = make([]*brokerageApi.Wallet, len(data))
+	for key, value := range data {
+		item := value.(struct {
+			Available float64 `json:"available"`
+			Frozen    float64 `json:"frozen"`
+		})
+		w := new(brokerageApi.Wallet)
+		w.AssetName = key
+		w.ActiveBalance = item.Available
+		w.BlockedBalance = item.Frozen
+		w.TotalBalance = item.Available + item.Frozen
+		fmt.Println(w)
+		response.Wallets = append(response.Wallets, w)
+	}
+	return response, nil
 }
 
 func (service *Service) OHLC(ctx context.Context, inputs brokerages.OHLCParams, runner brokerages.Handler) ([]*api.Candle, error) {
@@ -153,7 +174,6 @@ func (service *Service) UpdateMarket(ctx context.Context, runner brokerages.Hand
 	for _, value := range data {
 		item := value.(map[string]interface{})
 		m := new(repository.Market)
-		m.ID = uuid.New()
 		m.BrokerageName = brokerageApi.Names_Coinex.String()
 		m.PricingDecimal = int(item["pricing_decimal"].(float64))
 		m.TradingDecimal = int(item["trading_decimal"].(float64))
@@ -186,6 +206,56 @@ func (service *Service) UpdateMarket(ctx context.Context, runner brokerages.Hand
 	return markets, nil
 }
 
+func (service *Service) MarketStatistics(ctx context.Context, inputs brokerages.MarketStatisticsParams, runner brokerages.Handler) (*api.Candle, error) {
+	var market string
+	if inputs.Market == "" {
+		market = strings.ToUpper(fmt.Sprint(inputs.Source, inputs.Destination))
+	} else {
+		market = inputs.Market
+	}
+	request := new(networkAPI.Request)
+	request.Type = networkAPI.Type_GET
+	request.Params = []*networkAPI.KV{
+		{Key: "market", Value: market},
+	}
+	request.Endpoint = "https://www.coinex.com/res/market/ticker"
+
+	resp, err := runner(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	if resp.Code != http.StatusOK {
+		return nil, errors.NewWithSlug(ctx, codes.NotFound, resp.Response)
+	}
+	data := struct {
+		Date   time.Time `json:"date"`
+		Ticker struct {
+			Buy        float64 `json:"buy"`
+			BuyAmount  float64 `json:"buy_amount"`
+			Open       float64 `json:"open"`
+			High       float64 `json:"high"`
+			Low        float64 `json:"low"`
+			Last       float64 `json:"last"`
+			Sell       float64 `json:"sell"`
+			SellAmount float64 `json:"sell_amount"`
+			Volume     float64 `json:"volume"`
+		} `json:"ticker"`
+	}{}
+	if err := parseResponse(resp.Response, &data); err != nil {
+		return nil, err
+	}
+	return &api.Candle{
+		UpdatedAt: time.Now().Unix(),
+		CreatedAt: time.Now().Unix(),
+		Volume:    data.Ticker.Volume,
+		Close:     data.Ticker.Last,
+		Open:      data.Ticker.Open,
+		Time:      data.Date.Unix(),
+		High:      data.Ticker.High,
+		Low:       data.Ticker.Low,
+	}, nil
+}
+
 func (service *Service) generateAuthorization(params []*networkAPI.KV) string {
 	urlParameters := url.Values{}
 	for _, param := range params {
@@ -194,7 +264,7 @@ func (service *Service) generateAuthorization(params []*networkAPI.KV) string {
 	queryParamsString := urlParameters.Encode()
 	toEncodeParamsString := queryParamsString + "&secrect=" + service.Auth.SecretKey
 	w := md5.New()
-	io.WriteString(w, toEncodeParamsString)
+	_, _ = io.WriteString(w, toEncodeParamsString)
 	md5Str := fmt.Sprintf("%x", w.Sum(nil))
 	md5Str = strings.ToUpper(md5Str)
 	return md5Str

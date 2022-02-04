@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"github.com/mrNobody95/Gate/pkg/gormext"
 	"gorm.io/gorm"
 	"time"
 )
@@ -23,7 +22,7 @@ import (
 **/
 
 type Asset struct {
-	gormext.UniversalModel
+	gorm.Model
 	Name      string    `json:"name"`
 	Symbol    string    `json:"symbol" gorm:"unique"`
 	IssueDate time.Time `json:"issue_date"`

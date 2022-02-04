@@ -9,6 +9,7 @@ import (
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/workers"
+	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/workers/OHLC"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -48,7 +49,7 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 }
 
 func (s *Service) AddMarket(ctx context.Context, req *chipmunkApi.AddMarketRequest) (*api.Void, error) {
-	settings := new(workers.Settings)
+	settings := new(OHLC.OhlcWorkerSettings)
 	if req.Market == nil {
 		return nil, errors.NewWithSlug(ctx, codes.InvalidArgument, "market is nil")
 	}

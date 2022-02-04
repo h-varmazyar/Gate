@@ -18,7 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type WalletServiceClient interface {
-	List(ctx context.Context, in *WalletListRequest, opts ...grpc.CallOption) (*Wallets, error)
+	UpdateWallets(ctx context.Context, in *UpdateWalletRequest, opts ...grpc.CallOption) (*Wallets, error)
 }
 
 type walletServiceClient struct {
@@ -29,9 +29,9 @@ func NewWalletServiceClient(cc grpc.ClientConnInterface) WalletServiceClient {
 	return &walletServiceClient{cc}
 }
 
-func (c *walletServiceClient) List(ctx context.Context, in *WalletListRequest, opts ...grpc.CallOption) (*Wallets, error) {
+func (c *walletServiceClient) UpdateWallets(ctx context.Context, in *UpdateWalletRequest, opts ...grpc.CallOption) (*Wallets, error) {
 	out := new(Wallets)
-	err := c.cc.Invoke(ctx, "/brokerageApi.WalletService/List", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/brokerageApi.WalletService/UpdateWallets", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -42,15 +42,15 @@ func (c *walletServiceClient) List(ctx context.Context, in *WalletListRequest, o
 // All implementations should embed UnimplementedWalletServiceServer
 // for forward compatibility
 type WalletServiceServer interface {
-	List(context.Context, *WalletListRequest) (*Wallets, error)
+	UpdateWallets(context.Context, *UpdateWalletRequest) (*Wallets, error)
 }
 
 // UnimplementedWalletServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedWalletServiceServer struct {
 }
 
-func (UnimplementedWalletServiceServer) List(context.Context, *WalletListRequest) (*Wallets, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
+func (UnimplementedWalletServiceServer) UpdateWallets(context.Context, *UpdateWalletRequest) (*Wallets, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateWallets not implemented")
 }
 
 // UnsafeWalletServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -64,20 +64,20 @@ func RegisterWalletServiceServer(s grpc.ServiceRegistrar, srv WalletServiceServe
 	s.RegisterService(&WalletService_ServiceDesc, srv)
 }
 
-func _WalletService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(WalletListRequest)
+func _WalletService_UpdateWallets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateWalletRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(WalletServiceServer).List(ctx, in)
+		return srv.(WalletServiceServer).UpdateWallets(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/brokerageApi.WalletService/List",
+		FullMethod: "/brokerageApi.WalletService/UpdateWallets",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WalletServiceServer).List(ctx, req.(*WalletListRequest))
+		return srv.(WalletServiceServer).UpdateWallets(ctx, req.(*UpdateWalletRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -90,8 +90,8 @@ var WalletService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*WalletServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "List",
-			Handler:    _WalletService_List_Handler,
+			MethodName: "UpdateWallets",
+			Handler:    _WalletService_UpdateWallets_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

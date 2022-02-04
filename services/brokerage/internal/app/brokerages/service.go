@@ -2,8 +2,6 @@ package brokerages
 
 import (
 	"context"
-	"fmt"
-	"github.com/google/uuid"
 	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/pkg/errors"
 	"github.com/mrNobody95/Gate/pkg/grpcext"
@@ -35,7 +33,8 @@ import (
 **/
 
 type Service struct {
-	chipmunk chipmunkApi.OhlcServiceClient
+	ohlcService   chipmunkApi.OhlcServiceClient
+	walletService chipmunkApi.WalletsServiceClient
 }
 
 var (
@@ -46,7 +45,8 @@ func NewService(configs *configs.Configs) *Service {
 	if GrpcService == nil {
 		GrpcService = new(Service)
 		chipmunkConnection := grpcext.NewConnection(configs.ChipmunkAddress)
-		GrpcService.chipmunk = chipmunkApi.NewOhlcServiceClient(chipmunkConnection)
+		GrpcService.ohlcService = chipmunkApi.NewOhlcServiceClient(chipmunkConnection)
+		GrpcService.walletService = chipmunkApi.NewWalletsServiceClient(chipmunkConnection)
 	}
 	return GrpcService
 }
@@ -69,8 +69,6 @@ func (s *Service) Create(ctx context.Context, brokerage *brokerageApi.CreateBrok
 		br.AuthType = brokerage.Auth.Type.String()
 	}
 	br.Status = api.Status_Disable.String()
-	br.ID = uuid.New()
-	fmt.Println("before res")
 	resID, err := strconv.Atoi(brokerage.ResolutionID)
 	if err != nil {
 		return nil, errors.NewWithSlug(ctx, codes.FailedPrecondition, "invalid_resolution")
@@ -79,12 +77,8 @@ func (s *Service) Create(ctx context.Context, brokerage *brokerageApi.CreateBrok
 	mapper.Struct(brokerage, br)
 
 	for _, market := range brokerage.Markets.Markets {
-		id, err := uuid.Parse(market.ID)
-		if err != nil {
-			return nil, err
-		}
 		tmp := new(repository.Market)
-		tmp.ID = id
+		tmp.ID = uint(market.ID)
 		br.Markets = append(br.Markets, tmp)
 	}
 	if err := repository.Brokerages.Create(br); err != nil {
@@ -111,11 +105,7 @@ func (s *Service) List(_ context.Context, _ *api.Void) (*brokerageApi.Brokerages
 }
 
 func (s *Service) Get(_ context.Context, req *brokerageApi.BrokerageIDReq) (*brokerageApi.Brokerage, error) {
-	id, err := uuid.Parse(req.ID)
-	if err != nil {
-		return nil, err
-	}
-	brokerage, err := repository.Brokerages.ReturnByID(id)
+	brokerage, err := repository.Brokerages.ReturnByID(req.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -127,17 +117,13 @@ func (s *Service) Get(_ context.Context, req *brokerageApi.BrokerageIDReq) (*bro
 }
 
 func (s *Service) GetInternal(_ context.Context, req *brokerageApi.BrokerageIDReq) (*brokerageApi.Brokerage, error) {
-	id, err := uuid.Parse(req.ID)
-	if err != nil {
-		return nil, err
-	}
-	brokerage, err := repository.Brokerages.ReturnByID(id)
+	brokerage, err := repository.Brokerages.ReturnByID(req.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	return &brokerageApi.Brokerage{
-		ID: brokerage.ID.String(),
+		ID: uint32(brokerage.ID),
 		Auth: &api.Auth{
 			Type:      api.AuthType(api.AuthType_value[brokerage.AuthType]),
 			Username:  brokerage.Username,
@@ -151,36 +137,28 @@ func (s *Service) GetInternal(_ context.Context, req *brokerageApi.BrokerageIDRe
 }
 
 func (s *Service) Delete(_ context.Context, req *brokerageApi.BrokerageIDReq) (*api.Void, error) {
-	id, err := uuid.Parse(req.ID)
-	if err != nil {
+	if err := repository.Brokerages.Delete(req.ID); err != nil {
 		return nil, err
 	}
-	if err := repository.Brokerages.Delete(id); err != nil {
-		return nil, err
-	}
-	return new(api.Void), err
+	return new(api.Void), nil
 }
 
 func (s *Service) ChangeStatus(ctx context.Context, req *brokerageApi.StatusChangeRequest) (*brokerageApi.BrokerageStatus, error) {
-	id, err := uuid.Parse(req.ID)
-	if err != nil {
-		return nil, err
-	}
 	enables, err := repository.Brokerages.ReturnEnables()
 	if err != nil {
 		return nil, err
 	}
 	for _, enable := range enables {
 		for _, market := range enable.Markets {
-			if _, err := s.chipmunk.CancelWorker(ctx, &chipmunkApi.CancelWorkerRequest{
+			if _, err := s.ohlcService.CancelWorker(ctx, &chipmunkApi.CancelWorkerRequest{
 				ResolutionID: uint32(enable.ResolutionID),
-				MarketID:     market.ID.String(),
+				MarketID:     uint32(market.ID),
 			}); err != nil {
 				log.WithError(err).WithField("market", market.ID).WithField("brokerage", enable.ID)
 			}
 		}
 	}
-	brokerage, err := repository.Brokerages.ReturnByID(id)
+	brokerage, err := repository.Brokerages.ReturnByID(req.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +179,7 @@ func (s *Service) ChangeStatus(ctx context.Context, req *brokerageApi.StatusChan
 			for _, market := range brokerage.Markets {
 				m := new(brokerageApi.Market)
 				mapper.Struct(market, m)
-				if _, err := s.chipmunk.AddMarket(ctx, &chipmunkApi.AddMarketRequest{
+				if _, err := s.ohlcService.AddMarket(ctx, &chipmunkApi.AddMarketRequest{
 					Resolution: resolution,
 					Market:     m,
 				}); err != nil {
@@ -210,6 +188,12 @@ func (s *Service) ChangeStatus(ctx context.Context, req *brokerageApi.StatusChan
 			}
 		}
 		if req.Trading {
+			_, err := s.walletService.StartWorker(ctx, &chipmunkApi.StartWorkerRequest{
+				BrokerageID: uint32(brokerage.ID),
+			})
+			if err != nil {
+				log.WithError(err).WithField("brokerage", brokerage.ID).Error("failed to start wallet worker")
+			}
 			//todo: add trading worker
 		}
 	}

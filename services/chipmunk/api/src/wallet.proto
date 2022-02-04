@@ -1,0 +1,20 @@
+syntax = "proto3";
+package brokerageApi;
+option go_package = "github.com/mrNobody95/Gate/services/chipmunk/api";
+import "api/src/misc.proto";
+import "services/brokerage/api/src/wallet.proto";
+
+service WalletsService {
+  rpc List(WalletListRequest) returns (brokerageApi.Wallets);
+  rpc StartWorker(StartWorkerRequest) returns (api.Void);
+}
+
+message WalletListRequest {
+  // @inject_tag: json:"brokerage_name"
+  string BrokerageName = 1;
+}
+
+message StartWorkerRequest {
+  // @inject_tag: json:"brokerage_id"
+  uint32 BrokerageID = 1;
+}

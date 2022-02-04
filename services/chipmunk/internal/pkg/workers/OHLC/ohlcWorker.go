@@ -1,13 +1,11 @@
-package workers
+package OHLC
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/mrNobody95/Gate/pkg/grpcext"
 	"github.com/mrNobody95/Gate/pkg/mapper"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
-	"github.com/mrNobody95/Gate/services/chipmunk/configs"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository/candles"
@@ -16,47 +14,27 @@ import (
 	"time"
 )
 
-/**
-* Dear programmer:
-* When I wrote this code, only god And I know how it worked.
-* Now, only god knows it!
-*
-* Therefore, if you are trying to optimize this code And it fails(most surely),
-* please increase this counter as a warning for the next person:
-*
-* total_hours_wasted_here = 0 !!!
-*
-* Best regards, mr-nobody
-* Date: 02.12.21
-* Github: https://github.com/mrNobody95
-* Email: hossein.varmazyar@yahoo.com
-**/
-
-type ohlcWorker struct {
-	heartbeatInterval time.Duration
-	candleService     brokerageApi.CandleServiceClient
+type Worker struct {
+	HeartbeatInterval time.Duration
+	CandleService     brokerageApi.CandleServiceClient
 }
 
-type Settings struct {
+type OhlcWorkerSettings struct {
 	Context    context.Context
 	Market     *brokerageApi.Market
 	Resolution *brokerageApi.Resolution
 }
 
 var (
-	OHLCWorker          *ohlcWorker
-	workerCancellations map[string]context.CancelFunc
+	ohlcWorkerCancellations map[string]context.CancelFunc
 )
 
 func init() {
-	workerCancellations = make(map[string]context.CancelFunc)
-	OHLCWorker = new(ohlcWorker)
-	OHLCWorker.heartbeatInterval = configs.Variables.OHLCWorkerHeartbeat
-	candleConnection := grpcext.NewConnection(fmt.Sprintf(":%v", configs.Variables.GrpcAddresses.Brokerage))
-	OHLCWorker.candleService = brokerageApi.NewCandleServiceClient(candleConnection)
+	ohlcWorkerCancellations = make(map[string]context.CancelFunc)
 }
 
-func (worker *ohlcWorker) AddMarket(settings *Settings) {
+func (worker *Worker) AddMarket(settings *OhlcWorkerSettings) {
+	ohlcWorkerCancellations[fmt.Sprintf("%d > %v", settings.Market.ID, settings.Resolution.ID)]()
 	ctx := context.Background()
 	if ctx == nil {
 		panic("nil ctx1")
@@ -67,29 +45,29 @@ func (worker *ohlcWorker) AddMarket(settings *Settings) {
 		panic("nil ctx2")
 	}
 	settings.Context = ctx
-	workerCancellations[fmt.Sprintf("%s > %v", settings.Market.ID, settings.Resolution.ID)] = fn
+	ohlcWorkerCancellations[fmt.Sprintf("%d > %d", settings.Market.ID, settings.Resolution.ID)] = fn
 	buffer.Candles.AddList(settings.Market.ID, settings.Resolution.ID)
 	go worker.run(settings)
 }
 
-func (worker *ohlcWorker) CancelWorker(marketID string, resolutionID uint32) error {
-	fn, ok := workerCancellations[fmt.Sprintf("%s > %v", marketID, resolutionID)]
+func (worker *Worker) CancelWorker(marketID, resolutionID uint32) error {
+	fn, ok := ohlcWorkerCancellations[fmt.Sprintf("%d > %d", marketID, resolutionID)]
 	if !ok {
 		return errors.New("worker stopped before")
 	}
 	fn()
-	delete(workerCancellations, fmt.Sprintf("%s > %v", marketID, resolutionID))
+	delete(ohlcWorkerCancellations, fmt.Sprintf("%d > %d", marketID, resolutionID))
 	buffer.Candles.RemoveList(marketID, resolutionID)
 	return nil
 }
 
-func (worker *ohlcWorker) run(settings *Settings) {
+func (worker *Worker) run(settings *OhlcWorkerSettings) {
 	if err := worker.loadPrimaryData(settings); err != nil {
 		_ = worker.CancelWorker(settings.Market.ID, settings.Resolution.ID)
 		log.WithError(err).Error("load primary failed")
 		return
 	}
-	ticker := time.NewTicker(worker.heartbeatInterval)
+	ticker := time.NewTicker(worker.HeartbeatInterval)
 	last, err := repository.Candles.ReturnLast(settings.Market.ID, settings.Resolution.ID)
 	if err != nil {
 		_ = worker.CancelWorker(settings.Market.ID, settings.Resolution.ID)
@@ -117,7 +95,7 @@ LOOP:
 	}
 }
 
-func (worker *ohlcWorker) loadPrimaryData(ws *Settings) error {
+func (worker *Worker) loadPrimaryData(ws *OhlcWorkerSettings) error {
 	last, err := repository.Candles.ReturnLast(ws.Market.ID, ws.Resolution.ID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -146,8 +124,8 @@ func (worker *ohlcWorker) loadPrimaryData(ws *Settings) error {
 	return nil
 }
 
-func (worker *ohlcWorker) getCandle(ws *Settings, from, to int64) error {
-	c, err := worker.candleService.OHLC(ws.Context, &brokerageApi.OhlcRequest{
+func (worker *Worker) getCandle(ws *OhlcWorkerSettings, from, to int64) error {
+	c, err := worker.CandleService.OHLC(ws.Context, &brokerageApi.OhlcRequest{
 		Resolution: ws.Resolution,
 		Market:     ws.Market,
 		From:       from,

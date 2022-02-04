@@ -1,16 +1,14 @@
 package repository
 
 import (
-	"github.com/google/uuid"
 	"github.com/mrNobody95/Gate/api"
-	"github.com/mrNobody95/Gate/pkg/gormext"
 	"gorm.io/gorm"
 )
 
 //type BrokerageName string
 
 type Brokerage struct {
-	gormext.UniversalModel
+	gorm.Model
 	Title        string `gorm:"not null"`
 	Description  string `gorm:"type:varchar(1000)"`
 	Name         string `gorm:"type:varchar(25);not null"`
@@ -33,11 +31,11 @@ func (repository *BrokerageRepository) Create(brokerage *Brokerage) error {
 	return repository.db.Model(new(Brokerage)).Create(brokerage).Error
 }
 
-func (repository *BrokerageRepository) Delete(id uuid.UUID) error {
+func (repository *BrokerageRepository) Delete(id uint32) error {
 	return repository.db.Model(new(Brokerage)).Where("id LIKE ?", id).Delete(new(Brokerage)).Error
 }
 
-func (repository *BrokerageRepository) ReturnByID(id uuid.UUID) (*Brokerage, error) {
+func (repository *BrokerageRepository) ReturnByID(id uint32) (*Brokerage, error) {
 	brokerage := new(Brokerage)
 	return brokerage, repository.db.Joins("Resolution").Preload("Markets").
 		Where("brokerages.id = ?", id).First(brokerage).Error

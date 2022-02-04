@@ -23,6 +23,8 @@ type MarketServiceClient interface {
 	Get(ctx context.Context, in *MarketRequest, opts ...grpc.CallOption) (*Market, error)
 	List(ctx context.Context, in *MarketListRequest, opts ...grpc.CallOption) (*Markets, error)
 	UpdateMarkets(ctx context.Context, in *UpdateMarketsReq, opts ...grpc.CallOption) (*api.Void, error)
+	MarketStatistics(ctx context.Context, in *MarketStatisticsRequest, opts ...grpc.CallOption) (*api.Candle, error)
+	ReturnBySource(ctx context.Context, in *MarketListBySourceRequest, opts ...grpc.CallOption) (*Markets, error)
 }
 
 type marketServiceClient struct {
@@ -69,6 +71,24 @@ func (c *marketServiceClient) UpdateMarkets(ctx context.Context, in *UpdateMarke
 	return out, nil
 }
 
+func (c *marketServiceClient) MarketStatistics(ctx context.Context, in *MarketStatisticsRequest, opts ...grpc.CallOption) (*api.Candle, error) {
+	out := new(api.Candle)
+	err := c.cc.Invoke(ctx, "/brokerageApi.MarketService/MarketStatistics", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *marketServiceClient) ReturnBySource(ctx context.Context, in *MarketListBySourceRequest, opts ...grpc.CallOption) (*Markets, error) {
+	out := new(Markets)
+	err := c.cc.Invoke(ctx, "/brokerageApi.MarketService/ReturnBySource", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MarketServiceServer is the server API for MarketService service.
 // All implementations should embed UnimplementedMarketServiceServer
 // for forward compatibility
@@ -77,6 +97,8 @@ type MarketServiceServer interface {
 	Get(context.Context, *MarketRequest) (*Market, error)
 	List(context.Context, *MarketListRequest) (*Markets, error)
 	UpdateMarkets(context.Context, *UpdateMarketsReq) (*api.Void, error)
+	MarketStatistics(context.Context, *MarketStatisticsRequest) (*api.Candle, error)
+	ReturnBySource(context.Context, *MarketListBySourceRequest) (*Markets, error)
 }
 
 // UnimplementedMarketServiceServer should be embedded to have forward compatible implementations.
@@ -94,6 +116,12 @@ func (UnimplementedMarketServiceServer) List(context.Context, *MarketListRequest
 }
 func (UnimplementedMarketServiceServer) UpdateMarkets(context.Context, *UpdateMarketsReq) (*api.Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateMarkets not implemented")
+}
+func (UnimplementedMarketServiceServer) MarketStatistics(context.Context, *MarketStatisticsRequest) (*api.Candle, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MarketStatistics not implemented")
+}
+func (UnimplementedMarketServiceServer) ReturnBySource(context.Context, *MarketListBySourceRequest) (*Markets, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReturnBySource not implemented")
 }
 
 // UnsafeMarketServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -179,6 +207,42 @@ func _MarketService_UpdateMarkets_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MarketService_MarketStatistics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarketStatisticsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MarketServiceServer).MarketStatistics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/brokerageApi.MarketService/MarketStatistics",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MarketServiceServer).MarketStatistics(ctx, req.(*MarketStatisticsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MarketService_ReturnBySource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarketListBySourceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MarketServiceServer).ReturnBySource(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/brokerageApi.MarketService/ReturnBySource",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MarketServiceServer).ReturnBySource(ctx, req.(*MarketListBySourceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MarketService_ServiceDesc is the grpc.ServiceDesc for MarketService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -201,6 +265,14 @@ var MarketService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateMarkets",
 			Handler:    _MarketService_UpdateMarkets_Handler,
+		},
+		{
+			MethodName: "MarketStatistics",
+			Handler:    _MarketService_MarketStatistics_Handler,
+		},
+		{
+			MethodName: "ReturnBySource",
+			Handler:    _MarketService_ReturnBySource_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

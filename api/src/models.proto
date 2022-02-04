@@ -22,7 +22,7 @@ message Candle {
   // @inject_tag: json:"low"
   double Low = 9;
   // @inject_tag: json:"id"
-  string ID = 10;
+  uint64 ID = 10;
 }
 
 message Candles {

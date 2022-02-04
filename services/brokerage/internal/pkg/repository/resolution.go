@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"github.com/mrNobody95/Gate/pkg/gormext"
 	"github.com/mrNobody95/Gate/services/brokerage/api"
 	"gorm.io/gorm"
 	"time"
@@ -24,7 +23,7 @@ import (
 **/
 
 type Resolution struct {
-	gormext.IncrementalModel
+	gorm.Model
 	BrokerageName string
 	Duration      time.Duration
 	Label         string

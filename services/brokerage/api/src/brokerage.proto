@@ -40,7 +40,7 @@ message CreateBrokerageReq {
 
 message Brokerage {
   // @inject_tag: json:"id"
-  string ID = 1;
+  uint32 ID = 1;
   // @inject_tag: json:"title"
   string Title = 2;
   // @inject_tag: json:"description"
@@ -73,7 +73,7 @@ message BrokerageStatus {
 
 message StatusChangeRequest {
   // @inject_tag: json:"id"
-  string ID = 1;
+  uint32 ID = 1;
   // @inject_tag: json:"trading"
   bool Trading = 2;
   // @inject_tag: json:"ohlc"
@@ -82,7 +82,7 @@ message StatusChangeRequest {
 
 message BrokerageIDReq {
   // @inject_tag: json:"id"
-  string ID = 1;
+  uint32 ID = 1;
 }
 
 

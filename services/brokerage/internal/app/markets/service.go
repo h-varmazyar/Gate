@@ -3,13 +3,13 @@ package markets
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/pkg/errors"
 	"github.com/mrNobody95/Gate/pkg/grpcext"
 	"github.com/mrNobody95/Gate/pkg/mapper"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
 	"github.com/mrNobody95/Gate/services/brokerage/configs"
+	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/brokerages"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/brokerages/coinex"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
 	networkAPI "github.com/mrNobody95/Gate/services/network/api"
@@ -60,42 +60,14 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 func (s *Service) Set(_ context.Context, req *brokerageApi.Market) (*brokerageApi.Market, error) {
 	market := new(repository.Market)
 	mapper.Struct(req, market)
-	if req.ID == "" {
-		market.ID = uuid.New()
-	} else {
-		id, err := uuid.Parse(req.ID)
-		if err != nil {
-			return nil, err
-		}
-		market.ID = id
-	}
-	//brokerageID, err := uuid.Parse(req.BrokerageID)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//market.BrokerageID = brokerageID
-	//if req.Destination == nil {
-	//	return nil, errors.NewWithSlug(ctx, codes.InvalidArgument, "destination not set")
-	//}
-	destinationID, err := uuid.Parse(req.Destination.ID)
-	if err != nil {
-		return nil, err
-	}
-	market.DestinationID = destinationID
-	//if req.Source == nil {
-	//	return nil, errors.NewWithSlug(ctx, codes.InvalidArgument, "source not set")
-	//}
-	sourceID, err := uuid.Parse(req.Source.ID)
-	if err != nil {
-		return nil, err
-	}
-	market.SourceID = sourceID
+	market.DestinationID = uint(req.Destination.ID)
+	market.SourceID = uint(req.Source.ID)
 	market.Status = req.Status
 	if err := repository.Markets.SaveOrUpdate(market); err != nil {
 		return nil, err
 	}
 	mapper.Struct(market, req)
-	req.ID = market.ID.String()
+	req.ID = uint32(market.ID)
 	return req, nil
 }
 
@@ -135,7 +107,6 @@ func (s *Service) UpdateMarkets(ctx context.Context, req *brokerageApi.UpdateMar
 			if err != nil {
 				if err == gorm.ErrRecordNotFound {
 					asset := new(repository.Asset)
-					asset.ID = uuid.New()
 					asset.Name = market.SourceName
 					asset.Symbol = market.SourceName
 					asset.IssueDate = time.Now()
@@ -153,7 +124,6 @@ func (s *Service) UpdateMarkets(ctx context.Context, req *brokerageApi.UpdateMar
 			if err != nil {
 				if err == gorm.ErrRecordNotFound {
 					asset := new(repository.Asset)
-					asset.ID = uuid.New()
 					asset.Name = market.DestinationName
 					asset.Symbol = market.DestinationName
 					asset.IssueDate = time.Now()
@@ -179,4 +149,27 @@ func (s *Service) UpdateMarkets(ctx context.Context, req *brokerageApi.UpdateMar
 		return nil, errors.NewWithSlug(ctx, codes.Unimplemented, "brokerage_not_supported")
 	}
 	return new(api.Void), nil
+}
+
+func (s *Service) MarketStatistics(ctx context.Context, req *brokerageApi.MarketStatisticsRequest) (*api.Candle, error) {
+	br := new(coinex.Service)
+	params := brokerages.MarketStatisticsParams{
+		Market: req.MarketName,
+	}
+	return br.MarketStatistics(ctx, params, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
+		resp, err := s.networkService.Do(ctx, request)
+		return resp, err
+	})
+}
+
+func (s *Service) ReturnBySource(_ context.Context, req *brokerageApi.MarketListBySourceRequest) (*brokerageApi.Markets, error) {
+	response := new(brokerageApi.Markets)
+	if markets, err := repository.Markets.ListBySource(req.BrokerageName, req.Source); err != nil {
+		return nil, err
+	} else {
+		list := make([]*brokerageApi.Market, 0)
+		mapper.Slice(markets, &list)
+		response.Markets = list
+		return response, nil
+	}
 }

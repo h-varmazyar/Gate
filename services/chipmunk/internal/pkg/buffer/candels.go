@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/mrNobody95/Gate/services/chipmunk/configs"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository/candles"
+	"sync"
 )
 
 /**
@@ -27,23 +28,25 @@ type candleBuffer struct {
 }
 
 var (
-	Candles *candleBuffer
+	candlesLock *sync.Mutex
+	Candles     *candleBuffer
 )
 
 func init() {
+	candlesLock = new(sync.Mutex)
 	Candles = new(candleBuffer)
 	Candles.candles = make(map[string][]*candles.Candle)
 }
 
-func (buffer *candleBuffer) AddList(marketID string, resolutionID uint32) {
+func (buffer *candleBuffer) AddList(marketID, resolutionID uint32) {
 	buffer.candles[key(marketID, resolutionID)] = make([]*candles.Candle, configs.Variables.CandleBufferLength)
 }
 
-func (buffer *candleBuffer) RemoveList(marketID string, resolutionID uint32) {
+func (buffer *candleBuffer) RemoveList(marketID, resolutionID uint32) {
 	delete(buffer.candles, key(marketID, resolutionID))
 }
 
-func (buffer *candleBuffer) Last(marketID string, resolutionID uint32) *candles.Candle {
+func (buffer *candleBuffer) Last(marketID, resolutionID uint32) *candles.Candle {
 	list := buffer.candles[key(marketID, resolutionID)]
 	return list[len(list)-1]
 }
@@ -59,9 +62,11 @@ func (buffer *candleBuffer) Enqueue(candle *candles.Candle) {
 	} else {
 		list = append(list[1:], candle)
 	}
+	candlesLock.Lock()
 	buffer.candles[key(candle.MarketID, candle.ResolutionID)] = list
+	candlesLock.Unlock()
 }
 
-func key(marketID string, resolutionID uint32) string {
-	return fmt.Sprintf("%s > %v", marketID, resolutionID)
+func key(marketID, resolutionID uint32) string {
+	return fmt.Sprintf("%d > %d", marketID, resolutionID)
 }
