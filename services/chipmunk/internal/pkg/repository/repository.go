@@ -3,7 +3,6 @@ package repository
 import (
 	"github.com/mrNobody95/Gate/pkg/gormext"
 	"github.com/mrNobody95/Gate/services/chipmunk/configs"
-	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository/candles"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -24,13 +23,11 @@ import (
 **/
 
 var (
-	Candles candles.Candles
+	Candles *CandleRepository
 )
 
 const (
-	MariaDB  = "mariadb"
-	Postgres = "postgres"
-	Elastic  = "elasticsearch"
+	MariaDB = "mariadb"
 )
 
 func init() {
@@ -40,10 +37,9 @@ func init() {
 		if err != nil {
 			log.WithError(err).Fatal("can not open db connection")
 		}
-		if err := db.AutoMigrate(new(candles.Candle)); err != nil {
+		if err := db.AutoMigrate(new(Candle)); err != nil {
 			log.WithError(err).Fatal("migration failed for candles")
 		}
-		Candles = &candles.CandleMariadbRepository{DB: db}
-	case Elastic:
+		Candles = &CandleRepository{DB: db}
 	}
 }

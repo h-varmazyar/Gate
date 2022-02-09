@@ -41,7 +41,7 @@ func parseResponse(input string, response interface{}) error {
 	}
 	switch tmp.Data.(type) {
 	case []interface{}:
-		mapper.Slice(tmp.Data, response)
+		mapper.Slice(tmp.Data, &response)
 	case types.Struct:
 		mapper.Struct(tmp.Data, response)
 	case map[string]interface{}:

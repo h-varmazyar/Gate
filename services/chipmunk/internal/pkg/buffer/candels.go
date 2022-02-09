@@ -3,7 +3,7 @@ package buffer
 import (
 	"fmt"
 	"github.com/mrNobody95/Gate/services/chipmunk/configs"
-	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository/candles"
+	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository"
 	"sync"
 )
 
@@ -24,7 +24,7 @@ import (
 **/
 
 type candleBuffer struct {
-	candles map[string][]*candles.Candle
+	candles map[string][]*repository.Candle
 }
 
 var (
@@ -35,26 +35,26 @@ var (
 func init() {
 	candlesLock = new(sync.Mutex)
 	Candles = new(candleBuffer)
-	Candles.candles = make(map[string][]*candles.Candle)
+	Candles.candles = make(map[string][]*repository.Candle)
 }
 
 func (buffer *candleBuffer) AddList(marketID, resolutionID uint32) {
-	buffer.candles[key(marketID, resolutionID)] = make([]*candles.Candle, configs.Variables.CandleBufferLength)
+	buffer.candles[key(marketID, resolutionID)] = make([]*repository.Candle, configs.Variables.CandleBufferLength)
 }
 
 func (buffer *candleBuffer) RemoveList(marketID, resolutionID uint32) {
 	delete(buffer.candles, key(marketID, resolutionID))
 }
 
-func (buffer *candleBuffer) Last(marketID, resolutionID uint32) *candles.Candle {
+func (buffer *candleBuffer) Last(marketID, resolutionID uint32) *repository.Candle {
 	list := buffer.candles[key(marketID, resolutionID)]
 	return list[len(list)-1]
 }
 
-func (buffer *candleBuffer) Enqueue(candle *candles.Candle) {
+func (buffer *candleBuffer) Enqueue(candle *repository.Candle) {
 	list, ok := buffer.candles[key(candle.MarketID, candle.ResolutionID)]
 	if !ok || list == nil || len(list) == 0 {
-		list = make([]*candles.Candle, configs.Variables.CandleBufferLength)
+		list = make([]*repository.Candle, configs.Variables.CandleBufferLength)
 	}
 	last := len(list) - 1
 	if list[last] != nil && candle.Time.Equal(list[last].Time) {

@@ -8,7 +8,6 @@ import (
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository"
-	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository/candles"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"time"
@@ -99,7 +98,7 @@ func (worker *Worker) loadPrimaryData(ws *OhlcWorkerSettings) error {
 	last, err := repository.Candles.ReturnLast(ws.Market.ID, ws.Resolution.ID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			last = new(candles.Candle)
+			last = new(repository.Candle)
 			last.Time = time.Unix(ws.Market.StartTime, 0)
 		} else {
 			log.WithError(err).Error("load last candle failed")
@@ -135,7 +134,7 @@ func (worker *Worker) getCandle(ws *OhlcWorkerSettings, from, to int64) error {
 		return err
 	}
 	for _, candle := range c.Candles {
-		tmp := new(candles.Candle)
+		tmp := new(repository.Candle)
 		mapper.Struct(candle, tmp)
 		tmp.MarketID = ws.Market.ID
 		tmp.ResolutionID = ws.Resolution.ID

@@ -63,20 +63,20 @@ func (s *Service) AddMarket(ctx context.Context, req *chipmunkApi.AddMarketReque
 }
 
 func (s *Service) ReturnCandles(_ context.Context, req *chipmunkApi.BufferedCandlesRequest) (*api.Candles, error) {
-	candles := make([]*api.Candle, 0)
+	response := make([]*api.Candle, 0)
 	for i := 0; ; i += 1000 {
 		list, err := repository.Candles.ReturnList(req.MarketID, req.ResolutionID, i)
 		if err != nil {
 			return nil, err
 		}
 		tmp := make([]*api.Candle, 0)
-		mapper.Slice(list, tmp)
-		candles = append(candles, tmp...)
+		mapper.Slice(list, &tmp)
+		response = append(response, tmp...)
 		if len(list) < 1000 {
 			break
 		}
 	}
-	return &api.Candles{Candles: candles}, nil
+	return &api.Candles{Candles: response}, nil
 }
 
 func (s *Service) ReturnLastCandle(_ context.Context, req *chipmunkApi.BufferedCandlesRequest) (*api.Candle, error) {
