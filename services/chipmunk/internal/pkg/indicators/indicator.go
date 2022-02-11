@@ -1,8 +1,16 @@
 package indicators
 
+import "github.com/google/uuid"
+
 type Indicator interface {
 	Calculate()
-	Update()
+	Update() interface{}
+	GetID() string
+}
+
+type basicConfig struct {
+	MarketName string
+	id         uuid.UUID
 }
 
 type Source string

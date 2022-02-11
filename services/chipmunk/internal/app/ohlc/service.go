@@ -7,28 +7,13 @@ import (
 	"github.com/mrNobody95/Gate/pkg/mapper"
 	chipmunkApi "github.com/mrNobody95/Gate/services/chipmunk/api"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/buffer"
+	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/indicators"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/workers"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/workers/OHLC"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
-
-/**
-* Dear programmer:
-* When I wrote this code, only god And I know how it worked.
-* Now, only god knows it!
-*
-* Therefore, if you are trying to optimize this code And it fails(most surely),
-* please increase this counter as a warning for the next person:
-*
-* total_hours_wasted_here = 0 !!!
-*
-* Best regards, mr-nobody
-* Date: 02.12.21
-* Github: https://github.com/mrNobody95
-* Email: hossein.varmazyar@yahoo.com
-**/
 
 type Service struct {
 }
@@ -58,6 +43,7 @@ func (s *Service) AddMarket(ctx context.Context, req *chipmunkApi.AddMarketReque
 	}
 	settings.Market = req.Market
 	settings.Resolution = req.Resolution
+	settings.Indicators = make([]indicators.Indicator, 0)
 	workers.OHLCWorker.AddMarket(settings)
 	return &api.Void{}, nil
 }

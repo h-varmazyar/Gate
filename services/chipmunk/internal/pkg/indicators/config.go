@@ -15,7 +15,7 @@ type Configuration struct {
 	MacdSlowLength   int    `yaml:"MacdSlowLength"`
 	MacdSource       Source `yaml:"MacdSource"`
 	From             int
-	//RSI
+	//rsi
 
 	//stochastic
 

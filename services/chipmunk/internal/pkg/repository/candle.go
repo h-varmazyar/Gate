@@ -21,13 +21,6 @@ type Candle struct {
 	ResolutionID uint32
 }
 
-//
-//type Candles interface {
-//	Save(*Candle) error
-//	ReturnLast(marketID, resolutionID uint32) (*Candle, error)
-//	ReturnList(marketID, resolutionID uint32, offset int) ([]*Candle, error)
-//}
-
 type CandleRepository struct {
 	DB *gorm.DB
 }

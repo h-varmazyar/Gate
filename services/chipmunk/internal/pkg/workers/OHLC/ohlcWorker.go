@@ -7,6 +7,7 @@ import (
 	"github.com/mrNobody95/Gate/pkg/mapper"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/buffer"
+	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/indicators"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -22,6 +23,7 @@ type OhlcWorkerSettings struct {
 	Context    context.Context
 	Market     *brokerageApi.Market
 	Resolution *brokerageApi.Resolution
+	Indicators []indicators.Indicator
 }
 
 var (
@@ -142,7 +144,14 @@ func (worker *Worker) getCandle(ws *OhlcWorkerSettings, from, to int64) error {
 		if err != nil {
 			log.WithError(err).Error("save candle failed")
 		}
-		buffer.Candles.Enqueue(tmp)
+		indicatorsResponse := make([]buffer.IndicatorResp, len(ws.Indicators))
+		for i, indicator := range ws.Indicators {
+			indicatorsResponse[i] = buffer.IndicatorResp{
+				ID:    indicator.GetID(),
+				Value: indicator.Update(),
+			}
+		}
+		buffer.Markets.Update(ws.Market.Name, tmp, indicatorsResponse...)
 	}
 	return nil
 }
