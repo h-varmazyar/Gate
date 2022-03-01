@@ -1,9 +1,12 @@
 package indicators
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository"
+)
 
 type Indicator interface {
-	Calculate()
+	Calculate([]*repository.Candle, interface{}) error
 	Update() interface{}
 	GetID() string
 }

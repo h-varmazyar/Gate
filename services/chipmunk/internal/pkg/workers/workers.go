@@ -1,6 +1,7 @@
 package workers
 
 import (
+	"context"
 	"github.com/mrNobody95/Gate/pkg/grpcext"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
 	"github.com/mrNobody95/Gate/services/chipmunk/configs"
@@ -26,5 +27,6 @@ func init() {
 		OHLCWorker.HeartbeatInterval = configs.Variables.OHLCWorkerHeartbeat
 		candleConnection := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
 		OHLCWorker.CandleService = brokerageApi.NewCandleServiceClient(candleConnection)
+		OHLCWorker.Cancellations = make(map[string]context.CancelFunc)
 	}
 }

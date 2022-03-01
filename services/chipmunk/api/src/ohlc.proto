@@ -4,7 +4,6 @@ option go_package = "github.com/mrNobody95/Gate/services/chipmunk/api";
 import "api/src/misc.proto";
 import "api/src/models.proto";
 import "services/brokerage/api/src/market.proto";
-import "services/brokerage/api/src/resolution.proto";
 
 service ohlcService {
   rpc AddMarket(AddMarketRequest) returns (api.Void);
@@ -14,8 +13,8 @@ service ohlcService {
 }
 
 message AddMarketRequest {
-  // @inject_tag: json:"resolution"
-  brokerageApi.Resolution Resolution = 1;
+  // @inject_tag: json:"brokerage_id"
+  uint32 BrokerageID = 1;
   // @inject_tag: json:"market"
   brokerageApi.Market Market = 2;
 }

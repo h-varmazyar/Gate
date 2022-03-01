@@ -4,6 +4,7 @@ option go_package = "github.com/mrNobody95/Gate/services/brokerage/api";
 import "api/src/misc.proto";
 import "services/brokerage/api/src/market.proto";
 import "services/brokerage/api/src/resolution.proto";
+import "services/brokerage/api/src/strategy.proto";
 
 service BrokerageService {
   rpc Create(CreateBrokerageReq) returns (Brokerage);
@@ -59,6 +60,8 @@ message Brokerage {
   string StrategyID = 9;
   // @inject_tag: json:"status"
   api.Status Status = 10;
+  // @inject_tag: json:"strategy"
+  Strategy Strategy = 11;
 }
 
 message Brokerages {

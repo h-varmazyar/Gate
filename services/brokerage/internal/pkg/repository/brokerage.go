@@ -21,6 +21,8 @@ type Brokerage struct {
 	ResolutionID uint
 	Resolution   Resolution `gorm:"foreignKey:ResolutionID"`
 	Markets      []*Market  `gorm:"many2many:brokerage_markets"`
+	StrategyID   uint
+	Strategy     *Strategy `gorm:"foreignKey:StrategyID"`
 }
 
 type BrokerageRepository struct {
@@ -37,13 +39,13 @@ func (repository *BrokerageRepository) Delete(id uint32) error {
 
 func (repository *BrokerageRepository) ReturnByID(id uint32) (*Brokerage, error) {
 	brokerage := new(Brokerage)
-	return brokerage, repository.db.Joins("Resolution").Preload("Markets").
+	return brokerage, repository.db.Joins("Resolution").Preload("Markets").Preload("Strategy").
 		Where("brokerages.id = ?", id).First(brokerage).Error
 }
 
 func (repository *BrokerageRepository) ReturnEnables() ([]*Brokerage, error) {
 	brokerages := make([]*Brokerage, 0)
-	return brokerages, repository.db.Joins("Resolution").Preload("Markets").
+	return brokerages, repository.db.Joins("Resolution").Preload("Markets").Preload("Strategy").
 		Where("status LIKE ?", api.Status_Enable.String()).Find(&brokerages).Error
 }
 

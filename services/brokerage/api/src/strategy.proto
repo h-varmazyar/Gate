@@ -1,0 +1,43 @@
+syntax = "proto3";
+package brokerageApi;
+option go_package = "github.com/mrNobody95/Gate/services/brokerage/api";
+
+service StrategyService {
+  rpc Create(CreateStrategyReq) returns(Strategy);
+  rpc Return(ReturnStrategyReq) returns(Strategy);
+}
+
+enum IndicatorNames{
+  RSI = 0;
+  Stochastic = 1;
+  MovingAverage = 2;
+  BollingerBands = 3;
+}
+
+message Strategy {
+  // @inject_tag: json:"id"
+  uint32 ID = 1;
+  // @inject_tag: json:"indicators"
+  repeated Indicator Indicators = 2;
+  // @inject_tag: json:"created_at,omitempty"
+  int64 CreatedAt = 3;
+  // @inject_tag: json:"updated_at,omitempty"
+  int64 UpdatedAt = 4;
+}
+
+message Indicator {
+  // @inject_tag: json:"name"
+  IndicatorNames Name = 1;
+  // @inject_tag: json:"configs"
+  bytes Configs = 2;
+}
+
+message CreateStrategyReq {
+  // @inject_tag: json:"indicators"
+  repeated Indicator Indicators = 1;
+}
+
+message ReturnStrategyReq {
+  // @inject_tag: json:"id"
+  uint32 ID = 1;
+}

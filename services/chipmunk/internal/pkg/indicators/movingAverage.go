@@ -3,18 +3,36 @@ package indicators
 import (
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository"
 )
 
 type MovingAverage struct {
+	basicConfig
 	Source Source
 	Length int
-	Values []*MovingAverageResponse
 }
 
-func (conf *MovingAverage) sma(candles []*repository.Candle) error {
+func NewMovingAverage(length int, source Source, marketName string) *MovingAverage {
+	return &MovingAverage{
+		basicConfig: basicConfig{
+			MarketName: marketName,
+			id:         uuid.New(),
+		},
+		Length: length,
+		Source: source,
+	}
+}
+
+func (conf *MovingAverage) GetID() string {
+	return conf.id.String()
+}
+
+func (conf *MovingAverage) sma(candles []*repository.Candle) ([]float64, error) {
+	response := make([]float64, len(candles))
 	if err := conf.validateMA(len(candles)); err != nil {
-		return err
+		return nil, err
 	}
 	for i := conf.Length - 1; i < len(candles); i++ {
 		sum := float64(0)
@@ -36,32 +54,34 @@ func (conf *MovingAverage) sma(candles []*repository.Candle) error {
 				sum += (innerCandle.Open + innerCandle.Close + innerCandle.High + innerCandle.Low) / 4
 			}
 		}
-		if conf.Values[i] == nil {
-			conf.Values[i] = new(MovingAverageResponse)
-		}
-		conf.Values[i].Simple = sum / float64(conf.Length)
+		response[i] = sum / float64(conf.Length)
 	}
-	return nil
+	return response, nil
 }
 
 func (conf *MovingAverage) updateSMA(candles []*repository.Candle) float64 {
 	smaConf := MovingAverage{
 		Source: conf.Source,
 		Length: conf.Length,
-		Values: make([]*MovingAverageResponse, len(candles)),
 	}
-	if err := smaConf.sma(candles); err != nil {
+	if sma, err := smaConf.sma(candles); err != nil {
 		return float64(0)
+	} else {
+		return sma[len(candles)-1]
 	}
-	return smaConf.Values[len(candles)-1].Simple
 }
 
-func (conf *MovingAverage) Calculate(candles []*repository.Candle) error {
-	conf.Values = make([]*MovingAverageResponse, len(candles))
-	if err := conf.sma(candles); err != nil {
+func (conf *MovingAverage) Calculate(candles []*repository.Candle, response interface{}) error {
+	values := make([]*MovingAverageResponse, len(candles))
+	var sma []float64
+	var err error
+	if sma, err = conf.sma(candles); err != nil {
 		return err
 	}
-	conf.Values[conf.Length-1].Exponential = conf.Values[conf.Length-1].Simple
+	for i, value := range values {
+		value.Simple = sma[i]
+	}
+	values[conf.Length-1].Exponential = values[conf.Length-1].Simple
 
 	factor := 2 / float64(conf.Length+1)
 	for i := conf.Length; i < len(candles); i++ {
@@ -82,12 +102,16 @@ func (conf *MovingAverage) Calculate(candles []*repository.Candle) error {
 		case SourceOHLC4:
 			price = (candles[i].Open + candles[i].Close + candles[i].High + candles[i].Low) / 4
 		}
-		conf.Values[i].Exponential = price*factor + conf.Values[i-1].Exponential*(1-factor)
+		values[i].Exponential = price*factor + values[i-1].Exponential*(1-factor)
 	}
+	response = interface{}(values)
 	return nil
 }
 
-func (conf *MovingAverage) Update(candles []*repository.Candle) *MovingAverageResponse {
+func (conf *MovingAverage) Update() interface{} {
+	candles := buffer.Markets.GetLastNCandles(conf.MarketName, 2)
+	values := buffer.Markets.GetLastNIndicatorValue(conf.MarketName, conf.GetID(), 2)
+
 	i := len(candles) - 1
 	price := float64(0)
 	factor := 2 / float64(conf.Length+1)
@@ -109,7 +133,7 @@ func (conf *MovingAverage) Update(candles []*repository.Candle) *MovingAverageRe
 		price = (candles[i].Open + candles[i].Close + candles[i].High + candles[i].Low) / 4
 	}
 	return &MovingAverageResponse{
-		Exponential: price*factor + conf.Values[i-1].Exponential*(1-factor),
+		Exponential: price*factor + values[i-1].(MovingAverageResponse).Exponential*(1-factor),
 		Simple:      conf.updateSMA(candles),
 	}
 }

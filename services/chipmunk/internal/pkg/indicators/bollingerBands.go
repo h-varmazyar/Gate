@@ -2,19 +2,37 @@ package indicators
 
 import (
 	"errors"
+	"github.com/google/uuid"
+	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository"
 	"math"
 )
 
 type BollingerBands struct {
+	basicConfig
 	Deviation int
 	Length    int
 	Source    Source
-	Values    []*BollingerBandsResponse
 }
 
-func (conf *BollingerBands) Calculate(candles []*repository.Candle) error {
-	conf.Values = make([]*BollingerBandsResponse, len(candles))
+func NewBollingerBands(length, deviation int, source Source, marketName string) *BollingerBands {
+	return &BollingerBands{
+		basicConfig: basicConfig{
+			MarketName: marketName,
+			id:         uuid.New(),
+		},
+		Deviation: deviation,
+		Length:    length,
+		Source:    source,
+	}
+}
+
+func (conf *BollingerBands) GetID() string {
+	return conf.id.String()
+}
+
+func (conf *BollingerBands) Calculate(candles []*repository.Candle, response interface{}) error {
+	values := make([]*BollingerBandsResponse, len(candles))
 	if err := conf.validateBollingerBand(len(candles)); err != nil {
 		return err
 	}
@@ -22,15 +40,14 @@ func (conf *BollingerBands) Calculate(candles []*repository.Candle) error {
 	smaConf := MovingAverage{
 		Source: conf.Source,
 		Length: conf.Length,
-		Values: make([]*MovingAverageResponse, len(cloned)),
 	}
-	err := smaConf.sma(cloned)
+	sma, err := smaConf.sma(cloned)
 	if err != nil {
 		return err
 	}
 	for i := conf.Length - 1; i < len(candles); i++ {
 		variance := float64(0)
-		ma := smaConf.Values[i].Simple
+		ma := sma[i]
 		for j := 1 + i - conf.Length; j <= i; j++ {
 			sum := float64(0)
 			switch conf.Source {
@@ -52,27 +69,27 @@ func (conf *BollingerBands) Calculate(candles []*repository.Candle) error {
 			variance += math.Pow(ma-sum, 2)
 		}
 		variance /= float64(conf.Length)
-		conf.Values[i].MA = ma
-		conf.Values[i].UpperBand = ma + float64(conf.Deviation)*math.Sqrt(variance)
-		conf.Values[i].LowerBand = ma - float64(conf.Deviation)*math.Sqrt(variance)
+		values[i].MA = ma
+		values[i].UpperBand = ma + float64(conf.Deviation)*math.Sqrt(variance)
+		values[i].LowerBand = ma - float64(conf.Deviation)*math.Sqrt(variance)
 	}
+	response = interface{}(values)
 	return nil
 }
 
-func (conf *BollingerBands) Update(candles []*repository.Candle) (*BollingerBandsResponse, error) {
-	response := new(BollingerBandsResponse)
-	cloned := cloneCandles(candles[len(candles)-conf.Length:])
+func (conf *BollingerBands) Update() interface{} {
+	candles := buffer.Markets.GetLastNCandles(conf.MarketName, conf.Length)
+
 	smaConf := MovingAverage{
 		Source: conf.Source,
 		Length: conf.Length,
-		Values: make([]*MovingAverageResponse, len(cloned)),
 	}
-	err := smaConf.sma(cloned)
+	sma, err := smaConf.sma(candles)
 	if err != nil {
-		return nil, err
+		return nil
 	}
 	variance := float64(0)
-	ma := smaConf.Values[len(cloned)-1].Simple
+	ma := sma[len(candles)-1]
 	for j := 0; j < len(candles); j++ {
 		sum := float64(0)
 		switch conf.Source {
@@ -94,15 +111,11 @@ func (conf *BollingerBands) Update(candles []*repository.Candle) (*BollingerBand
 		variance += math.Pow(ma-sum, 2)
 	}
 	variance /= float64(conf.Length)
-	//conf.lock.Lock()
-	//candles[len(candles)-1].BollingerBands.MovingAverage = ma
-	//candles[len(candles)-1].BollingerBands.UpperBand = ma + float64(conf.Deviation)*math.Sqrt(variance)
-	//candles[len(candles)-1].BollingerBands.LowerBand = ma - float64(conf.Deviation)*math.Sqrt(variance)
-	//conf.lock.Unlock()
-	response.MA = ma
-	response.UpperBand = ma + float64(conf.Deviation)*math.Sqrt(variance)
-	response.LowerBand = ma - float64(conf.Deviation)*math.Sqrt(variance)
-	return response, nil
+	return &BollingerBandsResponse{
+		UpperBand: ma + float64(conf.Deviation)*math.Sqrt(variance),
+		LowerBand: ma - float64(conf.Deviation)*math.Sqrt(variance),
+		MA:        ma,
+	}
 }
 
 func (conf *BollingerBands) validateBollingerBand(length int) error {

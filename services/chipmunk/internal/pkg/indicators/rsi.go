@@ -27,9 +27,9 @@ func (conf *rsi) GetID() string {
 	return conf.id.String()
 }
 
-func (conf *rsi) Calculate(candles []*repository.Candle) ([]*RSIResponse, error) {
+func (conf *rsi) Calculate(candles []*repository.Candle, response interface{}) error {
 	if err := conf.validateRSI(len(candles)); err != nil {
-		return nil, err
+		return err
 	}
 	values := make([]*RSIResponse, len(candles))
 
@@ -67,10 +67,11 @@ func (conf *rsi) Calculate(candles []*repository.Candle) ([]*RSIResponse, error)
 			RSI:  100 - (100 / (1 + rs)),
 		}
 	}
-	return values, nil
+	response = interface{}(values)
+	return nil
 }
 
-func (conf *rsi) Update() *RSIResponse {
+func (conf *rsi) Update() interface{} {
 	candles := buffer.Markets.GetLastNCandles(conf.MarketName, 2)
 	values := buffer.Markets.GetLastNIndicatorValue(conf.MarketName, conf.GetID(), 2)
 

@@ -2,18 +2,36 @@ package indicators
 
 import (
 	"errors"
+	"github.com/google/uuid"
+	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository"
 	"math"
 )
 
-type Stochastic struct {
+type stochastic struct {
+	basicConfig
 	Length  int
 	SmoothK int
 	SmoothD int
-	Values  []*StochasticResponse
 }
 
-func (conf *Stochastic) validateStochastic(length int) error {
+func NewStochastic(length, smoothK, smoothD int, marketName string) *stochastic {
+	return &stochastic{
+		basicConfig: basicConfig{
+			MarketName: marketName,
+			id:         uuid.New(),
+		},
+		Length:  length,
+		SmoothK: smoothK,
+		SmoothD: smoothD,
+	}
+}
+
+func (conf *stochastic) GetID() string {
+	return conf.id.String()
+}
+
+func (conf *stochastic) validateStochastic(length int) error {
 	if length <= conf.Length {
 		return errors.New("candles length must bigger or equal than indicator period length")
 	}
@@ -26,11 +44,11 @@ func (conf *Stochastic) validateStochastic(length int) error {
 	return nil
 }
 
-func (conf *Stochastic) Calculate(candles []*repository.Candle) error {
+func (conf *stochastic) Calculate(candles []*repository.Candle, response interface{}) error {
 	if err := conf.validateStochastic(len(candles)); err != nil {
 		return err
 	}
-
+	values := make([]*StochasticResponse, len(candles))
 	for i := conf.Length - 1; i < len(candles); i++ {
 		lowest := math.MaxFloat64
 		highest := float64(0)
@@ -43,19 +61,25 @@ func (conf *Stochastic) Calculate(candles []*repository.Candle) error {
 				highest = candles[j].High
 			}
 		}
-		conf.Values[i].FastK = 100 * ((candles[i].Close - lowest) / (highest - lowest))
+		values[i].FastK = 100 * ((candles[i].Close - lowest) / (highest - lowest))
 
 		sum := float64(0)
 		for j := i - conf.SmoothK + 1; j <= i; j++ {
-			sum += conf.Values[j].FastK
+			sum += values[j].FastK
 		}
-		conf.Values[i].IndexK = sum / float64(conf.SmoothK)
-		conf.Values[i].IndexD = calculateIndexD(conf.Values[i-conf.SmoothD+1 : i+1])
+		values[i].IndexK = sum / float64(conf.SmoothK)
+		values[i].IndexD = calculateIndexD(values[i-conf.SmoothD+1 : i+1])
 	}
+	response = interface{}(values)
 	return nil
 }
 
-func (conf *Stochastic) Update(candles []*repository.Candle) *StochasticResponse {
+func (conf *stochastic) Update() interface{} {
+	candles := buffer.Markets.GetLastNCandles(conf.MarketName, conf.Length)
+	values := make([]*StochasticResponse, conf.Length)
+	for i, resp := range buffer.Markets.GetLastNIndicatorValue(conf.MarketName, conf.GetID(), conf.Length) {
+		values[i] = resp.(*StochasticResponse)
+	}
 	lowest := math.MaxFloat64
 	highest := float64(0)
 	lastIndex := len(candles) - 1
@@ -71,18 +95,12 @@ func (conf *Stochastic) Update(candles []*repository.Candle) *StochasticResponse
 
 	sum := fastK
 	for j := len(candles) - conf.SmoothK; j < len(candles)-1; j++ {
-		sum += conf.Values[j].FastK
+		sum += values[j].FastK
 	}
-
-	//conf.lock.Lock()
-	//candles[lastIndex].FastK = fastK
-	//candles[lastIndex].IndexK = sum / float64(conf.SmoothK)
-	//candles[lastIndex].IndexD = calculateIndexD(candles[lastIndex-conf.SmoothD+1:])
-	//conf.lock.Unlock()
 
 	return &StochasticResponse{
 		IndexK: sum / float64(conf.SmoothK),
-		IndexD: calculateIndexD(conf.Values[lastIndex-conf.SmoothD+1:]),
+		IndexD: calculateIndexD(values[lastIndex-conf.SmoothD+1:]),
 		FastK:  fastK,
 	}
 }
