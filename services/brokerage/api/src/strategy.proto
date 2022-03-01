@@ -1,10 +1,12 @@
 syntax = "proto3";
 package brokerageApi;
 option go_package = "github.com/mrNobody95/Gate/services/brokerage/api";
+import "api/src/misc.proto";
 
 service StrategyService {
   rpc Create(CreateStrategyReq) returns(Strategy);
   rpc Return(ReturnStrategyReq) returns(Strategy);
+  rpc List(api.Void) returns (Strategies);
 }
 
 enum IndicatorNames{
@@ -17,12 +19,21 @@ enum IndicatorNames{
 message Strategy {
   // @inject_tag: json:"id"
   uint32 ID = 1;
+  // @inject_tag: json:"name"
+  uint32 Name = 2;
+  // @inject_tag: json:"description"
+  uint32 Description = 3;
   // @inject_tag: json:"indicators"
-  repeated Indicator Indicators = 2;
+  repeated Indicator Indicators = 4;
   // @inject_tag: json:"created_at,omitempty"
-  int64 CreatedAt = 3;
+  int64 CreatedAt = 5;
   // @inject_tag: json:"updated_at,omitempty"
-  int64 UpdatedAt = 4;
+  int64 UpdatedAt = 6;
+}
+
+message Strategies {
+  // @inject_tag: json:"elements"
+  repeated Strategy Elements = 1;
 }
 
 message Indicator {

@@ -9,6 +9,7 @@ import (
 	"github.com/mrNobody95/Gate/services/dolphin/configs"
 	"github.com/mrNobody95/Gate/services/dolphin/internal/pkg/app"
 	"net/http"
+	"strconv"
 )
 
 type brokerageController struct {
@@ -37,7 +38,11 @@ func (c *brokerageController) list(ctx app.Context) error {
 }
 
 func (c *brokerageController) show(ctx app.Context) error {
-	brokerage, err := c.brokerageService.Get(ctx, &brokerageApi.BrokerageIDReq{ID: ctx.Param("brokerage_id")})
+	id, err := strconv.ParseUint(ctx.Param("brokerage_id"), 10, 32)
+	if err != nil {
+		return err
+	}
+	brokerage, err := c.brokerageService.Get(ctx, &brokerageApi.BrokerageIDReq{ID: uint32(id)})
 	if err != nil {
 		return ctx.Error(http.StatusBadRequest, err)
 	}
@@ -60,8 +65,12 @@ func (c *brokerageController) switchStatus(ctx app.Context) error {
 	if ctx.Request().Form.Get("tradingCheckbox") != "" {
 		trading = true
 	}
+	id, err := strconv.ParseUint(ctx.Param("brokerage_id"), 10, 32)
+	if err != nil {
+		return err
+	}
 	if _, err := c.brokerageService.ChangeStatus(ctx, &brokerageApi.StatusChangeRequest{
-		ID:      ctx.Param("brokerage_id"),
+		ID:      uint32(id),
 		OHLC:    ohlc,
 		Trading: trading,
 	}); err != nil {
@@ -92,7 +101,11 @@ func (c *brokerageController) add(ctx app.Context) error {
 	}
 	brokerage.Markets = new(brokerageApi.Markets)
 	for _, marketID := range ctx.Request().Form["marketsCheckbox"] {
-		brokerage.Markets.Markets = append(brokerage.Markets.Markets, &brokerageApi.Market{ID: marketID})
+		id, err := strconv.ParseUint(marketID, 10, 32)
+		if err != nil {
+			return err
+		}
+		brokerage.Markets.Markets = append(brokerage.Markets.Markets, &brokerageApi.Market{ID: uint32(id)})
 	}
 	brokerage.ResolutionID = ctx.Request().Form.Get("resolutionRadio")
 	brokerage.StrategyID = ctx.Request().Form.Get("strategyRadio")

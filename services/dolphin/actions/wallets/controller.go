@@ -20,10 +20,10 @@ func newWalletController() walletController {
 }
 
 func (c *walletController) list(ctx app.Context) error {
-	response, err := c.walletService.List(ctx, &brokerageApi.WalletListRequest{BrokerageName: brokerageApi.Names_All.String()})
-	if err != nil {
-		return ctx.Error(http.StatusBadRequest, err)
-	}
-	ctx.Set("wallets", response.Wallets)
+	//response, err := c.walletService.List(ctx, &brokerageApi.WalletListRequest{BrokerageName: brokerageApi.Names_All.String()})
+	//if err != nil {
+	//	return ctx.Error(http.StatusBadRequest, err)
+	//}
+	//ctx.Set("wallets", response.Wallets)
 	return ctx.Render(http.StatusOK, "wallets/list", viewHelpers.Sum, viewHelpers.ResolutionLabel, viewHelpers.TimeStampFormat)
 }

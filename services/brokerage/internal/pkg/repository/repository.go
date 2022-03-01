@@ -21,6 +21,12 @@ func LoadRepositories(dsn string) {
 	if err := db.AutoMigrate(new(Asset)); err != nil {
 		log.WithError(err).Fatal("migration failed for asset")
 	}
+	if err := db.AutoMigrate(new(Indicator)); err != nil {
+		log.WithError(err).Fatal("migration failed for indicator")
+	}
+	if err := db.AutoMigrate(new(Strategy)); err != nil {
+		log.WithError(err).Fatal("migration failed for strategy")
+	}
 	if err := db.AutoMigrate(new(Brokerage)); err != nil {
 		log.WithError(err).Fatal("migration failed for brokerage")
 	}
@@ -29,9 +35,6 @@ func LoadRepositories(dsn string) {
 	}
 	if err := db.AutoMigrate(new(Resolution)); err != nil {
 		log.WithError(err).Fatal("migration failed for resolution")
-	}
-	if err := db.AutoMigrate(new(Strategy)); err != nil {
-		log.WithError(err).Fatal("migration failed for strategy")
 	}
 	Assets = &AssetRepository{db: db}
 	Markets = &MarketRepository{db: db}

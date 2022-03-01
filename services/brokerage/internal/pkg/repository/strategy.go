@@ -1,16 +1,14 @@
 package repository
 
 import (
-	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
 	"gorm.io/gorm"
 )
 
 type Strategy struct {
 	gorm.Model
-	Indicators struct {
-		Name    brokerageApi.IndicatorNames
-		Configs []byte
-	}
+	Name        string
+	Description string
+	Indicators  []Indicator `gorm:"foreignKey:StrategyRefer"`
 }
 
 type StrategyRepository struct {
@@ -24,4 +22,9 @@ func (r *StrategyRepository) Create(strategy *Strategy) error {
 func (r *StrategyRepository) Return(strategyID uint32) (*Strategy, error) {
 	strategy := new(Strategy)
 	return strategy, r.db.Model(new(Strategy)).Where("id = ?", strategyID).Error
+}
+
+func (r *StrategyRepository) List() ([]*Strategy, error) {
+	strategies := make([]*Strategy, 0)
+	return strategies, r.db.Model(new(Strategy)).Find(&strategies).Error
 }

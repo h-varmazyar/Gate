@@ -2,6 +2,7 @@ package strategy
 
 import (
 	"context"
+	"github.com/mrNobody95/Gate/api"
 	"github.com/mrNobody95/Gate/pkg/mapper"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
@@ -44,5 +45,15 @@ func (s *Service) Return(ctx context.Context, req *brokerageApi.ReturnStrategyRe
 	}
 	response := new(brokerageApi.Strategy)
 	mapper.Struct(strategy, response)
+	return response, nil
+}
+
+func (s *Service) List(ctx context.Context, _ *api.Void) (*brokerageApi.Strategies, error) {
+	strategies, err := repository.Strategies.List()
+	if err != nil {
+		return nil, err
+	}
+	response := new(brokerageApi.Strategies)
+	mapper.Slice(strategies, &response.Elements)
 	return response, nil
 }

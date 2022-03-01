@@ -92,29 +92,51 @@ func parseIndicators(ctx context.Context, market string, strategy *brokerageApi.
 	response := make([]indicators.Indicator, 0)
 	for _, indicator := range strategy.Indicators {
 		var err error
+		if indicator == nil {
+			continue
+		}
 		switch indicator.Name {
 		case brokerageApi.IndicatorNames_RSI:
-			tmp := &struct {
+			rsiSettings := &struct {
 				Length int `json:"length"`
 			}{}
-			if err = json.Unmarshal(indicator.Configs, tmp); err != nil {
+			if err = json.Unmarshal(indicator.Configs, rsiSettings); err != nil {
 				return nil, err
 			}
-			response = append(response, indicators.NewRSI(tmp.Length, market))
+			response = append(response, indicators.NewRSI(rsiSettings.Length, market))
 		case brokerageApi.IndicatorNames_Stochastic:
-			tmp := &struct {
+			stochasticSettings := &struct {
 				Length  int `json:"length"`
 				SmoothK int `json:"smooth_k"`
 				SmoothD int `json:"smooth_d"`
 			}{}
-			if err = json.Unmarshal(indicator.Configs, tmp); err != nil {
+			if err = json.Unmarshal(indicator.Configs, stochasticSettings); err != nil {
 				return nil, err
 			}
-			response = append(response, indicators.NewStochastic(tmp.Length, tmp.SmoothK, tmp.SmoothD, market))
+			response = append(response, indicators.NewStochastic(stochasticSettings.Length, stochasticSettings.SmoothK, stochasticSettings.SmoothD, market))
 		case brokerageApi.IndicatorNames_MovingAverage:
+			movingAverageSettings := &struct {
+				Length int    `json:"length"`
+				Source string `json:"source"`
+			}{}
+			if err = json.Unmarshal(indicator.Configs, movingAverageSettings); err != nil {
+				return nil, err
+			}
+			response = append(response, indicators.NewMovingAverage(movingAverageSettings.Length, indicators.Source(movingAverageSettings.Source), market))
 		case brokerageApi.IndicatorNames_BollingerBands:
+			bollingerBandsSettings := &struct {
+				Length    int    `json:"length"`
+				Deviation int    `json:"deviation"`
+				Source    string `json:"source"`
+			}{}
+			if err = json.Unmarshal(indicator.Configs, bollingerBandsSettings); err != nil {
+				return nil, err
+			}
+			response = append(response, indicators.NewBollingerBands(bollingerBandsSettings.Length, bollingerBandsSettings.Deviation,
+				indicators.Source(bollingerBandsSettings.Source), market))
 		default:
 			return nil, errors.NewWithSlug(ctx, codes.NotFound, "no indicators found")
 		}
 	}
+	return response, nil
 }

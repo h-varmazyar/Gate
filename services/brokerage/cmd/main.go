@@ -37,7 +37,7 @@ import (
 
 var (
 	Name    = "brokerage"
-	Version = "v0.6.0"
+	Version = "v0.7.0"
 )
 
 func loadConfig() (*configs.Configs, error) {

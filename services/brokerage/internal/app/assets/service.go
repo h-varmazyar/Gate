@@ -3,7 +3,6 @@ package assets
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/mrNobody95/Gate/api"
 	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
 	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
@@ -49,11 +48,7 @@ func (s *Service) Set(_ context.Context, asset *brokerageApi.Asset) (*api.Void, 
 	tmp := new(repository.Asset)
 	tmp.Name = asset.Name
 	tmp.Symbol = asset.Symbol
-	if id, err := uuid.Parse(asset.ID); err != nil {
-		tmp.ID = uuid.New()
-	} else {
-		tmp.ID = id
-	}
+	tmp.ID = uint(asset.ID)
 	if asset.IssueDate == 0 {
 		return nil, fmt.Errorf("issue date must be declared")
 	} else {
@@ -69,7 +64,7 @@ func (s *Service) GetByName(_ context.Context, req *brokerageApi.GetAssetRequest
 		return nil, err
 	}
 	return &brokerageApi.Asset{
-		ID:        asset.ID.String(),
+		ID:        uint32(asset.ID),
 		Name:      asset.Name,
 		Symbol:    asset.Symbol,
 		IssueDate: asset.IssueDate.Unix(),
@@ -84,7 +79,7 @@ func (s *Service) List(_ context.Context, req *brokerageApi.GetAssetListRequest)
 		assetList := make([]*brokerageApi.Asset, len(list))
 		for i, asset := range list {
 			assetList[i] = &brokerageApi.Asset{
-				ID:        asset.ID.String(),
+				ID:        uint32(asset.ID),
 				Name:      asset.Name,
 				Symbol:    asset.Symbol,
 				IssueDate: asset.IssueDate.Unix(),

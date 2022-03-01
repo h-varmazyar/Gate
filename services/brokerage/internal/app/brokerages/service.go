@@ -164,8 +164,8 @@ func (s *Service) ChangeStatus(ctx context.Context, req *brokerageApi.StatusChan
 				m := new(brokerageApi.Market)
 				mapper.Struct(market, m)
 				if _, err := s.ohlcService.AddMarket(ctx, &chipmunkApi.AddMarketRequest{
-					Resolution: resolution,
-					Market:     m,
+					BrokerageID: uint32(brokerage.ID),
+					Market:      m,
 				}); err != nil {
 					log.WithError(err).WithField("market", market.ID).WithField("brokerage", brokerage.ID)
 				}

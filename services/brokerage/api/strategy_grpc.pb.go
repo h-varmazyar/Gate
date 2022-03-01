@@ -4,6 +4,7 @@ package api
 
 import (
 	context "context"
+	api "github.com/mrNobody95/Gate/api"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -20,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 type StrategyServiceClient interface {
 	Create(ctx context.Context, in *CreateStrategyReq, opts ...grpc.CallOption) (*Strategy, error)
 	Return(ctx context.Context, in *ReturnStrategyReq, opts ...grpc.CallOption) (*Strategy, error)
+	List(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*Strategies, error)
 }
 
 type strategyServiceClient struct {
@@ -48,12 +50,22 @@ func (c *strategyServiceClient) Return(ctx context.Context, in *ReturnStrategyRe
 	return out, nil
 }
 
+func (c *strategyServiceClient) List(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*Strategies, error) {
+	out := new(Strategies)
+	err := c.cc.Invoke(ctx, "/brokerageApi.StrategyService/List", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StrategyServiceServer is the server API for StrategyService service.
 // All implementations should embed UnimplementedStrategyServiceServer
 // for forward compatibility
 type StrategyServiceServer interface {
 	Create(context.Context, *CreateStrategyReq) (*Strategy, error)
 	Return(context.Context, *ReturnStrategyReq) (*Strategy, error)
+	List(context.Context, *api.Void) (*Strategies, error)
 }
 
 // UnimplementedStrategyServiceServer should be embedded to have forward compatible implementations.
@@ -65,6 +77,9 @@ func (UnimplementedStrategyServiceServer) Create(context.Context, *CreateStrateg
 }
 func (UnimplementedStrategyServiceServer) Return(context.Context, *ReturnStrategyReq) (*Strategy, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Return not implemented")
+}
+func (UnimplementedStrategyServiceServer) List(context.Context, *api.Void) (*Strategies, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 
 // UnsafeStrategyServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -114,6 +129,24 @@ func _StrategyService_Return_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StrategyService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(api.Void)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StrategyServiceServer).List(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/brokerageApi.StrategyService/List",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StrategyServiceServer).List(ctx, req.(*api.Void))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StrategyService_ServiceDesc is the grpc.ServiceDesc for StrategyService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -128,6 +161,10 @@ var StrategyService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Return",
 			Handler:    _StrategyService_Return_Handler,
+		},
+		{
+			MethodName: "List",
+			Handler:    _StrategyService_List_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
