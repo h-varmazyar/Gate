@@ -1,8 +1,8 @@
 package viewHelpers
 
 import (
-	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
-	"github.com/mrNobody95/Gate/services/dolphin/internal/pkg/app"
+	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	"github.com/h-varmazyar/Gate/services/dolphin/internal/pkg/app"
 )
 
 var (

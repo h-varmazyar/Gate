@@ -1,7 +1,7 @@
 package buffer
 
 import (
-	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
+	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
 	"sync"
 )
 
@@ -37,6 +37,7 @@ func (buffer *walletBuffer) AddOrUpdate(input *brokerageApi.Wallet) {
 
 func (buffer *walletBuffer) AddOrUpdateList(input []*brokerageApi.Wallet) {
 	walletLock.Lock()
+	buffer.wallets = make(map[string]*brokerageApi.Wallet)
 	for _, wallet := range input {
 		buffer.wallets[wallet.AssetName] = wallet
 	}

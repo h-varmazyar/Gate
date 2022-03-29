@@ -1,13 +1,15 @@
 package brokerages
 
 import (
-	"fmt"
-	"github.com/mrNobody95/Gate/api"
-	"github.com/mrNobody95/Gate/pkg/grpcext"
-	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
-	"github.com/mrNobody95/Gate/services/dolphin/actions/viewHelpers"
-	"github.com/mrNobody95/Gate/services/dolphin/configs"
-	"github.com/mrNobody95/Gate/services/dolphin/internal/pkg/app"
+	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/pkg/errors"
+	"github.com/h-varmazyar/Gate/pkg/grpcext"
+	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	"github.com/h-varmazyar/Gate/services/dolphin/actions/viewHelpers"
+	"github.com/h-varmazyar/Gate/services/dolphin/configs"
+	"github.com/h-varmazyar/Gate/services/dolphin/internal/pkg/app"
+	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc/codes"
 	"net/http"
 	"strconv"
 )
@@ -15,6 +17,7 @@ import (
 type brokerageController struct {
 	brokerageService  brokerageApi.BrokerageServiceClient
 	marketService     brokerageApi.MarketServiceClient
+	strategyService   brokerageApi.StrategyServiceClient
 	resolutionService brokerageApi.ResolutionServiceClient
 }
 
@@ -22,6 +25,7 @@ func newBrokerageController() brokerageController {
 	return brokerageController{
 		brokerageService:  brokerageApi.NewBrokerageServiceClient(grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)),
 		marketService:     brokerageApi.NewMarketServiceClient(grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)),
+		strategyService:   brokerageApi.NewStrategyServiceClient(grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)),
 		resolutionService: brokerageApi.NewResolutionServiceClient(grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)),
 	}
 }
@@ -56,7 +60,6 @@ func (c *brokerageController) overview(ctx app.Context) error {
 }
 
 func (c *brokerageController) switchStatus(ctx app.Context) error {
-	fmt.Println(ctx.Param("brokerage_id"))
 	ohlc := false
 	trading := false
 	if ctx.Request().Form.Get("ohlcCheckbox") != "" {
@@ -80,8 +83,14 @@ func (c *brokerageController) switchStatus(ctx app.Context) error {
 }
 
 func (c *brokerageController) showAddPage(ctx app.Context) error {
+	strategies, err := c.strategyService.List(ctx, new(api.Void))
+	if err != nil {
+		log.WithError(err).Error("failed to load strategies")
+		return errors.NewWithSlug(ctx, codes.FailedPrecondition, "failed to load strategiess")
+	}
 	ctx.Set("resolutions", make([]*brokerageApi.Resolution, 0))
 	ctx.Set("markets", make([]*brokerageApi.Market, 0))
+	ctx.Set("strategies", strategies.Elements)
 	return ctx.Render(http.StatusOK, "brokerages/add", viewHelpers.Sum, viewHelpers.ResolutionLabel)
 }
 
@@ -93,7 +102,8 @@ func (c *brokerageController) add(ctx app.Context) error {
 	if brokerageName, ok := brokerageApi.Names_value[ctx.Request().Form.Get("brokerageRadio")]; ok {
 		brokerage.Name = brokerageApi.Names(brokerageName)
 	} else {
-		fmt.Println("brokerage name not:", ctx.Request().Form.Get("brokerageRadio"))
+		log.Error("brokerage name not:", ctx.Request().Form.Get("brokerageRadio"))
+		return errors.NewWithSlug(ctx, codes.FailedPrecondition, "wrong brokerage name")
 	}
 	brokerage.Auth = &api.Auth{
 		AccessID:  ctx.Request().Form.Get("access-id"),
@@ -108,8 +118,12 @@ func (c *brokerageController) add(ctx app.Context) error {
 		brokerage.Markets.Markets = append(brokerage.Markets.Markets, &brokerageApi.Market{ID: uint32(id)})
 	}
 	brokerage.ResolutionID = ctx.Request().Form.Get("resolutionRadio")
-	brokerage.StrategyID = ctx.Request().Form.Get("strategyRadio")
-	_, err := c.brokerageService.Create(ctx, brokerage)
+	strategyID, err := strconv.ParseUint(ctx.Request().Form.Get("strategyRadio"), 10, 32)
+	if err != nil {
+		return err
+	}
+	brokerage.StrategyID = uint32(strategyID)
+	_, err = c.brokerageService.Create(ctx, brokerage)
 	if err != nil {
 		return ctx.Error(http.StatusBadRequest, err)
 	}

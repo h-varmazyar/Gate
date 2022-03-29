@@ -6,17 +6,20 @@ import (
 
 type Strategy struct {
 	gorm.Model
-	Name        string
-	Description string
-	Indicators  []Indicator `gorm:"foreignKey:StrategyRefer"`
+	Name              string
+	Description       string
+	MinDailyProfit    float64
+	MinProfitPerTrade float64
+	MaxFundPerTrade   float64
+	Indicators        []Indicator `gorm:"foreignKey:StrategyRefer"`
 }
 
 type StrategyRepository struct {
 	db *gorm.DB
 }
 
-func (r *StrategyRepository) Create(strategy *Strategy) error {
-	return r.db.Model(new(Strategy)).Create(strategy).Error
+func (r *StrategyRepository) Save(strategy *Strategy) error {
+	return r.db.Save(strategy).Error
 }
 
 func (r *StrategyRepository) Return(strategyID uint32) (*Strategy, error) {

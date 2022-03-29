@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mrNobody95/Gate.git"
+    "url": "git+https://github.com/h-varmazyar/Gate.git"
   },
   "nodemonConfig": {
     "ext": "go",

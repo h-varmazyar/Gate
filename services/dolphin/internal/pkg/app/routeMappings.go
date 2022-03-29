@@ -2,7 +2,7 @@ package app
 
 import (
 	"fmt"
-	"github.com/mrNobody95/Gate/services/dolphin/configs"
+	"github.com/h-varmazyar/Gate/services/dolphin/configs"
 	"net/http"
 	"net/url"
 	"os"

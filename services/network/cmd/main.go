@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/mrNobody95/Gate/pkg/envext"
-	"github.com/mrNobody95/Gate/pkg/service"
-	"github.com/mrNobody95/Gate/services/network/internal/app"
+	"github.com/h-varmazyar/Gate/pkg/envext"
+	"github.com/h-varmazyar/Gate/pkg/service"
+	"github.com/h-varmazyar/Gate/services/network/internal/app"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"net"
@@ -21,7 +21,7 @@ import (
 *
 * Best regards, mr-nobody
 * Date: 12.11.21
-* Github: https://github.com/mrNobody95
+* Github: https://github.com/h-varmazyar
 * Email: hossein.varmazyar@yahoo.com
 **/
 

@@ -1,0 +1,130 @@
+{{ template "base" .}}
+
+{{ define "title" }}resolution list{{ end }}
+
+{{ define "main" }}
+
+<!-- Page wrapper start -->
+<main class="page-wrapper">
+    <!-- Main container start -->
+    <div class="main-container">
+
+        <div class="row gutters">
+            <div class="col-12">
+                <h3>افزودن استراتژی</h3>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="padding-a-1 inline-grid ltr">
+
+                            <button class="btn btn-outline-info margin-r-1" data-target="#addMarket" data-toggle="modal"
+                                    type="button">
+                                <span class="icon-add"></span>
+                            </button>
+
+                            <div aria-hidden="true" aria-labelledby="addMarketLabel" class="modal fade" id="addMarket"
+                                 role="dialog" tabindex="-1">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="addMarketLabel">افزودن بازه زمانی</h5>
+                                            <button aria-label="Close" class="close" data-dismiss="modal" type="button">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <form action="./add" method="post">
+                                            <div class="modal-body">
+                                                <div class="input-group-m">
+                                                    <label class="subtitle" for="label">برچسب</label>
+                                                    <input class="form-control" id="label" name="label"
+                                                           placeholder="وارد کردن برچسب" type="text">
+                                                </div>
+                                                <div class="input-group-m">
+                                                    <label class="subtitle" for="value">مقدار</label>
+                                                    <input class="form-control" id="value" name="value"
+                                                           placeholder="وارد کردن مقدار" type="text">
+                                                </div>
+                                                <div class="input-group-m">
+                                                    <label class="subtitle" for="duration">مدت زمان</label>
+                                                    <input class="form-control" id="duration" name="duration"
+                                                           placeholder="وارد کردن مدت زمان" type="number">
+                                                </div>
+                                                <div class="input-group-m">
+
+                                                </div>
+                                                <div class="input-group-m">
+                                                    <div class="subtitle">صرافی</div>
+                                                    <div class="custom-control custom-radio custom-control-inline">
+                                                        <input class="custom-control-input" id="coinex-radio"
+                                                               name="brokerageRadio" type="radio" value="Coinex">
+                                                        <label class="custom-control-label"
+                                                               for="coinex-radio">کوینکس</label>
+                                                    </div>
+                                                    <div class="custom-control custom-radio custom-control-inline">
+                                                        <input class="custom-control-input" id="nobitex-radio"
+                                                               name="brokerageRadio" type="radio" value="Nobitex">
+                                                        <label class="custom-control-label"
+                                                               for="nobitex-radio">نوبیتکس</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button class="btn btn-secondary margin-l-1" data-dismiss="modal"
+                                                        type="button">بستن
+                                                </button>
+                                                <button class="btn btn-primary" type="submit">افزودن</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="padding-a-1">
+                            <div class="table-responsive">
+                                <table class="table custom-table">
+                                    <thead>
+                                    <tr>
+                                        <th width="1">#</th>
+                                        <th>نام</th>
+                                        <th>توضیحات</th>
+                                        <th>حداقل سود روزانه</th>
+                                        <th>حداقل سود در معامله</th>
+                                        <th>حداکثر سرمایه در معامله</th>
+                                        <th width="1">
+                                            <span class="range-text"></span>
+                                        </th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {{ range $index, $strategy := .strategies }}
+                                    <tr>
+                                        <td>{{ Sum $index 1}}</td>
+                                        <td>{{ $strategy.Name }}</td>
+                                        <td>{{ $strategy.Description }}</td>
+                                        <td>{{ $strategy.MinDailyProfit }}</td>
+                                        <td>{{ $strategy.MinProfitPerTrade }}</td>
+                                        <td>{{ $strategy.MaxFundPerTrade }}</td>
+                                    </tr>
+                                    {{ end }}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+    <!-- Main container end -->
+
+    <!-- Required jQuery first, then Bootstrap Bundle JS -->
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/moment.js"></script>
+    <!-- Main Js Required -->
+    <script src="/js/main.js"></script>
+</main>
+<!-- Page wrapper end -->
+
+{{ end }}

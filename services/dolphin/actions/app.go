@@ -2,12 +2,13 @@ package actions
 
 import (
 	"fmt"
-	"github.com/mrNobody95/Gate/services/dolphin/actions/brokerages"
-	"github.com/mrNobody95/Gate/services/dolphin/actions/markets"
-	"github.com/mrNobody95/Gate/services/dolphin/actions/resolutions"
-	"github.com/mrNobody95/Gate/services/dolphin/actions/wallets"
-	"github.com/mrNobody95/Gate/services/dolphin/configs"
-	"github.com/mrNobody95/Gate/services/dolphin/internal/pkg/app"
+	"github.com/h-varmazyar/Gate/services/dolphin/actions/brokerages"
+	"github.com/h-varmazyar/Gate/services/dolphin/actions/markets"
+	"github.com/h-varmazyar/Gate/services/dolphin/actions/resolutions"
+	"github.com/h-varmazyar/Gate/services/dolphin/actions/strategies"
+	"github.com/h-varmazyar/Gate/services/dolphin/actions/wallets"
+	"github.com/h-varmazyar/Gate/services/dolphin/configs"
+	"github.com/h-varmazyar/Gate/services/dolphin/internal/pkg/app"
 	"log"
 	"os"
 
@@ -52,8 +53,9 @@ func App() *app.App {
 		})
 
 		brokerages.RegisterRoutes(application)
-		resolutions.RegisterRoutes(application)
 		markets.RegisterRoutes(application)
+		resolutions.RegisterRoutes(application)
+		strategies.RegisterRoutes(application)
 		wallets.RegisterRoutes(application)
 
 		application.ServeFiles("/", packr.New("../public", "../public"))

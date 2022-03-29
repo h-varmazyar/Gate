@@ -1,7 +1,7 @@
 package indicators
 
 import (
-	"github.com/mrNobody95/Gate/services/eagle/internal/pkg/models"
+	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/models"
 	"sync"
 )
 

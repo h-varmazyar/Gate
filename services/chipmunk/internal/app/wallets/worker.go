@@ -1,23 +1,35 @@
-package wallet
+package wallets
 
 import (
 	"context"
-	"github.com/mrNobody95/Gate/pkg/errors"
-	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
-	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/buffer"
+	"github.com/h-varmazyar/Gate/pkg/errors"
+	"github.com/h-varmazyar/Gate/pkg/grpcext"
+	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"time"
 )
 
-type Worker struct {
-	HeartbeatInterval time.Duration
-	WalletService     brokerageApi.WalletServiceClient
-	MarketService     brokerageApi.MarketServiceClient
-	cancellation      context.CancelFunc
+type worker struct {
+	WalletService brokerageApi.WalletServiceClient
+	MarketService brokerageApi.MarketServiceClient
+	cancellation  context.CancelFunc
 }
 
-func (w *Worker) Start(brokerage *brokerageApi.Brokerage) error {
+var (
+	Worker *worker
+)
+
+func init() {
+	Worker = new(worker)
+	brokerageApiConnection := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
+	Worker.WalletService = brokerageApi.NewWalletServiceClient(brokerageApiConnection)
+	Worker.MarketService = brokerageApi.NewMarketServiceClient(brokerageApiConnection)
+}
+
+func (w *worker) Start(brokerage *brokerageApi.Brokerage) error {
 	if w.cancellation == nil {
 		ctx, fn := context.WithCancel(context.Background())
 		w.cancellation = fn
@@ -32,7 +44,7 @@ func (w *Worker) Start(brokerage *brokerageApi.Brokerage) error {
 	return errors.New(context.Background(), codes.AlreadyExists)
 }
 
-func (w *Worker) Stop() {
+func (w *worker) Stop() {
 	if w.cancellation != nil {
 		w.cancellation()
 		w.cancellation = nil
@@ -40,13 +52,14 @@ func (w *Worker) Stop() {
 	}
 }
 
-func (w *Worker) run(ctx context.Context, brokerage *brokerageApi.Brokerage) {
-	ticker := time.NewTicker(w.HeartbeatInterval)
+func (w *worker) run(ctx context.Context, brokerage *brokerageApi.Brokerage) {
+	ticker := time.NewTicker(configs.Variables.WalletWorkerHeartbeat)
 
 LOOP:
 	for {
 		select {
 		case <-ctx.Done():
+			ticker.Stop()
 			break LOOP
 		case <-ticker.C:
 			wallets, err := w.WalletService.UpdateWallets(ctx, &brokerageApi.UpdateWalletRequest{BrokerageID: brokerage.ID})
@@ -60,7 +73,7 @@ LOOP:
 	}
 }
 
-func (w *Worker) calculateReferenceValue(ctx context.Context, brokerage *brokerageApi.Brokerage, wallets []*brokerageApi.Wallet) {
+func (w *worker) calculateReferenceValue(ctx context.Context, brokerage *brokerageApi.Brokerage, wallets []*brokerageApi.Wallet) {
 	references := make(map[string]*buffer.Reference)
 	for _, wallet := range wallets {
 		list, err := w.MarketService.ReturnBySource(ctx, &brokerageApi.MarketListBySourceRequest{
@@ -68,6 +81,7 @@ func (w *Worker) calculateReferenceValue(ctx context.Context, brokerage *brokera
 			Source:        wallet.AssetName,
 		})
 		if err != nil {
+			log.WithError(err).Error("failed to get market list")
 			continue
 		}
 		for _, market := range list.Markets {
@@ -76,10 +90,11 @@ func (w *Worker) calculateReferenceValue(ctx context.Context, brokerage *brokera
 				MarketName:  market.Name,
 			})
 			if err != nil {
+				log.WithError(err).Error("failed to fetch market statistics")
 				continue
 			}
-			reference := references[market.Destination.Name]
-			if reference == nil {
+			reference, ok := references[market.Destination.Name]
+			if reference == nil || !ok {
 				reference = new(buffer.Reference)
 			}
 			reference.Blocked += statistics.Close * wallet.BlockedBalance

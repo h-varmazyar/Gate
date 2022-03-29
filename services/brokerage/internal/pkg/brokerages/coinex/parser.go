@@ -4,15 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/mrNobody95/Gate/pkg/mapper"
+	"github.com/h-varmazyar/Gate/pkg/mapper"
 	"go/types"
 	"reflect"
 )
 
 type responseModel struct {
-	Code    int
-	Message string
-	Data    interface{}
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
 }
 
 func parseResponse(input string, response interface{}) error {
@@ -25,11 +25,14 @@ func parseResponse(input string, response interface{}) error {
 	}
 	switch tmp.Data.(type) {
 	case []interface{}:
-		mapper.Slice(tmp.Data, &response)
+		mapper.Slice(tmp.Data, response)
 	case types.Struct:
-		mapper.Struct(tmp.Data, response)
 	case map[string]interface{}:
-		response = tmp.Data.(map[string]interface{})
+		data, err := json.Marshal(tmp.Data)
+		if err != nil {
+			return err
+		}
+		return json.Unmarshal(data, response)
 	default:
 		return errors.New(fmt.Sprintf("cast data failed: %v", reflect.TypeOf(tmp.Data)))
 	}

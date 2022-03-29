@@ -1,6 +1,6 @@
 syntax = "proto3";
 package brokerageApi;
-option go_package = "github.com/mrNobody95/Gate/services/brokerage/api";
+option go_package = "github.com/h-varmazyar/Gate/services/brokerage/api";
 import "api/src/misc.proto";
 import "services/brokerage/api/src/market.proto";
 import "services/brokerage/api/src/resolution.proto";
@@ -36,7 +36,7 @@ message CreateBrokerageReq {
   // @inject_tag: json:"resolution_id"
   string ResolutionID = 6;
   // @inject_tag: json:"strategy_id"
-  string StrategyID = 7;
+  uint32 StrategyID = 7;
 }
 
 message Brokerage {
@@ -57,7 +57,7 @@ message Brokerage {
   // @inject_tag: json:"resolution"
   Resolution Resolution = 8;
   // @inject_tag: json:"strategy_id"
-  string StrategyID = 9;
+  uint32 StrategyID = 9;
   // @inject_tag: json:"status"
   api.Status Status = 10;
   // @inject_tag: json:"strategy"

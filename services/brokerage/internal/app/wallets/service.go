@@ -3,13 +3,13 @@ package wallets
 import (
 	"context"
 	"fmt"
-	"github.com/mrNobody95/Gate/api"
-	"github.com/mrNobody95/Gate/pkg/grpcext"
-	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
-	"github.com/mrNobody95/Gate/services/brokerage/configs"
-	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/brokerages/coinex"
-	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
-	networkAPI "github.com/mrNobody95/Gate/services/network/api"
+	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/pkg/grpcext"
+	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	"github.com/h-varmazyar/Gate/services/brokerage/configs"
+	"github.com/h-varmazyar/Gate/services/brokerage/internal/pkg/brokerages/coinex"
+	"github.com/h-varmazyar/Gate/services/brokerage/internal/pkg/repository"
+	networkAPI "github.com/h-varmazyar/Gate/services/network/api"
 	"google.golang.org/grpc"
 )
 

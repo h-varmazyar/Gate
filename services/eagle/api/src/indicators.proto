@@ -1,6 +1,6 @@
 syntax = "proto3";
 package eagleApi;
-option go_package = "github.com/mrNobody95/Gate/services/eagle/api";
+option go_package = "github.com/h-varmazyar/Gate/services/eagle/api";
 import "api/src/misc.proto";
 import "api/src/models.proto";
 

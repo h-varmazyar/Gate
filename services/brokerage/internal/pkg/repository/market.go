@@ -1,27 +1,11 @@
 package repository
 
 import (
-	"github.com/mrNobody95/Gate/api"
-	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
+	"github.com/h-varmazyar/Gate/api"
+	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
 	"gorm.io/gorm"
 	"time"
 )
-
-/**
-* Dear programmer:
-* When I wrote this code, only god And I know how it worked.
-* Now, only god knows it!
-*
-* Therefore, if you are trying to optimize this code And it fails(most surely),
-* please increase this counter as a warning for the next person:
-*
-* total_hours_wasted_here = 0 !!!
-*
-* Best regards, mr-nobody
-* Date: 19.11.21
-* Github: https://github.com/mrNobody95
-* Email: hossein.varmazyar@yahoo.com
-**/
 
 type Market struct {
 	gorm.Model
@@ -67,8 +51,8 @@ func (repository *MarketRepository) List(brokerageName string) ([]*Market, error
 func (repository *MarketRepository) ListBySource(brokerageName, source string) ([]*Market, error) {
 	markets := make([]*Market, 0)
 	return markets, repository.db.Model(new(Market)).Joins("Source").Preload("Destination").
-		Where("source.name LIKE ?", source).
-		Where("market.brokerage_name LIKE ?", brokerageName).Find(&markets).Error
+		Where("Source.name LIKE ?", source).
+		Where("markets.brokerage_name LIKE ?", brokerageName).Find(&markets).Error
 }
 
 func (repository *MarketRepository) ReturnByID(id uint) (*Market, error) {
@@ -87,5 +71,5 @@ func (repository *MarketRepository) SaveOrUpdate(market *Market) error {
 	if count == 0 {
 		return repository.db.Model(new(Market)).Create(market).Error
 	}
-	return repository.db.Updates(market).Error
+	return repository.db.Updates(market).Where("name = ?", market.Name).Error
 }

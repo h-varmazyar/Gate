@@ -1,7 +1,7 @@
 package configs
 
 import (
-	"github.com/mrNobody95/Gate/pkg/envext"
+	"github.com/h-varmazyar/Gate/pkg/envext"
 	log "github.com/sirupsen/logrus"
 	"time"
 )
@@ -18,7 +18,7 @@ import (
 *
 * Best regards, mr-nobody
 * Date: 01.12.21
-* Github: https://github.com/mrNobody95
+* Github: https://github.com/h-varmazyar
 * Email: hossein.varmazyar@yahoo.com
 **/
 

@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/mrNobody95/Gate/api"
-	"github.com/mrNobody95/Gate/services/eagle/configs"
-	"github.com/mrNobody95/Gate/services/eagle/internal/pkg/buffers"
-	"github.com/mrNobody95/Gate/services/eagle/internal/pkg/indicators"
-	"github.com/mrNobody95/Gate/services/eagle/internal/pkg/strategies"
+	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/services/eagle/configs"
+	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/buffers"
+	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/indicators"
+	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/strategies"
 	"time"
 )
 
@@ -24,7 +24,7 @@ import (
 *
 * Best regards, mr-nobody
 * Date: 04.12.21
-* Github: https://github.com/mrNobody95
+* Github: https://github.com/h-varmazyar
 * Email: hossein.varmazyar@yahoo.com
 **/
 

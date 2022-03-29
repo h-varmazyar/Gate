@@ -2,10 +2,10 @@ package strategy
 
 import (
 	"context"
-	"github.com/mrNobody95/Gate/api"
-	"github.com/mrNobody95/Gate/pkg/mapper"
-	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
-	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
+	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/pkg/mapper"
+	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	"github.com/h-varmazyar/Gate/services/brokerage/internal/pkg/repository"
 	"google.golang.org/grpc"
 )
 
@@ -30,7 +30,7 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 func (s *Service) Create(ctx context.Context, req *brokerageApi.CreateStrategyReq) (*brokerageApi.Strategy, error) {
 	strategy := new(repository.Strategy)
 	mapper.Struct(req, strategy)
-	if err := repository.Strategies.Create(strategy); err != nil {
+	if err := repository.Strategies.Save(strategy); err != nil {
 		return nil, err
 	}
 	response := new(brokerageApi.Strategy)

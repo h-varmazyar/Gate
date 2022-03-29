@@ -3,14 +3,12 @@ package indicators
 import (
 	"errors"
 	"github.com/google/uuid"
-	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/buffer"
-	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
 	"math"
 )
 
 type stochastic struct {
 	basicConfig
-	Length  int
 	SmoothK int
 	SmoothD int
 }
@@ -20,40 +18,47 @@ func NewStochastic(length, smoothK, smoothD int, marketName string) *stochastic 
 		basicConfig: basicConfig{
 			MarketName: marketName,
 			id:         uuid.New(),
+			length:     length,
 		},
-		Length:  length,
 		SmoothK: smoothK,
 		SmoothD: smoothD,
 	}
 }
 
-func (conf *stochastic) GetID() string {
-	return conf.id.String()
+func (conf *stochastic) GetID() uuid.UUID {
+	return conf.id
+}
+
+func (conf *stochastic) GetType() IndicatorType {
+	return Stochastic
+}
+
+func (conf *stochastic) GetLength() int {
+	return conf.length
 }
 
 func (conf *stochastic) validateStochastic(length int) error {
-	if length <= conf.Length {
+	if length <= conf.length {
 		return errors.New("candles length must bigger or equal than indicator period length")
 	}
-	if conf.SmoothK >= conf.Length {
+	if conf.SmoothK >= conf.length {
 		return errors.New("smoothK parameter must be smaller than indicator period length")
 	}
-	if conf.SmoothD >= conf.Length {
+	if conf.SmoothD >= conf.length {
 		return errors.New("smoothD parameter must be smaller than indicator period length")
 	}
 	return nil
 }
 
-func (conf *stochastic) Calculate(candles []*repository.Candle, response interface{}) error {
+func (conf *stochastic) Calculate(candles []*repository.Candle) error {
 	if err := conf.validateStochastic(len(candles)); err != nil {
 		return err
 	}
-	values := make([]*StochasticResponse, len(candles))
-	for i := conf.Length - 1; i < len(candles); i++ {
+	for i := conf.length - 1; i < len(candles); i++ {
 		lowest := math.MaxFloat64
 		highest := float64(0)
-		from := i - (conf.Length - 1)
-		for j := from; j < from+conf.Length; j++ {
+		from := i - (conf.length - 1)
+		for j := from; j < from+conf.length; j++ {
 			if candles[j].Low < lowest {
 				lowest = candles[j].Low
 			}
@@ -61,29 +66,28 @@ func (conf *stochastic) Calculate(candles []*repository.Candle, response interfa
 				highest = candles[j].High
 			}
 		}
-		values[i].FastK = 100 * ((candles[i].Close - lowest) / (highest - lowest))
-
-		sum := float64(0)
-		for j := i - conf.SmoothK + 1; j <= i; j++ {
-			sum += values[j].FastK
+		var stochasticValue repository.StochasticValue
+		{
 		}
-		values[i].IndexK = sum / float64(conf.SmoothK)
-		values[i].IndexD = calculateIndexD(values[i-conf.SmoothD+1 : i+1])
+		stochasticValue.FastK = 100 * ((candles[i].Close - lowest) / (highest - lowest))
+
+		sum := stochasticValue.FastK
+		for j := i - conf.SmoothK + 1; j < i; j++ {
+			sum += candles[j].Stochastics[conf.id].FastK
+		}
+		stochasticValue.IndexK = sum / float64(conf.SmoothK)
+		stochasticValue.IndexD = calculateIndexD(conf.id, candles[i-conf.SmoothD+1:i+1])
+
+		candles[i].Stochastics[conf.id] = stochasticValue
 	}
-	response = interface{}(values)
 	return nil
 }
 
-func (conf *stochastic) Update() interface{} {
-	candles := buffer.Markets.GetLastNCandles(conf.MarketName, conf.Length)
-	values := make([]*StochasticResponse, conf.Length)
-	for i, resp := range buffer.Markets.GetLastNIndicatorValue(conf.MarketName, conf.GetID(), conf.Length) {
-		values[i] = resp.(*StochasticResponse)
-	}
+func (conf *stochastic) Update(candles []*repository.Candle) *repository.IndicatorValue {
 	lowest := math.MaxFloat64
 	highest := float64(0)
 	lastIndex := len(candles) - 1
-	for i := len(candles) - conf.Length; i < len(candles); i++ {
+	for i := len(candles) - conf.length; i < len(candles); i++ {
 		if candles[i].Low < lowest {
 			lowest = candles[i].Low
 		}
@@ -95,20 +99,22 @@ func (conf *stochastic) Update() interface{} {
 
 	sum := fastK
 	for j := len(candles) - conf.SmoothK; j < len(candles)-1; j++ {
-		sum += values[j].FastK
+		sum += candles[j].Stochastics[conf.id].FastK
 	}
 
-	return &StochasticResponse{
-		IndexK: sum / float64(conf.SmoothK),
-		IndexD: calculateIndexD(values[lastIndex-conf.SmoothD+1:]),
-		FastK:  fastK,
+	return &repository.IndicatorValue{
+		Stochastic: &repository.StochasticValue{
+			IndexK: sum / float64(conf.SmoothK),
+			IndexD: calculateIndexD(conf.id, candles[lastIndex-conf.SmoothD+1:]),
+			FastK:  fastK,
+		},
 	}
 }
 
-func calculateIndexD(values []*StochasticResponse) float64 {
+func calculateIndexD(id uuid.UUID, candles []*repository.Candle) float64 {
 	sum := float64(0)
-	for _, value := range values {
-		sum += value.IndexK
+	for _, candle := range candles {
+		sum += candle.Stochastics[id].IndexK
 	}
-	return sum / float64(len(values))
+	return sum / float64(len(candles))
 }

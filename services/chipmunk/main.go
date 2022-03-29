@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/mrNobody95/Gate/pkg/service"
-	"github.com/mrNobody95/Gate/services/chipmunk/configs"
-	"github.com/mrNobody95/Gate/services/chipmunk/internal/app/ohlc"
-	"github.com/mrNobody95/Gate/services/chipmunk/internal/app/wallets"
+	"github.com/h-varmazyar/Gate/pkg/service"
+	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/ohlc"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/wallets"
 	"google.golang.org/grpc"
 	"net"
 )

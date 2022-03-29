@@ -2,14 +2,13 @@ package wallets
 
 import (
 	"context"
-	"github.com/mrNobody95/Gate/api"
-	"github.com/mrNobody95/Gate/pkg/grpcext"
-	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
-	chipmunkApi "github.com/mrNobody95/Gate/services/chipmunk/api"
-	"github.com/mrNobody95/Gate/services/chipmunk/configs"
-	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/buffer"
-	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/workers"
-	networkAPI "github.com/mrNobody95/Gate/services/network/api"
+	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/pkg/grpcext"
+	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
+	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
+	networkAPI "github.com/h-varmazyar/Gate/services/network/api"
 	"google.golang.org/grpc"
 )
 
@@ -46,8 +45,13 @@ func (s *Service) StartWorker(ctx context.Context, req *chipmunkApi.StartWorkerR
 	if err != nil {
 		return nil, err
 	}
-	if err := workers.WalletWorker.Start(brokerage); err != nil {
+	if err := Worker.Start(brokerage); err != nil {
 		return nil, err
 	}
+	return new(api.Void), nil
+}
+
+func (s *Service) CancelWorker(ctx context.Context, _ *api.Void) (*api.Void, error) {
+	Worker.Stop()
 	return new(api.Void), nil
 }

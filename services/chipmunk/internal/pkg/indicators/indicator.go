@@ -2,21 +2,32 @@ package indicators
 
 import (
 	"github.com/google/uuid"
-	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
 )
 
 type Indicator interface {
-	Calculate([]*repository.Candle, interface{}) error
-	Update() interface{}
-	GetID() string
+	Calculate([]*repository.Candle) error
+	Update([]*repository.Candle) *repository.IndicatorValue
+	GetID() uuid.UUID
+	GetType() IndicatorType
+	GetLength() int
 }
 
 type basicConfig struct {
 	MarketName string
 	id         uuid.UUID
+	length     int
 }
 
+type IndicatorType string
 type Source string
+
+const (
+	RSI            IndicatorType = "rsi"
+	Stochastic     IndicatorType = "stochastic"
+	BollingerBands IndicatorType = "bollingerBand"
+	MovingAverage  IndicatorType = "movingAverage"
+)
 
 const (
 	SourceCustom Source = "custom"

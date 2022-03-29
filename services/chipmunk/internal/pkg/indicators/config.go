@@ -1,7 +1,7 @@
 package indicators
 
 import (
-	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
 	"sync"
 )
 

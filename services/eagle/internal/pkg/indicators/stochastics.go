@@ -2,7 +2,7 @@ package indicators
 
 import (
 	"errors"
-	"github.com/mrNobody95/Gate/services/eagle/internal/pkg/models"
+	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/models"
 	"math"
 )
 
@@ -18,7 +18,7 @@ import (
 *
 * Best regards, mr-nobody
 * Date: 03.12.21
-* Github: https://github.com/mrNobody95
+* Github: https://github.com/h-varmazyar
 * Email: hossein.varmazyar@yahoo.com
 **/
 

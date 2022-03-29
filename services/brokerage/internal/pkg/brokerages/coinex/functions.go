@@ -5,12 +5,12 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"github.com/mrNobody95/Gate/api"
-	"github.com/mrNobody95/Gate/pkg/errors"
-	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
-	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/brokerages"
-	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
-	networkAPI "github.com/mrNobody95/Gate/services/network/api"
+	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/pkg/errors"
+	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	"github.com/h-varmazyar/Gate/services/brokerage/internal/pkg/brokerages"
+	"github.com/h-varmazyar/Gate/services/brokerage/internal/pkg/repository"
+	networkAPI "github.com/h-varmazyar/Gate/services/network/api"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"io"
@@ -20,22 +20,6 @@ import (
 	"strings"
 	"time"
 )
-
-/**
-* Dear programmer:
-* When I wrote this code, only god And I know how it worked.
-* Now, only god knows it!
-*
-* Therefore, if you are trying to optimize this code And it fails(most surely),
-* please increase this counter as a warning for the next person:
-*
-* total_hours_wasted_here = 0 !!!
-*
-* Best regards, mr-nobody
-* Date: 19.11.21
-* Github: https://github.com/mrNobody95
-* Email: hossein.varmazyar@yahoo.com
-**/
 
 type Service struct {
 	Auth *api.Auth
@@ -60,23 +44,24 @@ func (service *Service) WalletList(ctx context.Context, runner brokerages.Handle
 	if resp.Code != http.StatusOK {
 		return nil, errors.NewWithSlug(ctx, codes.Unknown, resp.Response)
 	}
-	data := make(map[string]interface{})
+	data := make(map[string]map[string]interface{})
 	if err := parseResponse(resp.Response, &data); err != nil {
 		return nil, err
 	}
 	response := new(brokerageApi.Wallets)
 	response.Wallets = make([]*brokerageApi.Wallet, len(data))
 	for key, value := range data {
-		item := value.(struct {
-			Available float64 `json:"available"`
-			Frozen    float64 `json:"frozen"`
-		})
 		w := new(brokerageApi.Wallet)
 		w.AssetName = key
-		w.ActiveBalance = item.Available
-		w.BlockedBalance = item.Frozen
-		w.TotalBalance = item.Available + item.Frozen
-		fmt.Println(w)
+		w.ActiveBalance, err = strconv.ParseFloat(value["available"].(string), 64)
+		if err != nil {
+			continue
+		}
+		w.BlockedBalance, err = strconv.ParseFloat(value["frozen"].(string), 64)
+		if err != nil {
+			continue
+		}
+		w.TotalBalance = w.ActiveBalance + w.BlockedBalance
 		response.Wallets = append(response.Wallets, w)
 	}
 	return response, nil
@@ -218,7 +203,7 @@ func (service *Service) MarketStatistics(ctx context.Context, inputs brokerages.
 	request.Params = []*networkAPI.KV{
 		{Key: "market", Value: market},
 	}
-	request.Endpoint = "https://www.coinex.com/res/market/ticker"
+	request.Endpoint = "https://api.coinex.com/v1/market/ticker"
 
 	resp, err := runner(ctx, request)
 	if err != nil {
@@ -228,32 +213,47 @@ func (service *Service) MarketStatistics(ctx context.Context, inputs brokerages.
 		return nil, errors.NewWithSlug(ctx, codes.NotFound, resp.Response)
 	}
 	data := struct {
-		Date   time.Time `json:"date"`
+		Date   float64 `json:"date"`
 		Ticker struct {
-			Buy        float64 `json:"buy"`
-			BuyAmount  float64 `json:"buy_amount"`
-			Open       float64 `json:"open"`
-			High       float64 `json:"high"`
-			Low        float64 `json:"low"`
-			Last       float64 `json:"last"`
-			Sell       float64 `json:"sell"`
-			SellAmount float64 `json:"sell_amount"`
-			Volume     float64 `json:"volume"`
+			Buy        string `json:"buy"`
+			BuyAmount  string `json:"buy_amount"`
+			Open       string `json:"open"`
+			High       string `json:"high"`
+			Low        string `json:"low"`
+			Last       string `json:"last"`
+			Sell       string `json:"sell"`
+			SellAmount string `json:"sell_amount"`
+			Volume     string `json:"vol"`
 		} `json:"ticker"`
 	}{}
 	if err := parseResponse(resp.Response, &data); err != nil {
 		return nil, err
 	}
-	return &api.Candle{
-		UpdatedAt: time.Now().Unix(),
-		CreatedAt: time.Now().Unix(),
-		Volume:    data.Ticker.Volume,
-		Close:     data.Ticker.Last,
-		Open:      data.Ticker.Open,
-		Time:      data.Date.Unix(),
-		High:      data.Ticker.High,
-		Low:       data.Ticker.Low,
-	}, nil
+	candle := new(api.Candle)
+	candle.CreatedAt = time.Now().Unix()
+	candle.UpdatedAt = time.Now().Unix()
+	candle.Time = int64(data.Date)
+	if candle.Volume, err = strconv.ParseFloat(data.Ticker.Volume, 64); err != nil {
+		log.WithError(err).Error("failed to parse volume")
+		return nil, err
+	}
+	if candle.Close, err = strconv.ParseFloat(data.Ticker.Last, 64); err != nil {
+		log.WithError(err).Error("failed to parse close")
+		return nil, err
+	}
+	if candle.Open, err = strconv.ParseFloat(data.Ticker.Open, 64); err != nil {
+		log.WithError(err).Error("failed to parse open")
+		return nil, err
+	}
+	if candle.High, err = strconv.ParseFloat(data.Ticker.High, 64); err != nil {
+		log.WithError(err).Error("failed to parse high")
+		return nil, err
+	}
+	if candle.Low, err = strconv.ParseFloat(data.Ticker.Low, 64); err != nil {
+		log.WithError(err).Error("failed to parse low")
+		return nil, err
+	}
+	return candle, nil
 }
 
 func (service *Service) generateAuthorization(params []*networkAPI.KV) string {
@@ -262,10 +262,8 @@ func (service *Service) generateAuthorization(params []*networkAPI.KV) string {
 		urlParameters.Add(param.Key, param.Value)
 	}
 	queryParamsString := urlParameters.Encode()
-	toEncodeParamsString := queryParamsString + "&secrect=" + service.Auth.SecretKey
+	toEncodeParamsString := queryParamsString + "&secret_key=" + service.Auth.SecretKey
 	w := md5.New()
 	_, _ = io.WriteString(w, toEncodeParamsString)
-	md5Str := fmt.Sprintf("%x", w.Sum(nil))
-	md5Str = strings.ToUpper(md5Str)
-	return md5Str
+	return strings.ToUpper(fmt.Sprintf("%x", w.Sum(nil)))
 }

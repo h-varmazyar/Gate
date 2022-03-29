@@ -2,14 +2,14 @@ package brokerages
 
 import (
 	"context"
-	"github.com/mrNobody95/Gate/api"
-	"github.com/mrNobody95/Gate/pkg/errors"
-	"github.com/mrNobody95/Gate/pkg/grpcext"
-	"github.com/mrNobody95/Gate/pkg/mapper"
-	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
-	"github.com/mrNobody95/Gate/services/brokerage/configs"
-	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
-	chipmunkApi "github.com/mrNobody95/Gate/services/chipmunk/api"
+	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/pkg/errors"
+	"github.com/h-varmazyar/Gate/pkg/grpcext"
+	"github.com/h-varmazyar/Gate/pkg/mapper"
+	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	"github.com/h-varmazyar/Gate/services/brokerage/configs"
+	"github.com/h-varmazyar/Gate/services/brokerage/internal/pkg/repository"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -138,7 +138,10 @@ func (s *Service) ChangeStatus(ctx context.Context, req *brokerageApi.StatusChan
 				ResolutionID: uint32(enable.ResolutionID),
 				MarketID:     uint32(market.ID),
 			}); err != nil {
-				log.WithError(err).WithField("market", market.ID).WithField("brokerage", enable.ID)
+				log.WithError(err).WithField("market", market.ID).WithField("brokerage", enable.ID).Error("failed to stop market")
+			}
+			if _, err = s.walletService.CancelWorker(ctx, new(api.Void)); err != nil {
+				return nil, err
 			}
 		}
 	}
@@ -152,9 +155,6 @@ func (s *Service) ChangeStatus(ctx context.Context, req *brokerageApi.StatusChan
 	case api.Status_Disable.String():
 		brokerage.Status = api.Status_Enable.String()
 	}
-	if err := repository.Brokerages.ChangeStatus(brokerage); err != nil {
-		return nil, err
-	}
 	if brokerage.Status == api.Status_Enable.String() {
 		if req.OHLC {
 			resolution := new(brokerageApi.Resolution)
@@ -167,19 +167,22 @@ func (s *Service) ChangeStatus(ctx context.Context, req *brokerageApi.StatusChan
 					BrokerageID: uint32(brokerage.ID),
 					Market:      m,
 				}); err != nil {
-					log.WithError(err).WithField("market", market.ID).WithField("brokerage", brokerage.ID)
+					log.WithError(err).WithField("market", market.ID).WithField("brokerage", brokerage.ID).Error("failed to add market")
+					return nil, err
 				}
 			}
 		}
 		if req.Trading {
-			_, err := s.walletService.StartWorker(ctx, &chipmunkApi.StartWorkerRequest{
+			if _, err = s.walletService.StartWorker(ctx, &chipmunkApi.StartWorkerRequest{
 				BrokerageID: uint32(brokerage.ID),
-			})
-			if err != nil {
+			}); err != nil {
 				log.WithError(err).WithField("brokerage", brokerage.ID).Error("failed to start wallet worker")
 			}
 			//todo: add trading worker
 		}
+	}
+	if err := repository.Brokerages.ChangeStatus(brokerage); err != nil {
+		return nil, err
 	}
 	return &brokerageApi.BrokerageStatus{Status: api.Status(api.Status_value[brokerage.Status])}, nil
 }

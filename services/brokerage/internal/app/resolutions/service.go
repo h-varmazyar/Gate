@@ -2,11 +2,11 @@ package resolutions
 
 import (
 	"context"
-	"github.com/mrNobody95/Gate/api"
-	"github.com/mrNobody95/Gate/pkg/errors"
-	"github.com/mrNobody95/Gate/pkg/mapper"
-	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
-	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
+	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/pkg/errors"
+	"github.com/h-varmazyar/Gate/pkg/mapper"
+	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	"github.com/h-varmazyar/Gate/services/brokerage/internal/pkg/repository"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"time"

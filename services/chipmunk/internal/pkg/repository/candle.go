@@ -1,24 +1,42 @@
 package repository
 
 import (
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"time"
 )
 
 type Candle struct {
-	ID           uint64 `gorm:"primarykey"`
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	DeletedAt    gorm.DeletedAt `gorm:"index"`
-	Time         time.Time
-	Open         float64
-	High         float64
-	Low          float64
-	Close        float64
-	Volume       float64
-	Amount       float64
-	MarketID     uint32
-	ResolutionID uint32
+	ID              uint64 `gorm:"primarykey"`
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	DeletedAt       gorm.DeletedAt `gorm:"index"`
+	Time            time.Time
+	Open            float64
+	High            float64
+	Low             float64
+	Close           float64
+	Volume          float64
+	Amount          float64
+	MarketID        uint32
+	ResolutionID    uint32
+	IndicatorValues `gorm:"-"`
+}
+
+type IndicatorValues struct {
+	BollingerBands map[uuid.UUID]*BollingerBandsValue
+	MovingAverages map[uuid.UUID]*MovingAverageValue
+	Stochastics    map[uuid.UUID]*StochasticValue
+	RSIs           map[uuid.UUID]*RSIValue
+}
+
+func NewIndicatorValues() IndicatorValues {
+	return IndicatorValues{
+		BollingerBands: make(map[uuid.UUID]*BollingerBandsValue),
+		MovingAverages: make(map[uuid.UUID]*MovingAverageValue),
+		Stochastics:    make(map[uuid.UUID]*StochasticValue),
+		RSIs:           make(map[uuid.UUID]*RSIValue),
+	}
 }
 
 type CandleRepository struct {
@@ -49,10 +67,10 @@ func (r *CandleRepository) ReturnLast(marketID, resolutionID uint32) (*Candle, e
 		Order("time desc").First(item).Error
 }
 
-func (r *CandleRepository) ReturnList(marketID, resolutionID uint32, offset int) ([]*Candle, error) {
+func (r *CandleRepository) ReturnList(marketID, resolutionID uint32, limit, offset int) ([]*Candle, error) {
 	items := make([]*Candle, 0)
 	return items, r.DB.Model(new(Candle)).
 		Where("market_id = ?", marketID).
 		Where("resolution_id = ?", resolutionID).
-		Order("time desc").Offset(offset).Limit(1000).Find(items).Error
+		Order("time desc").Offset(offset).Limit(limit).Find(items).Error
 }

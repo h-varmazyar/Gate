@@ -1,12 +1,13 @@
 syntax = "proto3";
 package brokerageApi;
-option go_package = "github.com/mrNobody95/Gate/services/chipmunk/api";
+option go_package = "github.com/h-varmazyar/Gate/services/chipmunk/api";
 import "api/src/misc.proto";
 import "services/brokerage/api/src/wallet.proto";
 
 service WalletsService {
   rpc List(WalletListRequest) returns (brokerageApi.Wallets);
   rpc StartWorker(StartWorkerRequest) returns (api.Void);
+  rpc CancelWorker(api.Void) returns (api.Void);
 }
 
 message WalletListRequest {

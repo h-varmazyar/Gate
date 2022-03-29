@@ -2,9 +2,9 @@ package app
 
 import (
 	"context"
-	"github.com/mrNobody95/Gate/api"
-	ganjehAPI "github.com/mrNobody95/Gate/services/ganjeh/api"
-	"github.com/mrNobody95/Gate/services/ganjeh/internal/pkg/consul"
+	"github.com/h-varmazyar/Gate/api"
+	ganjehAPI "github.com/h-varmazyar/Gate/services/ganjeh/api"
+	"github.com/h-varmazyar/Gate/services/ganjeh/internal/pkg/consul"
 	"google.golang.org/grpc"
 	"time"
 )
@@ -21,7 +21,7 @@ import (
 *
 * Best regards, mr-nobody
 * Date: 10.11.21
-* Github: https://github.com/mrNobody95
+* Github: https://github.com/h-varmazyar
 * Email: hossein.varmazyar@yahoo.com
 **/
 

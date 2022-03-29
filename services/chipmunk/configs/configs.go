@@ -1,7 +1,7 @@
 package configs
 
 import (
-	"github.com/mrNobody95/Gate/pkg/envext"
+	"github.com/h-varmazyar/Gate/pkg/envext"
 	log "github.com/sirupsen/logrus"
 	"time"
 )

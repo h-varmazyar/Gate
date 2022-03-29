@@ -2,33 +2,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/mrNobody95/Gate/pkg/envext"
-	"github.com/mrNobody95/Gate/pkg/grpcext"
-	"github.com/mrNobody95/Gate/pkg/httpext"
-	"github.com/mrNobody95/Gate/pkg/muxext"
-	"github.com/mrNobody95/Gate/pkg/service"
-	"github.com/mrNobody95/Gate/services/ganjeh/internal/app"
+	"github.com/h-varmazyar/Gate/pkg/envext"
+	"github.com/h-varmazyar/Gate/pkg/grpcext"
+	"github.com/h-varmazyar/Gate/pkg/httpext"
+	"github.com/h-varmazyar/Gate/pkg/muxext"
+	"github.com/h-varmazyar/Gate/pkg/service"
+	"github.com/h-varmazyar/Gate/services/ganjeh/internal/app"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"net"
 	"net/http"
 )
-
-/**
-* Dear programmer:
-* When I wrote this code, only god And I know how it worked.
-* Now, only god knows it!
-*
-* Therefore, if you are trying to optimize this code And it fails(most surely),
-* please increase this counter as a warning for the next person:
-*
-* total_hours_wasted_here = 0 !!!
-*
-* Best regards, mr-nobody
-* Date: 12.11.21
-* Github: https://github.com/mrNobody95
-* Email: hossein.varmazyar@yahoo.com
-**/
 
 type Configs struct {
 	GrpcPort       uint16 `env:"GRPC_PORT,required"`

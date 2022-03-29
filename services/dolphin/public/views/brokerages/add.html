@@ -81,34 +81,22 @@
                             <div class="padding-a-1">
                                 <div class="title base">استراتژی های معاملاتی</div>
                                 <div class="inline-grid">
+                                    {{ range $index, $strategy := .strategies }}
                                     <div class="card col-4 margin-r-1">
                                         <div class="inline-grid stretch-center">
                                             <div class="custom-control custom-radio custom-control-inline">
-                                                <input checked class="custom-control-input" id="strategy1"
+                                                <input checked class="custom-control-input" id="{{ $strategy.ID }}"
                                                        name="strategyRadio"
-                                                       type="radio" value="strategy1">
-                                                <label class="custom-control-label" for="strategy1"></label>
+                                                       type="radio" value="{{ $strategy.ID }}">
+                                                <label class="custom-control-label" for="{{ $strategy.ID }}"></label>
                                             </div>
                                             <div>
-                                                <div class="title">استراتژی اول</div>
-                                                <p>این متن تستی برای نمایش محتوای استراتژی اول است</p>
+                                                <div class="title">{{ $strategy.Name }}</div>
+                                                <p>{{ $strategy.Description }}</p>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="card col-4 margin-r-1">
-                                        <div class="inline-grid stretch-center">
-                                            <div class="custom-control custom-radio custom-control-inline">
-                                                <input class="custom-control-input" id="strategy2" name="strategyRadio"
-                                                       type="radio"
-                                                       value="strategy2">
-                                                <label class="custom-control-label" for="strategy2"></label>
-                                            </div>
-                                            <div>
-                                                <div class="title">استراتژی دوم</div>
-                                                <p>این متن تستی برای نمایش محتوای استراتژی دوم است</p>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    {{ end }}
                                 </div>
                             </div>
 

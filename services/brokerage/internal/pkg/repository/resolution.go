@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/mrNobody95/Gate/services/brokerage/api"
+	"github.com/h-varmazyar/Gate/services/brokerage/api"
 	"gorm.io/gorm"
 	"time"
 )

@@ -1,7 +1,7 @@
 package brokerages
 
 import (
-	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
+	"github.com/h-varmazyar/Gate/services/brokerage/internal/pkg/repository"
 	"time"
 )
 

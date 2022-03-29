@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/mrNobody95/Gate/pkg/service"
-	"github.com/mrNobody95/Gate/services/eagle/configs"
-	"github.com/mrNobody95/Gate/services/eagle/internal/app/indicators"
-	"github.com/mrNobody95/Gate/services/eagle/internal/app/signals"
+	"github.com/h-varmazyar/Gate/pkg/service"
+	"github.com/h-varmazyar/Gate/services/eagle/configs"
+	"github.com/h-varmazyar/Gate/services/eagle/internal/app/indicators"
+	"github.com/h-varmazyar/Gate/services/eagle/internal/app/signals"
 	"google.golang.org/grpc"
 	"net"
 )
@@ -21,7 +21,7 @@ import (
 *
 * Best regards, mr-nobody
 * Date: 12.11.21
-* Github: https://github.com/mrNobody95
+* Github: https://github.com/h-varmazyar
 * Email: hossein.varmazyar@yahoo.com
 **/
 

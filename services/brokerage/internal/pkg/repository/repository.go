@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/mrNobody95/Gate/pkg/gormext"
+	"github.com/h-varmazyar/Gate/pkg/gormext"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -11,6 +11,7 @@ var (
 	Brokerages  *BrokerageRepository
 	Resolutions *ResolutionRepository
 	Strategies  *StrategyRepository
+	Indicators  *IndicatorRepository
 )
 
 func LoadRepositories(dsn string) {
@@ -41,4 +42,5 @@ func LoadRepositories(dsn string) {
 	Brokerages = &BrokerageRepository{db: db}
 	Resolutions = &ResolutionRepository{db: db}
 	Strategies = &StrategyRepository{db: db}
+	Indicators = &IndicatorRepository{db: db}
 }

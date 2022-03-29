@@ -2,11 +2,11 @@ package signals
 
 import (
 	"context"
-	"github.com/mrNobody95/Gate/api"
-	"github.com/mrNobody95/Gate/pkg/errors"
-	eagleApi "github.com/mrNobody95/Gate/services/eagle/api"
-	"github.com/mrNobody95/Gate/services/eagle/internal/pkg/strategies/automatedStrategy"
-	"github.com/mrNobody95/Gate/services/eagle/internal/pkg/workers"
+	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/pkg/errors"
+	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
+	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/strategies/automatedStrategy"
+	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/workers"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -23,7 +23,7 @@ import (
 *
 * Best regards, mr-nobody
 * Date: 09.12.21
-* Github: https://github.com/mrNobody95
+* Github: https://github.com/h-varmazyar
 * Email: hossein.varmazyar@yahoo.com
 **/
 

@@ -3,38 +3,22 @@ package markets
 import (
 	"context"
 	"fmt"
-	"github.com/mrNobody95/Gate/api"
-	"github.com/mrNobody95/Gate/pkg/errors"
-	"github.com/mrNobody95/Gate/pkg/grpcext"
-	"github.com/mrNobody95/Gate/pkg/mapper"
-	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
-	"github.com/mrNobody95/Gate/services/brokerage/configs"
-	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/brokerages"
-	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/brokerages/coinex"
-	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
-	networkAPI "github.com/mrNobody95/Gate/services/network/api"
+	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/pkg/errors"
+	"github.com/h-varmazyar/Gate/pkg/grpcext"
+	"github.com/h-varmazyar/Gate/pkg/mapper"
+	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	"github.com/h-varmazyar/Gate/services/brokerage/configs"
+	"github.com/h-varmazyar/Gate/services/brokerage/internal/pkg/brokerages"
+	"github.com/h-varmazyar/Gate/services/brokerage/internal/pkg/brokerages/coinex"
+	"github.com/h-varmazyar/Gate/services/brokerage/internal/pkg/repository"
+	networkAPI "github.com/h-varmazyar/Gate/services/network/api"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
 	"time"
 )
-
-/**
-* Dear programmer:
-* When I wrote this code, only god And I know how it worked.
-* Now, only god knows it!
-*
-* Therefore, if you are trying to optimize this code And it fails(most surely),
-* please increase this counter as a warning for the next person:
-*
-* total_hours_wasted_here = 0 !!!
-*
-* Best regards, mr-nobody
-* Date: 12.11.21
-* Github: https://github.com/mrNobody95
-* Email: hossein.varmazyar@yahoo.com
-**/
 
 type Service struct {
 	networkService networkAPI.RequestServiceClient

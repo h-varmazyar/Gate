@@ -1,6 +1,6 @@
 syntax = "proto3";
 package networkAPI;
-option go_package = "github.com/mrNobody95/Gate/services/network/api";
+option go_package = "github.com/h-varmazyar/Gate/services/network/api";
 
 service RequestService {
   rpc Do(Request) returns (Response);

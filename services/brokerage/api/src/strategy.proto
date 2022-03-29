@@ -1,6 +1,6 @@
 syntax = "proto3";
 package brokerageApi;
-option go_package = "github.com/mrNobody95/Gate/services/brokerage/api";
+option go_package = "github.com/h-varmazyar/Gate/services/brokerage/api";
 import "api/src/misc.proto";
 
 service StrategyService {
@@ -20,15 +20,19 @@ message Strategy {
   // @inject_tag: json:"id"
   uint32 ID = 1;
   // @inject_tag: json:"name"
-  uint32 Name = 2;
+  string Name = 2;
   // @inject_tag: json:"description"
-  uint32 Description = 3;
+  string Description = 3;
+  // @inject_tag: json:"min_daily_profit"
+  string MinDailyProfit = 4;
+  // @inject_tag: json:"min_profit_per_trade"
+  string MinProfitPerTrade = 5;
   // @inject_tag: json:"indicators"
-  repeated Indicator Indicators = 4;
+  repeated Indicator Indicators = 6;
   // @inject_tag: json:"created_at,omitempty"
-  int64 CreatedAt = 5;
+  int64 CreatedAt = 7;
   // @inject_tag: json:"updated_at,omitempty"
-  int64 UpdatedAt = 6;
+  int64 UpdatedAt = 8;
 }
 
 message Strategies {
@@ -44,8 +48,18 @@ message Indicator {
 }
 
 message CreateStrategyReq {
+  // @inject_tag: json:"name"
+  string Name = 1;
+  // @inject_tag: json:"description"
+  string Description = 2;
+  // @inject_tag: json:"min_daily_profit"
+  string MinDailyProfit = 3;
+  // @inject_tag: json:"min_profit_per_trade"
+  string MinProfitPerTrade = 4;
+  // @inject_tag: json:"max_fund_per_trade"
+  string MaxFundPerTrade = 5;
   // @inject_tag: json:"indicators"
-  repeated Indicator Indicators = 1;
+  repeated Indicator Indicators = 6;
 }
 
 message ReturnStrategyReq {

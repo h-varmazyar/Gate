@@ -2,9 +2,9 @@ package app
 
 import (
 	"github.com/gorilla/mux"
-	"github.com/mrNobody95/Gate/pkg/httpext"
-	"github.com/mrNobody95/Gate/pkg/muxext"
-	ganjehAPI "github.com/mrNobody95/Gate/services/ganjeh/api"
+	"github.com/h-varmazyar/Gate/pkg/httpext"
+	"github.com/h-varmazyar/Gate/pkg/muxext"
+	ganjehAPI "github.com/h-varmazyar/Gate/services/ganjeh/api"
 	"google.golang.org/grpc"
 	"net/http"
 )
@@ -21,7 +21,7 @@ import (
 *
 * Best regards, mr-nobody
 * Date: 13.11.21
-* Github: https://github.com/mrNobody95
+* Github: https://github.com/h-varmazyar
 * Email: hossein.varmazyar@yahoo.com
 **/
 

@@ -1,39 +1,26 @@
 package main
 
 import (
-	"github.com/mrNobody95/Gate/pkg/envext"
-	"github.com/mrNobody95/Gate/pkg/httpext"
-	"github.com/mrNobody95/Gate/pkg/muxext"
-	"github.com/mrNobody95/Gate/pkg/service"
-	"github.com/mrNobody95/Gate/services/brokerage/configs"
-	"github.com/mrNobody95/Gate/services/brokerage/internal/app/assets"
-	"github.com/mrNobody95/Gate/services/brokerage/internal/app/brokerages"
-	"github.com/mrNobody95/Gate/services/brokerage/internal/app/candles"
-	"github.com/mrNobody95/Gate/services/brokerage/internal/app/markets"
-	"github.com/mrNobody95/Gate/services/brokerage/internal/app/resolutions"
-	"github.com/mrNobody95/Gate/services/brokerage/internal/app/wallets"
-	"github.com/mrNobody95/Gate/services/brokerage/internal/pkg/repository"
+	"encoding/json"
+	"github.com/h-varmazyar/Gate/pkg/envext"
+	"github.com/h-varmazyar/Gate/pkg/httpext"
+	"github.com/h-varmazyar/Gate/pkg/muxext"
+	"github.com/h-varmazyar/Gate/pkg/service"
+	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	"github.com/h-varmazyar/Gate/services/brokerage/configs"
+	"github.com/h-varmazyar/Gate/services/brokerage/internal/app/assets"
+	"github.com/h-varmazyar/Gate/services/brokerage/internal/app/brokerages"
+	"github.com/h-varmazyar/Gate/services/brokerage/internal/app/candles"
+	"github.com/h-varmazyar/Gate/services/brokerage/internal/app/markets"
+	"github.com/h-varmazyar/Gate/services/brokerage/internal/app/resolutions"
+	"github.com/h-varmazyar/Gate/services/brokerage/internal/app/strategy"
+	"github.com/h-varmazyar/Gate/services/brokerage/internal/app/wallets"
+	"github.com/h-varmazyar/Gate/services/brokerage/internal/pkg/repository"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"net"
 	"net/http"
 )
-
-/**
-* Dear programmer:
-* When I wrote this code, only god And I know how it worked.
-* Now, only god knows it!
-*
-* Therefore, if you are trying to optimize this code And it fails(most surely),
-* please increase this counter as a warning for the next person:
-*
-* total_hours_wasted_here = 0 !!!
-*
-* Best regards, mr-nobody
-* Date: 12.11.21
-* Github: https://github.com/mrNobody95
-* Email: hossein.varmazyar@yahoo.com
-**/
 
 var (
 	Name    = "brokerage"
@@ -54,6 +41,11 @@ func main() {
 		log.WithError(err).Fatal("can not load service configs")
 	}
 	repository.LoadRepositories(configs.DatabaseConnection)
+
+	if err = createStrategy(); err != nil {
+		log.WithError(err).Fatal("failed to create strategy")
+	}
+
 	service.Serve(configs.GrpcPort, func(lst net.Listener) error {
 		server := grpc.NewServer()
 		assets.NewService().RegisterServer(server)
@@ -61,6 +53,7 @@ func main() {
 		markets.NewService(configs).RegisterServer(server)
 		wallets.NewService(configs).RegisterServer(server)
 		resolutions.NewService().RegisterServer(server)
+		strategy.NewService().RegisterServer(server)
 		candles.NewService(configs).RegisterServer(server)
 		return server.Serve(lst)
 	})
@@ -71,4 +64,88 @@ func main() {
 	})
 
 	service.Start(Name, Version)
+}
+
+func createStrategy() error {
+	list := make([]*repository.Strategy, 0)
+	var err error
+	if list, err = repository.Strategies.List(); err != nil {
+		return err
+	}
+	if len(list) == 0 {
+		strategy := &repository.Strategy{
+			Name:        "خودکار",
+			Description: "انجام معاملات به صورت خودکار",
+		}
+		err = repository.Strategies.Save(strategy)
+		if err != nil {
+			return err
+		}
+		var bytes []byte
+		{
+			bytes, err = json.Marshal(struct {
+				Length int `json:"length"`
+			}{
+				Length: 7,
+			})
+			if err != nil {
+				return err
+			}
+			if err = repository.Indicators.Save(&repository.Indicator{
+				StrategyRefer: strategy.ID,
+				Name:          brokerageApi.IndicatorNames_RSI,
+				Description:   "fast rsi",
+				Configs:       bytes,
+			}); err != nil {
+				return err
+			}
+		}
+
+		{
+			bytes, err = json.Marshal(struct {
+				Length  int `json:"length"`
+				SmoothK int `json:"smooth_k"`
+				SmoothD int `json:"smooth_d"`
+			}{
+				Length:  14,
+				SmoothK: 3,
+				SmoothD: 10,
+			})
+			if err != nil {
+				return err
+			}
+			if err = repository.Indicators.Save(&repository.Indicator{
+				StrategyRefer: strategy.ID,
+				Name:          brokerageApi.IndicatorNames_Stochastic,
+				Description:   "slow stochastic",
+				Configs:       bytes,
+			}); err != nil {
+				return err
+			}
+		}
+
+		{
+			bytes, err = json.Marshal(struct {
+				Length    int    `json:"length"`
+				Deviation int    `json:"deviation"`
+				Source    string `json:"source"`
+			}{
+				Length:    20,
+				Deviation: 2,
+				Source:    "close",
+			})
+			if err != nil {
+				return err
+			}
+			if err = repository.Indicators.Save(&repository.Indicator{
+				StrategyRefer: strategy.ID,
+				Name:          brokerageApi.IndicatorNames_BollingerBands,
+				Description:   "regular bollinger bands",
+				Configs:       bytes,
+			}); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

@@ -1,7 +1,7 @@
 package httpext
 
 import (
-	"github.com/mrNobody95/Gate/pkg/errors"
+	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/rs/cors"
 
 	"google.golang.org/grpc/codes"

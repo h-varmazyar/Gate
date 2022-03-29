@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	networkAPI "github.com/mrNobody95/Gate/services/network/api"
+	networkAPI "github.com/h-varmazyar/Gate/services/network/api"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -24,7 +24,7 @@ import (
 *
 * Best regards, mr-nobody
 * Date: 12.11.21
-* Github: https://github.com/mrNobody95
+* Github: https://github.com/h-varmazyar
 * Email: hossein.varmazyar@yahoo.com
 **/
 

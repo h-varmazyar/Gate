@@ -1,6 +1,6 @@
 syntax = "proto3";
 package brokerageApi;
-option go_package = "github.com/mrNobody95/Gate/services/brokerage/api";
+option go_package = "github.com/h-varmazyar/Gate/services/brokerage/api";
 import "api/src/misc.proto";
 import "api/src/models.proto";
 import "services/brokerage/api/src/asset.proto";

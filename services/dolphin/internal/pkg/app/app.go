@@ -2,8 +2,8 @@ package app
 
 import (
 	"fmt"
-	"github.com/mrNobody95/Gate/services/dolphin/internal/pkg/defaults"
-	"github.com/mrNobody95/Gate/services/dolphin/internal/pkg/httpx"
+	"github.com/h-varmazyar/Gate/services/dolphin/internal/pkg/defaults"
+	"github.com/h-varmazyar/Gate/services/dolphin/internal/pkg/httpx"
 	"net/http"
 	"net/url"
 	"sync"

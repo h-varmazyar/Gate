@@ -20,9 +20,9 @@
         <td>{{ $res.Duration }}</td>
         <td class="center">
             <div class="custom-control custom-radio custom-control-inline">
-                <input checked class="custom-control-input" id="{{ $res.ID }}" name="resolutionRadio"
+                <input checked class="custom-control-input" id="resolution{{ $res.ID }}" name="resolutionRadio"
                        type="radio" value="{{ $res.ID }}">
-                <label class="custom-control-label" for="{{ $res.ID }}"></label>
+                <label class="custom-control-label" for="resolution{{ $res.ID }}"></label>
             </div>
         </td>
     </tr>

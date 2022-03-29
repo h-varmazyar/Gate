@@ -3,9 +3,9 @@ package consul
 import (
 	"context"
 	"encoding/json"
+	"github.com/h-varmazyar/Gate/pkg/errors"
+	ganjehAPI "github.com/h-varmazyar/Gate/services/ganjeh/api"
 	"github.com/hashicorp/consul/api"
-	"github.com/mrNobody95/Gate/pkg/errors"
-	ganjehAPI "github.com/mrNobody95/Gate/services/ganjeh/api"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 )
@@ -22,7 +22,7 @@ import (
 *
 * Best regards, mr-nobody
 * Date: 17.11.21
-* Github: https://github.com/mrNobody95
+* Github: https://github.com/h-varmazyar
 * Email: hossein.varmazyar@yahoo.com
 **/
 

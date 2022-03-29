@@ -1,11 +1,11 @@
 package wallets
 
 import (
-	"github.com/mrNobody95/Gate/pkg/grpcext"
-	brokerageApi "github.com/mrNobody95/Gate/services/brokerage/api"
-	"github.com/mrNobody95/Gate/services/dolphin/actions/viewHelpers"
-	"github.com/mrNobody95/Gate/services/dolphin/configs"
-	"github.com/mrNobody95/Gate/services/dolphin/internal/pkg/app"
+	"github.com/h-varmazyar/Gate/pkg/grpcext"
+	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	"github.com/h-varmazyar/Gate/services/dolphin/actions/viewHelpers"
+	"github.com/h-varmazyar/Gate/services/dolphin/configs"
+	"github.com/h-varmazyar/Gate/services/dolphin/internal/pkg/app"
 	"net/http"
 )
 

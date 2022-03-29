@@ -4,14 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/mrNobody95/Gate/api"
-	"github.com/mrNobody95/Gate/pkg/grpcext"
-	"github.com/mrNobody95/Gate/pkg/mapper"
-	chipmunkApi "github.com/mrNobody95/Gate/services/chipmunk/api"
-	"github.com/mrNobody95/Gate/services/eagle/configs"
-	"github.com/mrNobody95/Gate/services/eagle/internal/pkg/buffers"
-	"github.com/mrNobody95/Gate/services/eagle/internal/pkg/indicators"
-	"github.com/mrNobody95/Gate/services/eagle/internal/pkg/models"
+	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/pkg/grpcext"
+	"github.com/h-varmazyar/Gate/pkg/mapper"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
+	"github.com/h-varmazyar/Gate/services/eagle/configs"
+	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/buffers"
+	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/indicators"
+	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/models"
 	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
@@ -29,7 +29,7 @@ import (
 *
 * Best regards, mr-nobody
 * Date: 04.12.21
-* Github: https://github.com/mrNobody95
+* Github: https://github.com/h-varmazyar
 * Email: hossein.varmazyar@yahoo.com
 **/
 

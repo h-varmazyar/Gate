@@ -1,6 +1,6 @@
 package automatedStrategy
 
-import "github.com/mrNobody95/Gate/services/eagle/internal/pkg/models"
+import "github.com/h-varmazyar/Gate/services/eagle/internal/pkg/models"
 
 /**
 * Dear programmer:
@@ -14,7 +14,7 @@ import "github.com/mrNobody95/Gate/services/eagle/internal/pkg/models"
 *
 * Best regards, mr-nobody
 * Date: 09.12.21
-* Github: https://github.com/mrNobody95
+* Github: https://github.com/h-varmazyar
 * Email: hossein.varmazyar@yahoo.com
 **/
 

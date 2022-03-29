@@ -1,6 +1,6 @@
 package resolutions
 
-import "github.com/mrNobody95/Gate/services/dolphin/internal/pkg/app"
+import "github.com/h-varmazyar/Gate/services/dolphin/internal/pkg/app"
 
 func RegisterRoutes(application *app.App) {
 	resolutionController := newResolutionController()

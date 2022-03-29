@@ -3,52 +3,61 @@ package indicators
 import (
 	"errors"
 	"github.com/google/uuid"
-	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/buffer"
-	"github.com/mrNobody95/Gate/services/chipmunk/internal/pkg/repository"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
 	"math"
 )
 
-type BollingerBands struct {
+type bollingerBands struct {
 	basicConfig
 	Deviation int
-	Length    int
 	Source    Source
 }
 
-func NewBollingerBands(length, deviation int, source Source, marketName string) *BollingerBands {
-	return &BollingerBands{
+func NewBollingerBands(length, deviation int, source Source, marketName string) *bollingerBands {
+	return &bollingerBands{
 		basicConfig: basicConfig{
 			MarketName: marketName,
 			id:         uuid.New(),
+			length:     length,
 		},
 		Deviation: deviation,
-		Length:    length,
 		Source:    source,
 	}
 }
 
-func (conf *BollingerBands) GetID() string {
-	return conf.id.String()
+func (conf *bollingerBands) GetID() uuid.UUID {
+	return conf.id
 }
 
-func (conf *BollingerBands) Calculate(candles []*repository.Candle, response interface{}) error {
-	values := make([]*BollingerBandsResponse, len(candles))
+func (conf *bollingerBands) GetType() IndicatorType {
+	return BollingerBands
+}
+
+func (conf *bollingerBands) GetLength() int {
+	return conf.length
+}
+
+func (conf *bollingerBands) Calculate(candles []*repository.Candle) error {
 	if err := conf.validateBollingerBand(len(candles)); err != nil {
 		return err
 	}
 	cloned := cloneCandles(candles)
-	smaConf := MovingAverage{
+	smaConf := movingAverage{
+		basicConfig: basicConfig{
+			MarketName: conf.MarketName,
+			id:         uuid.New(),
+			length:     conf.length,
+		},
 		Source: conf.Source,
-		Length: conf.Length,
 	}
 	sma, err := smaConf.sma(cloned)
 	if err != nil {
 		return err
 	}
-	for i := conf.Length - 1; i < len(candles); i++ {
+	for i := conf.length - 1; i < len(candles); i++ {
 		variance := float64(0)
 		ma := sma[i]
-		for j := 1 + i - conf.Length; j <= i; j++ {
+		for j := 1 + i - conf.length; j <= i; j++ {
 			sum := float64(0)
 			switch conf.Source {
 			case SourceOpen:
@@ -68,21 +77,25 @@ func (conf *BollingerBands) Calculate(candles []*repository.Candle, response int
 			}
 			variance += math.Pow(ma-sum, 2)
 		}
-		variance /= float64(conf.Length)
-		values[i].MA = ma
-		values[i].UpperBand = ma + float64(conf.Deviation)*math.Sqrt(variance)
-		values[i].LowerBand = ma - float64(conf.Deviation)*math.Sqrt(variance)
+		variance /= float64(conf.length)
+
+		candles[i].BollingerBands[conf.id] = repository.BollingerBandsValue{
+			UpperBand: ma + float64(conf.Deviation)*math.Sqrt(variance),
+			LowerBand: ma - float64(conf.Deviation)*math.Sqrt(variance),
+			MA:        ma,
+		}
 	}
-	response = interface{}(values)
 	return nil
 }
 
-func (conf *BollingerBands) Update() interface{} {
-	candles := buffer.Markets.GetLastNCandles(conf.MarketName, conf.Length)
-
-	smaConf := MovingAverage{
+func (conf *bollingerBands) Update(candles []*repository.Candle) *repository.IndicatorValue {
+	smaConf := movingAverage{
+		basicConfig: basicConfig{
+			MarketName: conf.MarketName,
+			id:         uuid.New(),
+			length:     conf.length,
+		},
 		Source: conf.Source,
-		Length: conf.Length,
 	}
 	sma, err := smaConf.sma(candles)
 	if err != nil {
@@ -110,20 +123,22 @@ func (conf *BollingerBands) Update() interface{} {
 		}
 		variance += math.Pow(ma-sum, 2)
 	}
-	variance /= float64(conf.Length)
-	return &BollingerBandsResponse{
-		UpperBand: ma + float64(conf.Deviation)*math.Sqrt(variance),
-		LowerBand: ma - float64(conf.Deviation)*math.Sqrt(variance),
-		MA:        ma,
+	variance /= float64(conf.length)
+	return &repository.IndicatorValue{
+		BB: &repository.BollingerBandsValue{
+			UpperBand: ma + float64(conf.Deviation)*math.Sqrt(variance),
+			LowerBand: ma - float64(conf.Deviation)*math.Sqrt(variance),
+			MA:        ma,
+		},
 	}
 }
 
-func (conf *BollingerBands) validateBollingerBand(length int) error {
-	if conf.Length != conf.Length {
+func (conf *bollingerBands) validateBollingerBand(length int) error {
+	if conf.length != conf.length {
 		return errors.New("bollinger band length must be equal to moving average length")
 	}
-	if length < conf.Length {
-		return errors.New("Length must be bigger than or equal to candle length")
+	if length < conf.length {
+		return errors.New("length must be bigger than or equal to candle length")
 	}
 	if conf.Deviation < 1 {
 		return errors.New("deviation value must be positive")
