@@ -45,7 +45,7 @@ func (worker *worker) AddMarket(settings *WorkerSettings) {
 		cancel()
 	}
 	settings.Context, worker.Cancellations[fmt.Sprintf("%d > %d", settings.Market.ID, settings.Resolution.ID)] = context.WithCancel(context.Background())
-	buffer.Candles.AddList(settings.Market.ID, settings.Resolution.ID)
+	buffer.Markets.AddList(settings.Market.ID)
 	go worker.run(settings)
 }
 
@@ -56,7 +56,7 @@ func (worker *worker) CancelWorker(marketID, resolutionID uint32) error {
 	}
 	fn()
 	delete(worker.Cancellations, fmt.Sprintf("%d > %d", marketID, resolutionID))
-	buffer.Candles.RemoveList(marketID, resolutionID)
+	buffer.Markets.RemoveList(marketID)
 	return nil
 }
 
@@ -134,13 +134,15 @@ func (worker *worker) loadPrimaryData(ws *WorkerSettings) error {
 			end = true
 		}
 		if candles, err := worker.downloadCandlesInfo(ws, from.Unix(), to.Unix()); err != nil {
-			fmt.Println("from:", from, "to:", to, "duration:", ws.Resolution.Duration)
 			log.WithError(err).Error("get candle failed")
 			return err
 		} else {
 			from = to
 			totalCandles = append(totalCandles, candles...)
 		}
+	}
+	for _, candle := range totalCandles {
+		candle.IndicatorValues = repository.NewIndicatorValues()
 	}
 	for _, indicator := range ws.Indicators {
 		err := indicator.Calculate(totalCandles)

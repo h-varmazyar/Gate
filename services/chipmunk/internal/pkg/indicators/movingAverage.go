@@ -116,7 +116,7 @@ func (conf *movingAverage) Calculate(candles []*repository.Candle) error {
 	}
 
 	for i := 0; i < len(candles); i++ {
-		candles[i].MovingAverages[conf.id] = repository.MovingAverageValue{
+		candles[i].MovingAverages[conf.id] = &repository.MovingAverageValue{
 			Simple:      values[i].Simple,
 			Exponential: values[i].Exponential,
 		}
@@ -157,7 +157,7 @@ func (conf *movingAverage) Update(candles []*repository.Candle) *repository.Indi
 }
 
 func (conf *movingAverage) validateMA(length int) error {
-	if length <= conf.length {
+	if length < conf.length {
 		return errors.New(fmt.Sprintf("candles length must be grater or equal than %d", conf.length))
 	}
 	switch conf.Source {

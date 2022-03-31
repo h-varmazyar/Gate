@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
-	"math"
 )
 
 type rsi struct {
@@ -38,7 +37,7 @@ func (conf *rsi) Calculate(candles []*repository.Candle) error {
 		return err
 	}
 
-	{
+	{ //first RSI
 		gain := float64(0)
 		loss := float64(0)
 		for i := 1; i <= conf.length; i++ {
@@ -48,11 +47,13 @@ func (conf *rsi) Calculate(candles []*repository.Candle) error {
 				loss += change
 			}
 		}
-		loss = math.Abs(loss)
+		loss *= -1
+		gain = gain / float64(conf.length)
+		loss = loss / float64(conf.length)
 		rs := gain / loss
-		candles[conf.length].RSIs[conf.id] = repository.RSIValue{
-			Gain: gain / float64(conf.length),
-			Loss: loss / float64(conf.length),
+		candles[conf.length].RSIs[conf.id] = &repository.RSIValue{
+			Gain: gain,
+			Loss: loss,
 			RSI:  100 - (100 / (1 + rs)),
 		}
 	}
@@ -65,32 +66,43 @@ func (conf *rsi) Calculate(candles []*repository.Candle) error {
 		} else {
 			loss = change * -1
 		}
-		rs := gain / loss
-		candles[i].RSIs[conf.id] = repository.RSIValue{
-			Gain: (candles[i-1].RSIs[conf.id].Gain*(float64(conf.length-1)) + gain) / float64(conf.length),
-			Loss: (candles[i-1].RSIs[conf.id].Loss*(float64(conf.length-1)) + loss) / float64(conf.length),
-			RSI:  100 - (100 / (1 + rs)),
+		avgGain := (candles[i-1].RSIs[conf.id].Gain*float64(conf.length-1) + gain) / float64(conf.length)
+		avgLoss := (candles[i-1].RSIs[conf.id].Loss*float64(conf.length-1) + loss) / float64(conf.length)
+		rs := avgGain / avgLoss
+		rsiValue := 100 - (100 / (1 + rs))
+
+		candles[i].RSIs[conf.id] = &repository.RSIValue{
+			Gain: avgGain,
+			Loss: avgLoss,
+			RSI:  rsiValue,
 		}
 	}
 	return nil
 }
 
 func (conf *rsi) Update(candles []*repository.Candle) *repository.IndicatorValue {
-	gain := float64(0)
-	loss := float64(0)
-	change := candles[1].Close - candles[0].Close
-
-	if change > 0 {
+	gain, loss := float64(0), float64(0)
+	last := len(candles) - 1
+	if last < 1 {
+		return nil
+	}
+	if change := candles[last].Close - candles[last-1].Close; change > 0 {
 		gain = change
 	} else {
-		loss = change * -1
+		loss = change
 	}
 
-	return &repository.IndicatorValue{RSI: &repository.RSIValue{
-		Gain: (candles[0].RSIs[conf.id].Gain*(float64(conf.length-1)) + gain) / float64(conf.length),
-		Loss: (candles[0].RSIs[conf.id].Loss*(float64(conf.length-1)) + loss) / float64(conf.length),
-		RSI:  100 - (100 / (1 + gain/loss)),
-	}}
+	avgGain := (candles[last-1].RSIs[conf.id].Gain*float64(conf.length-1) + gain) / float64(conf.length)
+	avgLoss := (candles[last-1].RSIs[conf.id].Loss*float64(conf.length-1) - loss) / float64(conf.length)
+	rs := avgGain / avgLoss
+	rsiValue := 100 - (100 / (1 + rs))
+
+	return &repository.IndicatorValue{
+		RSI: &repository.RSIValue{
+			Gain: avgGain,
+			Loss: avgLoss,
+			RSI:  rsiValue,
+		}}
 }
 
 func (conf *rsi) validateRSI(length int) error {

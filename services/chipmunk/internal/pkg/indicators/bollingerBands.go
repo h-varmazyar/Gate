@@ -79,7 +79,7 @@ func (conf *bollingerBands) Calculate(candles []*repository.Candle) error {
 		}
 		variance /= float64(conf.length)
 
-		candles[i].BollingerBands[conf.id] = repository.BollingerBandsValue{
+		candles[i].BollingerBands[conf.id] = &repository.BollingerBandsValue{
 			UpperBand: ma + float64(conf.Deviation)*math.Sqrt(variance),
 			LowerBand: ma - float64(conf.Deviation)*math.Sqrt(variance),
 			MA:        ma,

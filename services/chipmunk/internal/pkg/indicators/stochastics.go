@@ -54,11 +54,15 @@ func (conf *stochastic) Calculate(candles []*repository.Candle) error {
 	if err := conf.validateStochastic(len(candles)); err != nil {
 		return err
 	}
+	for _, candle := range candles {
+		if candle.Stochastics[conf.id] == nil {
+			candle.Stochastics[conf.id] = new(repository.StochasticValue)
+		}
+	}
 	for i := conf.length - 1; i < len(candles); i++ {
 		lowest := math.MaxFloat64
 		highest := float64(0)
-		from := i - (conf.length - 1)
-		for j := from; j < from+conf.length; j++ {
+		for j := i - (conf.length - 1); j <= i; j++ {
 			if candles[j].Low < lowest {
 				lowest = candles[j].Low
 			}
@@ -66,9 +70,7 @@ func (conf *stochastic) Calculate(candles []*repository.Candle) error {
 				highest = candles[j].High
 			}
 		}
-		var stochasticValue repository.StochasticValue
-		{
-		}
+		stochasticValue := new(repository.StochasticValue)
 		stochasticValue.FastK = 100 * ((candles[i].Close - lowest) / (highest - lowest))
 
 		sum := stochasticValue.FastK

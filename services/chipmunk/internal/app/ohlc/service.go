@@ -3,7 +3,6 @@ package ohlc
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/h-varmazyar/Gate/api"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
@@ -11,7 +10,6 @@ import (
 	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
 	log "github.com/sirupsen/logrus"
@@ -78,7 +76,10 @@ func (s *Service) ReturnCandles(_ context.Context, req *chipmunkApi.BufferedCand
 }
 
 func (s *Service) ReturnLastCandle(_ context.Context, req *chipmunkApi.BufferedCandlesRequest) (*api.Candle, error) {
-	candle := buffer.Candles.Last(req.MarketID, req.ResolutionID)
+	candle, err := repository.Candles.ReturnLast(req.MarketID, req.ResolutionID)
+	if err != nil {
+		return nil, err
+	}
 	response := new(api.Candle)
 	mapper.Struct(candle, &response)
 	return response, nil
@@ -89,7 +90,6 @@ func (s *Service) CancelWorker(_ context.Context, req *chipmunkApi.CancelWorkerR
 }
 
 func parseIndicators(ctx context.Context, market string, strategy *brokerageApi.Strategy) ([]indicators.Indicator, error) {
-	fmt.Println("parse indicator:", len(strategy.Indicators))
 	response := make([]indicators.Indicator, 0)
 	for _, indicator := range strategy.Indicators {
 		var err error

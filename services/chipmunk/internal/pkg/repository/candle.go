@@ -72,5 +72,5 @@ func (r *CandleRepository) ReturnList(marketID, resolutionID uint32, limit, offs
 	return items, r.DB.Model(new(Candle)).
 		Where("market_id = ?", marketID).
 		Where("resolution_id = ?", resolutionID).
-		Order("time desc").Offset(offset).Limit(limit).Find(items).Error
+		Order("time desc").Offset(offset).Limit(limit).Find(&items).Error
 }

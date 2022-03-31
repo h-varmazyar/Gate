@@ -22,9 +22,22 @@ func init() {
 	}
 }
 
+func (m *markets) AddList(marketID uint32) {
+	candles, ok := m.data[marketID]
+	if !ok || candles == nil || len(candles) == 0 {
+		m.lock.Lock()
+		m.data[marketID] = make([]*repository.Candle, m.BufferLength)
+	}
+	m.lock.Unlock()
+}
+
+func (m *markets) RemoveList(marketID uint32) {
+	delete(m.data, marketID)
+}
+
 func (m *markets) Push(marketID uint32, candle *repository.Candle) {
 	candles, ok := m.data[marketID]
-	if !ok {
+	if !ok || candles == nil || len(candles) == 0 {
 		candles = make([]*repository.Candle, m.BufferLength)
 	}
 
@@ -44,9 +57,11 @@ func (m *markets) GetLastNCandles(marketID uint32, n int) []*repository.Candle {
 		return nil
 	} else {
 		cloned := make([]*repository.Candle, n)
-		for i := n; i > 0; i-- {
-			c := *candles[m.BufferLength-i]
-			cloned[i-1] = &c
+		j := m.BufferLength - n
+		for i := 0; i < n; i++ {
+			c := *candles[j]
+			cloned[i] = &c
+			j++
 		}
 		return cloned
 	}
