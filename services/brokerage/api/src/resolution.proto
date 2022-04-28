@@ -21,7 +21,7 @@ message Resolution {
   // @inject_tag: json:"value"
   string Value = 4;
   // @inject_tag: json:"id"
-  uint32 ID = 5;
+  string ID = 5;
 }
 
 message Resolutions {
@@ -31,7 +31,7 @@ message Resolutions {
 
 message GetResolutionByIDRequest {
   // @inject_tag: json:"id"
-  uint32 ID = 1;
+  string ID = 1;
 }
 
 message GetResolutionByDurationRequest {

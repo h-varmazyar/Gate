@@ -1,0 +1,27 @@
+syntax = "proto3";
+package eagleApi;
+option go_package = "github.com/h-varmazyar/Gate/services/eagle/api";
+import "api/src/misc.proto";
+import "api/src/models.proto";
+
+service signalService {
+  rpc StartWorker(StartWorkerReq) returns (api.Void);
+  rpc StopWorker(api.Void) returns (api.Void);
+  rpc AddCandleData(CandleData) returns (api.Void);
+}
+
+message StartWorkerReq {
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 1;
+  // @inject_tag: json:"strategy_id"
+  string StrategyID = 2;
+}
+
+message CandleData {
+  // @inject_tag: json:"candles"
+  repeated api.Candle Candles = 1;
+  // @inject_tag: json:"market_id"
+  string MarketID = 2;
+  // @inject_tag: json:"market_name"
+  string MarketName = 3;
+}

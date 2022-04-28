@@ -14,21 +14,21 @@ service ohlcService {
 
 message AddMarketRequest {
   // @inject_tag: json:"brokerage_id"
-  uint32 BrokerageID = 1;
+  string BrokerageID = 1;
   // @inject_tag: json:"market"
   brokerageApi.Market Market = 2;
 }
 
 message BufferedCandlesRequest {
   // @inject_tag: json:"resolution_id"
-  uint32 ResolutionID = 1;
+  string ResolutionID = 1;
   // @inject_tag: json:"market_id"
-  uint32 MarketID = 2;
+  string MarketID = 2;
 }
 
 message CancelWorkerRequest {
   // @inject_tag: json:"resolution_id"
-  uint32 ResolutionID = 1;
+  string ResolutionID = 1;
   // @inject_tag: json:"market_id"
-  uint32 MarketID = 2;
+  string MarketID = 2;
 }

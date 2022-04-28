@@ -34,7 +34,7 @@ func NewStrategyServiceClient(cc grpc.ClientConnInterface) StrategyServiceClient
 
 func (c *strategyServiceClient) Create(ctx context.Context, in *CreateStrategyReq, opts ...grpc.CallOption) (*Strategy, error) {
 	out := new(Strategy)
-	err := c.cc.Invoke(ctx, "/brokerageApi.StrategyService/Create", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/eagleApi.StrategyService/Create", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (c *strategyServiceClient) Create(ctx context.Context, in *CreateStrategyRe
 
 func (c *strategyServiceClient) Return(ctx context.Context, in *ReturnStrategyReq, opts ...grpc.CallOption) (*Strategy, error) {
 	out := new(Strategy)
-	err := c.cc.Invoke(ctx, "/brokerageApi.StrategyService/Return", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/eagleApi.StrategyService/Return", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (c *strategyServiceClient) Return(ctx context.Context, in *ReturnStrategyRe
 
 func (c *strategyServiceClient) List(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*Strategies, error) {
 	out := new(Strategies)
-	err := c.cc.Invoke(ctx, "/brokerageApi.StrategyService/List", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/eagleApi.StrategyService/List", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func _StrategyService_Create_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/brokerageApi.StrategyService/Create",
+		FullMethod: "/eagleApi.StrategyService/Create",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(StrategyServiceServer).Create(ctx, req.(*CreateStrategyReq))
@@ -121,7 +121,7 @@ func _StrategyService_Return_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/brokerageApi.StrategyService/Return",
+		FullMethod: "/eagleApi.StrategyService/Return",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(StrategyServiceServer).Return(ctx, req.(*ReturnStrategyReq))
@@ -139,7 +139,7 @@ func _StrategyService_List_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/brokerageApi.StrategyService/List",
+		FullMethod: "/eagleApi.StrategyService/List",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(StrategyServiceServer).List(ctx, req.(*api.Void))
@@ -151,7 +151,7 @@ func _StrategyService_List_Handler(srv interface{}, ctx context.Context, dec fun
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var StrategyService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "brokerageApi.StrategyService",
+	ServiceName: "eagleApi.StrategyService",
 	HandlerType: (*StrategyServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -168,5 +168,5 @@ var StrategyService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "services/brokerage/api/src/strategy.proto",
+	Metadata: "services/eagle/api/src/strategy.proto",
 }

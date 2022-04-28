@@ -4,35 +4,28 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
 )
 
 type movingAverage struct {
-	basicConfig
-	Source Source
+	id uuid.UUID
+	repository.MovingAverageConfigs
 }
 
-func NewMovingAverage(length int, source Source, marketName string) *movingAverage {
+func NewMovingAverage(id uuid.UUID, configs *repository.MovingAverageConfigs) (*movingAverage, error) {
 	return &movingAverage{
-		basicConfig: basicConfig{
-			MarketName: marketName,
-			id:         uuid.New(),
-			length:     length,
-		},
-		Source: source,
-	}
+		id:                   id,
+		MovingAverageConfigs: *configs,
+	}, nil
 }
 
-func (conf *movingAverage) GetID() uuid.UUID {
-	return conf.id
-}
-
-func (conf *movingAverage) GetType() IndicatorType {
-	return MovingAverage
+func (conf *movingAverage) GetType() chipmunkApi.IndicatorType {
+	return chipmunkApi.IndicatorType_MovingAverage
 }
 
 func (conf *movingAverage) GetLength() int {
-	return conf.length
+	return conf.Length
 }
 
 func (conf *movingAverage) sma(candles []*repository.Candle) ([]float64, error) {
@@ -40,39 +33,35 @@ func (conf *movingAverage) sma(candles []*repository.Candle) ([]float64, error) 
 	if err := conf.validateMA(len(candles)); err != nil {
 		return nil, err
 	}
-	for i := conf.length - 1; i < len(candles); i++ {
+	for i := conf.Length - 1; i < len(candles); i++ {
 		sum := float64(0)
-		for _, innerCandle := range candles[i-conf.length+1 : i+1] {
+		for _, innerCandle := range candles[i-conf.Length+1 : i+1] {
 			switch conf.Source {
-			case SourceClose:
+			case chipmunkApi.Source_Close:
 				sum += innerCandle.Close
-			case SourceOpen:
+			case chipmunkApi.Source_Open:
 				sum += innerCandle.Open
-			case SourceHigh:
+			case chipmunkApi.Source_High:
 				sum += innerCandle.High
-			case SourceLow:
+			case chipmunkApi.Source_Low:
 				sum += innerCandle.Low
-			case SourceHL2:
+			case chipmunkApi.Source_HL2:
 				sum += (innerCandle.High + innerCandle.Low) / 2
-			case SourceHLC3:
+			case chipmunkApi.Source_HLC3:
 				sum += (innerCandle.High + innerCandle.Low + innerCandle.Close) / 3
-			case SourceOHLC4:
+			case chipmunkApi.Source_OHLC4:
 				sum += (innerCandle.Open + innerCandle.Close + innerCandle.High + innerCandle.Low) / 4
 			}
 		}
-		response[i] = sum / float64(conf.length)
+		response[i] = sum / float64(conf.Length)
 	}
 	return response, nil
 }
 
 func (conf *movingAverage) updateSMA(candles []*repository.Candle) float64 {
 	smaConf := movingAverage{
-		basicConfig: basicConfig{
-			MarketName: conf.MarketName,
-			id:         uuid.New(),
-			length:     conf.length,
-		},
-		Source: conf.Source,
+		id:                   uuid.New(),
+		MovingAverageConfigs: conf.MovingAverageConfigs,
 	}
 	if sma, err := smaConf.sma(candles); err != nil {
 		return float64(0)
@@ -91,25 +80,25 @@ func (conf *movingAverage) Calculate(candles []*repository.Candle) error {
 	for i := range values {
 		values[i].Simple = sma[i]
 	}
-	values[conf.length-1].Exponential = values[conf.length-1].Simple
+	values[conf.Length-1].Exponential = values[conf.Length-1].Simple
 
-	factor := 2 / float64(conf.length+1)
-	for i := conf.length; i < len(candles); i++ {
+	factor := 2 / float64(conf.Length+1)
+	for i := conf.Length; i < len(candles); i++ {
 		price := float64(0)
 		switch conf.Source {
-		case SourceClose:
+		case chipmunkApi.Source_Close:
 			price = candles[i].Close
-		case SourceOpen:
+		case chipmunkApi.Source_Open:
 			price = candles[i].Open
-		case SourceHigh:
+		case chipmunkApi.Source_High:
 			price = candles[i].High
-		case SourceLow:
+		case chipmunkApi.Source_Low:
 			price = candles[i].Low
-		case SourceHL2:
+		case chipmunkApi.Source_HL2:
 			price = (candles[i].High + candles[i].Low) / 2
-		case SourceHLC3:
+		case chipmunkApi.Source_HLC3:
 			price = (candles[i].High + candles[i].Low + candles[i].Close) / 3
-		case SourceOHLC4:
+		case chipmunkApi.Source_OHLC4:
 			price = (candles[i].Open + candles[i].Close + candles[i].High + candles[i].Low) / 4
 		}
 		values[i].Exponential = price*factor + values[i-1].Exponential*(1-factor)
@@ -130,22 +119,22 @@ func (conf *movingAverage) Update(candles []*repository.Candle) *repository.Indi
 
 	i := len(candles) - 1
 	price := float64(0)
-	factor := 2 / float64(conf.length+1)
+	factor := 2 / float64(conf.Length+1)
 
 	switch conf.Source {
-	case SourceClose:
+	case chipmunkApi.Source_Close:
 		price = candles[i].Close
-	case SourceOpen:
+	case chipmunkApi.Source_Open:
 		price = candles[i].Open
-	case SourceHigh:
+	case chipmunkApi.Source_High:
 		price = candles[i].High
-	case SourceLow:
+	case chipmunkApi.Source_Low:
 		price = candles[i].Low
-	case SourceHL2:
+	case chipmunkApi.Source_HL2:
 		price = (candles[i].High + candles[i].Low) / 2
-	case SourceHLC3:
+	case chipmunkApi.Source_HLC3:
 		price = (candles[i].High + candles[i].Low + candles[i].Close) / 3
-	case SourceOHLC4:
+	case chipmunkApi.Source_OHLC4:
 		price = (candles[i].Open + candles[i].Close + candles[i].High + candles[i].Low) / 4
 	}
 	return &repository.IndicatorValue{
@@ -157,11 +146,18 @@ func (conf *movingAverage) Update(candles []*repository.Candle) *repository.Indi
 }
 
 func (conf *movingAverage) validateMA(length int) error {
-	if length < conf.length {
-		return errors.New(fmt.Sprintf("candles length must be grater or equal than %d", conf.length))
+	if length < conf.Length {
+		return errors.New(fmt.Sprintf("candles length must be grater or equal than %d", conf.Length))
 	}
 	switch conf.Source {
-	case SourceClose, SourceOpen, SourceHigh, SourceLow, SourceHL2, SourceHLC3, SourceOHLC4, SourceCustom:
+	case chipmunkApi.Source_Close,
+		chipmunkApi.Source_Open,
+		chipmunkApi.Source_High,
+		chipmunkApi.Source_Low,
+		chipmunkApi.Source_HL2,
+		chipmunkApi.Source_HLC3,
+		chipmunkApi.Source_OHLC4,
+		chipmunkApi.Source_Custom:
 		return nil
 	default:
 		return errors.New(fmt.Sprintf("moving average source not valid: %s", conf.Source))

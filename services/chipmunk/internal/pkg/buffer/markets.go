@@ -1,6 +1,7 @@
 package buffer
 
 import (
+	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
 	"sync"
@@ -8,7 +9,7 @@ import (
 
 type markets struct {
 	lock         *sync.Mutex
-	data         map[uint32][]*repository.Candle
+	data         map[uuid.UUID][]*repository.Candle
 	BufferLength int
 }
 
@@ -17,12 +18,12 @@ var Markets *markets
 func init() {
 	Markets = &markets{
 		lock:         new(sync.Mutex),
-		data:         make(map[uint32][]*repository.Candle),
+		data:         make(map[uuid.UUID][]*repository.Candle),
 		BufferLength: configs.Variables.CandleBufferLength,
 	}
 }
 
-func (m *markets) AddList(marketID uint32) {
+func (m *markets) AddList(marketID uuid.UUID) {
 	candles, ok := m.data[marketID]
 	if !ok || candles == nil || len(candles) == 0 {
 		m.lock.Lock()
@@ -31,11 +32,11 @@ func (m *markets) AddList(marketID uint32) {
 	m.lock.Unlock()
 }
 
-func (m *markets) RemoveList(marketID uint32) {
+func (m *markets) RemoveList(marketID uuid.UUID) {
 	delete(m.data, marketID)
 }
 
-func (m *markets) Push(marketID uint32, candle *repository.Candle) {
+func (m *markets) Push(marketID uuid.UUID, candle *repository.Candle) {
 	candles, ok := m.data[marketID]
 	if !ok || candles == nil || len(candles) == 0 {
 		candles = make([]*repository.Candle, m.BufferLength)
@@ -52,7 +53,7 @@ func (m *markets) Push(marketID uint32, candle *repository.Candle) {
 	m.data[marketID] = candles
 }
 
-func (m *markets) GetLastNCandles(marketID uint32, n int) []*repository.Candle {
+func (m *markets) GetLastNCandles(marketID uuid.UUID, n int) []*repository.Candle {
 	if candles, ok := m.data[marketID]; !ok || candles == nil {
 		return nil
 	} else {

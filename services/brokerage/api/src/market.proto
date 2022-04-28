@@ -40,7 +40,7 @@ message Market {
   // @inject_tag: json:"name"
   string Name = 12;
   // @inject_tag: json:"id"
-  uint32 ID = 13;
+  string ID = 13;
   // @inject_tag: json:"status"
   api.Status Status = 14;
   // @inject_tag: json:"brokerage_name"
@@ -73,7 +73,7 @@ message MarketListBySourceRequest {
 
 message MarketStatisticsRequest {
   // @inject_tag: json:"brokerage_id"
-  uint32 BrokerageID = 1;
+  string BrokerageID = 1;
   // @inject_tag: json:"market_name"
   string MarketName = 2;
 }

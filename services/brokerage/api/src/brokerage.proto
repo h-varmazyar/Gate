@@ -4,7 +4,6 @@ option go_package = "github.com/h-varmazyar/Gate/services/brokerage/api";
 import "api/src/misc.proto";
 import "services/brokerage/api/src/market.proto";
 import "services/brokerage/api/src/resolution.proto";
-import "services/brokerage/api/src/strategy.proto";
 
 service BrokerageService {
   rpc Create(CreateBrokerageReq) returns (Brokerage);
@@ -36,12 +35,12 @@ message CreateBrokerageReq {
   // @inject_tag: json:"resolution_id"
   string ResolutionID = 6;
   // @inject_tag: json:"strategy_id"
-  uint32 StrategyID = 7;
+  string StrategyID = 7;
 }
 
 message Brokerage {
   // @inject_tag: json:"id"
-  uint32 ID = 1;
+  string ID = 1;
   // @inject_tag: json:"title"
   string Title = 2;
   // @inject_tag: json:"description"
@@ -57,11 +56,9 @@ message Brokerage {
   // @inject_tag: json:"resolution"
   Resolution Resolution = 8;
   // @inject_tag: json:"strategy_id"
-  uint32 StrategyID = 9;
+  string StrategyID = 9;
   // @inject_tag: json:"status"
   api.Status Status = 10;
-  // @inject_tag: json:"strategy"
-  Strategy Strategy = 11;
 }
 
 message Brokerages {
@@ -76,7 +73,7 @@ message BrokerageStatus {
 
 message StatusChangeRequest {
   // @inject_tag: json:"id"
-  uint32 ID = 1;
+  string ID = 1;
   // @inject_tag: json:"trading"
   bool Trading = 2;
   // @inject_tag: json:"ohlc"
@@ -85,7 +82,7 @@ message StatusChangeRequest {
 
 message BrokerageIDReq {
   // @inject_tag: json:"id"
-  uint32 ID = 1;
+  string ID = 1;
 }
 
 

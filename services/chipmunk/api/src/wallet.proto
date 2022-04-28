@@ -8,11 +8,17 @@ service WalletsService {
   rpc List(WalletListRequest) returns (brokerageApi.Wallets);
   rpc StartWorker(StartWorkerRequest) returns (api.Void);
   rpc CancelWorker(api.Void) returns (api.Void);
+  rpc ReturnByName(ReturnWalletByDestReq) returns (brokerageApi.Wallet);
 }
 
 message WalletListRequest {
   // @inject_tag: json:"brokerage_name"
   string BrokerageName = 1;
+}
+
+message ReturnWalletByDestReq {
+  // @inject_tag: json:"destination"
+  string Destination = 1;
 }
 
 message StartWorkerRequest {

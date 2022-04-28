@@ -10,6 +10,7 @@ enum Type {
   Unknown = 0;
   POST = 1;
   GET = 2;
+  DELETE = 3;
 }
 
 //enum Status {
@@ -39,7 +40,18 @@ message KV {
   // @inject_tag: json:"key"
   string key = 1;
   // @inject_tag: json:"value"
-  string Value = 2;
+  oneof Value{
+    // @inject_tag: json:"string"
+    string String = 2;
+    // @inject_tag: json:"float64"
+    double Float64 = 3;
+    // @inject_tag: json:"float32"
+    float Float32 = 4;
+    // @inject_tag: json:"integer"
+    int64 Integer = 5;
+    // @inject_tag: json:"bool"
+    bool Bool = 6;
+  }
 }
 
 message Request {

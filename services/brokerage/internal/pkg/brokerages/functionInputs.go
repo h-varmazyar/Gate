@@ -1,6 +1,7 @@
 package brokerages
 
 import (
+	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
 	"github.com/h-varmazyar/Gate/services/brokerage/internal/pkg/repository"
 	"time"
 )
@@ -38,29 +39,29 @@ type TransactionListParams struct {
 	WalletID int
 }
 
-//type NewOrderParams struct {
-//	OrderKind  repository.OrderKind
-//	ClientUUID string
-//	BuyOrSell  repository.OrderType
-//	Price      float64
-//	StopPrice  float64
-//	Market     repository.Market
-//	Amount     float64
-//	Option     repository.OrderOption
-//	HideOrder  bool
-//}
+type NewOrderParams struct {
+	OrderModel brokerageApi.OrderModel
+	ClientUUID string
+	BuyOrSell  brokerageApi.OrderType
+	Price      float64
+	StopPrice  float64
+	Market     *brokerageApi.Market
+	Amount     float64
+	Option     brokerageApi.OrderOption
+	HideOrder  bool
+}
 
 type CancelOrderParams struct {
 	ServerOrderId int64
-	Market        repository.Market
-	IsBuy         bool
+	Market        *brokerageApi.Market
+	Type          brokerageApi.OrderType
 	ClientUUID    string
 	AllOrders     bool
 }
 
 type OrderStatusParams struct {
 	ServerOrderId int64
-	Market        repository.Market
+	Market        *brokerageApi.Market
 	ClientUUID    string
 }
 

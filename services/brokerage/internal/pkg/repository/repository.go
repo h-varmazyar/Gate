@@ -10,7 +10,6 @@ var (
 	Markets     *MarketRepository
 	Brokerages  *BrokerageRepository
 	Resolutions *ResolutionRepository
-	Strategies  *StrategyRepository
 	Indicators  *IndicatorRepository
 )
 
@@ -25,9 +24,6 @@ func LoadRepositories(dsn string) {
 	if err := db.AutoMigrate(new(Indicator)); err != nil {
 		log.WithError(err).Fatal("migration failed for indicator")
 	}
-	if err := db.AutoMigrate(new(Strategy)); err != nil {
-		log.WithError(err).Fatal("migration failed for strategy")
-	}
 	if err := db.AutoMigrate(new(Brokerage)); err != nil {
 		log.WithError(err).Fatal("migration failed for brokerage")
 	}
@@ -41,6 +37,5 @@ func LoadRepositories(dsn string) {
 	Markets = &MarketRepository{db: db}
 	Brokerages = &BrokerageRepository{db: db}
 	Resolutions = &ResolutionRepository{db: db}
-	Strategies = &StrategyRepository{db: db}
 	Indicators = &IndicatorRepository{db: db}
 }

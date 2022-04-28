@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
+	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
 	"go/types"
 	"reflect"
+	"strconv"
 )
 
 type responseModel struct {
@@ -37,4 +40,41 @@ func parseResponse(input string, response interface{}) error {
 		return errors.New(fmt.Sprintf("cast data failed: %v", reflect.TypeOf(tmp.Data)))
 	}
 	return nil
+}
+
+func createOrder(data map[string]interface{}, market *brokerageApi.Market) *brokerageApi.Order {
+	response := new(brokerageApi.Order)
+	response.ID = uuid.New().String()
+	response.Market = market
+	response.DestinationAsset = market.Destination
+	response.SourceAsset = market.Source
+
+	response.Amount, _ = strconv.ParseFloat(data["amount"].(string), 64)
+	response.AveragePrice, _ = strconv.ParseFloat(data["avg_price"].(string), 64)
+	response.CreatedAt, _ = strconv.ParseInt(data["create_time"].(string), 10, 64)
+	response.ExecutedAmount, _ = strconv.ParseFloat(data["deal_amount"].(string), 64)
+	response.Volume, _ = strconv.ParseFloat(data["deal_money"].(string), 64)
+	response.FinishedAt, _ = strconv.ParseInt(data["finished_time"].(string), 10, 64)
+	response.OrderNo, _ = strconv.ParseInt(data["id"].(string), 10, 64)
+	response.MakerFeeRate, _ = strconv.ParseFloat(data["maker_fee_rate"].(string), 64)
+	response.OrderType = brokerageApi.OrderModel(brokerageApi.OrderModel_value[data["order_type"].(string)])
+	response.SellOrBuy = brokerageApi.OrderType(brokerageApi.OrderType_value[data["type"].(string)])
+	response.Price, _ = strconv.ParseFloat(data["price"].(string), 64)
+	response.TakerFeeRate, _ = strconv.ParseFloat(data["taker_fee_rate"].(string), 64)
+	response.StockFee, _ = strconv.ParseFloat(data["stock_fee"].(string), 64)
+	response.MoneyFee, _ = strconv.ParseFloat(data["money_fee"].(string), 64)
+	response.AssetFee, _ = strconv.ParseFloat(data["asset_fee"].(string), 64)
+	response.TransactionFee, _ = strconv.ParseFloat(data["fee_asset"].(string), 64)
+	response.FeeDiscount, _ = strconv.ParseFloat(data["fee_discount"].(string), 64)
+	response.UnExecutedAmount, _ = strconv.ParseFloat(data["left"].(string), 64)
+
+	switch data["status"].(string) {
+	case brokerageApi.Order_not_deal.String():
+		response.Status = brokerageApi.Order_not_deal
+	case brokerageApi.Order_part_deal.String():
+		response.Status = brokerageApi.Order_part_deal
+	case brokerageApi.Order_done.String():
+		response.Status = brokerageApi.Order_done
+	}
+	return response
 }

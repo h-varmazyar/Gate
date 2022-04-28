@@ -8,7 +8,7 @@ service WalletService {
 
 message UpdateWalletRequest {
   // @inject_tag: json:"brokerage_id"
-  uint32 BrokerageID = 1;
+  string BrokerageID = 1;
 }
 
 message Wallet {

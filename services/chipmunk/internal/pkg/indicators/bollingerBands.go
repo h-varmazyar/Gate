@@ -3,38 +3,32 @@ package indicators
 import (
 	"errors"
 	"github.com/google/uuid"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
 	"math"
 )
 
 type bollingerBands struct {
-	basicConfig
-	Deviation int
-	Source    Source
+	id uuid.UUID
+	repository.BollingerBandsConfigs
 }
 
-func NewBollingerBands(length, deviation int, source Source, marketName string) *bollingerBands {
-	return &bollingerBands{
-		basicConfig: basicConfig{
-			MarketName: marketName,
-			id:         uuid.New(),
-			length:     length,
-		},
-		Deviation: deviation,
-		Source:    source,
+func NewBollingerBands(id uuid.UUID, configs *repository.BollingerBandsConfigs) (*bollingerBands, error) {
+	if err := validateBollingerBandsConfigs(configs); err != nil {
+		return nil, err
 	}
+	return &bollingerBands{
+		id:                    id,
+		BollingerBandsConfigs: *configs,
+	}, nil
 }
 
-func (conf *bollingerBands) GetID() uuid.UUID {
-	return conf.id
-}
-
-func (conf *bollingerBands) GetType() IndicatorType {
-	return BollingerBands
+func (conf *bollingerBands) GetType() chipmunkApi.IndicatorType {
+	return chipmunkApi.IndicatorType_BollingerBands
 }
 
 func (conf *bollingerBands) GetLength() int {
-	return conf.length
+	return conf.Length
 }
 
 func (conf *bollingerBands) Calculate(candles []*repository.Candle) error {
@@ -43,41 +37,40 @@ func (conf *bollingerBands) Calculate(candles []*repository.Candle) error {
 	}
 	cloned := cloneCandles(candles)
 	smaConf := movingAverage{
-		basicConfig: basicConfig{
-			MarketName: conf.MarketName,
-			id:         uuid.New(),
-			length:     conf.length,
+		id: uuid.New(),
+		MovingAverageConfigs: repository.MovingAverageConfigs{
+			Length: conf.Length,
+			Source: conf.Source,
 		},
-		Source: conf.Source,
 	}
 	sma, err := smaConf.sma(cloned)
 	if err != nil {
 		return err
 	}
-	for i := conf.length - 1; i < len(candles); i++ {
+	for i := conf.Length - 1; i < len(candles); i++ {
 		variance := float64(0)
 		ma := sma[i]
-		for j := 1 + i - conf.length; j <= i; j++ {
+		for j := 1 + i - conf.Length; j <= i; j++ {
 			sum := float64(0)
 			switch conf.Source {
-			case SourceOpen:
+			case chipmunkApi.Source_Open:
 				sum = candles[j].Open
-			case SourceHigh:
+			case chipmunkApi.Source_High:
 				sum = candles[j].High
-			case SourceLow:
+			case chipmunkApi.Source_Low:
 				sum = candles[j].Low
-			case SourceClose:
+			case chipmunkApi.Source_Close:
 				sum = candles[j].Close
-			case SourceOHLC4:
+			case chipmunkApi.Source_OHLC4:
 				sum = (candles[j].Open + candles[j].High + candles[j].Low + candles[j].Close) / 4
-			case SourceHLC3:
+			case chipmunkApi.Source_HLC3:
 				sum = (candles[j].Low + candles[j].High + candles[j].Close) / 3
-			case SourceHL2:
+			case chipmunkApi.Source_HL2:
 				sum = (candles[j].Low + candles[j].High) / 2
 			}
 			variance += math.Pow(ma-sum, 2)
 		}
-		variance /= float64(conf.length)
+		variance /= float64(conf.Length)
 
 		candles[i].BollingerBands[conf.id] = &repository.BollingerBandsValue{
 			UpperBand: ma + float64(conf.Deviation)*math.Sqrt(variance),
@@ -90,12 +83,11 @@ func (conf *bollingerBands) Calculate(candles []*repository.Candle) error {
 
 func (conf *bollingerBands) Update(candles []*repository.Candle) *repository.IndicatorValue {
 	smaConf := movingAverage{
-		basicConfig: basicConfig{
-			MarketName: conf.MarketName,
-			id:         uuid.New(),
-			length:     conf.length,
+		id: uuid.New(),
+		MovingAverageConfigs: repository.MovingAverageConfigs{
+			Length: conf.Length,
+			Source: conf.Source,
 		},
-		Source: conf.Source,
 	}
 	sma, err := smaConf.sma(candles)
 	if err != nil {
@@ -106,24 +98,24 @@ func (conf *bollingerBands) Update(candles []*repository.Candle) *repository.Ind
 	for j := 0; j < len(candles); j++ {
 		sum := float64(0)
 		switch conf.Source {
-		case SourceOpen:
+		case chipmunkApi.Source_Open:
 			sum = candles[j].Open
-		case SourceHigh:
+		case chipmunkApi.Source_High:
 			sum = candles[j].High
-		case SourceLow:
+		case chipmunkApi.Source_Low:
 			sum = candles[j].Low
-		case SourceClose:
+		case chipmunkApi.Source_Close:
 			sum = candles[j].Close
-		case SourceOHLC4:
+		case chipmunkApi.Source_OHLC4:
 			sum = (candles[j].Open + candles[j].High + candles[j].Low + candles[j].Close) / 4
-		case SourceHLC3:
+		case chipmunkApi.Source_HLC3:
 			sum = (candles[j].Low + candles[j].High + candles[j].Close) / 3
-		case SourceHL2:
+		case chipmunkApi.Source_HL2:
 			sum = (candles[j].Low + candles[j].High) / 2
 		}
 		variance += math.Pow(ma-sum, 2)
 	}
-	variance /= float64(conf.length)
+	variance /= float64(conf.Length)
 	return &repository.IndicatorValue{
 		BB: &repository.BollingerBandsValue{
 			UpperBand: ma + float64(conf.Deviation)*math.Sqrt(variance),
@@ -134,14 +126,15 @@ func (conf *bollingerBands) Update(candles []*repository.Candle) *repository.Ind
 }
 
 func (conf *bollingerBands) validateBollingerBand(length int) error {
-	if conf.length != conf.length {
-		return errors.New("bollinger band length must be equal to moving average length")
-	}
-	if length < conf.length {
+	if length < conf.Length {
 		return errors.New("length must be bigger than or equal to candle length")
 	}
 	if conf.Deviation < 1 {
 		return errors.New("deviation value must be positive")
 	}
+	return nil
+}
+
+func validateBollingerBandsConfigs(indicator *repository.BollingerBandsConfigs) error {
 	return nil
 }

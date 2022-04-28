@@ -2,10 +2,11 @@ package strategy
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/api"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
-	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
-	"github.com/h-varmazyar/Gate/services/brokerage/internal/pkg/repository"
+	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
+	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/repository"
 	"google.golang.org/grpc"
 )
 
@@ -24,36 +25,40 @@ func NewService() *Service {
 }
 
 func (s *Service) RegisterServer(server *grpc.Server) {
-	brokerageApi.RegisterStrategyServiceServer(server, s)
+	eagleApi.RegisterStrategyServiceServer(server, s)
 }
 
-func (s *Service) Create(ctx context.Context, req *brokerageApi.CreateStrategyReq) (*brokerageApi.Strategy, error) {
+func (s *Service) Create(ctx context.Context, req *eagleApi.CreateStrategyReq) (*eagleApi.Strategy, error) {
 	strategy := new(repository.Strategy)
 	mapper.Struct(req, strategy)
 	if err := repository.Strategies.Save(strategy); err != nil {
 		return nil, err
 	}
-	response := new(brokerageApi.Strategy)
+	response := new(eagleApi.Strategy)
 	mapper.Struct(strategy, response)
 	return response, nil
 }
 
-func (s *Service) Return(ctx context.Context, req *brokerageApi.ReturnStrategyReq) (*brokerageApi.Strategy, error) {
-	strategy, err := repository.Strategies.Return(req.ID)
+func (s *Service) Return(ctx context.Context, req *eagleApi.ReturnStrategyReq) (*eagleApi.Strategy, error) {
+	strategyID, err := uuid.Parse(req.ID)
 	if err != nil {
 		return nil, err
 	}
-	response := new(brokerageApi.Strategy)
+	strategy, err := repository.Strategies.Return(strategyID)
+	if err != nil {
+		return nil, err
+	}
+	response := new(eagleApi.Strategy)
 	mapper.Struct(strategy, response)
 	return response, nil
 }
 
-func (s *Service) List(ctx context.Context, _ *api.Void) (*brokerageApi.Strategies, error) {
+func (s *Service) List(ctx context.Context, _ *api.Void) (*eagleApi.Strategies, error) {
 	strategies, err := repository.Strategies.List()
 	if err != nil {
 		return nil, err
 	}
-	response := new(brokerageApi.Strategies)
+	response := new(eagleApi.Strategies)
 	mapper.Slice(strategies, &response.Elements)
 	return response, nil
 }

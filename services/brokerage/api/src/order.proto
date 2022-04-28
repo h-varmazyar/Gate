@@ -1,0 +1,143 @@
+syntax = "proto3";
+package brokerageApi;
+option go_package = "github.com/h-varmazyar/Gate/services/brokerage/api";
+import "services/brokerage/api/src/market.proto";
+import "services/brokerage/api/src/asset.proto";
+
+service OrderService {
+  rpc NewOrder(NewOrderRequest) returns (Order);
+  rpc CancelOrder(CancelOrderRequest) returns (Order);
+  rpc OrderStatus(OrderStatusRequest) returns (OrderStatusResp);
+  rpc OrderList(OrderListRequest) returns (Orders);
+}
+
+enum OrderModel{
+  all = 0;
+  market = 1;
+  multipleLimit = 2;
+  ioc = 3;
+  stopLimit = 4;
+  limit = 5;
+}
+
+message Order {
+  enum type{
+    ask = 0;
+    bid = 1;
+    buy = 2;
+    sell = 3;
+  }
+
+  enum status{
+    new = 0;
+    done = 1;
+    part_deal = 2;
+    not_deal = 3;
+    cancel = 4;
+  }
+
+  enum option {
+    IOC = 0;
+    FOK = 1;
+    NORMAL = 2;
+    MAKER_ONLY = 3;
+  }
+
+  // @inject_tag: json:"id"
+  string ID = 1;
+  // @inject_tag: json:"server_order_id"
+  int64 ServerOrderId = 2;
+  // @inject_tag: json:"amount"
+  double Amount = 3;
+  // @inject_tag: json:"finished_at"
+  int64 FinishedAt = 4;
+  // @inject_tag: json:"executed_amount"
+  double ExecutedAmount = 5;
+  // @inject_tag: json:"un_executed_amount"
+  double UnExecutedAmount = 6;
+  // @inject_tag: json:"status"
+  status Status = 7;
+  // @inject_tag: json:"price"
+  double Price = 8;
+  // @inject_tag: json:"market"
+  Market Market = 9;
+  // @inject_tag: json:"maker_fee_rate"
+  double MakerFeeRate = 10;
+  // @inject_tag: json:"taker_fee_rate"
+  double TakerFeeRate = 11;
+  // @inject_tag: json:"sell_or_buy"
+  type SellOrBuy = 12;
+  // @inject_tag: json:"order_type"
+  OrderModel OrderType = 13;
+  // @inject_tag: json:"average_price"
+  double AveragePrice = 14;
+  // @inject_tag: json:"transaction_fee"
+  double TransactionFee = 15;
+  // @inject_tag: json:"source_asset"
+  Asset SourceAsset = 16;
+  // @inject_tag: json:"destination_asset"
+  Asset DestinationAsset = 17;
+  // @inject_tag: json:"fee_asset"
+  Asset FeeAsset = 18;
+  // @inject_tag: json:"fee_discount"
+  double FeeDiscount = 19;
+  // @inject_tag: json:"asset_fee"
+  double AssetFee = 20;
+  // @inject_tag: json:"money_fee"
+  double MoneyFee = 21;
+  // @inject_tag: json:"volume"
+  double Volume = 22;
+  // @inject_tag: json:"order_no"
+  int64 OrderNo = 23;
+  // @inject_tag: json:"stock_fee"
+  double StockFee = 24;
+  // @inject_tag: json:"created_at"
+  int64 CreatedAt = 25;
+  // @inject_tag: json:"updated_at"
+  int64 UpdatedAt = 26;
+}
+
+message Orders {
+  repeated Order Elements = 1;
+}
+
+message NewOrderRequest {
+  // @inject_tag: json:"access_id"
+  string AccessID = 1;
+  // @inject_tag: json:"market"
+  string Market = 2;
+  // @inject_tag: json:"type"
+  string Type = 3;
+  // @inject_tag: json:"amount"
+  string Amount = 4;
+  // @inject_tag: json:"price"
+  string Price = 5;
+  // @inject_tag: json:"source_id"
+  string SourceID = 6;
+  // @inject_tag: json:"account_id"
+  int32 AccountID = 7;
+  // @inject_tag: json:"tonce"
+  int32 Tonce = 8;
+  // @inject_tag: json:"client_id"
+  string ClientID = 9;
+  // @inject_tag: json:"hide"
+  bool Hide = 10;
+  // @inject_tag: json:"option"
+  string Option = 11;
+}
+
+message CancelOrderRequest {
+
+}
+
+message OrderStatusResp {
+  Order.status Status = 1;
+}
+
+message OrderStatusRequest {
+
+}
+
+message OrderListRequest {
+
+}

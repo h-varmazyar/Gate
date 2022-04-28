@@ -12,7 +12,10 @@ type Handler func(ctx context.Context, request *networkAPI.Request) (*networkAPI
 
 type Brokerage interface {
 	WalletList(context.Context, Handler) (*brokerageApi.Wallets, error)
-	OHLC(context.Context, OHLCParams, Handler) ([]*api.Candle, error)
-	MarketStatistics(context.Context, MarketStatisticsParams, Handler) (*api.Candle, error)
-	UpdateMarket(ctx context.Context, handler Handler) ([]*repository.Market, error)
+	OHLC(context.Context, *OHLCParams, Handler) ([]*api.Candle, error)
+	MarketStatistics(context.Context, *MarketStatisticsParams, Handler) (*api.Candle, error)
+	UpdateMarket(context.Context, Handler) ([]*repository.Market, error)
+	NewOrder(context.Context, *NewOrderParams, Handler) (*brokerageApi.Order, error)
+	CancelOrder(context.Context, *CancelOrderParams, Handler) (*brokerageApi.Order, error)
+	OrderStatus(context.Context, *OrderStatusParams, Handler) (*brokerageApi.Order, error)
 }

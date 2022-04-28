@@ -1,24 +1,24 @@
 syntax = "proto3";
 package eagleApi;
 option go_package = "github.com/h-varmazyar/Gate/services/eagle/api";
-import "api/src/misc.proto";
-import "api/src/models.proto";
-
-service indicatorsService {
-  rpc NewWorker(AddWorkerRequest) returns (api.Void);
-  rpc CancelWorker(CancelWorkerRequest) returns (api.Void);
-}
-
-message AddWorkerRequest {
-  // @inject_tag: json:"resolution"
-  api.Resolution Resolution = 1;
-  // @inject_tag: json:"market"
-  api.Market Market = 2;
-}
-
-message CancelWorkerRequest {
-  // @inject_tag: json:"resolution_id"
-  string ResolutionID = 1;
-  // @inject_tag: json:"market_id"
-  string MarketID = 2;
-}
+//import "api/src/misc.proto";
+//import "api/src/models.proto";
+//
+//service indicatorsService {
+//  rpc NewWorker(AddWorkerRequest) returns (api.Void);
+//  rpc CancelWorker(CancelWorkerRequest) returns (api.Void);
+//}
+//
+//message AddWorkerRequest {
+//  // @inject_tag: json:"resolution"
+//  brokerage.Resolution Resolution = 1;
+//  // @inject_tag: json:"market"
+//  brokerage.Market Market = 2;
+//}
+//
+//message CancelWorkerRequest {
+//  // @inject_tag: json:"resolution_id"
+//  string ResolutionID = 1;
+//  // @inject_tag: json:"market_id"
+//  string MarketID = 2;
+//}

@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	Candles *CandleRepository
+	Candles    *CandleRepository
+	Indicators *IndicatorRepository
 )
 
 const (
@@ -24,6 +25,10 @@ func init() {
 		if err := db.AutoMigrate(new(Candle)); err != nil {
 			log.WithError(err).Fatal("migration failed for candles")
 		}
-		Candles = &CandleRepository{DB: db}
+		if err := db.AutoMigrate(new(Indicator)); err != nil {
+			log.WithError(err).Fatal("migration failed for indicators")
+		}
+		Candles = &CandleRepository{db: db}
+		Indicators = &IndicatorRepository{db: db}
 	}
 }

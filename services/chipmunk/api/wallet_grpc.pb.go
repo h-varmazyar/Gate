@@ -23,6 +23,7 @@ type WalletsServiceClient interface {
 	List(ctx context.Context, in *WalletListRequest, opts ...grpc.CallOption) (*api.Wallets, error)
 	StartWorker(ctx context.Context, in *StartWorkerRequest, opts ...grpc.CallOption) (*api1.Void, error)
 	CancelWorker(ctx context.Context, in *api1.Void, opts ...grpc.CallOption) (*api1.Void, error)
+	ReturnByName(ctx context.Context, in *ReturnWalletByDestReq, opts ...grpc.CallOption) (*api.Wallet, error)
 }
 
 type walletsServiceClient struct {
@@ -60,6 +61,15 @@ func (c *walletsServiceClient) CancelWorker(ctx context.Context, in *api1.Void, 
 	return out, nil
 }
 
+func (c *walletsServiceClient) ReturnByName(ctx context.Context, in *ReturnWalletByDestReq, opts ...grpc.CallOption) (*api.Wallet, error) {
+	out := new(api.Wallet)
+	err := c.cc.Invoke(ctx, "/brokerageApi.WalletsService/ReturnByName", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WalletsServiceServer is the server API for WalletsService service.
 // All implementations should embed UnimplementedWalletsServiceServer
 // for forward compatibility
@@ -67,6 +77,7 @@ type WalletsServiceServer interface {
 	List(context.Context, *WalletListRequest) (*api.Wallets, error)
 	StartWorker(context.Context, *StartWorkerRequest) (*api1.Void, error)
 	CancelWorker(context.Context, *api1.Void) (*api1.Void, error)
+	ReturnByName(context.Context, *ReturnWalletByDestReq) (*api.Wallet, error)
 }
 
 // UnimplementedWalletsServiceServer should be embedded to have forward compatible implementations.
@@ -81,6 +92,9 @@ func (UnimplementedWalletsServiceServer) StartWorker(context.Context, *StartWork
 }
 func (UnimplementedWalletsServiceServer) CancelWorker(context.Context, *api1.Void) (*api1.Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelWorker not implemented")
+}
+func (UnimplementedWalletsServiceServer) ReturnByName(context.Context, *ReturnWalletByDestReq) (*api.Wallet, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReturnByName not implemented")
 }
 
 // UnsafeWalletsServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -148,6 +162,24 @@ func _WalletsService_CancelWorker_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WalletsService_ReturnByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReturnWalletByDestReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletsServiceServer).ReturnByName(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/brokerageApi.WalletsService/ReturnByName",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletsServiceServer).ReturnByName(ctx, req.(*ReturnWalletByDestReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WalletsService_ServiceDesc is the grpc.ServiceDesc for WalletsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -166,6 +198,10 @@ var WalletsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CancelWorker",
 			Handler:    _WalletsService_CancelWorker_Handler,
+		},
+		{
+			MethodName: "ReturnByName",
+			Handler:    _WalletsService_ReturnByName_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

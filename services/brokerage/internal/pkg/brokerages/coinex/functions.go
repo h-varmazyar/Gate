@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/api"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
@@ -14,6 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"io"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -30,13 +32,14 @@ func (service *Service) WalletList(ctx context.Context, runner brokerages.Handle
 	request.Type = networkAPI.Type_GET
 	request.Endpoint = "https://api.coinex.com/v1/balance/info"
 	request.Params = []*networkAPI.KV{
-		{Key: "access_id", Value: service.Auth.AccessID},
-		{Key: "tonce", Value: fmt.Sprintf("%d", time.Now().UnixNano()/1e6)},
+		networkAPI.NewKV("access_id", service.Auth.AccessID),
+		networkAPI.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
 	}
 	request.Headers = []*networkAPI.KV{
-		{Key: "authorization", Value: service.generateAuthorization(request.Params)},
-		{Key: "tonce", Value: fmt.Sprintf("%d", time.Now().UnixNano()/1e6)},
+		networkAPI.NewKV("authorization", service.generateAuthorization(request.Params)),
+		networkAPI.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
 	}
+
 	resp, err := runner(ctx, request)
 	if err != nil {
 		return nil, err
@@ -67,7 +70,7 @@ func (service *Service) WalletList(ctx context.Context, runner brokerages.Handle
 	return response, nil
 }
 
-func (service *Service) OHLC(ctx context.Context, inputs brokerages.OHLCParams, runner brokerages.Handler) ([]*api.Candle, error) {
+func (service *Service) OHLC(ctx context.Context, inputs *brokerages.OHLCParams, runner brokerages.Handler) ([]*api.Candle, error) {
 	request := new(networkAPI.Request)
 	request.Type = networkAPI.Type_GET
 	count := (inputs.To.Sub(inputs.From)) / inputs.Resolution.Duration
@@ -76,16 +79,16 @@ func (service *Service) OHLC(ctx context.Context, inputs brokerages.OHLCParams, 
 	}
 	if int64(count) >= 1000 {
 		request.Params = []*networkAPI.KV{
-			{Key: "market", Value: inputs.Market.Name},
-			{Key: "interval", Value: inputs.Resolution.Value},
-			{Key: "start_time", Value: fmt.Sprintf("%v", inputs.From.Unix())},
-			{Key: "end_time", Value: fmt.Sprintf("%v", inputs.To.Unix())}}
+			networkAPI.NewKV("market", inputs.Market.Name),
+			networkAPI.NewKV("interval", inputs.Resolution.Value),
+			networkAPI.NewKV("start_time", fmt.Sprintf("%v", inputs.From.Unix())),
+			networkAPI.NewKV("end_time", fmt.Sprintf("%v", inputs.To.Unix()))}
 		request.Endpoint = "https://www.coinex.com/res/market/kline"
 	} else {
 		request.Params = []*networkAPI.KV{
-			{Key: "market", Value: inputs.Market.Name},
-			{Key: "type", Value: inputs.Resolution.Label},
-			{Key: "limit", Value: fmt.Sprintf("%v", int64(count))},
+			networkAPI.NewKV("market", inputs.Market.Name),
+			networkAPI.NewKV("type", inputs.Resolution.Label),
+			networkAPI.NewKV("limit", fmt.Sprintf("%v", int64(count))),
 		}
 		request.Endpoint = "https://api.coinex.com/v1/market/kline"
 	}
@@ -191,7 +194,7 @@ func (service *Service) UpdateMarket(ctx context.Context, runner brokerages.Hand
 	return markets, nil
 }
 
-func (service *Service) MarketStatistics(ctx context.Context, inputs brokerages.MarketStatisticsParams, runner brokerages.Handler) (*api.Candle, error) {
+func (service *Service) MarketStatistics(ctx context.Context, inputs *brokerages.MarketStatisticsParams, runner brokerages.Handler) (*api.Candle, error) {
 	var market string
 	if inputs.Market == "" {
 		market = strings.ToUpper(fmt.Sprint(inputs.Source, inputs.Destination))
@@ -201,7 +204,7 @@ func (service *Service) MarketStatistics(ctx context.Context, inputs brokerages.
 	request := new(networkAPI.Request)
 	request.Type = networkAPI.Type_GET
 	request.Params = []*networkAPI.KV{
-		{Key: "market", Value: market},
+		networkAPI.NewKV("market", market),
 	}
 	request.Endpoint = "https://api.coinex.com/v1/market/ticker"
 
@@ -256,10 +259,141 @@ func (service *Service) MarketStatistics(ctx context.Context, inputs brokerages.
 	return candle, nil
 }
 
+func (service *Service) NewOrder(ctx context.Context, inputs *brokerages.NewOrderParams, runner brokerages.Handler) (*brokerageApi.Order, error) {
+	request := new(networkAPI.Request)
+	request.Type = networkAPI.Type_POST
+	request.Params = []*networkAPI.KV{
+		networkAPI.NewKV("access_id", service.Auth.AccessID),
+		networkAPI.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
+	}
+	request.Headers = []*networkAPI.KV{
+		networkAPI.NewKV("authorization", service.generateAuthorization(request.Params)),
+		networkAPI.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
+	}
+	switch inputs.OrderModel {
+	case brokerageApi.OrderModel_limit:
+		request.Endpoint = "https://api.coinex.com/v1/order/limit"
+		request.Params = append(request.Params, networkAPI.NewKV("market", inputs.Market.Name))
+		request.Params = append(request.Params, networkAPI.NewKV("type", inputs.BuyOrSell.String()))
+		request.Params = append(request.Params, networkAPI.NewKV("amount", fmt.Sprintf("%f", inputs.Amount)))
+		request.Params = append(request.Params, networkAPI.NewKV("price", fmt.Sprintf("%f", inputs.Price)))
+		request.Params = append(request.Params, networkAPI.NewKV("source_id", fmt.Sprintf("%d", rand.Int())))
+		request.Params = append(request.Params, networkAPI.NewKV("option", inputs.Option.String()))
+		request.Params = append(request.Params, networkAPI.NewKV("client_id", strings.ReplaceAll(uuid.New().String(), "-", "")))
+		request.Params = append(request.Params, networkAPI.NewKV("hide", inputs.HideOrder))
+	case brokerageApi.OrderModel_market:
+		request.Endpoint = "https://api.coinex.com/v1/order/market"
+		request.Params = append(request.Params, networkAPI.NewKV("market", inputs.Market.Name))
+		request.Params = append(request.Params, networkAPI.NewKV("type", inputs.BuyOrSell.String()))
+		request.Params = append(request.Params, networkAPI.NewKV("amount", fmt.Sprintf("%f", inputs.Amount)))
+		request.Params = append(request.Params, networkAPI.NewKV("option", inputs.Option.String()))
+		request.Params = append(request.Params, networkAPI.NewKV("client_id", strings.ReplaceAll(uuid.New().String(), "-", "")))
+	case brokerageApi.OrderModel_stopLimit:
+		request.Endpoint = "https://api.coinex.com/v1/order/stop/limit"
+		request.Params = append(request.Params, networkAPI.NewKV("market", inputs.Market.Name))
+		request.Params = append(request.Params, networkAPI.NewKV("type", inputs.BuyOrSell.String()))
+		request.Params = append(request.Params, networkAPI.NewKV("amount", fmt.Sprintf("%f", inputs.Amount)))
+		request.Params = append(request.Params, networkAPI.NewKV("price", fmt.Sprintf("%f", inputs.Price)))
+		request.Params = append(request.Params, networkAPI.NewKV("source_id", fmt.Sprintf("%d", rand.Int())))
+		request.Params = append(request.Params, networkAPI.NewKV("option", inputs.Option.String()))
+		request.Params = append(request.Params, networkAPI.NewKV("client_id", strings.ReplaceAll(uuid.New().String(), "-", "")))
+		request.Params = append(request.Params, networkAPI.NewKV("hide", inputs.HideOrder))
+		request.Params = append(request.Params, networkAPI.NewKV("stop_price", fmt.Sprintf("%f", inputs.StopPrice)))
+	case brokerageApi.OrderModel_ioc:
+		request.Endpoint = "https://api.coinex.com/v1/order/ioc"
+		request.Params = append(request.Params, networkAPI.NewKV("market", inputs.Market.Name))
+		request.Params = append(request.Params, networkAPI.NewKV("type", inputs.BuyOrSell.String()))
+		request.Params = append(request.Params, networkAPI.NewKV("amount", fmt.Sprintf("%f", inputs.Amount)))
+		request.Params = append(request.Params, networkAPI.NewKV("price", fmt.Sprintf("%f", inputs.Price)))
+		request.Params = append(request.Params, networkAPI.NewKV("source_id", fmt.Sprintf("%d", rand.Int())))
+		request.Params = append(request.Params, networkAPI.NewKV("client_id", strings.ReplaceAll(uuid.New().String(), "-", "")))
+	default:
+		return nil, errors.New(ctx, codes.Unimplemented)
+	}
+
+	resp, err := runner(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	if resp.Code != http.StatusOK {
+		return nil, errors.NewWithSlug(ctx, codes.Unknown, resp.Response)
+	}
+	data := make(map[string]interface{})
+	if err := parseResponse(resp.Response, &data); err != nil {
+		return nil, err
+	}
+
+	return createOrder(data, inputs.Market), nil
+}
+
+func (service *Service) CancelOrder(ctx context.Context, inputs *brokerages.CancelOrderParams, runner brokerages.Handler) (*brokerageApi.Order, error) {
+	request := new(networkAPI.Request)
+	request.Type = networkAPI.Type_DELETE
+	request.Params = []*networkAPI.KV{
+		networkAPI.NewKV("access_id", service.Auth.AccessID),
+		networkAPI.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
+	}
+	request.Headers = []*networkAPI.KV{
+		networkAPI.NewKV("authorization", service.generateAuthorization(request.Params)),
+		networkAPI.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
+	}
+	request.Params = []*networkAPI.KV{
+		networkAPI.NewKV("id", inputs.ServerOrderId),
+		networkAPI.NewKV("market", inputs.Market.Name),
+		networkAPI.NewKV("account_id", 0),
+		networkAPI.NewKV("type", fmt.Sprintf("%v", inputs.Type))}
+	request.Endpoint = "https://api.coinex.com/v1/order/pending"
+
+	resp, err := runner(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	if resp.Code != http.StatusOK {
+		return nil, errors.NewWithSlug(ctx, codes.Unknown, resp.Response)
+	}
+	data := make(map[string]interface{})
+	if err := parseResponse(resp.Response, &data); err != nil {
+		return nil, err
+	}
+
+	return createOrder(data, inputs.Market), nil
+}
+
+func (service *Service) OrderStatus(ctx context.Context, inputs *brokerages.OrderStatusParams, runner brokerages.Handler) (*brokerageApi.Order, error) {
+	request := new(networkAPI.Request)
+	request.Type = networkAPI.Type_GET
+	request.Params = []*networkAPI.KV{
+		networkAPI.NewKV("access_id", service.Auth.AccessID),
+		networkAPI.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
+	}
+	request.Headers = []*networkAPI.KV{
+		networkAPI.NewKV("authorization", service.generateAuthorization(request.Params)),
+		networkAPI.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
+	}
+	request.Params = []*networkAPI.KV{
+		networkAPI.NewKV("id", inputs.ServerOrderId),
+		networkAPI.NewKV("market", inputs.Market.Name)}
+	request.Endpoint = "https://api.coinex.com/v1/order/status"
+
+	resp, err := runner(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	if resp.Code != http.StatusOK {
+		return nil, errors.NewWithSlug(ctx, codes.Unknown, resp.Response)
+	}
+	data := make(map[string]interface{})
+	if err := parseResponse(resp.Response, &data); err != nil {
+		return nil, err
+	}
+
+	return createOrder(data, inputs.Market), nil
+}
+
 func (service *Service) generateAuthorization(params []*networkAPI.KV) string {
 	urlParameters := url.Values{}
 	for _, param := range params {
-		urlParameters.Add(param.Key, param.Value)
+		urlParameters.Add(param.Key, fmt.Sprintf("%v", param.GetValue()))
 	}
 	queryParamsString := urlParameters.Encode()
 	toEncodeParamsString := queryParamsString + "&secret_key=" + service.Auth.SecretKey

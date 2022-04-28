@@ -13,9 +13,10 @@ import (
 	"github.com/h-varmazyar/Gate/services/brokerage/internal/app/candles"
 	"github.com/h-varmazyar/Gate/services/brokerage/internal/app/markets"
 	"github.com/h-varmazyar/Gate/services/brokerage/internal/app/resolutions"
-	"github.com/h-varmazyar/Gate/services/brokerage/internal/app/strategy"
 	"github.com/h-varmazyar/Gate/services/brokerage/internal/app/wallets"
 	"github.com/h-varmazyar/Gate/services/brokerage/internal/pkg/repository"
+	"github.com/h-varmazyar/Gate/services/eagle/internal/app/strategy"
+	repository2 "github.com/h-varmazyar/Gate/services/eagle/internal/pkg/repository"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"net"
@@ -67,13 +68,13 @@ func main() {
 }
 
 func createStrategy() error {
-	list := make([]*repository.Strategy, 0)
+	list := make([]*repository2.Strategy, 0)
 	var err error
 	if list, err = repository.Strategies.List(); err != nil {
 		return err
 	}
 	if len(list) == 0 {
-		strategy := &repository.Strategy{
+		strategy := &repository2.Strategy{
 			Name:        "خودکار",
 			Description: "انجام معاملات به صورت خودکار",
 		}

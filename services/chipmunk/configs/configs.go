@@ -19,6 +19,7 @@ type Configs struct {
 	GrpcPort              uint16        `env:"GRPC_PORT,required"`
 	GrpcAddresses         struct {
 		Brokerage string `env:"BROKERAGE_GRPC_ADDRESS,required"`
+		Eagle     string `env:"EAGLE_GRPC_ADDRESS,required"`
 		Network   string `env:"NETWORK_GRPC_ADDRESS,required"`
 	}
 }

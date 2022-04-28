@@ -23,9 +23,50 @@ message Candle {
   double Low = 9;
   // @inject_tag: json:"id"
   uint64 ID = 10;
+  // @inject_tag: json:"indicator_values"
+  IndicatorValue indicatorValues = 11;
 }
 
 message Candles {
   // @inject_tag: json:"candles"
   repeated Candle Candles = 1;
+}
+
+message IndicatorValue {
+  // @inject_tag: json:"bollinger_bands"
+  map<string, BollingerBand> BollingerBands = 1;
+  // @inject_tag: json:"moving_average"
+  map<string, MovingAverage> MovingAverages = 2;
+  // @inject_tag: json:"stochastics"
+  map<string, Stochastic> Stochastics = 3;
+  // @inject_tag: json:"rsis"
+  map<string, RSI> RSIs = 4;
+}
+
+message BollingerBand {
+  // @inject_tag: json:"upper_band"
+  double UpperBand = 1;
+  // @inject_tag: json:"lower_band"
+  double LowerBand = 2;
+  // @inject_tag: json:"ma"
+  double MA = 3;
+}
+
+message MovingAverage {
+  // @inject_tag: json:"simple"
+  double Simple = 1;
+  // @inject_tag: json:"exponential"
+  double Exponential = 2;
+}
+
+message Stochastic {
+  // @inject_tag: json:"index_k"
+  double IndexK = 1;
+  // @inject_tag: json:"index_d"
+  double IndexD = 2;
+}
+
+message RSI {
+  // @inject_tag: json:"rsi"
+  double RSI = 1;
 }
