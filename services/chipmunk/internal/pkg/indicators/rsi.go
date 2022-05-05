@@ -23,7 +23,7 @@ func NewRSI(id uuid.UUID, configs *repository.RsiConfigs) (*rsi, error) {
 }
 
 func (conf *rsi) GetType() chipmunkApi.IndicatorType {
-	return chipmunkApi.IndicatorType_RSI
+	return chipmunkApi.Indicator_RSI
 }
 
 func (conf *rsi) GetLength() int {

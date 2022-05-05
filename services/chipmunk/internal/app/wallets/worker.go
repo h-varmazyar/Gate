@@ -5,6 +5,7 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 	log "github.com/sirupsen/logrus"
@@ -73,7 +74,7 @@ LOOP:
 	}
 }
 
-func (w *worker) calculateReferenceValue(ctx context.Context, brokerage *brokerageApi.Brokerage, wallets []*brokerageApi.Wallet) {
+func (w *worker) calculateReferenceValue(ctx context.Context, brokerage *brokerageApi.Brokerage, wallets []*chipmunkApi.Wallet) {
 	references := make(map[string]*buffer.Reference)
 	for _, wallet := range wallets {
 		list, err := w.MarketService.ReturnBySource(ctx, &brokerageApi.MarketListBySourceRequest{

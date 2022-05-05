@@ -1,4 +1,4 @@
-package ohlc
+package candle
 
 import (
 	"context"

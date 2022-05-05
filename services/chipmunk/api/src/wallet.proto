@@ -1,14 +1,31 @@
 syntax = "proto3";
-package brokerageApi;
+package chipmunkApi;
 option go_package = "github.com/h-varmazyar/Gate/services/chipmunk/api";
 import "api/src/misc.proto";
-import "services/brokerage/api/src/wallet.proto";
 
 service WalletsService {
-  rpc List(WalletListRequest) returns (brokerageApi.Wallets);
+  rpc List(WalletListRequest) returns (Wallets);
   rpc StartWorker(StartWorkerRequest) returns (api.Void);
   rpc CancelWorker(api.Void) returns (api.Void);
-  rpc ReturnByName(ReturnWalletByDestReq) returns (brokerageApi.Wallet);
+  rpc ReturnByAsset(ReturnByAssetReq) returns (Wallet);
+}
+
+message Wallet {
+  // @inject_tag: json:"blocked_balance"
+  double BlockedBalance = 1;
+  // @inject_tag: json:"active_balance"
+  double ActiveBalance = 2;
+  // @inject_tag: json:"total_balance"
+  double TotalBalance = 3;
+  // @inject_tag: json:"asset_name"
+  string AssetName = 4;
+}
+
+message Wallets {
+  // @inject_tag: json:"elements"
+  repeated Wallet Elements = 1;
+  // @inject_tag: json:"count"
+  int64 Count = 2;
 }
 
 message WalletListRequest {
@@ -16,12 +33,12 @@ message WalletListRequest {
   string BrokerageName = 1;
 }
 
-message ReturnWalletByDestReq {
-  // @inject_tag: json:"destination"
-  string Destination = 1;
+message ReturnByAssetReq {
+  // @inject_tag: json:"Asset_name"
+  string AssetName = 1;
 }
 
 message StartWorkerRequest {
   // @inject_tag: json:"brokerage_id"
-  uint32 BrokerageID = 1;
+  string BrokerageID = 1;
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/h-varmazyar/Gate/pkg/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/ohlc"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/indicator"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/wallets"
 	"google.golang.org/grpc"
 	"net"
@@ -14,6 +14,7 @@ func main() {
 		server := grpc.NewServer()
 		ohlc.NewService().RegisterServer(server)
 		wallets.NewService().RegisterServer(server)
+		indicator.NewService().RegisterServer(server)
 		return server.Serve(lst)
 	})
 

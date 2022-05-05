@@ -6,13 +6,6 @@ service indicatorService{
   rpc Return(IndicatorReturnReq) returns (Indicator);
 }
 
-enum IndicatorType{
-  RSI = 0;
-  Stochastic = 1;
-  MovingAverage = 2;
-  BollingerBands = 3;
-}
-
 enum Source {
   Custom = 0;
   OHLC4 = 1;
@@ -25,12 +18,59 @@ enum Source {
 }
 
 message Indicator {
+  enum type{
+    RSI = 0;
+    Stochastic = 1;
+    MovingAverage = 2;
+    BollingerBands = 3;
+  }
   // @inject_tag: json:"id"
   string ID = 1;
   // @inject_tag: json:"name"
-  IndicatorType Type = 2;
+  type Type = 2;
   // @inject_tag: json:"configs"
   IndicatorConfigs Configs = 3;
+}
+
+message indicatorValue{
+  // @inject_tag: json:"type"
+  Indicator.type Type = 1;
+  // @inject_tag: json:"bollinger_bands,omitempty"
+  BollingerBand BollingerBands = 2;
+  // @inject_tag: json:"moving_average,omitempty"
+  MovingAverage MovingAverages = 3;
+  // @inject_tag: json:"stochastics,omitempty"
+  Stochastic Stochastics = 4;
+  // @inject_tag: json:"rsis,omitempty"
+  RSI RSIs = 5;
+}
+
+message BollingerBand {
+  // @inject_tag: json:"upper_band"
+  double UpperBand = 1;
+  // @inject_tag: json:"lower_band"
+  double LowerBand = 2;
+  // @inject_tag: json:"ma"
+  double MA = 3;
+}
+
+message MovingAverage {
+  // @inject_tag: json:"simple"
+  double Simple = 1;
+  // @inject_tag: json:"exponential"
+  double Exponential = 2;
+}
+
+message Stochastic {
+  // @inject_tag: json:"index_k"
+  double IndexK = 1;
+  // @inject_tag: json:"index_d"
+  double IndexD = 2;
+}
+
+message RSI {
+  // @inject_tag: json:"rsi"
+  double RSI = 1;
 }
 
 message IndicatorConfigs {

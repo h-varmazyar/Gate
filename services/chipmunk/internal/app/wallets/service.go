@@ -3,6 +3,7 @@ package wallets
 import (
 	"context"
 	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
@@ -10,6 +11,7 @@ import (
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 )
 
 type Service struct {
@@ -36,7 +38,7 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 	chipmunkApi.RegisterWalletsServiceServer(server, s)
 }
 
-func (s *Service) List(_ context.Context, _ *chipmunkApi.WalletListRequest) (*brokerageApi.Wallets, error) {
+func (s *Service) List(_ context.Context, _ *chipmunkApi.WalletListRequest) (*chipmunkApi.Wallets, error) {
 	return buffer.Wallets.FetchAll(), nil
 }
 
@@ -54,4 +56,12 @@ func (s *Service) StartWorker(ctx context.Context, req *chipmunkApi.StartWorkerR
 func (s *Service) CancelWorker(ctx context.Context, _ *api.Void) (*api.Void, error) {
 	Worker.Stop()
 	return new(api.Void), nil
+}
+
+func (s *Service) ReturnByAsset(ctx context.Context, req *chipmunkApi.ReturnByAssetReq) (*chipmunkApi.Wallet, error) {
+	wallet := buffer.Wallets.Fetch(req.AssetName)
+	if wallet != nil {
+		return wallet, nil
+	}
+	return nil, errors.New(ctx, codes.NotFound).AddDetailF("wallet %v not found", req.AssetName)
 }

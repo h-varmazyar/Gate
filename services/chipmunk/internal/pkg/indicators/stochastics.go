@@ -24,7 +24,7 @@ func NewStochastic(id uuid.UUID, configs *repository.StochasticConfigs) (*stocha
 }
 
 func (conf *stochastic) GetType() chipmunkApi.IndicatorType {
-	return chipmunkApi.IndicatorType_Stochastic
+	return chipmunkApi.Indicator_Stochastic
 }
 
 func (conf *stochastic) GetLength() int {

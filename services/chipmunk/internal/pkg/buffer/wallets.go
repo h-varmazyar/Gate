@@ -2,6 +2,7 @@ package buffer
 
 import (
 	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"sync"
 )
 
@@ -44,7 +45,7 @@ func (buffer *walletBuffer) AddOrUpdateList(input []*brokerageApi.Wallet) {
 	walletLock.Unlock()
 }
 
-func (buffer *walletBuffer) Fetch(assetName string) *brokerageApi.Wallet {
+func (buffer *walletBuffer) Fetch(assetName string) *chipmunkApi.Wallet {
 	if w, ok := buffer.wallets[assetName]; ok {
 		return w
 	}

@@ -24,7 +24,7 @@ func NewBollingerBands(id uuid.UUID, configs *repository.BollingerBandsConfigs) 
 }
 
 func (conf *bollingerBands) GetType() chipmunkApi.IndicatorType {
-	return chipmunkApi.IndicatorType_BollingerBands
+	return chipmunkApi.Indicator_BollingerBands
 }
 
 func (conf *bollingerBands) GetLength() int {

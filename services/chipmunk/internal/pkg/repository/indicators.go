@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/gormext"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"gorm.io/gorm"
@@ -74,7 +75,7 @@ type IndicatorValue struct {
 	RSI        *RSIValue
 }
 
-func (r *IndicatorRepository) Return(indicatorID string) (*Indicator, error) {
+func (r *IndicatorRepository) Return(indicatorID uuid.UUID) (*Indicator, error) {
 	indicator := new(Indicator)
 	return indicator, r.db.Model(new(Indicator)).Where("id = ?", indicatorID).First(indicator).Error
 }

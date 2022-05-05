@@ -21,7 +21,7 @@ func NewMovingAverage(id uuid.UUID, configs *repository.MovingAverageConfigs) (*
 }
 
 func (conf *movingAverage) GetType() chipmunkApi.IndicatorType {
-	return chipmunkApi.IndicatorType_MovingAverage
+	return chipmunkApi.Indicator_MovingAverage
 }
 
 func (conf *movingAverage) GetLength() int {
