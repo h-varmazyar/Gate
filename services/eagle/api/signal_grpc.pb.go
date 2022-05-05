@@ -19,9 +19,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SignalServiceClient interface {
-	StartWorker(ctx context.Context, in *StartWorkerReq, opts ...grpc.CallOption) (*api.Void, error)
-	StopWorker(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*api.Void, error)
-	AddCandleData(ctx context.Context, in *CandleData, opts ...grpc.CallOption) (*api.Void, error)
+	Start(ctx context.Context, in *SignalStartReq, opts ...grpc.CallOption) (*api.Void, error)
+	Stop(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*api.Void, error)
 }
 
 type signalServiceClient struct {
@@ -32,27 +31,18 @@ func NewSignalServiceClient(cc grpc.ClientConnInterface) SignalServiceClient {
 	return &signalServiceClient{cc}
 }
 
-func (c *signalServiceClient) StartWorker(ctx context.Context, in *StartWorkerReq, opts ...grpc.CallOption) (*api.Void, error) {
+func (c *signalServiceClient) Start(ctx context.Context, in *SignalStartReq, opts ...grpc.CallOption) (*api.Void, error) {
 	out := new(api.Void)
-	err := c.cc.Invoke(ctx, "/eagleApi.signalService/StartWorker", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/eagleApi.SignalService/Start", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *signalServiceClient) StopWorker(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*api.Void, error) {
+func (c *signalServiceClient) Stop(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*api.Void, error) {
 	out := new(api.Void)
-	err := c.cc.Invoke(ctx, "/eagleApi.signalService/StopWorker", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *signalServiceClient) AddCandleData(ctx context.Context, in *CandleData, opts ...grpc.CallOption) (*api.Void, error) {
-	out := new(api.Void)
-	err := c.cc.Invoke(ctx, "/eagleApi.signalService/AddCandleData", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/eagleApi.SignalService/Stop", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -63,23 +53,19 @@ func (c *signalServiceClient) AddCandleData(ctx context.Context, in *CandleData,
 // All implementations should embed UnimplementedSignalServiceServer
 // for forward compatibility
 type SignalServiceServer interface {
-	StartWorker(context.Context, *StartWorkerReq) (*api.Void, error)
-	StopWorker(context.Context, *api.Void) (*api.Void, error)
-	AddCandleData(context.Context, *CandleData) (*api.Void, error)
+	Start(context.Context, *SignalStartReq) (*api.Void, error)
+	Stop(context.Context, *api.Void) (*api.Void, error)
 }
 
 // UnimplementedSignalServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedSignalServiceServer struct {
 }
 
-func (UnimplementedSignalServiceServer) StartWorker(context.Context, *StartWorkerReq) (*api.Void, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method StartWorker not implemented")
+func (UnimplementedSignalServiceServer) Start(context.Context, *SignalStartReq) (*api.Void, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Start not implemented")
 }
-func (UnimplementedSignalServiceServer) StopWorker(context.Context, *api.Void) (*api.Void, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method StopWorker not implemented")
-}
-func (UnimplementedSignalServiceServer) AddCandleData(context.Context, *CandleData) (*api.Void, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddCandleData not implemented")
+func (UnimplementedSignalServiceServer) Stop(context.Context, *api.Void) (*api.Void, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Stop not implemented")
 }
 
 // UnsafeSignalServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -93,56 +79,38 @@ func RegisterSignalServiceServer(s grpc.ServiceRegistrar, srv SignalServiceServe
 	s.RegisterService(&SignalService_ServiceDesc, srv)
 }
 
-func _SignalService_StartWorker_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StartWorkerReq)
+func _SignalService_Start_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SignalStartReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SignalServiceServer).StartWorker(ctx, in)
+		return srv.(SignalServiceServer).Start(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/eagleApi.signalService/StartWorker",
+		FullMethod: "/eagleApi.SignalService/Start",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SignalServiceServer).StartWorker(ctx, req.(*StartWorkerReq))
+		return srv.(SignalServiceServer).Start(ctx, req.(*SignalStartReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SignalService_StopWorker_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SignalService_Stop_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(api.Void)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SignalServiceServer).StopWorker(ctx, in)
+		return srv.(SignalServiceServer).Stop(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/eagleApi.signalService/StopWorker",
+		FullMethod: "/eagleApi.SignalService/Stop",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SignalServiceServer).StopWorker(ctx, req.(*api.Void))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _SignalService_AddCandleData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CandleData)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(SignalServiceServer).AddCandleData(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/eagleApi.signalService/AddCandleData",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SignalServiceServer).AddCandleData(ctx, req.(*CandleData))
+		return srv.(SignalServiceServer).Stop(ctx, req.(*api.Void))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -151,20 +119,16 @@ func _SignalService_AddCandleData_Handler(srv interface{}, ctx context.Context, 
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var SignalService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "eagleApi.signalService",
+	ServiceName: "eagleApi.SignalService",
 	HandlerType: (*SignalServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "StartWorker",
-			Handler:    _SignalService_StartWorker_Handler,
+			MethodName: "Start",
+			Handler:    _SignalService_Start_Handler,
 		},
 		{
-			MethodName: "StopWorker",
-			Handler:    _SignalService_StopWorker_Handler,
-		},
-		{
-			MethodName: "AddCandleData",
-			Handler:    _SignalService_AddCandleData_Handler,
+			MethodName: "Stop",
+			Handler:    _SignalService_Stop_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

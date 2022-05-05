@@ -1,7 +1,10 @@
 package strategies
 
-import "github.com/google/uuid"
+import (
+	"context"
+	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+)
 
 type Strategy interface {
-	CheckForSignals(marketID uuid.UUID, marketName string) float64
+	CheckForSignals(ctx context.Context, market *brokerageApi.Market)
 }

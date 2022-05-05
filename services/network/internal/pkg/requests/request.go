@@ -12,22 +12,6 @@ import (
 	"time"
 )
 
-/**
-* Dear programmer:
-* When I wrote this code, only god And I know how it worked.
-* Now, only god knows it!
-*
-* Therefore, if you are trying to optimize this code And it fails(most surely),
-* please increase this counter as a warning for the next person:
-*
-* total_hours_wasted_here = 0 !!!
-*
-* Best regards, mr-nobody
-* Date: 12.11.21
-* Github: https://github.com/h-varmazyar
-* Email: hossein.varmazyar@yahoo.com
-**/
-
 const (
 	ContentTypeJson = "application/json"
 	UserAgent       = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36"
@@ -59,14 +43,14 @@ func New(Type networkAPI.Type, endpoint string) *Request {
 
 func (req *Request) AddHeaders(headers []*networkAPI.KV) {
 	for _, header := range headers {
-		req.headers.Add(header.Key, header.Value)
+		req.headers.Add(header.Key, fmt.Sprint(header.Value))
 	}
 }
 
 func (req *Request) AddQueryParams(params []*networkAPI.KV) {
 	qParams := url.Values{}
 	for _, param := range params {
-		qParams.Add(param.Key, param.Value)
+		qParams.Add(param.Key, fmt.Sprint(param.Value))
 	}
 	req.queryParams = qParams.Encode()
 }
@@ -74,7 +58,7 @@ func (req *Request) AddQueryParams(params []*networkAPI.KV) {
 func (req *Request) AddBody(bodyParams []*networkAPI.KV) error {
 	bodyMap := make(map[string]string)
 	for _, param := range bodyParams {
-		bodyMap[param.Key] = param.Value
+		bodyMap[param.Key] = fmt.Sprint(param.Value)
 	}
 	jsonBody, err := json.Marshal(bodyMap)
 	if err != nil {

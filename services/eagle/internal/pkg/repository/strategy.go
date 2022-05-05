@@ -11,10 +11,11 @@ type Strategy struct {
 	gormext.UniversalModel
 	Name                     string
 	Description              string
-	MinDailyPercentageProfit int
-	MinProfitPercentage      int
+	MinDailyPercentageProfit float64
+	MinProfitPercentage      float64
 	MaxFund                  float64
-	MaxFundPercentage        int
+	MaxFundPercentage        float64
+	ResolutionID             uuid.UUID
 	Indicators               []*StrategyIndicator `gorm:"->;foreignkey:StrategyID;references:ID"`
 }
 
