@@ -2,6 +2,8 @@ package wallets
 
 import (
 	"context"
+	"fmt"
+	"github.com/h-varmazyar/Gate/api"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
@@ -14,9 +16,9 @@ import (
 )
 
 type worker struct {
-	WalletService brokerageApi.WalletServiceClient
-	MarketService brokerageApi.MarketServiceClient
-	cancellation  context.CancelFunc
+	functionsService brokerageApi.FunctionsServiceClient
+	marketService    chipmunkApi.MarketServiceClient
+	cancellation     context.CancelFunc
 }
 
 var (
@@ -25,9 +27,10 @@ var (
 
 func init() {
 	Worker = new(worker)
-	brokerageApiConnection := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
-	Worker.WalletService = brokerageApi.NewWalletServiceClient(brokerageApiConnection)
-	Worker.MarketService = brokerageApi.NewMarketServiceClient(brokerageApiConnection)
+	brokerageConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
+	chipmunkConn := grpcext.NewConnection(fmt.Sprintf(":%v", configs.Variables.GrpcAddresses))
+	Worker.functionsService = brokerageApi.NewFunctionsServiceClient(brokerageConn)
+	Worker.marketService = chipmunkApi.NewMarketServiceClient(chipmunkConn)
 }
 
 func (w *worker) Start(brokerage *brokerageApi.Brokerage) error {
@@ -63,44 +66,44 @@ LOOP:
 			ticker.Stop()
 			break LOOP
 		case <-ticker.C:
-			wallets, err := w.WalletService.UpdateWallets(ctx, &brokerageApi.UpdateWalletRequest{BrokerageID: brokerage.ID})
+			wallets, err := w.functionsService.UpdateWalletsBalance(ctx, new(api.Void))
 			if err != nil {
 				log.WithError(err).Error("failed to update wallets")
 			} else {
-				buffer.Wallets.AddOrUpdateList(wallets.Wallets)
-				w.calculateReferenceValue(ctx, brokerage, wallets.Wallets)
+				buffer.Wallets.AddOrUpdateList(wallets.Elements)
+				w.calculateReferenceValue(ctx, brokerage, wallets.Elements)
 			}
 		}
 	}
 }
 
 func (w *worker) calculateReferenceValue(ctx context.Context, brokerage *brokerageApi.Brokerage, wallets []*chipmunkApi.Wallet) {
-	references := make(map[string]*buffer.Reference)
+	references := make(map[string]*chipmunkApi.Reference)
 	for _, wallet := range wallets {
-		list, err := w.MarketService.ReturnBySource(ctx, &brokerageApi.MarketListBySourceRequest{
-			BrokerageName: brokerage.Name.String(),
-			Source:        wallet.AssetName,
+		list, err := w.marketService.ReturnBySource(ctx, &chipmunkApi.MarketListBySourceRequest{
+			BrokerageID: brokerage.ID,
+			Source:      wallet.AssetName,
 		})
 		if err != nil {
-			log.WithError(err).Error("failed to get market list")
+			log.WithError(err).Error("failed to get markets list")
 			continue
 		}
-		for _, market := range list.Markets {
-			statistics, err := w.MarketService.MarketStatistics(ctx, &brokerageApi.MarketStatisticsRequest{
-				BrokerageID: brokerage.ID,
-				MarketName:  market.Name,
+		for _, market := range list.Elements {
+			statistics, err := w.functionsService.MarketStatistics(ctx, &brokerageApi.MarketStatisticsReq{
+				MarketName: market.Name,
 			})
 			if err != nil {
-				log.WithError(err).Error("failed to fetch market statistics")
+				log.WithError(err).Error("failed to fetch markets statistics")
 				continue
 			}
 			reference, ok := references[market.Destination.Name]
 			if reference == nil || !ok {
-				reference = new(buffer.Reference)
+				reference = new(chipmunkApi.Reference)
 			}
-			reference.Blocked += statistics.Close * wallet.BlockedBalance
-			reference.Active += statistics.Close * wallet.ActiveBalance
-			reference.Total += statistics.Close * wallet.TotalBalance
+			reference.AssetName = market.Destination.Name
+			reference.BlockedBalance += statistics.Close * wallet.BlockedBalance
+			reference.ActiveBalance += statistics.Close * wallet.ActiveBalance
+			reference.TotalBalance += statistics.Close * wallet.TotalBalance
 			references[market.Destination.Name] = reference
 		}
 	}

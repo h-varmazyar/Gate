@@ -7,7 +7,7 @@ import "services/chipmunk/api/src/indicator.proto";
 service CandleService {
   rpc AddMarket(AddMarketRequest) returns (api.Void);
   rpc ReturnLastNCandles(BufferedCandlesRequest) returns (Candles);
-  rpc CancelWorker(CancelWorkerRequest) returns (api.Void);
+  rpc DeleteMarket(DeleteMarketRequest) returns (api.Void);
 }
 
 message Candle {
@@ -58,9 +58,7 @@ message BufferedCandlesRequest {
   int32 Count = 3;
 }
 
-message CancelWorkerRequest {
-  // @inject_tag: json:"resolution_id"
-  string ResolutionID = 1;
+message DeleteMarketRequest {
   // @inject_tag: json:"market_id"
-  string MarketID = 2;
+  string MarketID = 1;
 }

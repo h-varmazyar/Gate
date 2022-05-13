@@ -127,7 +127,7 @@ func (conf *bollingerBands) Update(candles []*repository.Candle) *repository.Ind
 
 func (conf *bollingerBands) validateBollingerBand(length int) error {
 	if length < conf.Length {
-		return errors.New("length must be bigger than or equal to candle length")
+		return errors.New("length must be bigger than or equal to candles length")
 	}
 	if conf.Deviation < 1 {
 		return errors.New("deviation value must be positive")

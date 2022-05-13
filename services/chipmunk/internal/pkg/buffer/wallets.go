@@ -1,21 +1,13 @@
 package buffer
 
 import (
-	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"sync"
 )
 
 type walletBuffer struct {
-	wallets    map[string]*brokerageApi.Wallet
-	references map[string]*Reference
-}
-
-type Reference struct {
-	AssetName string
-	Total     float64
-	Active    float64
-	Blocked   float64
+	wallets    map[string]*chipmunkApi.Wallet
+	references map[string]*chipmunkApi.Reference
 }
 
 var (
@@ -26,54 +18,61 @@ var (
 func init() {
 	walletLock = new(sync.Mutex)
 	Wallets = new(walletBuffer)
-	Wallets.wallets = make(map[string]*brokerageApi.Wallet)
-	Wallets.references = make(map[string]*Reference)
+	Wallets.wallets = make(map[string]*chipmunkApi.Wallet)
+	Wallets.references = make(map[string]*chipmunkApi.Reference)
 }
 
-func (buffer *walletBuffer) AddOrUpdate(input *brokerageApi.Wallet) {
+func (buffer *walletBuffer) AddOrUpdate(input *chipmunkApi.Wallet) {
 	walletLock.Lock()
 	buffer.wallets[input.AssetName] = input
 	walletLock.Unlock()
 }
 
-func (buffer *walletBuffer) AddOrUpdateList(input []*brokerageApi.Wallet) {
+func (buffer *walletBuffer) AddOrUpdateList(input []*chipmunkApi.Wallet) {
 	walletLock.Lock()
-	buffer.wallets = make(map[string]*brokerageApi.Wallet)
+	buffer.wallets = make(map[string]*chipmunkApi.Wallet)
 	for _, wallet := range input {
 		buffer.wallets[wallet.AssetName] = wallet
 	}
 	walletLock.Unlock()
 }
 
-func (buffer *walletBuffer) Fetch(assetName string) *chipmunkApi.Wallet {
+func (buffer *walletBuffer) FetchWallet(assetName string) *chipmunkApi.Wallet {
 	if w, ok := buffer.wallets[assetName]; ok {
 		return w
 	}
 	return nil
 }
 
-func (buffer *walletBuffer) FetchAll() *brokerageApi.Wallets {
-	wallets := new(brokerageApi.Wallets)
-	wallets.Wallets = make([]*brokerageApi.Wallet, 0)
+func (buffer *walletBuffer) FetchReference(refName string) *chipmunkApi.Reference {
+	if w, ok := buffer.references[refName]; ok {
+		return w
+	}
+	return nil
+}
+
+func (buffer *walletBuffer) FetchAll() *chipmunkApi.Wallets {
+	wallets := new(chipmunkApi.Wallets)
+	wallets.Elements = make([]*chipmunkApi.Wallet, 0)
 	for key, value := range buffer.wallets {
-		wallet := &brokerageApi.Wallet{
+		wallet := &chipmunkApi.Wallet{
 			BlockedBalance: value.BlockedBalance,
 			ActiveBalance:  value.ActiveBalance,
 			TotalBalance:   value.TotalBalance,
 			AssetName:      key,
 		}
-		wallets.Wallets = append(wallets.Wallets, wallet)
+		wallets.Elements = append(wallets.Elements, wallet)
 	}
 	return wallets
 }
 
-func (buffer *walletBuffer) UpdateReferences(newRefs map[string]*Reference) {
+func (buffer *walletBuffer) UpdateReferences(newRefs map[string]*chipmunkApi.Reference) {
 	walletLock.Lock()
 	buffer.references = newRefs
 	walletLock.Unlock()
 }
 
 func (buffer *walletBuffer) Flush() {
-	Wallets.wallets = make(map[string]*brokerageApi.Wallet)
-	Wallets.references = make(map[string]*Reference)
+	Wallets.wallets = make(map[string]*chipmunkApi.Wallet)
+	Wallets.references = make(map[string]*chipmunkApi.Reference)
 }

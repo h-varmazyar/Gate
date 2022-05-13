@@ -1,4 +1,4 @@
-package indicator
+package indicators
 
 import (
 	"context"
@@ -27,7 +27,7 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 	chipmunkApi.RegisterIndicatorServiceServer(server, s)
 }
 
-func (s *Service) Return(ctx context.Context, req *chipmunkApi.IndicatorReturnReq) (*chipmunkApi.Indicator, error) {
+func (s *Service) Return(_ context.Context, req *chipmunkApi.IndicatorReturnReq) (*chipmunkApi.Indicator, error) {
 	id, err := uuid.Parse(req.ID)
 	if err != nil {
 		return nil, err

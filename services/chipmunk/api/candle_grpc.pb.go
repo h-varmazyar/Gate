@@ -21,7 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 type CandleServiceClient interface {
 	AddMarket(ctx context.Context, in *AddMarketRequest, opts ...grpc.CallOption) (*api.Void, error)
 	ReturnLastNCandles(ctx context.Context, in *BufferedCandlesRequest, opts ...grpc.CallOption) (*Candles, error)
-	CancelWorker(ctx context.Context, in *CancelWorkerRequest, opts ...grpc.CallOption) (*api.Void, error)
+	DeleteMarket(ctx context.Context, in *DeleteMarketRequest, opts ...grpc.CallOption) (*api.Void, error)
 }
 
 type candleServiceClient struct {
@@ -50,9 +50,9 @@ func (c *candleServiceClient) ReturnLastNCandles(ctx context.Context, in *Buffer
 	return out, nil
 }
 
-func (c *candleServiceClient) CancelWorker(ctx context.Context, in *CancelWorkerRequest, opts ...grpc.CallOption) (*api.Void, error) {
+func (c *candleServiceClient) DeleteMarket(ctx context.Context, in *DeleteMarketRequest, opts ...grpc.CallOption) (*api.Void, error) {
 	out := new(api.Void)
-	err := c.cc.Invoke(ctx, "/chipmunkApi.CandleService/CancelWorker", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/chipmunkApi.CandleService/DeleteMarket", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (c *candleServiceClient) CancelWorker(ctx context.Context, in *CancelWorker
 type CandleServiceServer interface {
 	AddMarket(context.Context, *AddMarketRequest) (*api.Void, error)
 	ReturnLastNCandles(context.Context, *BufferedCandlesRequest) (*Candles, error)
-	CancelWorker(context.Context, *CancelWorkerRequest) (*api.Void, error)
+	DeleteMarket(context.Context, *DeleteMarketRequest) (*api.Void, error)
 }
 
 // UnimplementedCandleServiceServer should be embedded to have forward compatible implementations.
@@ -78,8 +78,8 @@ func (UnimplementedCandleServiceServer) AddMarket(context.Context, *AddMarketReq
 func (UnimplementedCandleServiceServer) ReturnLastNCandles(context.Context, *BufferedCandlesRequest) (*Candles, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReturnLastNCandles not implemented")
 }
-func (UnimplementedCandleServiceServer) CancelWorker(context.Context, *CancelWorkerRequest) (*api.Void, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CancelWorker not implemented")
+func (UnimplementedCandleServiceServer) DeleteMarket(context.Context, *DeleteMarketRequest) (*api.Void, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteMarket not implemented")
 }
 
 // UnsafeCandleServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -129,20 +129,20 @@ func _CandleService_ReturnLastNCandles_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CandleService_CancelWorker_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CancelWorkerRequest)
+func _CandleService_DeleteMarket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteMarketRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CandleServiceServer).CancelWorker(ctx, in)
+		return srv.(CandleServiceServer).DeleteMarket(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/chipmunkApi.CandleService/CancelWorker",
+		FullMethod: "/chipmunkApi.CandleService/DeleteMarket",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CandleServiceServer).CancelWorker(ctx, req.(*CancelWorkerRequest))
+		return srv.(CandleServiceServer).DeleteMarket(ctx, req.(*DeleteMarketRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -163,8 +163,8 @@ var CandleService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CandleService_ReturnLastNCandles_Handler,
 		},
 		{
-			MethodName: "CancelWorker",
-			Handler:    _CandleService_CancelWorker_Handler,
+			MethodName: "DeleteMarket",
+			Handler:    _CandleService_DeleteMarket_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

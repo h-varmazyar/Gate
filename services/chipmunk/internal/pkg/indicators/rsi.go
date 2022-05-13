@@ -105,7 +105,7 @@ func (conf *rsi) Update(candles []*repository.Candle) *repository.IndicatorValue
 
 func (conf *rsi) validateRSI(length int) error {
 	if length-1 < conf.Length {
-		return errors.New("candles length must bigger than indicator period length")
+		return errors.New("candles length must bigger than indicators period length")
 	}
 	return nil
 }

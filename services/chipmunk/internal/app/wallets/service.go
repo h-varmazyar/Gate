@@ -38,12 +38,12 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 	chipmunkApi.RegisterWalletsServiceServer(server, s)
 }
 
-func (s *Service) List(_ context.Context, _ *chipmunkApi.WalletListRequest) (*chipmunkApi.Wallets, error) {
+func (s *Service) List(_ context.Context, _ *api.Void) (*chipmunkApi.Wallets, error) {
 	return buffer.Wallets.FetchAll(), nil
 }
 
 func (s *Service) StartWorker(ctx context.Context, req *chipmunkApi.StartWorkerRequest) (*api.Void, error) {
-	brokerage, err := s.brokerageService.Get(ctx, &brokerageApi.BrokerageIDReq{ID: req.BrokerageID})
+	brokerage, err := s.brokerageService.Return(ctx, &brokerageApi.ReturnBrokerageReq{ID: req.BrokerageID})
 	if err != nil {
 		return nil, err
 	}
@@ -53,15 +53,23 @@ func (s *Service) StartWorker(ctx context.Context, req *chipmunkApi.StartWorkerR
 	return new(api.Void), nil
 }
 
-func (s *Service) CancelWorker(ctx context.Context, _ *api.Void) (*api.Void, error) {
+func (s *Service) StopWorker(_ context.Context, _ *api.Void) (*api.Void, error) {
 	Worker.Stop()
 	return new(api.Void), nil
 }
 
-func (s *Service) ReturnByAsset(ctx context.Context, req *chipmunkApi.ReturnByAssetReq) (*chipmunkApi.Wallet, error) {
-	wallet := buffer.Wallets.Fetch(req.AssetName)
+func (s *Service) ReturnWallet(ctx context.Context, req *chipmunkApi.ReturnWalletReq) (*chipmunkApi.Wallet, error) {
+	wallet := buffer.Wallets.FetchWallet(req.AssetName)
 	if wallet != nil {
 		return wallet, nil
 	}
 	return nil, errors.New(ctx, codes.NotFound).AddDetailF("wallet %v not found", req.AssetName)
+}
+
+func (s *Service) ReturnReference(ctx context.Context, req *chipmunkApi.ReturnReferenceReq) (*chipmunkApi.Reference, error) {
+	wallet := buffer.Wallets.FetchReference(req.ReferenceName)
+	if wallet != nil {
+		return wallet, nil
+	}
+	return nil, errors.New(ctx, codes.NotFound).AddDetailF("wallet %v not found", req.ReferenceName)
 }

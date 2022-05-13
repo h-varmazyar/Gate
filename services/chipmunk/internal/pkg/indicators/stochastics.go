@@ -33,13 +33,13 @@ func (conf *stochastic) GetLength() int {
 
 func (conf *stochastic) validateStochastic(length int) error {
 	if length <= conf.Length {
-		return errors.New("candles length must bigger or equal than indicator period length")
+		return errors.New("candles length must bigger or equal than indicators period length")
 	}
 	if conf.SmoothK >= conf.Length {
-		return errors.New("smoothK parameter must be smaller than indicator period length")
+		return errors.New("smoothK parameter must be smaller than indicators period length")
 	}
 	if conf.SmoothD >= conf.Length {
-		return errors.New("smoothD parameter must be smaller than indicator period length")
+		return errors.New("smoothD parameter must be smaller than indicators period length")
 	}
 	return nil
 }

@@ -1,9 +1,8 @@
-package candle
+package candles
 
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
@@ -19,14 +18,14 @@ import (
 )
 
 type worker struct {
-	CandleService brokerageApi.CandleServiceClient
-	Cancellations map[string]context.CancelFunc
+	functionsService brokerageApi.FunctionsServiceClient
+	Cancellations    map[uuid.UUID]context.CancelFunc
 }
 
 type WorkerSettings struct {
 	Context    context.Context
-	Market     *brokerageApi.Market
-	Resolution *brokerageApi.Resolution
+	Market     *chipmunkApi.Market
+	Resolution *chipmunkApi.Resolution
 	Indicators map[uuid.UUID]indicators.Indicator
 }
 
@@ -36,45 +35,45 @@ var (
 
 func init() {
 	Worker = new(worker)
-	candleConnection := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
-	Worker.CandleService = brokerageApi.NewCandleServiceClient(candleConnection)
-	Worker.Cancellations = make(map[string]context.CancelFunc)
+	brokerageConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
+	Worker.functionsService = brokerageApi.NewFunctionsServiceClient(brokerageConn)
+	Worker.Cancellations = make(map[uuid.UUID]context.CancelFunc)
 }
 
 func (worker *worker) AddMarket(settings *WorkerSettings) {
-	cancel, ok := worker.Cancellations[fmt.Sprintf("%d > %v", settings.Market.ID, settings.Resolution.ID)]
+	marketID, _ := uuid.Parse(settings.Market.ID)
+	cancel, ok := worker.Cancellations[marketID]
 	if ok {
 		cancel()
 	}
-	settings.Context, worker.Cancellations[fmt.Sprintf("%d > %d", settings.Market.ID, settings.Resolution.ID)] = context.WithCancel(context.Background())
-	marketID, _ := uuid.Parse(settings.Market.ID)
+	settings.Context, worker.Cancellations[marketID] = context.WithCancel(context.Background())
+
 	buffer.Markets.AddList(marketID)
 	go worker.run(settings)
 }
 
-func (worker *worker) CancelWorker(marketID, resolutionID uuid.UUID) error {
-	fn, ok := worker.Cancellations[fmt.Sprintf("%d > %d", marketID, resolutionID)]
+func (worker *worker) DeleteMarket(marketID uuid.UUID) error {
+	fn, ok := worker.Cancellations[marketID]
 	if !ok {
 		return errors.New("worker stopped before")
 	}
 	fn()
-	delete(worker.Cancellations, fmt.Sprintf("%d > %d", marketID, resolutionID))
+	delete(worker.Cancellations, marketID)
 	buffer.Markets.RemoveList(marketID)
 	return nil
 }
 
 func (worker *worker) run(settings *WorkerSettings) {
 	marketID, _ := uuid.Parse(settings.Market.ID)
-	resolutionID, _ := uuid.Parse(settings.Resolution.ID)
 	if err := worker.loadPrimaryData(settings); err != nil {
-		_ = worker.CancelWorker(marketID, resolutionID)
+		_ = worker.DeleteMarket(marketID)
 		log.WithError(err).Error("load primary failed")
 		return
 	}
 	ticker := time.NewTicker(configs.Variables.OHLCWorkerHeartbeat)
 	last, err := repository.Candles.ReturnLast(settings.Market.ID, settings.Resolution.ID)
 	if err != nil {
-		_ = worker.CancelWorker(marketID, resolutionID)
+		_ = worker.DeleteMarket(marketID)
 		log.WithError(err).Error("load last failed")
 		return
 	}
@@ -93,7 +92,7 @@ LOOP:
 			candles := make([]*repository.Candle, 0)
 			if candles, err = worker.downloadCandlesInfo(settings, lastTime.Unix(), to.Unix()); err != nil {
 				time.Sleep(time.Minute)
-				log.WithError(err).Error("get candle failed")
+				log.WithError(err).Error("get candles failed")
 			} else {
 				worker.calculateIndicators(settings, candles)
 				for _, candle := range candles {
@@ -142,7 +141,7 @@ func (worker *worker) loadPrimaryData(ws *WorkerSettings) error {
 			end = true
 		}
 		if candles, err := worker.downloadCandlesInfo(ws, from.Unix(), to.Unix()); err != nil {
-			log.WithError(err).Error("get candle failed")
+			log.WithError(err).Error("get candles failed")
 			return err
 		} else {
 			from = to
@@ -170,16 +169,16 @@ func (worker *worker) calculateIndicators(ws *WorkerSettings, candles []*reposit
 		candle.IndicatorValues = repository.NewIndicatorValues()
 		for id, indicator := range ws.Indicators {
 			switch indicator.GetType() {
-			case chipmunkApi.IndicatorType_RSI:
+			case chipmunkApi.Indicator_RSI:
 				data := buffer.Markets.GetLastNCandles(marketID, 2)
 				candle.RSIs[id] = indicator.Update(data).RSI
-			case chipmunkApi.IndicatorType_Stochastic:
+			case chipmunkApi.Indicator_Stochastic:
 				data := buffer.Markets.GetLastNCandles(marketID, indicator.GetLength())
 				candle.Stochastics[id] = indicator.Update(data).Stochastic
-			case chipmunkApi.IndicatorType_BollingerBands:
+			case chipmunkApi.Indicator_BollingerBands:
 				data := buffer.Markets.GetLastNCandles(marketID, indicator.GetLength())
 				candle.BollingerBands[id] = indicator.Update(data).BB
-			case chipmunkApi.IndicatorType_MovingAverage:
+			case chipmunkApi.Indicator_MovingAverage:
 				data := buffer.Markets.GetLastNCandles(marketID, 2)
 				candle.MovingAverages[id] = indicator.Update(data).MA
 			}
@@ -191,7 +190,7 @@ func (worker *worker) downloadCandlesInfo(ws *WorkerSettings, from, to int64) ([
 	marketID, _ := uuid.Parse(ws.Market.ID)
 	resolutionID, _ := uuid.Parse(ws.Resolution.ID)
 	response := make([]*repository.Candle, 0)
-	c, err := worker.CandleService.OHLC(ws.Context, &brokerageApi.OhlcRequest{
+	candles, err := worker.functionsService.OHLC(ws.Context, &brokerageApi.OHLCReq{
 		Resolution: ws.Resolution,
 		Market:     ws.Market,
 		From:       from,
@@ -201,14 +200,14 @@ func (worker *worker) downloadCandlesInfo(ws *WorkerSettings, from, to int64) ([
 		log.WithError(err).Error("failed to get candles")
 		return nil, err
 	}
-	for _, candle := range c.Candles {
+	for _, candle := range candles.Elements {
 		tmp := new(repository.Candle)
 		mapper.Struct(candle, tmp)
 		tmp.MarketID = marketID
 		tmp.ResolutionID = resolutionID
 		err := repository.Candles.Save(tmp)
 		if err != nil {
-			log.WithError(err).Error("save candle failed")
+			log.WithError(err).Error("save candles failed")
 		}
 		response = append(response, tmp)
 	}
