@@ -1,13 +1,13 @@
 package automatedStrategy
 
 import (
-	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"sync"
 )
 
 type AssetBalancePool struct {
 	Lock            *sync.Mutex
-	Market          *brokerageApi.Market
+	Market          *chipmunkApi.Market
 	Total           float64
 	Available       float64
 	Sold            float64

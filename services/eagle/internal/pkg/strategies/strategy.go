@@ -2,9 +2,9 @@ package strategies
 
 import (
 	"context"
-	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 )
 
 type Strategy interface {
-	CheckForSignals(ctx context.Context, market *brokerageApi.Market)
+	CheckForSignals(ctx context.Context, market *chipmunkApi.Market)
 }

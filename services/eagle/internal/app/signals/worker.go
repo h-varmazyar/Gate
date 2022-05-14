@@ -1,15 +1,15 @@
-package signal
+package signals
 
 import (
 	"context"
-	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/strategies"
 	"time"
 )
 
 type worker struct {
 	strategy   strategies.Strategy
-	markets    []*brokerageApi.Market
+	markets    []*chipmunkApi.Market
 	running    bool
 	cancelFunc func()
 }
@@ -18,7 +18,7 @@ var (
 	signalCheckWorker *worker
 )
 
-func SignalCheckWorkerInstance(strategy strategies.Strategy, markets []*brokerageApi.Market) *worker {
+func SignalCheckWorkerInstance(strategy strategies.Strategy, markets []*chipmunkApi.Market) *worker {
 	if signalCheckWorker == nil || !signalCheckWorker.running {
 		signalCheckWorker = &worker{
 			strategy: strategy,

@@ -3,12 +3,12 @@ package automatedStrategy
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/h-varmazyar/Gate/api"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
+	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
 	"github.com/h-varmazyar/Gate/services/eagle/configs"
 	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/repository"
 	log "github.com/sirupsen/logrus"
@@ -19,55 +19,59 @@ import (
 
 type automated struct {
 	*repository.Strategy
-	walletsService chipmunkApi.WalletsServiceClient
-	ohlcService    chipmunkApi.OhlcServiceClient
-	orderService   brokerageApi.OrderServiceClient
-	checkTicker    *time.Ticker
-	withTrading    bool
+	functionsService brokerageApi.FunctionsServiceClient
+	walletsService   chipmunkApi.WalletsServiceClient
+	candleService    chipmunkApi.CandleServiceClient
+	checkTicker      *time.Ticker
+	withTrading      bool
 }
 
-func NewAutomatedStrategy(strategy *brokerageApi.Strategy, withTrading bool) (*automated, error) {
+func NewAutomatedStrategy(strategy *eagleApi.Strategy, withTrading bool) (*automated, error) {
 	if strategy == nil {
 		return nil, errors.NewWithSlug(context.Background(), codes.FailedPrecondition, "empty_strategy")
 	}
 	automated := new(automated)
 	mapper.Struct(strategy, automated.Strategy)
 	automated.withTrading = withTrading
+
+	brokerageConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
+	automated.functionsService = brokerageApi.NewFunctionsServiceClient(brokerageConn)
+
 	chipmunkConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Chipmunk)
-	brokerageConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Chipmunk)
 	automated.walletsService = chipmunkApi.NewWalletsServiceClient(chipmunkConn)
-	automated.orderService = brokerageApi.NewOrderServiceClient(brokerageConn)
+	automated.candleService = chipmunkApi.NewCandleServiceClient(chipmunkConn)
+
 	return automated, nil
 }
 
-func (s *automated) CheckForSignals(ctx context.Context, market *brokerageApi.Market) {
+func (s *automated) CheckForSignals(ctx context.Context, market *chipmunkApi.Market) {
 	var (
-		err      error
-		wallet   *brokerageApi.Wallet
-		marketID uuid.UUID
-		candles  *api.Candles
-		strength float64
+		err       error
+		reference *chipmunkApi.Reference
+		marketID  uuid.UUID
+		candles   *chipmunkApi.Candles
+		strength  float64
 	)
 
 	marketID, err = uuid.Parse(market.ID)
 	if err != nil {
-		log.WithError(err).Errorf("failed to parse market %v", market)
+		log.WithError(err).Errorf("failed to parse markets %v", market)
 		return
 	}
 
 	s.checkTicker = time.NewTicker(time.Second)
 	for range s.checkTicker.C {
-		wallet, err = s.walletsService.ReturnByName(context.Background(), &chipmunkApi.ReturnWalletByDestReq{Destination: market.Destination.Name})
+		reference, err = s.walletsService.ReturnReference(context.Background(), &chipmunkApi.ReturnReferenceReq{ReferenceName: market.Destination.Name})
 		if err != nil {
 			log.WithError(err).Errorf("failed to fetch wallet info for %v", marketID)
 			continue
 		}
-		if wallet.ActiveBalance <= 0 || wallet.ActiveBalance < wallet.TotalBalance/10 {
+		if reference.ActiveBalance <= 0 || reference.ActiveBalance < reference.TotalBalance/10 {
 			continue
 		}
 		strength = 0
-		candles, err = s.ohlcService.ReturnLastNCandles(ctx, &chipmunkApi.BufferedCandlesRequest{
-			ResolutionID: "",
+		candles, err = s.candleService.ReturnLastNCandles(ctx, &chipmunkApi.BufferedCandlesRequest{
+			ResolutionID: s.WorkingResolutionID.String(),
 			MarketID:     marketID.String(),
 			Count:        2,
 		})
@@ -76,33 +80,33 @@ func (s *automated) CheckForSignals(ctx context.Context, market *brokerageApi.Ma
 		}
 		for _, strategyIndicator := range s.Indicators {
 			switch strategyIndicator.Type {
-			case chipmunkApi.IndicatorType_RSI:
-				strength += s.checkRSI(candles.Candles, strategyIndicator.IndicatorID)
-			case chipmunkApi.IndicatorType_Stochastic:
-				strength += s.checkStochastic(candles.Candles, strategyIndicator.IndicatorID)
-			case chipmunkApi.IndicatorType_BollingerBands:
-				strength += s.checkBollingerBand(candles.Candles, strategyIndicator.IndicatorID, market.MakerFeeRate, market.TakerFeeRate)
+			case chipmunkApi.Indicator_RSI:
+				strength += s.checkRSI(candles.Elements, strategyIndicator.IndicatorID)
+			case chipmunkApi.Indicator_Stochastic:
+				strength += s.checkStochastic(candles.Elements, strategyIndicator.IndicatorID)
+			case chipmunkApi.Indicator_BollingerBands:
+				strength += s.checkBollingerBand(candles.Elements, strategyIndicator.IndicatorID, market.MakerFeeRate, market.TakerFeeRate)
 			}
 		}
 		strength /= float64(len(s.Indicators))
 		if strength >= 0.9 {
-			price := candles.Candles[len(candles.Candles)-1].Close
+			price := candles.Elements[len(candles.Elements)-1].Close
 			balance := float64(0)
-			if wallet.ActiveBalance < wallet.TotalBalance/10 {
-				balance = wallet.ActiveBalance
+			if reference.ActiveBalance < reference.TotalBalance/10 {
+				balance = reference.ActiveBalance
 			} else {
-				balance = wallet.TotalBalance / 10
+				balance = reference.TotalBalance / 10
 			}
-			order, err := s.orderService.NewOrder(context.Background(), &brokerageApi.NewOrderRequest{
+			order, err := s.functionsService.NewOrder(context.Background(), &brokerageApi.NewOrderReq{
 				MarketID: market.ID,
-				Type:     brokerageApi.Order_buy,
+				Type:     eagleApi.Order_buy,
 				Amount:   balance / price,
 				Price:    price,
-				Option:   brokerageApi.Order_NORMAL,
-				Model:    brokerageApi.OrderModel_limit,
+				Option:   eagleApi.Order_NORMAL,
+				Model:    eagleApi.OrderModel_limit,
 			})
 			if err != nil {
-				log.WithError(err).Errorf("failed to place new order for market %v", market.ID)
+				log.WithError(err).Errorf("failed to place new order for markets %v", market.ID)
 			}
 			go s.manageBuyOrder(ctx, market, order)
 		}
@@ -113,7 +117,7 @@ func (s *automated) Stop() {
 	s.checkTicker.Stop()
 }
 
-func (s *automated) manageBuyOrder(ctx context.Context, market *brokerageApi.Market, order *brokerageApi.Order) {
+func (s *automated) manageBuyOrder(ctx context.Context, market *chipmunkApi.Market, order *eagleApi.Order) {
 	var err error
 	endTicker := time.NewTicker(time.Minute * 15)
 	checkTicker := time.NewTicker(time.Second)
@@ -125,7 +129,7 @@ LOOP:
 	for {
 		select {
 		case <-endTicker.C:
-			order, err = s.orderService.CancelOrder(ctx, &brokerageApi.CancelOrderRequest{
+			order, err = s.functionsService.CancelOrder(ctx, &brokerageApi.CancelOrderReq{
 				ServerOrderID: order.ServerOrderId,
 				MarketID:      market.ID,
 			})
@@ -136,7 +140,7 @@ LOOP:
 			break LOOP
 
 		case <-checkTicker.C:
-			order, err = s.orderService.OrderStatus(ctx, &brokerageApi.OrderStatusRequest{})
+			order, err = s.functionsService.OrderStatus(ctx, &brokerageApi.OrderStatusReq{})
 			if err != nil {
 				log.WithError(err).Errorf("failed to get status of order %v", order.ID)
 				break
@@ -147,7 +151,7 @@ LOOP:
 				pool.AveragePrice = order.AveragePrice
 				pool.Lock.Unlock()
 			}
-			if order.Status == brokerageApi.Order_done {
+			if order.Status == eagleApi.Order_done {
 				break LOOP
 			}
 			if !pool.Running {
@@ -169,8 +173,8 @@ LOOP:
 func (s *automated) manageBidOrder(ctx context.Context, pool *AssetBalancePool) {
 	var (
 		err       error
-		last      *api.Candles
-		openOrder *brokerageApi.Order
+		last      *brokerageApi.MarketStatisticsResp
+		openOrder *eagleApi.Order
 		sellPrice float64
 	)
 	ticker := time.NewTicker(time.Second)
@@ -180,7 +184,7 @@ LOOP:
 			continue
 		}
 		if openOrder != nil {
-			openOrder, err = s.orderService.OrderStatus(ctx, &brokerageApi.OrderStatusRequest{
+			openOrder, err = s.functionsService.OrderStatus(ctx, &brokerageApi.OrderStatusReq{
 				ServerOrderID: openOrder.ServerOrderId,
 				MarketID:      pool.Market.ID,
 			})
@@ -191,31 +195,29 @@ LOOP:
 				break LOOP
 			}
 		}
-		if last, err = s.ohlcService.ReturnLastNCandles(ctx, &chipmunkApi.BufferedCandlesRequest{
-			ResolutionID: s.ResolutionID.String(),
-			MarketID:     pool.Market.ID,
-			Count:        1,
+		if last, err = s.functionsService.MarketStatistics(ctx, &brokerageApi.MarketStatisticsReq{
+			MarketName: pool.Market.Name,
 		}); err != nil {
-			log.WithError(err).Errorf("failed to get last candle of %v", pool.Market.Name)
+			log.WithError(err).Errorf("failed to get last candles of %v", pool.Market.Name)
 			continue
 		}
 
-		if pool.AveragePrice*(0.98) > last.Candles[0].Close {
+		if pool.AveragePrice*(0.98) > last.Close {
 			sellPrice = pool.AveragePrice * 0.97
 		}
 
 		makerFee := pool.AveragePrice * pool.MakerFeeRate
-		takerFee := pool.AveragePrice * (1 + s.MinProfitPercentage/100) * pool.TakerFeeRate
-		profit := pool.AveragePrice*(1+s.MinProfitPercentage/100) + makerFee + takerFee
+		takerFee := pool.AveragePrice * (1 + s.MinProfitPerTradeRate/100) * pool.TakerFeeRate
+		profit := pool.AveragePrice*(1+s.MinProfitPerTradeRate/100) + makerFee + takerFee
 
-		if profit*0.9 < last.Candles[0].Close {
+		if profit*0.9 < last.Close {
 			sellPrice = profit
 		}
 
 		if sellPrice != 0 {
 			updateOrder := false
 			if openOrder != nil && openOrder.Amount != pool.Available {
-				if _, err = s.orderService.CancelOrder(ctx, &brokerageApi.CancelOrderRequest{
+				if _, err = s.functionsService.CancelOrder(ctx, &brokerageApi.CancelOrderReq{
 					ServerOrderID: openOrder.ServerOrderId,
 					MarketID:      pool.Market.ID,
 				}); err != nil {
@@ -225,13 +227,13 @@ LOOP:
 				updateOrder = true
 			}
 			if updateOrder || openOrder == nil {
-				if openOrder, err = s.orderService.NewOrder(ctx, &brokerageApi.NewOrderRequest{
+				if openOrder, err = s.functionsService.NewOrder(ctx, &brokerageApi.NewOrderReq{
 					MarketID: pool.Market.Name,
-					Type:     brokerageApi.Order_sell,
+					Type:     eagleApi.Order_sell,
 					Amount:   pool.Available,
 					Price:    sellPrice,
-					Option:   brokerageApi.Order_NORMAL,
-					Model:    brokerageApi.OrderModel_limit,
+					Option:   eagleApi.Order_NORMAL,
+					Model:    eagleApi.OrderModel_limit,
 				}); err != nil {
 					log.WithError(err).Errorf("failed to update sell limit order")
 				}
@@ -241,35 +243,35 @@ LOOP:
 	ticker.Stop()
 }
 
-func (s *automated) checkRSI(candles []*api.Candle, indicatorID uuid.UUID) float64 {
-	if candles[0].IndicatorValues.RSIs[indicatorID.String()].RSI < 30 &&
-		candles[1].IndicatorValues.RSIs[indicatorID.String()].RSI >= 30 {
+func (s *automated) checkRSI(candles []*chipmunkApi.Candle, indicatorID uuid.UUID) float64 {
+	if candles[0].IndicatorValues[indicatorID.String()].RSIs.RSI < 30 &&
+		candles[1].IndicatorValues[indicatorID.String()].RSIs.RSI >= 30 {
 		return 1
 	}
 	return 0
 }
 
-func (s *automated) checkStochastic(candles []*api.Candle, indicatorID uuid.UUID) float64 {
-	if candles[1].IndicatorValues.Stochastics[indicatorID.String()].IndexD > 20 ||
-		candles[0].IndicatorValues.Stochastics[indicatorID.String()].IndexK > 20 {
+func (s *automated) checkStochastic(candles []*chipmunkApi.Candle, indicatorID uuid.UUID) float64 {
+	if candles[1].IndicatorValues[indicatorID.String()].Stochastics.IndexD > 20 ||
+		candles[0].IndicatorValues[indicatorID.String()].Stochastics.IndexK > 20 {
 		return 0
 	}
 
-	if candles[0].IndicatorValues.Stochastics[indicatorID.String()].IndexK <
-		candles[1].IndicatorValues.Stochastics[indicatorID.String()].IndexK {
+	if candles[0].IndicatorValues[indicatorID.String()].Stochastics.IndexK <
+		candles[1].IndicatorValues[indicatorID.String()].Stochastics.IndexK {
 		return 1
 	}
 
 	return 0
 }
 
-func (s *automated) checkBollingerBand(candles []*api.Candle, indicatorID uuid.UUID, makerFeeRate, takerFeeRate float64) float64 {
-	if candles[0].Low > candles[0].IndicatorValues.BollingerBands[indicatorID.String()].LowerBand {
+func (s *automated) checkBollingerBand(candles []*chipmunkApi.Candle, indicatorID uuid.UUID, makerFeeRate, takerFeeRate float64) float64 {
+	if candles[0].Low > candles[0].IndicatorValues[indicatorID.String()].BollingerBands.LowerBand {
 		return 0
 	}
 
-	price := candles[1].Close * (1 + makerFeeRate/100) * (1 + s.MinProfitPercentage/100) * (1 + takerFeeRate/100)
-	if price < candles[1].IndicatorValues.BollingerBands[indicatorID.String()].UpperBand {
+	price := candles[1].Close * (1 + makerFeeRate/100) * (1 + s.MinProfitPerTradeRate/100) * (1 + takerFeeRate/100)
+	if price < candles[1].IndicatorValues[indicatorID.String()].BollingerBands.UpperBand {
 		return 1
 	}
 	return 0

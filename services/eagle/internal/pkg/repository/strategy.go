@@ -9,14 +9,14 @@ import (
 
 type Strategy struct {
 	gormext.UniversalModel
-	Name                     string
-	Description              string
-	MinDailyPercentageProfit float64
-	MinProfitPercentage      float64
-	MaxFund                  float64
-	MaxFundPercentage        float64
-	ResolutionID             uuid.UUID
-	Indicators               []*StrategyIndicator `gorm:"->;foreignkey:StrategyID;references:ID"`
+	Name                  string
+	Description           string
+	MinDailyProfitRate    float64
+	MinProfitPerTradeRate float64
+	MaxFundPerTrade       float64
+	MaxFundPerTradeRate   float64
+	WorkingResolutionID   uuid.UUID
+	Indicators            []*StrategyIndicator `gorm:"->;foreignkey:StrategyID;references:ID"`
 }
 
 type StrategyIndicator struct {
