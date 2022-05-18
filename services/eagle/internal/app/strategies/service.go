@@ -62,3 +62,17 @@ func (s *Service) List(_ context.Context, _ *api.Void) (*eagleApi.Strategies, er
 	mapper.Slice(strategies, &response.Elements)
 	return response, nil
 }
+
+func (s *Service) Indicators(_ context.Context, req *eagleApi.StrategyIndicatorReq) (*eagleApi.StrategyIndicators, error) {
+	strategyID, err := uuid.Parse(req.StrategyID)
+	if err != nil {
+		return nil, err
+	}
+	indicators, err := repository.Strategies.ReturnIndicators(strategyID)
+	if err != nil {
+		return nil, err
+	}
+	response := new(eagleApi.StrategyIndicators)
+	mapper.Slice(indicators, &response.Elements)
+	return response, nil
+}

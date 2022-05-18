@@ -11,7 +11,6 @@ var Variables *Configs
 type Configs struct {
 	ServiceName           string        `env:"SERVICE_NAME,required"`
 	Version               string        `env:"VERSION,required"`
-	StorageProvider       string        `env:"STORAGE_PROVIDER,required"`
 	DatabaseConnection    string        `env:"DATABASE_CONNECTION,required,file"`
 	OHLCWorkerHeartbeat   time.Duration `env:"OHLC_WORKER_HEARTBEAT,required"`
 	WalletWorkerHeartbeat time.Duration `env:"WALLET_WORKER_HEARTBEAT,required"`
@@ -24,7 +23,7 @@ type Configs struct {
 	}
 }
 
-func init() {
+func Load() {
 	Variables = new(Configs)
 	if err := envext.Load(Variables); err != nil {
 		log.WithError(err).Panic("load env failed")

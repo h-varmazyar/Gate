@@ -5,19 +5,15 @@ import "api/src/misc.proto";
 import "services/chipmunk/api/src/asset.proto";
 
 service MarketService {
-  rpc Set(Market) returns (Market);
+  rpc Create(CreateMarketReq) returns (Market);
   rpc Return(ReturnMarketRequest) returns (Market);
-  rpc Get(MarketRequest) returns (Market);
   rpc List(MarketListRequest) returns (Markets);
-  rpc UpdateMarkets(UpdateMarketsReq) returns (api.Void);
   rpc ReturnBySource(MarketListBySourceRequest) returns (Markets);
+  rpc StartWorker(WorkerStartReq) returns (api.Void);
+  rpc StopWorker(WorkerStopReq) returns (api.Void);
 }
 
 message Market {
-  enum status {
-    Disable = 0;
-    Enable = 1;
-  }
   // @inject_tag: json:"pricing_decimal"
   double PricingDecimal = 1;
   // @inject_tag: json:"trading_decimal"
@@ -45,7 +41,38 @@ message Market {
   // @inject_tag: json:"id"
   string ID = 13;
   // @inject_tag: json:"status"
-  status Status = 14;
+  api.Status Status = 14;
+  // @inject_tag: json:"brokerage_name"
+  string BrokerageName = 15;
+}
+
+message CreateMarketReq {
+  // @inject_tag: json:"pricing_decimal"
+  double PricingDecimal = 1;
+  // @inject_tag: json:"trading_decimal"
+  double TradingDecimal = 2;
+  // @inject_tag: json:"taker_fee_rate"
+  double TakerFeeRate = 3;
+  // @inject_tag: json:"maker_fee_rate"
+  double MakerFeeRate = 4;
+  // @inject_tag: json:"destination"
+  Asset Destination = 5;
+  // @inject_tag: json:"start_time"
+  int64 StartTime = 6;
+  // @inject_tag: json:"min_amount"
+  double MinAmount = 7;
+  // @inject_tag: json:"created_at"
+  int64 CreatedAt = 8;
+  // @inject_tag: json:"updated_at"
+  int64 UpdatedAt = 9;
+  // @inject_tag: json:"source"
+  Asset Source = 10;
+  // @inject_tag: json:"is_amm"
+  bool IsAMM = 11;
+  // @inject_tag: json:"name"
+  string Name = 12;
+  // @inject_tag: json:"status"
+  api.Status Status = 14;
   // @inject_tag: json:"brokerage_name"
   string BrokerageName = 15;
 }
@@ -60,13 +87,6 @@ message ReturnMarketRequest {
   string ID = 1;
 }
 
-message MarketRequest {
-  // @inject_tag: json:"brokerage_id"
-  string BrokerageID = 1;
-  // @inject_tag: json:"market_name"
-  string MarketName = 2;
-}
-
 message MarketListRequest {
   // @inject_tag: json:"brokerage_id"
   string BrokerageID = 1;
@@ -79,7 +99,16 @@ message MarketListBySourceRequest {
   string Source = 2;
 }
 
-message UpdateMarketsReq {
-  // @inject_tag: json:"brokerage_name"
-  string BrokerageName = 1;
+message WorkerStartReq{
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 1;
+  // @inject_tag: json:"resolution_id"
+  string ResolutionID = 2;
+  // @inject_tag: json:"strategy_id"
+  string StrategyID = 3;
+}
+
+message WorkerStopReq {
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 1;
 }

@@ -4,17 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/h-varmazyar/Gate/api"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
@@ -45,41 +41,41 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 	chipmunkApi.RegisterCandleServiceServer(server, s)
 }
 
-func (s *Service) AddMarket(ctx context.Context, req *chipmunkApi.AddMarketRequest) (*api.Void, error) {
-	settings := new(WorkerSettings)
-	var (
-		err       error
-		brokerage *brokerageApi.Brokerage
-		strategy  *eagleApi.Strategy
-	)
-
-	settings.Market, err = s.marketService.Return(ctx, &chipmunkApi.ReturnMarketRequest{
-		ID: req.MarketID,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	brokerage, err = s.brokerageService.Return(ctx, &brokerageApi.ReturnBrokerageReq{ID: req.BrokerageID})
-	if err != nil {
-		return nil, err
-	}
-
-	strategy, err = s.strategyService.Return(ctx, &eagleApi.ReturnStrategyReq{
-		ID: brokerage.StrategyID,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	if settings.Indicators, err = loadIndicators(ctx, strategy); err != nil {
-		log.WithError(err).Error("failed to parse indicators")
-		return nil, err
-	}
-	settings.Resolution = brokerage.Resolution
-	Worker.AddMarket(settings)
-	return &api.Void{}, nil
-}
+//func (s *Service) AddMarket(ctx context.Context, req *chipmunkApi.AddMarketRequest) (*api.Void, error) {
+//	settings := new(WorkerSettings)
+//	var (
+//		err       error
+//		brokerage *brokerageApi.Brokerage
+//		strategy  *eagleApi.Strategy
+//	)
+//
+//	settings.Market, err = s.marketService.Return(ctx, &chipmunkApi.ReturnMarketRequest{
+//		ID: req.MarketID,
+//	})
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	brokerage, err = s.brokerageService.Return(ctx, &brokerageApi.ReturnBrokerageReq{ID: req.BrokerageID})
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	strategy, err = s.strategyService.Return(ctx, &eagleApi.ReturnStrategyReq{
+//		ID: brokerage.StrategyID,
+//	})
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	if settings.Indicators, err = loadIndicators(ctx, strategy); err != nil {
+//		log.WithError(err).Error("failed to parse indicators")
+//		return nil, err
+//	}
+//	settings.Resolution = brokerage.Resolution
+//	Worker.AddMarket(settings)
+//	return &api.Void{}, nil
+//}
 
 func (s *Service) ReturnLastNCandles(_ context.Context, req *chipmunkApi.BufferedCandlesRequest) (*chipmunkApi.Candles, error) {
 	marketID, err := uuid.Parse(req.MarketID)
@@ -92,40 +88,10 @@ func (s *Service) ReturnLastNCandles(_ context.Context, req *chipmunkApi.Buffere
 	return response, nil
 }
 
-func (s *Service) DeleteMarket(_ context.Context, req *chipmunkApi.DeleteMarketRequest) (*api.Void, error) {
-	marketID, err := uuid.Parse(req.MarketID)
-	if err != nil {
-		return nil, err
-	}
-	return new(api.Void), Worker.DeleteMarket(marketID)
-}
-
-func loadIndicators(_ context.Context, strategy *eagleApi.Strategy) (map[uuid.UUID]indicators.Indicator, error) {
-	response := make(map[uuid.UUID]indicators.Indicator)
-	for _, strategyIndicator := range strategy.Indicators {
-		id, err := uuid.Parse(strategyIndicator.IndicatorID)
-		if err != nil {
-			continue
-		}
-		indicator, err := repository.Indicators.Return(id)
-		if err != nil {
-			return nil, err
-		}
-		var indicatorCalculator indicators.Indicator
-		switch indicator.Type {
-		case chipmunkApi.Indicator_RSI:
-			indicatorCalculator, err = indicators.NewRSI(indicator.ID, indicator.Configs.RSI)
-		case chipmunkApi.Indicator_Stochastic:
-			indicatorCalculator, err = indicators.NewStochastic(indicator.ID, indicator.Configs.Stochastic)
-		case chipmunkApi.Indicator_MovingAverage:
-			indicatorCalculator, err = indicators.NewMovingAverage(indicator.ID, indicator.Configs.MovingAverage)
-		case chipmunkApi.Indicator_BollingerBands:
-			indicatorCalculator, err = indicators.NewBollingerBands(indicator.ID, indicator.Configs.BollingerBands)
-		}
-		if err != nil {
-			return nil, err
-		}
-		response[indicator.ID] = indicatorCalculator
-	}
-	return response, nil
-}
+//func (s *Service) DeleteMarket(_ context.Context, req *chipmunkApi.DeleteMarketRequest) (*api.Void, error) {
+//	marketID, err := uuid.Parse(req.MarketID)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return new(api.Void), Worker.DeleteMarket(marketID)
+//}

@@ -31,7 +31,7 @@ func (c *marketController) add(ctx app.Context) error {
 }
 
 func (c *marketController) show(ctx app.Context) error {
-	fmt.Println("show market")
+	fmt.Println("show markets")
 	return ctx.Render(http.StatusOK, "/markets/show")
 }
 

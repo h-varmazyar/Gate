@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/gormext"
 	"github.com/h-varmazyar/Gate/services/brokerage/api"
 	"gorm.io/gorm"
@@ -39,6 +40,13 @@ func (r *ResolutionRepository) Set(resolution *Resolution) error {
 	return r.db.Model(new(Resolution)).Where("id = ?", found.ID).Save(resolution).Error
 }
 
+func (r *ResolutionRepository) Return(id uuid.UUID) (*Resolution, error) {
+	resolution := new(Resolution)
+	return resolution, r.db.Model(new(Resolution)).
+		Where("id = ?", id).
+		First(resolution).Error
+}
+
 func (r *ResolutionRepository) GetByDuration(duration time.Duration, brokerageName string) (*Resolution, error) {
 	resolution := new(Resolution)
 	return resolution, r.db.Model(new(Resolution)).
@@ -50,7 +58,7 @@ func (r *ResolutionRepository) GetByDuration(duration time.Duration, brokerageNa
 func (r *ResolutionRepository) List(brokerageName string) ([]*Resolution, error) {
 	resolutions := make([]*Resolution, 0)
 	tx := r.db.Model(new(Resolution))
-	if brokerageName != api.Names_All.String() {
+	if brokerageName != api.Platform_All.String() {
 		tx.Where("brokerage_Name LIKE ?", brokerageName)
 	}
 	return resolutions, tx.Find(&resolutions).Error

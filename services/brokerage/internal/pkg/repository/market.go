@@ -42,7 +42,7 @@ func (repository *MarketRepository) Info(brokerageName, marketName string) (*Mar
 func (repository *MarketRepository) List(brokerageName string) ([]*Market, error) {
 	markets := make([]*Market, 0)
 	tx := repository.db.Model(new(Market))
-	if brokerageName != brokerageApi.Names_All.String() {
+	if brokerageName != brokerageApi.Platform_All.String() {
 		tx = tx.Where("brokerage_name LIKE ?", brokerageName)
 	}
 	return markets, tx.Find(&markets).Error

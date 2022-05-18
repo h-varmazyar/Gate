@@ -15,7 +15,7 @@ type markets struct {
 
 var Markets *markets
 
-func init() {
+func NewMarketInstance() {
 	Markets = &markets{
 		lock:         new(sync.Mutex),
 		data:         make(map[uuid.UUID][]*repository.Candle),

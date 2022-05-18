@@ -9,6 +9,7 @@ import (
 var Variables *Configs
 
 type Configs struct {
+	DBConnection              string        `env:"DATABASE_CONNECTION,required,file"`
 	ServiceName               string        `env:"SERVICE_NAME,required"`
 	Version                   string        `env:"VERSION,required"`
 	IndicatorsWorkerHeartbeat time.Duration `env:"INDICATORS_WORKER_HEARTBEAT,required"`
@@ -21,7 +22,7 @@ type Configs struct {
 	}
 }
 
-func init() {
+func LoadVariables() {
 	Variables = new(Configs)
 	if err := envext.Load(Variables); err != nil {
 		log.WithError(err).Panic("load env failed")

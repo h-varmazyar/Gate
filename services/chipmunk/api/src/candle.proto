@@ -5,9 +5,9 @@ import "api/src/misc.proto";
 import "services/chipmunk/api/src/indicator.proto";
 
 service CandleService {
-  rpc AddMarket(AddMarketRequest) returns (api.Void);
+//  rpc AddMarket(AddMarketRequest) returns (api.Void);
   rpc ReturnLastNCandles(BufferedCandlesRequest) returns (Candles);
-  rpc DeleteMarket(DeleteMarketRequest) returns (api.Void);
+  //  rpc DeleteMarket(DeleteMarketRequest) returns (api.Void);
 }
 
 message Candle {

@@ -2,40 +2,37 @@ package repository
 
 import (
 	"github.com/h-varmazyar/Gate/pkg/gormext"
+	"github.com/h-varmazyar/Gate/services/brokerage/configs"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 var (
-	Assets      *AssetRepository
-	Markets     *MarketRepository
-	Brokerages  *BrokerageRepository
-	Resolutions *ResolutionRepository
-	Indicators  *IndicatorRepository
+	Brokerages *BrokerageRepository
 )
 
-func LoadRepositories(dsn string) {
-	db, err := gormext.Open(gormext.Mariadb, dsn)
+func InitializingDB() {
+	db, err := gormext.Open(gormext.PostgreSQL, configs.Variables.DatabaseConnection)
 	if err != nil {
 		log.WithError(err).Fatal("can not load repository configs")
 	}
-	if err := db.AutoMigrate(new(Asset)); err != nil {
-		log.WithError(err).Fatal("migration failed for asset")
+
+	if err = db.Transaction(func(tx *gorm.DB) error {
+		if err = gormext.EnableExtensions(tx,
+			gormext.UUIDExtension,
+		); err != nil {
+			return err
+		}
+
+		if err = tx.AutoMigrate(
+			new(Brokerage),
+		); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		log.WithError(err).Fatal("failed to migrate database")
 	}
-	if err := db.AutoMigrate(new(Indicator)); err != nil {
-		log.WithError(err).Fatal("migration failed for indicator")
-	}
-	if err := db.AutoMigrate(new(Brokerage)); err != nil {
-		log.WithError(err).Fatal("migration failed for brokerage")
-	}
-	if err := db.AutoMigrate(new(Market)); err != nil {
-		log.WithError(err).Fatal("migration failed for market")
-	}
-	if err := db.AutoMigrate(new(Resolution)); err != nil {
-		log.WithError(err).Fatal("migration failed for resolution")
-	}
-	Assets = &AssetRepository{db: db}
-	Markets = &MarketRepository{db: db}
+
 	Brokerages = &BrokerageRepository{db: db}
-	Resolutions = &ResolutionRepository{db: db}
-	Indicators = &IndicatorRepository{db: db}
 }

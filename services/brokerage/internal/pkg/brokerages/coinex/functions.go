@@ -10,7 +10,8 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
 	"github.com/h-varmazyar/Gate/services/brokerage/internal/pkg/brokerages"
-	"github.com/h-varmazyar/Gate/services/brokerage/internal/pkg/repository"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
+	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
@@ -27,7 +28,7 @@ type Service struct {
 	Auth *api.Auth
 }
 
-func (service *Service) WalletList(ctx context.Context, runner brokerages.Handler) (*brokerageApi.Wallets, error) {
+func (service *Service) WalletList(ctx context.Context, runner brokerages.Handler) (*chipmunkApi.Wallets, error) {
 	request := new(networkAPI.Request)
 	request.Type = networkAPI.Type_GET
 	request.Endpoint = "https://api.coinex.com/v1/balance/info"
@@ -51,10 +52,10 @@ func (service *Service) WalletList(ctx context.Context, runner brokerages.Handle
 	if err := parseResponse(resp.Response, &data); err != nil {
 		return nil, err
 	}
-	response := new(brokerageApi.Wallets)
-	response.Wallets = make([]*brokerageApi.Wallet, len(data))
+	response := new(chipmunkApi.Wallets)
+	response.Elements = make([]*chipmunkApi.Wallet, len(data))
 	for key, value := range data {
-		w := new(brokerageApi.Wallet)
+		w := new(chipmunkApi.Wallet)
 		w.AssetName = key
 		w.ActiveBalance, err = strconv.ParseFloat(value["available"].(string), 64)
 		if err != nil {
@@ -65,12 +66,12 @@ func (service *Service) WalletList(ctx context.Context, runner brokerages.Handle
 			continue
 		}
 		w.TotalBalance = w.ActiveBalance + w.BlockedBalance
-		response.Wallets = append(response.Wallets, w)
+		response.Elements = append(response.Elements, w)
 	}
 	return response, nil
 }
 
-func (service *Service) OHLC(ctx context.Context, inputs *brokerages.OHLCParams, runner brokerages.Handler) ([]*api.Candle, error) {
+func (service *Service) OHLC(ctx context.Context, inputs *brokerages.OHLCParams, runner brokerages.Handler) ([]*chipmunkApi.Candle, error) {
 	request := new(networkAPI.Request)
 	request.Type = networkAPI.Type_GET
 	count := (inputs.To.Sub(inputs.From)) / inputs.Resolution.Duration
@@ -79,14 +80,14 @@ func (service *Service) OHLC(ctx context.Context, inputs *brokerages.OHLCParams,
 	}
 	if int64(count) >= 1000 {
 		request.Params = []*networkAPI.KV{
-			networkAPI.NewKV("market", inputs.Market.Name),
+			networkAPI.NewKV("markets", inputs.Market.Name),
 			networkAPI.NewKV("interval", inputs.Resolution.Value),
 			networkAPI.NewKV("start_time", fmt.Sprintf("%v", inputs.From.Unix())),
 			networkAPI.NewKV("end_time", fmt.Sprintf("%v", inputs.To.Unix()))}
 		request.Endpoint = "https://www.coinex.com/res/market/kline"
 	} else {
 		request.Params = []*networkAPI.KV{
-			networkAPI.NewKV("market", inputs.Market.Name),
+			networkAPI.NewKV("markets", inputs.Market.Name),
 			networkAPI.NewKV("type", inputs.Resolution.Label),
 			networkAPI.NewKV("limit", fmt.Sprintf("%v", int64(count))),
 		}
@@ -103,9 +104,9 @@ func (service *Service) OHLC(ctx context.Context, inputs *brokerages.OHLCParams,
 	if err := parseResponse(resp.Response, &data); err != nil {
 		return nil, err
 	}
-	candles := make([]*api.Candle, 0)
+	candles := make([]*chipmunkApi.Candle, 0)
 	for _, item := range data {
-		c := new(api.Candle)
+		c := new(chipmunkApi.Candle)
 		var err error
 		c.Time = int64(item[0].(float64))
 		c.Open, err = strconv.ParseFloat(item[1].(string), 64)
@@ -137,7 +138,7 @@ func (service *Service) OHLC(ctx context.Context, inputs *brokerages.OHLCParams,
 	return candles, nil
 }
 
-func (service *Service) UpdateMarket(ctx context.Context, runner brokerages.Handler) ([]*repository.Market, error) {
+func (service *Service) UpdateMarket(ctx context.Context, runner brokerages.Handler) ([]*chipmunkApi.Market, error) {
 	request := new(networkAPI.Request)
 	request.Type = networkAPI.Type_GET
 	request.Endpoint = "https://api.coinex.com/v1/market/info"
@@ -158,34 +159,34 @@ func (service *Service) UpdateMarket(ctx context.Context, runner brokerages.Hand
 		return nil, errors.New(ctx, codes.Canceled)
 	}
 	data := tmp.Data.(map[string]interface{})
-	markets := make([]*repository.Market, 0)
+	markets := make([]*chipmunkApi.Market, 0)
 	for _, value := range data {
 		item := value.(map[string]interface{})
-		m := new(repository.Market)
-		m.BrokerageName = brokerageApi.Names_Coinex.String()
-		m.PricingDecimal = int(item["pricing_decimal"].(float64))
-		m.TradingDecimal = int(item["trading_decimal"].(float64))
+		m := new(chipmunkApi.Market)
+		m.BrokerageName = brokerageApi.Platform_Coinex.String()
+		m.PricingDecimal = item["pricing_decimal"].(float64)
+		m.TradingDecimal = item["trading_decimal"].(float64)
 		num, err := strconv.ParseFloat(item["taker_fee_rate"].(string), 64)
 		if err != nil {
-			log.WithError(err).WithField("taker_fee_rate", item["taker_fee_rate"]).Error("failed to add market")
+			log.WithError(err).WithField("taker_fee_rate", item["taker_fee_rate"]).Error("failed to add markets")
 			continue
 		}
 		m.TakerFeeRate = num
 		num, err = strconv.ParseFloat(item["maker_fee_rate"].(string), 64)
 		if err != nil {
-			log.WithError(err).WithField("maker_fee_rate", item["maker_fee_rate"]).Error("failed to add market")
+			log.WithError(err).WithField("maker_fee_rate", item["maker_fee_rate"]).Error("failed to add markets")
 			continue
 		}
 		m.MakerFeeRate = num
 		num, err = strconv.ParseFloat(item["min_amount"].(string), 64)
 		if err != nil {
-			log.WithError(err).WithField("min_amount", item["min_amount"]).Error("failed to add market")
+			log.WithError(err).WithField("min_amount", item["min_amount"]).Error("failed to add markets")
 			continue
 		}
 		m.MinAmount = num
-		m.SourceName = item["trading_name"].(string)
-		m.DestinationName = item["pricing_name"].(string)
-		m.StartTime = time.Unix(1641025800, 0)
+		//m.Source = item["trading_name"].(string)
+		//m.Destination = item["pricing_name"].(string)
+		m.StartTime = time.Unix(1641025800, 0).Unix()
 		m.IsAMM = false
 		m.Name = item["name"].(string)
 		m.Status = api.Status_Enable
@@ -194,7 +195,7 @@ func (service *Service) UpdateMarket(ctx context.Context, runner brokerages.Hand
 	return markets, nil
 }
 
-func (service *Service) MarketStatistics(ctx context.Context, inputs *brokerages.MarketStatisticsParams, runner brokerages.Handler) (*api.Candle, error) {
+func (service *Service) MarketStatistics(ctx context.Context, inputs *brokerages.MarketStatisticsParams, runner brokerages.Handler) (*chipmunkApi.Candle, error) {
 	var market string
 	if inputs.Market == "" {
 		market = strings.ToUpper(fmt.Sprint(inputs.Source, inputs.Destination))
@@ -204,7 +205,7 @@ func (service *Service) MarketStatistics(ctx context.Context, inputs *brokerages
 	request := new(networkAPI.Request)
 	request.Type = networkAPI.Type_GET
 	request.Params = []*networkAPI.KV{
-		networkAPI.NewKV("market", market),
+		networkAPI.NewKV("markets", market),
 	}
 	request.Endpoint = "https://api.coinex.com/v1/market/ticker"
 
@@ -232,7 +233,7 @@ func (service *Service) MarketStatistics(ctx context.Context, inputs *brokerages
 	if err := parseResponse(resp.Response, &data); err != nil {
 		return nil, err
 	}
-	candle := new(api.Candle)
+	candle := new(chipmunkApi.Candle)
 	candle.CreatedAt = time.Now().Unix()
 	candle.UpdatedAt = time.Now().Unix()
 	candle.Time = int64(data.Date)
@@ -259,7 +260,7 @@ func (service *Service) MarketStatistics(ctx context.Context, inputs *brokerages
 	return candle, nil
 }
 
-func (service *Service) NewOrder(ctx context.Context, inputs *brokerages.NewOrderParams, runner brokerages.Handler) (*brokerageApi.Order, error) {
+func (service *Service) NewOrder(ctx context.Context, inputs *brokerages.NewOrderParams, runner brokerages.Handler) (*eagleApi.Order, error) {
 	request := new(networkAPI.Request)
 	request.Type = networkAPI.Type_POST
 	request.Params = []*networkAPI.KV{
@@ -271,9 +272,9 @@ func (service *Service) NewOrder(ctx context.Context, inputs *brokerages.NewOrde
 		networkAPI.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
 	}
 	switch inputs.OrderModel {
-	case brokerageApi.OrderModel_limit:
+	case eagleApi.OrderModel_limit:
 		request.Endpoint = "https://api.coinex.com/v1/order/limit"
-		request.Params = append(request.Params, networkAPI.NewKV("market", inputs.Market.Name))
+		request.Params = append(request.Params, networkAPI.NewKV("markets", inputs.Market.Name))
 		request.Params = append(request.Params, networkAPI.NewKV("type", inputs.BuyOrSell.String()))
 		request.Params = append(request.Params, networkAPI.NewKV("amount", fmt.Sprintf("%f", inputs.Amount)))
 		request.Params = append(request.Params, networkAPI.NewKV("price", fmt.Sprintf("%f", inputs.Price)))
@@ -281,16 +282,16 @@ func (service *Service) NewOrder(ctx context.Context, inputs *brokerages.NewOrde
 		request.Params = append(request.Params, networkAPI.NewKV("option", inputs.Option.String()))
 		request.Params = append(request.Params, networkAPI.NewKV("client_id", strings.ReplaceAll(uuid.New().String(), "-", "")))
 		request.Params = append(request.Params, networkAPI.NewKV("hide", inputs.HideOrder))
-	case brokerageApi.OrderModel_market:
+	case eagleApi.OrderModel_market:
 		request.Endpoint = "https://api.coinex.com/v1/order/market"
-		request.Params = append(request.Params, networkAPI.NewKV("market", inputs.Market.Name))
+		request.Params = append(request.Params, networkAPI.NewKV("markets", inputs.Market.Name))
 		request.Params = append(request.Params, networkAPI.NewKV("type", inputs.BuyOrSell.String()))
 		request.Params = append(request.Params, networkAPI.NewKV("amount", fmt.Sprintf("%f", inputs.Amount)))
 		request.Params = append(request.Params, networkAPI.NewKV("option", inputs.Option.String()))
 		request.Params = append(request.Params, networkAPI.NewKV("client_id", strings.ReplaceAll(uuid.New().String(), "-", "")))
-	case brokerageApi.OrderModel_stopLimit:
+	case eagleApi.OrderModel_stopLimit:
 		request.Endpoint = "https://api.coinex.com/v1/order/stop/limit"
-		request.Params = append(request.Params, networkAPI.NewKV("market", inputs.Market.Name))
+		request.Params = append(request.Params, networkAPI.NewKV("markets", inputs.Market.Name))
 		request.Params = append(request.Params, networkAPI.NewKV("type", inputs.BuyOrSell.String()))
 		request.Params = append(request.Params, networkAPI.NewKV("amount", fmt.Sprintf("%f", inputs.Amount)))
 		request.Params = append(request.Params, networkAPI.NewKV("price", fmt.Sprintf("%f", inputs.Price)))
@@ -299,9 +300,9 @@ func (service *Service) NewOrder(ctx context.Context, inputs *brokerages.NewOrde
 		request.Params = append(request.Params, networkAPI.NewKV("client_id", strings.ReplaceAll(uuid.New().String(), "-", "")))
 		request.Params = append(request.Params, networkAPI.NewKV("hide", inputs.HideOrder))
 		request.Params = append(request.Params, networkAPI.NewKV("stop_price", fmt.Sprintf("%f", inputs.StopPrice)))
-	case brokerageApi.OrderModel_ioc:
+	case eagleApi.OrderModel_ioc:
 		request.Endpoint = "https://api.coinex.com/v1/order/ioc"
-		request.Params = append(request.Params, networkAPI.NewKV("market", inputs.Market.Name))
+		request.Params = append(request.Params, networkAPI.NewKV("markets", inputs.Market.Name))
 		request.Params = append(request.Params, networkAPI.NewKV("type", inputs.BuyOrSell.String()))
 		request.Params = append(request.Params, networkAPI.NewKV("amount", fmt.Sprintf("%f", inputs.Amount)))
 		request.Params = append(request.Params, networkAPI.NewKV("price", fmt.Sprintf("%f", inputs.Price)))
@@ -326,7 +327,7 @@ func (service *Service) NewOrder(ctx context.Context, inputs *brokerages.NewOrde
 	return createOrder(data, inputs.Market), nil
 }
 
-func (service *Service) CancelOrder(ctx context.Context, inputs *brokerages.CancelOrderParams, runner brokerages.Handler) (*brokerageApi.Order, error) {
+func (service *Service) CancelOrder(ctx context.Context, inputs *brokerages.CancelOrderParams, runner brokerages.Handler) (*eagleApi.Order, error) {
 	request := new(networkAPI.Request)
 	request.Type = networkAPI.Type_DELETE
 	request.Params = []*networkAPI.KV{
@@ -339,9 +340,8 @@ func (service *Service) CancelOrder(ctx context.Context, inputs *brokerages.Canc
 	}
 	request.Params = []*networkAPI.KV{
 		networkAPI.NewKV("id", inputs.ServerOrderId),
-		networkAPI.NewKV("market", inputs.Market.Name),
-		networkAPI.NewKV("account_id", 0),
-		networkAPI.NewKV("type", fmt.Sprintf("%v", inputs.Type))}
+		networkAPI.NewKV("markets", inputs.Market.Name),
+		networkAPI.NewKV("account_id", 0)}
 	request.Endpoint = "https://api.coinex.com/v1/order/pending"
 
 	resp, err := runner(ctx, request)
@@ -359,7 +359,7 @@ func (service *Service) CancelOrder(ctx context.Context, inputs *brokerages.Canc
 	return createOrder(data, inputs.Market), nil
 }
 
-func (service *Service) OrderStatus(ctx context.Context, inputs *brokerages.OrderStatusParams, runner brokerages.Handler) (*brokerageApi.Order, error) {
+func (service *Service) OrderStatus(ctx context.Context, inputs *brokerages.OrderStatusParams, runner brokerages.Handler) (*eagleApi.Order, error) {
 	request := new(networkAPI.Request)
 	request.Type = networkAPI.Type_GET
 	request.Params = []*networkAPI.KV{
@@ -372,7 +372,7 @@ func (service *Service) OrderStatus(ctx context.Context, inputs *brokerages.Orde
 	}
 	request.Params = []*networkAPI.KV{
 		networkAPI.NewKV("id", inputs.ServerOrderId),
-		networkAPI.NewKV("market", inputs.Market.Name)}
+		networkAPI.NewKV("markets", inputs.Market.Name)}
 	request.Endpoint = "https://api.coinex.com/v1/order/status"
 
 	resp, err := runner(ctx, request)

@@ -49,7 +49,7 @@ func (r *ResolutionRepository) GetByDuration(duration time.Duration, brokerageNa
 func (r *ResolutionRepository) List(brokerageName string) ([]*Resolution, error) {
 	resolutions := make([]*Resolution, 0)
 	tx := r.db.Model(new(Resolution))
-	if brokerageName != api.Names_All.String() {
+	if brokerageName != api.Platform_All.String() {
 		tx.Where("brokerage_Name LIKE ?", brokerageName)
 	}
 	return resolutions, tx.Find(&resolutions).Error

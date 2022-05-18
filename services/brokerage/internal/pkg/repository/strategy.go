@@ -9,14 +9,13 @@ import (
 
 type Strategy struct {
 	gormext.UniversalModel
-	Name                  string
-	Description           string
-	MinDailyProfitRate    float64
-	MinProfitPerTradeRate float64
-	MaxFundPerTrade       float64
-	MaxFundPerTradeRate   float64
-	WorkingResolutionID   uuid.UUID
-	Indicators            []*StrategyIndicator `gorm:"->;foreignkey:StrategyID;references:ID"`
+	Name                     string
+	Description              string
+	MinDailyPercentageProfit int
+	MinProfitPercentage      int
+	MaxFund                  float64
+	MaxFundPercentage        int
+	Indicators               []*StrategyIndicator `gorm:"->;foreignkey:StrategyID;references:ID"`
 }
 
 type StrategyIndicator struct {
@@ -36,11 +35,6 @@ func (r *StrategyRepository) Save(strategy *Strategy) error {
 func (r *StrategyRepository) Return(strategyID uuid.UUID) (*Strategy, error) {
 	strategy := new(Strategy)
 	return strategy, r.db.Model(new(Strategy)).Preload("Indicators").Where("id = ?", strategyID).Error
-}
-
-func (r *StrategyRepository) ReturnIndicators(strategyID uuid.UUID) ([]*StrategyIndicator, error) {
-	strategyIndicators := make([]*StrategyIndicator, 0)
-	return strategyIndicators, r.db.Model(new(StrategyIndicator)).Where("strategy_id = ?", strategyIndicators).Find(&strategyIndicators).Error
 }
 
 func (r *StrategyRepository) List() ([]*Strategy, error) {

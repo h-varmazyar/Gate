@@ -25,7 +25,7 @@ var (
 	Worker *worker
 )
 
-func init() {
+func InitializeWorker() {
 	Worker = new(worker)
 	brokerageConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
 	chipmunkConn := grpcext.NewConnection(fmt.Sprintf(":%v", configs.Variables.GrpcAddresses))
@@ -66,7 +66,7 @@ LOOP:
 			ticker.Stop()
 			break LOOP
 		case <-ticker.C:
-			wallets, err := w.functionsService.UpdateWalletsBalance(ctx, new(api.Void))
+			wallets, err := w.functionsService.WalletsBalance(ctx, new(api.Void))
 			if err != nil {
 				log.WithError(err).Error("failed to update wallets")
 			} else {

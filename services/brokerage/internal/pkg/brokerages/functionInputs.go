@@ -1,8 +1,9 @@
 package brokerages
 
 import (
-	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
 	"github.com/h-varmazyar/Gate/services/brokerage/internal/pkg/repository"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
+	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
 	"time"
 )
 
@@ -40,28 +41,28 @@ type TransactionListParams struct {
 }
 
 type NewOrderParams struct {
-	OrderModel brokerageApi.OrderModel
+	OrderModel eagleApi.OrderModel
 	ClientUUID string
-	BuyOrSell  brokerageApi.OrderType
+	BuyOrSell  eagleApi.OrderType
 	Price      float64
 	StopPrice  float64
-	Market     *brokerageApi.Market
+	Market     *chipmunkApi.Market
 	Amount     float64
-	Option     brokerageApi.OrderOption
+	Option     eagleApi.OrderOption
 	HideOrder  bool
 }
 
 type CancelOrderParams struct {
 	ServerOrderId int64
-	Market        *brokerageApi.Market
-	Type          brokerageApi.OrderType
+	Market        *chipmunkApi.Market
+	Type          eagleApi.OrderType
 	ClientUUID    string
 	AllOrders     bool
 }
 
 type OrderStatusParams struct {
 	ServerOrderId int64
-	Market        *brokerageApi.Market
+	Market        *chipmunkApi.Market
 	ClientUUID    string
 }
 

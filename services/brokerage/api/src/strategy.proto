@@ -1,15 +1,12 @@
 syntax = "proto3";
-package eagleApi;
+package brokerageApi;
 option go_package = "github.com/h-varmazyar/Gate/services/eagle/api";
 import "api/src/misc.proto";
-import "services/chipmunk/api/src/resolution.proto";
-import "services/chipmunk/api/src/indicator.proto";
 
 service StrategyService {
   rpc Create(CreateStrategyReq) returns(Strategy);
   rpc Return(ReturnStrategyReq) returns(Strategy);
   rpc List(api.Void) returns (Strategies);
-  rpc Indicators(StrategyIndicatorReq) returns (StrategyIndicators);
 }
 
 message Strategy {
@@ -31,8 +28,8 @@ message Strategy {
   double MaxFundPerTrade = 8;
   // @inject_tag: json:"max_fund_per_trade_rate"
   double MaxFundPerTradeRate = 9;
-  // @inject_tag: json:"working_resolution"
-  chipmunkApi.Resolution WorkingResolution = 10;
+  // @inject_tag: json:"working_resolution_id"
+  string WorkingResolutionID = 10;
   // @inject_tag: json:"indicators"
   repeated StrategyIndicator Indicators = 11;
 }
@@ -57,23 +54,11 @@ message CreateStrategyReq {
   repeated StrategyIndicator Indicators = 6;
 }
 
-message StrategyIndicatorReq {
-  // @inject_tag: json:"basket_id"
-  string StrategyID = 1;
-}
-
 message StrategyIndicator {
   // @inject_tag: json:"basket_id"
   string StrategyID = 1;
   // @inject_tag: json:"invoice_id"
   string IndicatorID = 2;
-  // @inject_tag: json:"invoice_type"
-  chipmunkApi.Indicator.type IndicatorType = 3;
-}
-
-message StrategyIndicators {
-  // @inject_tag: json:"elements"
-  repeated StrategyIndicator Elements = 1;
 }
 
 message ReturnStrategyReq {

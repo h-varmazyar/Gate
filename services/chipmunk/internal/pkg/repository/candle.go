@@ -58,7 +58,7 @@ func (r *CandleRepository) Save(candle *Candle) error {
 	return r.db.Save(candle).Error
 }
 
-func (r *CandleRepository) ReturnLast(marketID, resolutionID string) (*Candle, error) {
+func (r *CandleRepository) ReturnLast(marketID, resolutionID uuid.UUID) (*Candle, error) {
 	item := new(Candle)
 	return item, r.db.Model(new(Candle)).
 		Where("market_id = ?", marketID).

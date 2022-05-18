@@ -52,5 +52,5 @@ func (c *resolutionController) showBrokerageResolutions(ctx app.Context) error {
 		return ctx.Error(http.StatusBadRequest, err)
 	}
 	ctx.Set("resolutions", resolutions.Resolutions)
-	return ctx.Render(http.StatusOK, "brokerages/resolution-table", viewHelpers.Sum, viewHelpers.ResolutionLabel)
+	return ctx.Render(http.StatusOK, "brokerages/resolutions-table", viewHelpers.Sum, viewHelpers.ResolutionLabel)
 }

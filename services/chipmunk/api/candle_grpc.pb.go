@@ -4,7 +4,6 @@ package api
 
 import (
 	context "context"
-	api "github.com/h-varmazyar/Gate/api"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -19,9 +18,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CandleServiceClient interface {
-	AddMarket(ctx context.Context, in *AddMarketRequest, opts ...grpc.CallOption) (*api.Void, error)
+	//  rpc AddMarket(AddMarketRequest) returns (api.Void);
 	ReturnLastNCandles(ctx context.Context, in *BufferedCandlesRequest, opts ...grpc.CallOption) (*Candles, error)
-	DeleteMarket(ctx context.Context, in *DeleteMarketRequest, opts ...grpc.CallOption) (*api.Void, error)
 }
 
 type candleServiceClient struct {
@@ -30,15 +28,6 @@ type candleServiceClient struct {
 
 func NewCandleServiceClient(cc grpc.ClientConnInterface) CandleServiceClient {
 	return &candleServiceClient{cc}
-}
-
-func (c *candleServiceClient) AddMarket(ctx context.Context, in *AddMarketRequest, opts ...grpc.CallOption) (*api.Void, error) {
-	out := new(api.Void)
-	err := c.cc.Invoke(ctx, "/chipmunkApi.CandleService/AddMarket", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *candleServiceClient) ReturnLastNCandles(ctx context.Context, in *BufferedCandlesRequest, opts ...grpc.CallOption) (*Candles, error) {
@@ -50,36 +39,20 @@ func (c *candleServiceClient) ReturnLastNCandles(ctx context.Context, in *Buffer
 	return out, nil
 }
 
-func (c *candleServiceClient) DeleteMarket(ctx context.Context, in *DeleteMarketRequest, opts ...grpc.CallOption) (*api.Void, error) {
-	out := new(api.Void)
-	err := c.cc.Invoke(ctx, "/chipmunkApi.CandleService/DeleteMarket", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // CandleServiceServer is the server API for CandleService service.
 // All implementations should embed UnimplementedCandleServiceServer
 // for forward compatibility
 type CandleServiceServer interface {
-	AddMarket(context.Context, *AddMarketRequest) (*api.Void, error)
+	//  rpc AddMarket(AddMarketRequest) returns (api.Void);
 	ReturnLastNCandles(context.Context, *BufferedCandlesRequest) (*Candles, error)
-	DeleteMarket(context.Context, *DeleteMarketRequest) (*api.Void, error)
 }
 
 // UnimplementedCandleServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedCandleServiceServer struct {
 }
 
-func (UnimplementedCandleServiceServer) AddMarket(context.Context, *AddMarketRequest) (*api.Void, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddMarket not implemented")
-}
 func (UnimplementedCandleServiceServer) ReturnLastNCandles(context.Context, *BufferedCandlesRequest) (*Candles, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReturnLastNCandles not implemented")
-}
-func (UnimplementedCandleServiceServer) DeleteMarket(context.Context, *DeleteMarketRequest) (*api.Void, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteMarket not implemented")
 }
 
 // UnsafeCandleServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -91,24 +64,6 @@ type UnsafeCandleServiceServer interface {
 
 func RegisterCandleServiceServer(s grpc.ServiceRegistrar, srv CandleServiceServer) {
 	s.RegisterService(&CandleService_ServiceDesc, srv)
-}
-
-func _CandleService_AddMarket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddMarketRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CandleServiceServer).AddMarket(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/chipmunkApi.CandleService/AddMarket",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CandleServiceServer).AddMarket(ctx, req.(*AddMarketRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _CandleService_ReturnLastNCandles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -129,24 +84,6 @@ func _CandleService_ReturnLastNCandles_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CandleService_DeleteMarket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteMarketRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CandleServiceServer).DeleteMarket(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/chipmunkApi.CandleService/DeleteMarket",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CandleServiceServer).DeleteMarket(ctx, req.(*DeleteMarketRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // CandleService_ServiceDesc is the grpc.ServiceDesc for CandleService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -155,16 +92,8 @@ var CandleService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*CandleServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "AddMarket",
-			Handler:    _CandleService_AddMarket_Handler,
-		},
-		{
 			MethodName: "ReturnLastNCandles",
 			Handler:    _CandleService_ReturnLastNCandles_Handler,
-		},
-		{
-			MethodName: "DeleteMarket",
-			Handler:    _CandleService_DeleteMarket_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -98,12 +98,12 @@ func (s *automated) CheckForSignals(ctx context.Context, market *chipmunkApi.Mar
 				balance = reference.TotalBalance / 10
 			}
 			order, err := s.functionsService.NewOrder(context.Background(), &brokerageApi.NewOrderReq{
-				MarketID: market.ID,
-				Type:     eagleApi.Order_buy,
-				Amount:   balance / price,
-				Price:    price,
-				Option:   eagleApi.Order_NORMAL,
-				Model:    eagleApi.OrderModel_limit,
+				Market: market,
+				Type:   eagleApi.Order_buy,
+				Amount: balance / price,
+				Price:  price,
+				Option: eagleApi.Order_NORMAL,
+				Model:  eagleApi.OrderModel_limit,
 			})
 			if err != nil {
 				log.WithError(err).Errorf("failed to place new order for markets %v", market.ID)
@@ -131,7 +131,7 @@ LOOP:
 		case <-endTicker.C:
 			order, err = s.functionsService.CancelOrder(ctx, &brokerageApi.CancelOrderReq{
 				ServerOrderID: order.ServerOrderId,
-				MarketID:      market.ID,
+				Market:        market,
 			})
 			if err != nil {
 				log.WithError(err).Errorf("failed to cancel order %v", order.ID)
@@ -186,7 +186,7 @@ LOOP:
 		if openOrder != nil {
 			openOrder, err = s.functionsService.OrderStatus(ctx, &brokerageApi.OrderStatusReq{
 				ServerOrderID: openOrder.ServerOrderId,
-				MarketID:      pool.Market.ID,
+				Market:        pool.Market,
 			})
 			pool.Lock.Lock()
 			pool.Sold += openOrder.ExecutedAmount
@@ -219,7 +219,7 @@ LOOP:
 			if openOrder != nil && openOrder.Amount != pool.Available {
 				if _, err = s.functionsService.CancelOrder(ctx, &brokerageApi.CancelOrderReq{
 					ServerOrderID: openOrder.ServerOrderId,
-					MarketID:      pool.Market.ID,
+					Market:        pool.Market,
 				}); err != nil {
 					log.WithError(err).Errorf("failed to cancel order %v", openOrder.ServerOrderId)
 					continue
@@ -228,12 +228,12 @@ LOOP:
 			}
 			if updateOrder || openOrder == nil {
 				if openOrder, err = s.functionsService.NewOrder(ctx, &brokerageApi.NewOrderReq{
-					MarketID: pool.Market.Name,
-					Type:     eagleApi.Order_sell,
-					Amount:   pool.Available,
-					Price:    sellPrice,
-					Option:   eagleApi.Order_NORMAL,
-					Model:    eagleApi.OrderModel_limit,
+					Market: pool.Market,
+					Type:   eagleApi.Order_sell,
+					Amount: pool.Available,
+					Price:  sellPrice,
+					Option: eagleApi.Order_NORMAL,
+					Model:  eagleApi.OrderModel_limit,
 				}); err != nil {
 					log.WithError(err).Errorf("failed to update sell limit order")
 				}

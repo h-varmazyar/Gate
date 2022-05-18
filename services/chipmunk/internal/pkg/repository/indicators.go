@@ -10,7 +10,7 @@ import (
 type Indicator struct {
 	gormext.UniversalModel
 	Type    chipmunkApi.IndicatorType
-	Configs *IndicatorConfigs
+	Configs *IndicatorConfigs `gorm:"type:jsonb"`
 }
 
 type IndicatorRepository struct {

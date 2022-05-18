@@ -2,8 +2,8 @@ package repository
 
 import (
 	"github.com/google/uuid"
+	"github.com/h-varmazyar/Gate/api"
 	"github.com/h-varmazyar/Gate/pkg/gormext"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"gorm.io/gorm"
 	"time"
 )
@@ -16,14 +16,14 @@ type Market struct {
 	TakerFeeRate    float64
 	MakerFeeRate    float64
 	DestinationID   uuid.UUID
-	Destination     *Asset `gorm:"foreignKey:DestinationID"`
+	Destination     *Asset `gorm:"->;foreignkey:DestinationID;references:ID"`
 	StartTime       time.Time
 	MinAmount       float64
 	SourceID        uuid.UUID
-	Source          *Asset `gorm:"foreignKey:SourceID"`
+	Source          *Asset `gorm:"->;foreignkey:SourceID;references:ID"`
 	IsAMM           bool
 	Name            string
-	Status          chipmunkApi.MarketStatus
+	Status          api.Status
 	SourceName      string `gorm:"-"`
 	DestinationName string `gorm:"-"`
 }

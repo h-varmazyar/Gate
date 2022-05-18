@@ -85,7 +85,7 @@ paths:
   /markets:
     put:
       operationId: market_set
-      summary: Create or update a market
+      summary: Create or update a markets
       requestBody:
         content:
           application/json:
@@ -107,7 +107,7 @@ paths:
   /markets/{id}:
     delete:
       operationId: market_delete
-      summary: delete a market
+      summary: delete a markets
       parameters:
         - $ref: '#/components/parameters/id'
       responses:
@@ -143,7 +143,7 @@ paths:
   /markets/names/{name}/brokerages/{brokerage_id}:
     get:
       operationId: market_get
-      summary: get market
+      summary: get markets
       parameters:
         - $ref: '#/components/parameters/name'
         - $ref: '#/components/parameters/brokerage_id'
@@ -163,7 +163,7 @@ paths:
   /markets/{id}/change-status:
     get:
       operationId: market_status_change
-      summary: change market status
+      summary: change markets status
       parameters:
         - $ref: '#/components/parameters/id'
       responses:
@@ -339,14 +339,14 @@ components:
         id:
           type: string
           readOnly: true
-          description: market id
+          description: markets id
           format: uuid
         name:
           type: string
-          description: market name
+          description: markets name
         status:
           type: number
-          description: market status
+          description: markets status
         pricing_decimal:
           type: number
           description: pricing decimal
@@ -382,7 +382,7 @@ components:
           description: source id
         is_amm:
           type: boolean
-          description: is amm market
+          description: is amm markets
     Markets:
       type: object
       readOnly: true
