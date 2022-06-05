@@ -1,0 +1,30 @@
+package indicators
+
+import (
+	"github.com/gorilla/mux"
+	"github.com/h-varmazyar/Gate/pkg/grpcext"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
+	"github.com/h-varmazyar/Gate/services/gateway/configs"
+)
+
+var (
+	controller *Controller
+)
+
+type Controller struct {
+	indicatorsService chipmunkApi.IndicatorServiceClient
+}
+
+func ControllerInstance() *Controller {
+	if controller == nil {
+		chipmunkConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Chipmunk)
+		controller = &Controller{
+			indicatorsService: chipmunkApi.NewIndicatorServiceClient(chipmunkConn),
+		}
+	}
+	return controller
+}
+
+func (c Controller) RegisterRoutes(router *mux.Router) {
+	indicators := router.PathPrefix("/indicators").Subrouter()
+}
