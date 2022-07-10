@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/h-varmazyar/Gate/pkg/httpext"
-	"github.com/h-varmazyar/Gate/pkg/muxext"
 	"github.com/h-varmazyar/Gate/pkg/service"
 	"github.com/h-varmazyar/Gate/services/brokerage/configs"
 	"github.com/h-varmazyar/Gate/services/brokerage/internal/app/brokerages"

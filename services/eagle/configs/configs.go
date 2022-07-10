@@ -17,8 +17,9 @@ type Configs struct {
 	CandleBufferLength        int           `env:"CANDLE_BUFFER_LENGTH,required"`
 	GrpcPort                  uint16        `env:"GRPC_PORT,required"`
 	GrpcAddresses             struct {
-		Chipmunk  string `env:"CHIPMUNK_GRPC_ADDRESS,required"`
-		Brokerage string `env:"BROKERAGE_GRPC_ADDRESS,required"`
+		TelegramBot string `env:"TELEGRAM_BOT_GRPC_ADDRESS,required"`
+		Chipmunk    string `env:"CHIPMUNK_GRPC_ADDRESS,required"`
+		Brokerage   string `env:"BROKERAGE_GRPC_ADDRESS,required"`
 	}
 }
 

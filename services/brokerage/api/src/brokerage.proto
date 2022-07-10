@@ -7,6 +7,7 @@ import "services/chipmunk/api/src/resolution.proto";
 
 service BrokerageService {
   rpc Create(CreateBrokerageReq) returns (Brokerage);
+  rpc Active(ActiveBrokerageReq) returns (Brokerage);
   rpc Return(ReturnBrokerageReq) returns (Brokerage);
   rpc List(api.Void) returns (Brokerages);
   rpc Delete(DeleteBrokerageReq) returns (api.Void);
@@ -89,6 +90,13 @@ message ReturnBrokerageReq {
 message DeleteBrokerageReq {
   // @inject_tag: json:"id"
   string ID = 1;
+}
+
+message ActiveBrokerageReq{
+  // @inject_tag: json:"with_markets"
+  bool WithMarkets = 1;
+  // @inject_tag: json:"with_resolutions"
+  bool WithResolutions = 2;
 }
 
 

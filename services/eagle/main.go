@@ -15,12 +15,16 @@ func main() {
 	configs.LoadVariables()
 	repository.InitializingDB()
 
+	registerGrpcServer()
+
+	service.Start(configs.Variables.ServiceName, configs.Variables.Version)
+}
+
+func registerGrpcServer() {
 	service.Serve(configs.Variables.GrpcPort, func(lst net.Listener) error {
 		server := grpc.NewServer()
 		strategies.NewService().RegisterServer(server)
 		signals.NewService().RegisterServer(server)
 		return server.Serve(lst)
 	})
-
-	service.Start(configs.Variables.ServiceName, configs.Variables.Version)
 }

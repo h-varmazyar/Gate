@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/h-varmazyar/Gate/pkg/muxext"
 	"github.com/h-varmazyar/Gate/pkg/service"
 	"github.com/h-varmazyar/Gate/services/gateway/configs"
 	"github.com/h-varmazyar/Gate/services/gateway/internal/app/brokerage"
 	"github.com/h-varmazyar/Gate/services/gateway/internal/app/chipmunk"
 	"github.com/h-varmazyar/Gate/services/gateway/internal/app/eagle"
+	"github.com/h-varmazyar/gopack/mux"
 	"google.golang.org/grpc"
 	"net"
 )
@@ -16,7 +16,7 @@ func main() {
 
 	service.Serve(configs.Variables.GrpcPort, func(lst net.Listener) error {
 		server := grpc.NewServer()
-		router := muxext.NewRouter(true)
+		router := mux.NewRouter(true)
 		//router.Use(httpext.Authorization)
 
 		brokerage.RegisterRoutes(router)

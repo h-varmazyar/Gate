@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BrokerageServiceClient interface {
 	Create(ctx context.Context, in *CreateBrokerageReq, opts ...grpc.CallOption) (*Brokerage, error)
+	Active(ctx context.Context, in *ActiveBrokerageReq, opts ...grpc.CallOption) (*Brokerage, error)
 	Return(ctx context.Context, in *ReturnBrokerageReq, opts ...grpc.CallOption) (*Brokerage, error)
 	List(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*Brokerages, error)
 	Delete(ctx context.Context, in *DeleteBrokerageReq, opts ...grpc.CallOption) (*api.Void, error)
@@ -37,6 +38,15 @@ func NewBrokerageServiceClient(cc grpc.ClientConnInterface) BrokerageServiceClie
 func (c *brokerageServiceClient) Create(ctx context.Context, in *CreateBrokerageReq, opts ...grpc.CallOption) (*Brokerage, error) {
 	out := new(Brokerage)
 	err := c.cc.Invoke(ctx, "/brokerageApi.BrokerageService/Create", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *brokerageServiceClient) Active(ctx context.Context, in *ActiveBrokerageReq, opts ...grpc.CallOption) (*Brokerage, error) {
+	out := new(Brokerage)
+	err := c.cc.Invoke(ctx, "/brokerageApi.BrokerageService/Active", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +94,7 @@ func (c *brokerageServiceClient) ChangeStatus(ctx context.Context, in *StatusCha
 // for forward compatibility
 type BrokerageServiceServer interface {
 	Create(context.Context, *CreateBrokerageReq) (*Brokerage, error)
+	Active(context.Context, *ActiveBrokerageReq) (*Brokerage, error)
 	Return(context.Context, *ReturnBrokerageReq) (*Brokerage, error)
 	List(context.Context, *api.Void) (*Brokerages, error)
 	Delete(context.Context, *DeleteBrokerageReq) (*api.Void, error)
@@ -96,6 +107,9 @@ type UnimplementedBrokerageServiceServer struct {
 
 func (UnimplementedBrokerageServiceServer) Create(context.Context, *CreateBrokerageReq) (*Brokerage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
+}
+func (UnimplementedBrokerageServiceServer) Active(context.Context, *ActiveBrokerageReq) (*Brokerage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Active not implemented")
 }
 func (UnimplementedBrokerageServiceServer) Return(context.Context, *ReturnBrokerageReq) (*Brokerage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Return not implemented")
@@ -135,6 +149,24 @@ func _BrokerageService_Create_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BrokerageServiceServer).Create(ctx, req.(*CreateBrokerageReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BrokerageService_Active_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ActiveBrokerageReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BrokerageServiceServer).Active(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/brokerageApi.BrokerageService/Active",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BrokerageServiceServer).Active(ctx, req.(*ActiveBrokerageReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -221,6 +253,10 @@ var BrokerageService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Create",
 			Handler:    _BrokerageService_Create_Handler,
+		},
+		{
+			MethodName: "Active",
+			Handler:    _BrokerageService_Active_Handler,
 		},
 		{
 			MethodName: "Return",

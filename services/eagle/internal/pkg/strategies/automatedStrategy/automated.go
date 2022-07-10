@@ -2,6 +2,7 @@ package automatedStrategy
 
 import (
 	"context"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
@@ -11,6 +12,7 @@ import (
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
 	"github.com/h-varmazyar/Gate/services/eagle/configs"
 	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/repository"
+	telegramBotApi "github.com/h-varmazyar/Gate/services/telegramBot/api"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"sync"
@@ -22,6 +24,7 @@ type automated struct {
 	functionsService brokerageApi.FunctionsServiceClient
 	walletsService   chipmunkApi.WalletsServiceClient
 	candleService    chipmunkApi.CandleServiceClient
+	botService       telegramBotApi.BotServiceClient
 	checkTicker      *time.Ticker
 	withTrading      bool
 }
@@ -41,6 +44,9 @@ func NewAutomatedStrategy(strategy *eagleApi.Strategy, withTrading bool) (*autom
 	automated.walletsService = chipmunkApi.NewWalletsServiceClient(chipmunkConn)
 	automated.candleService = chipmunkApi.NewCandleServiceClient(chipmunkConn)
 
+	telegramBotConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.TelegramBot)
+	automated.botService = telegramBotApi.NewBotServiceClient(telegramBotConn)
+
 	return automated, nil
 }
 
@@ -50,7 +56,6 @@ func (s *automated) CheckForSignals(ctx context.Context, market *chipmunkApi.Mar
 		reference *chipmunkApi.Reference
 		marketID  uuid.UUID
 		candles   *chipmunkApi.Candles
-		strength  float64
 	)
 
 	marketID, err = uuid.Parse(market.ID)
@@ -69,7 +74,6 @@ func (s *automated) CheckForSignals(ctx context.Context, market *chipmunkApi.Mar
 		if reference.ActiveBalance <= 0 || reference.ActiveBalance < reference.TotalBalance/10 {
 			continue
 		}
-		strength = 0
 		candles, err = s.candleService.ReturnLastNCandles(ctx, &chipmunkApi.BufferedCandlesRequest{
 			ResolutionID: s.WorkingResolutionID.String(),
 			MarketID:     marketID.String(),
@@ -78,43 +82,65 @@ func (s *automated) CheckForSignals(ctx context.Context, market *chipmunkApi.Mar
 		if err != nil {
 			continue
 		}
-		for _, strategyIndicator := range s.Indicators {
-			switch strategyIndicator.Type {
-			case chipmunkApi.Indicator_RSI:
-				strength += s.checkRSI(candles.Elements, strategyIndicator.IndicatorID)
-			case chipmunkApi.Indicator_Stochastic:
-				strength += s.checkStochastic(candles.Elements, strategyIndicator.IndicatorID)
-			case chipmunkApi.Indicator_BollingerBands:
-				strength += s.checkBollingerBand(candles.Elements, strategyIndicator.IndicatorID, market.MakerFeeRate, market.TakerFeeRate)
-			}
-		}
-		strength /= float64(len(s.Indicators))
+
+		strength := s.calculateSignalStrength(candles.Elements, market)
 		if strength >= 0.9 {
 			price := candles.Elements[len(candles.Elements)-1].Close
-			balance := float64(0)
-			if reference.ActiveBalance < reference.TotalBalance/10 {
-				balance = reference.ActiveBalance
-			} else {
-				balance = reference.TotalBalance / 10
+			s.sendSignalToBot(ctx, market.Name, price)
+			if s.withTrading {
+				balance := float64(0)
+				if reference.ActiveBalance < reference.TotalBalance/10 {
+					balance = reference.ActiveBalance
+				} else {
+					balance = reference.TotalBalance / 10
+				}
+				order, err := s.functionsService.NewOrder(context.Background(), &brokerageApi.NewOrderReq{
+					Market: market,
+					Type:   eagleApi.Order_buy,
+					Amount: balance / price,
+					Price:  price,
+					Option: eagleApi.Order_NORMAL,
+					Model:  eagleApi.OrderModel_limit,
+				})
+				if err != nil {
+					log.WithError(err).Errorf("failed to place new order for markets %v", market.ID)
+				}
+				go s.manageBuyOrder(ctx, market, order)
 			}
-			order, err := s.functionsService.NewOrder(context.Background(), &brokerageApi.NewOrderReq{
-				Market: market,
-				Type:   eagleApi.Order_buy,
-				Amount: balance / price,
-				Price:  price,
-				Option: eagleApi.Order_NORMAL,
-				Model:  eagleApi.OrderModel_limit,
-			})
-			if err != nil {
-				log.WithError(err).Errorf("failed to place new order for markets %v", market.ID)
-			}
-			go s.manageBuyOrder(ctx, market, order)
 		}
 	}
 }
 
 func (s *automated) Stop() {
 	s.checkTicker.Stop()
+}
+
+func (s *automated) calculateSignalStrength(candles []*chipmunkApi.Candle, market *chipmunkApi.Market) float64 {
+	strength := float64(0)
+	for _, strategyIndicator := range s.Indicators {
+		switch strategyIndicator.Type {
+		case chipmunkApi.Indicator_RSI:
+			strength += s.checkRSI(candles, strategyIndicator.IndicatorID)
+		case chipmunkApi.Indicator_Stochastic:
+			strength += s.checkStochastic(candles, strategyIndicator.IndicatorID)
+		case chipmunkApi.Indicator_BollingerBands:
+			strength += s.checkBollingerBand(candles, strategyIndicator.IndicatorID, market.MakerFeeRate, market.TakerFeeRate)
+		}
+	}
+	strength /= float64(len(s.Indicators))
+	return strength
+}
+
+func (s *automated) sendSignalToBot(ctx context.Context, market string, price float64) {
+	text := fmt.Sprintf(`new buy signal raise in spot of coinex:
+market: %s
+enter price: %v
+`, market, price)
+	if _, err := s.botService.SendMessage(ctx, &telegramBotApi.Message{
+		Text: text,
+	}); err != nil {
+		log.WithError(err).Errorf("failed to send signal message to bot: %v", text)
+	}
 }
 
 func (s *automated) manageBuyOrder(ctx context.Context, market *chipmunkApi.Market, order *eagleApi.Order) {

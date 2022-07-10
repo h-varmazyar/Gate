@@ -1,11 +1,11 @@
 package brokerage
 
 import (
-	"github.com/gorilla/mux"
+	gorilla "github.com/gorilla/mux"
 	"github.com/h-varmazyar/Gate/services/gateway/internal/app/brokerage/brokerages"
 )
 
-func RegisterRoutes(router *mux.Router) {
+func RegisterRoutes(router *gorilla.Router) {
 	brokerageRouter := router.PathPrefix("/brokerage").Subrouter()
-	brokerages.ControllerInstance().RegisterRoutes(brokerageRouter)
+	brokerages.HandlerInstance().RegisterRoutes(brokerageRouter)
 }

@@ -1,7 +1,7 @@
 package wallets
 
 import (
-	"github.com/gorilla/mux"
+	gorilla "github.com/gorilla/mux"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"github.com/h-varmazyar/Gate/services/gateway/configs"
@@ -25,6 +25,6 @@ func ControllerInstance() *Controller {
 	return controller
 }
 
-func (c Controller) RegisterRoutes(router *mux.Router) {
+func (c Controller) RegisterRoutes(router *gorilla.Router) {
 	wallets := router.PathPrefix("/wallets").Subrouter()
 }
