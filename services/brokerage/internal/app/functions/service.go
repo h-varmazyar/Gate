@@ -23,16 +23,16 @@ type Service struct {
 }
 
 var (
-	GrpcService *Service
+	grpcService *Service
 )
 
 func NewService() *Service {
-	if GrpcService == nil {
-		GrpcService = new(Service)
+	if grpcService == nil {
+		grpcService = new(Service)
 		networkConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Network)
-		GrpcService.requestService = networkAPI.NewRequestServiceClient(networkConn)
+		grpcService.requestService = networkAPI.NewRequestServiceClient(networkConn)
 	}
-	return GrpcService
+	return grpcService
 }
 
 func (s *Service) RegisterServer(server *grpc.Server) {

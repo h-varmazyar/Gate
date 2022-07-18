@@ -137,7 +137,8 @@ market: %s
 enter price: %v
 `, market, price)
 	if _, err := s.botService.SendMessage(ctx, &telegramBotApi.Message{
-		Text: text,
+		ChatID: configs.Variables.BroadcastChannelID,
+		Text:   text,
 	}); err != nil {
 		log.WithError(err).Errorf("failed to send signal message to bot: %v", text)
 	}

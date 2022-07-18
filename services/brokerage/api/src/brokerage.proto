@@ -9,7 +9,6 @@ service BrokerageService {
   rpc Create(CreateBrokerageReq) returns (Brokerage);
   rpc Active(ActiveBrokerageReq) returns (Brokerage);
   rpc Return(ReturnBrokerageReq) returns (Brokerage);
-  rpc List(api.Void) returns (Brokerages);
   rpc Delete(DeleteBrokerageReq) returns (api.Void);
   rpc ChangeStatus(StatusChangeRequest) returns (BrokerageStatus);
 }
@@ -18,7 +17,6 @@ enum Platform {
   UnknownBrokerage = 0;
   Coinex = 1;
   Nobitex = 2;
-  All = 99;
 }
 
 message CreateBrokerageReq {

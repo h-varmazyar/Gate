@@ -25,9 +25,9 @@ require (
 	google.golang.org/genproto v0.0.0-20220624142145-8cd45d7dbd1f
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.0
-	gorm.io/driver/mysql v1.3.4
+	gorm.io/driver/mysql v1.3.5
 	gorm.io/driver/postgres v1.3.7
-	gorm.io/gorm v1.23.6
+	gorm.io/gorm v1.23.8
 )
 
 require (
@@ -46,14 +46,16 @@ require (
 	github.com/jackc/pgtype v1.11.0 // indirect
 	github.com/jackc/pgx/v4 v4.16.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.4 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/karrick/godirwalk v1.16.1 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/markbates/safe v1.0.1 // indirect
+	github.com/mattn/go-sqlite3 v1.14.12 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
 	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gorm.io/driver/sqlite v1.3.6 // indirect
 )

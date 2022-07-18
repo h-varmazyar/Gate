@@ -23,18 +23,18 @@ type Service struct {
 }
 
 var (
-	GrpcService *Service
+	grpcService *Service
 )
 
 func NewService() *Service {
-	if GrpcService == nil {
-		GrpcService = new(Service)
+	if grpcService == nil {
+		grpcService = new(Service)
 		chipmunkConnection := grpcext.NewConnection(configs.Variables.GrpcAddresses.Chipmunk)
 		//GrpcService.candleService = chipmunkApi.NewCandleServiceClient(chipmunkConnection)
-		GrpcService.marketService = chipmunkApi.NewMarketServiceClient(chipmunkConnection)
-		GrpcService.walletService = chipmunkApi.NewWalletsServiceClient(chipmunkConnection)
+		grpcService.marketService = chipmunkApi.NewMarketServiceClient(chipmunkConnection)
+		grpcService.walletService = chipmunkApi.NewWalletsServiceClient(chipmunkConnection)
 	}
-	return GrpcService
+	return grpcService
 }
 
 func (s *Service) RegisterServer(server *grpc.Server) {

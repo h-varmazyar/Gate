@@ -15,6 +15,7 @@ type Configs struct {
 	IndicatorsWorkerHeartbeat time.Duration `env:"INDICATORS_WORKER_HEARTBEAT,required"`
 	SignalsWorkerHeartbeat    time.Duration `env:"SIGNALS_WORKER_HEARTBEAT,required"`
 	CandleBufferLength        int           `env:"CANDLE_BUFFER_LENGTH,required"`
+	BroadcastChannelID        int64         `env:"BROADCAST_CHANNEL_ID,required"`
 	GrpcPort                  uint16        `env:"GRPC_PORT,required"`
 	GrpcAddresses             struct {
 		TelegramBot string `env:"TELEGRAM_BOT_GRPC_ADDRESS,required"`
