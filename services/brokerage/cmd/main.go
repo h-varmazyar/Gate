@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gorilla/mux"
 	"github.com/h-varmazyar/Gate/pkg/httpext"
 	"github.com/h-varmazyar/Gate/pkg/service"
 	"github.com/h-varmazyar/Gate/services/brokerage/configs"
@@ -24,7 +25,7 @@ func main() {
 	})
 
 	service.Serve(configs.Variables.HttpPort, func(lst net.Listener) error {
-		router := muxext.NewRouter(true)
+		router := mux.NewRouter()
 		return http.Serve(lst, httpext.DefaultCors.Handler(router))
 	})
 

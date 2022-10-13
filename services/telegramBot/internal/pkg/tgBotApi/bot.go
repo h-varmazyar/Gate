@@ -5,7 +5,6 @@ import (
 	"errors"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	errorext "github.com/h-varmazyar/Gate/pkg/errors"
-	"github.com/h-varmazyar/Gate/services/telegramBot/configs"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"sync"
@@ -13,30 +12,34 @@ import (
 )
 
 var (
-	err     error
-	running bool
-	bot     *tgbotapi.BotAPI
-	updates tgbotapi.UpdatesChannel
-	lock    = &sync.Mutex{}
-	h       Handlers
+	err        error
+	running    bool
+	bot        *tgbotapi.BotAPI
+	updates    tgbotapi.UpdatesChannel
+	lock       = &sync.Mutex{}
+	h          Handlers
+	botConfigs *Configs
 )
 
-func Run(customHandlers Handlers) error {
+func Run(customHandlers Handlers, configs *Configs) error {
 	lock.Lock()
 	defer lock.Unlock()
 
 	if customHandlers == nil {
-		h = new(UnImplementedHandler)
+		return errors.New("please specify handler")
 	} else {
 		h = customHandlers
 	}
 
-	bot, err = tgbotapi.NewBotAPI(configs.Variables.BotToken)
+	botConfigs = configs
+
+	bot, err = tgbotapi.NewBotAPI(botConfigs.BotToken)
 	if err != nil {
+		log.WithError(err).Error("failed to create new bot")
 		return err
 	}
 
-	bot.Debug = configs.Variables.DebugMode
+	bot.Debug = configs.DebugMode
 
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
@@ -89,8 +92,11 @@ func handleUpdate(update tgbotapi.Update) {
 		err = h.HandleChannelPost(ctx, update.ChannelPost)
 		chatID = update.ChannelPost.Chat.ID
 		messageID = update.ChannelPost.MessageID
-	}
-	if update.Message != nil {
+	} else if update.CallbackQuery != nil {
+		err = h.HandleCallbackQuery(ctx, update.CallbackQuery)
+		chatID = update.CallbackQuery.Message.Chat.ID
+		messageID = update.CallbackQuery.Message.MessageID
+	} else if update.Message != nil {
 		if update.Message.IsCommand() {
 			err = h.HandleCommand(ctx, update.Message)
 		} else {

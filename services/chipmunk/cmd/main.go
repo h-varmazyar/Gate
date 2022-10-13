@@ -35,5 +35,22 @@ func main() {
 	markets.InitializeWorker()
 	wallets.InitializeWorker()
 
+	//rsi := repository.Indicator{
+	//	UniversalModel: gormext.UniversalModel{},
+	//	Type:           chipmunkApi.Indicator_RSI,
+	//	Configs: &repository.IndicatorConfigs{
+	//		RSI: &repository.RsiConfigs{Length: 7},
+	//	},
+	//}
+	//
+	//log.Infof("rsi creation: %v", repository.Indicators.Create(&rsi))
+
+	////id, _ := uuid.Parse("d4cc478a-7783-47f6-9c73-987b6c675d5d")
+	//id, _ := uuid.Parse("1917ae7b-a3cf-4e59-8e78-d1a44c073c81")
+	//rsi, err := repository.Indicators.Return(id)
+	//log.Errorf("rsi fetch err: %v", err)
+	//log.Infof("rsi fetch: %v", rsi)
+	//log.Warnf("rsi fetch: %v", rsi.Configs)
+
 	service.Start(configs.Variables.ServiceName, configs.Variables.Version)
 }

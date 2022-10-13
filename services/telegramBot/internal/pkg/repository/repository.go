@@ -2,7 +2,6 @@ package repository
 
 import (
 	"github.com/h-varmazyar/Gate/pkg/gormext"
-	"github.com/h-varmazyar/Gate/services/telegramBot/configs"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -11,8 +10,8 @@ var (
 	Clients *clientRepository
 )
 
-func InitializingDB() {
-	db, err := gormext.Open(gormext.PostgreSQL, configs.Variables.DBConnection)
+func InitializingDB(configs *Configs) {
+	db, err := gormext.Open(gormext.PostgreSQL, configs.DBConnection)
 	if err != nil {
 		log.WithError(err).Fatal("can not load repository configs")
 	}

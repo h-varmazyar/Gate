@@ -2,7 +2,6 @@ package repository
 
 import (
 	"github.com/h-varmazyar/Gate/api"
-	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
 	"gorm.io/gorm"
 	"time"
 )
@@ -39,14 +38,14 @@ func (repository *MarketRepository) Info(brokerageName, marketName string) (*Mar
 		First(market).Error
 }
 
-func (repository *MarketRepository) List(brokerageName string) ([]*Market, error) {
-	markets := make([]*Market, 0)
-	tx := repository.db.Model(new(Market))
-	if brokerageName != brokerageApi.Platform_All.String() {
-		tx = tx.Where("brokerage_name LIKE ?", brokerageName)
-	}
-	return markets, tx.Find(&markets).Error
-}
+//func (repository *MarketRepository) List(brokerageName string) ([]*Market, error) {
+//	markets := make([]*Market, 0)
+//	tx := repository.db.Model(new(Market))
+//	if brokerageName != brokerageApi.Platform_All.String() {
+//		tx = tx.Where("brokerage_name LIKE ?", brokerageName)
+//	}
+//	return markets, tx.Find(&markets).Error
+//}
 
 func (repository *MarketRepository) ListBySource(brokerageName, source string) ([]*Market, error) {
 	markets := make([]*Market, 0)

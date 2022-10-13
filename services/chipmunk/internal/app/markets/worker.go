@@ -2,7 +2,6 @@ package markets
 
 import (
 	"context"
-	"errors"
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
@@ -48,21 +47,25 @@ func (worker *Worker) AddMarket(settings *WorkerSettings) {
 	settings.ctx, worker.Cancellations[settings.Market.ID] = context.WithCancel(context.Background())
 
 	buffer.Markets.AddList(settings.Market.ID)
+	log.Infof("add new market: %v", settings.Market.Name)
 	go worker.run(settings)
 }
 
 func (worker *Worker) DeleteMarket(marketID uuid.UUID) error {
+	log.Infof("deleting market: %v", marketID)
 	fn, ok := worker.Cancellations[marketID]
 	if !ok {
-		return errors.New("worker stopped before")
+		return nil
 	}
 	fn()
 	delete(worker.Cancellations, marketID)
 	buffer.Markets.RemoveList(marketID)
+	log.Infof("market deleted: %v", marketID)
 	return nil
 }
 
 func (worker *Worker) run(settings *WorkerSettings) {
+	log.Infof("runnig worker for %v", settings.Market.Name)
 	if err := worker.loadPrimaryData(settings); err != nil {
 		_ = worker.DeleteMarket(settings.Market.ID)
 		log.WithError(err).Error("load primary failed")
@@ -152,7 +155,11 @@ func (worker *Worker) loadPrimaryData(ws *WorkerSettings) error {
 			return err
 		}
 	}
-	for i := len(totalCandles) - configs.Variables.CandleBufferLength; i < len(totalCandles); i++ {
+	i := len(totalCandles) - configs.Variables.CandleBufferLength
+	if i < 0 {
+		i = 0
+	}
+	for ; i < len(totalCandles); i++ {
 		buffer.Markets.Push(ws.Market.ID, totalCandles[i])
 	}
 	return nil

@@ -114,40 +114,50 @@ func (s *Service) ReturnBySource(_ context.Context, req *chipmunkApi.MarketListB
 }
 
 func (s *Service) StartWorker(ctx context.Context, req *chipmunkApi.WorkerStartReq) (*api.Void, error) {
-	brokerageID, err := uuid.Parse(req.BrokerageID)
-	if err != nil {
-		return nil, err
-	}
-	markets, err := repository.Markets.List(brokerageID)
-	if err != nil {
+	var (
+		err                error
+		brokerageID        uuid.UUID
+		resolutionID       uuid.UUID
+		markets            []*repository.Market
+		resolution         *repository.Resolution
+		strategyIndicators *eagleApi.StrategyIndicators
+		loadedIndicators   map[uuid.UUID]indicators.Indicator
+	)
+
+	if brokerageID, err = uuid.Parse(req.BrokerageID); err != nil {
 		return nil, err
 	}
 
-	resolutionID, err := uuid.Parse(req.ResolutionID)
-	if err != nil {
-		return nil, err
-	}
-	resolution, err := repository.Resolutions.Return(resolutionID)
-	if err != nil {
+	if markets, err = repository.Markets.List(brokerageID); err != nil {
 		return nil, err
 	}
 
-	strategyIndicators, err := s.strategyService.Indicators(ctx, &eagleApi.StrategyIndicatorReq{StrategyID: req.StrategyID})
-	if err != nil {
+	if resolutionID, err = uuid.Parse(req.ResolutionID); err != nil {
+		return nil, err
+	}
+	if resolution, err = repository.Resolutions.Return(resolutionID); err != nil {
 		return nil, err
 	}
 
-	sIndicators, err := loadIndicators(ctx, strategyIndicators)
-	if err != nil {
+	log.Infof("loaded resolution: %v", resolution)
+
+	if strategyIndicators, err = s.strategyService.Indicators(ctx, &eagleApi.StrategyIndicatorReq{StrategyID: req.StrategyID}); err != nil {
+		return nil, err
+	}
+
+	log.Infof("loaded strategies count: %v", len(strategyIndicators.Elements))
+
+	if loadedIndicators, err = loadIndicators(ctx, strategyIndicators); err != nil {
 		return nil, err
 	}
 	for _, market := range markets {
 		settings := &WorkerSettings{
 			Market:     market,
 			Resolution: resolution,
-			Indicators: sIndicators,
+			Indicators: loadedIndicators,
 		}
 		worker.AddMarket(settings)
+		log.Infof("new market added: %v", market.Name)
 	}
 	return new(api.Void), nil
 }

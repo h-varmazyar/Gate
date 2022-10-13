@@ -9,8 +9,8 @@ import (
 
 type Indicator struct {
 	gormext.UniversalModel
-	Type    chipmunkApi.IndicatorType
-	Configs *IndicatorConfigs `gorm:"type:jsonb"`
+	Type    chipmunkApi.IndicatorType `gorm:"type:varchar(25);not null"`
+	Configs *IndicatorConfigs         `gorm:"embedded;embeddedPrefix:configs_"`
 }
 
 type IndicatorRepository struct {
@@ -18,10 +18,10 @@ type IndicatorRepository struct {
 }
 
 type IndicatorConfigs struct {
-	RSI            *RsiConfigs
-	Stochastic     *StochasticConfigs
-	MovingAverage  *MovingAverageConfigs
-	BollingerBands *BollingerBandsConfigs
+	RSI            *RsiConfigs            `gorm:"embedded;embeddedPrefix:rsi_"`
+	Stochastic     *StochasticConfigs     `gorm:"embedded;embeddedPrefix:stochastic_"`
+	MovingAverage  *MovingAverageConfigs  `gorm:"embedded;embeddedPrefix:moving_average_"`
+	BollingerBands *BollingerBandsConfigs `gorm:"embedded;embeddedPrefix:bollinger_bands_"`
 }
 
 type RsiConfigs struct {
@@ -73,6 +73,10 @@ type IndicatorValue struct {
 	MA         *MovingAverageValue
 	Stochastic *StochasticValue
 	RSI        *RSIValue
+}
+
+func (r *IndicatorRepository) Create(indicator *Indicator) error {
+	return r.db.Save(indicator).Error
 }
 
 func (r *IndicatorRepository) Return(indicatorID uuid.UUID) (*Indicator, error) {

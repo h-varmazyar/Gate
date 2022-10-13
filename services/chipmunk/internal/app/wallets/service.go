@@ -43,7 +43,7 @@ func (s *Service) List(_ context.Context, _ *api.Void) (*chipmunkApi.Wallets, er
 }
 
 func (s *Service) StartWorker(ctx context.Context, req *chipmunkApi.StartWorkerRequest) (*api.Void, error) {
-	brokerage, err := s.brokerageService.Return(ctx, &brokerageApi.ReturnBrokerageReq{ID: req.BrokerageID})
+	brokerage, err := s.brokerageService.Return(ctx, &brokerageApi.BrokerageReturnReq{ID: req.BrokerageID})
 	if err != nil {
 		return nil, err
 	}

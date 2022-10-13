@@ -80,7 +80,7 @@ func (service *Service) OHLC(ctx context.Context, inputs *brokerages.OHLCParams,
 	}
 	if int64(count) >= 1000 {
 		request.Params = []*networkAPI.KV{
-			networkAPI.NewKV("markets", inputs.Market.Name),
+			networkAPI.NewKV("market", inputs.Market.Name),
 			networkAPI.NewKV("interval", inputs.Resolution.Value),
 			networkAPI.NewKV("start_time", fmt.Sprintf("%v", inputs.From.Unix())),
 			networkAPI.NewKV("end_time", fmt.Sprintf("%v", inputs.To.Unix()))}

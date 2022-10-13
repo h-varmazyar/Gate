@@ -10,11 +10,12 @@ var Variables *Configs
 type Configs struct {
 	ServiceName   string `env:"SERVICE_NAME,required"`
 	Version       string `env:"VERSION,required"`
-	GrpcPort      uint16 `env:"GRPC_PORT,required"`
+	HttpPort      uint16 `env:"HTTP_PORT,required"`
 	GrpcAddresses struct {
-		Brokerage string `env:"BROKERAGE_GRPC_ADDRESS,required"`
-		Chipmunk  string `env:"CHIPMUNK_GRPC_ADDRESS,required"`
-		Eagle     string `env:"EAGLE_GRPC_ADDRESS,required"`
+		Brokerage   string `env:"BROKERAGE_GRPC_ADDRESS,required"`
+		Chipmunk    string `env:"CHIPMUNK_GRPC_ADDRESS,required"`
+		Eagle       string `env:"EAGLE_GRPC_ADDRESS,required"`
+		TelegramBot string `env:"TELEGRAM_BOT_ADDRESS,required"`
 	}
 }
 

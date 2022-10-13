@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"github.com/h-varmazyar/Gate/services/brokerage/api"
 	"gorm.io/gorm"
 	"time"
 )
@@ -46,11 +45,11 @@ func (r *ResolutionRepository) GetByDuration(duration time.Duration, brokerageNa
 		First(resolution).Error
 }
 
-func (r *ResolutionRepository) List(brokerageName string) ([]*Resolution, error) {
-	resolutions := make([]*Resolution, 0)
-	tx := r.db.Model(new(Resolution))
-	if brokerageName != api.Platform_All.String() {
-		tx.Where("brokerage_Name LIKE ?", brokerageName)
-	}
-	return resolutions, tx.Find(&resolutions).Error
-}
+//func (r *ResolutionRepository) List(brokerageName string) ([]*Resolution, error) {
+//	resolutions := make([]*Resolution, 0)
+//	tx := r.db.Model(new(Resolution))
+//	if brokerageName != api.Platform_All.String() {
+//		tx.Where("brokerage_Name LIKE ?", brokerageName)
+//	}
+//	return resolutions, tx.Find(&resolutions).Error
+//}

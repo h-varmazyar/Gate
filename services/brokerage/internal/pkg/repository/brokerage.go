@@ -19,10 +19,11 @@ type Brokerage struct {
 	AccessID     string                `gorm:"type:varchar(100)"`
 	SecretKey    string                `gorm:"type:varchar(100)"`
 	Status       api.Status            `gorm:"type:varchar(25);not null"`
-	ResolutionID uuid.UUID
-	//Resolution   Resolution `gorm:"->;foreignkey:ResolutionID;references:ID"`
+	ResolutionID *uuid.UUID            `gorm:"not null"`
+	//ResolutionID *uuid.UUID             `gorm:"type:uuid REFERENCES resolutions(id);not null;index"`
+	//Resolution   *Resolution           `gorm:"->;foreignkey:ResolutionID;references:ID"`
 	//Markets      []*Market  `gorm:"many2many:brokerage_markets"`
-	StrategyID uuid.UUID
+	StrategyID *uuid.UUID `gorm:"not null"`
 }
 
 type BrokerageRepository struct {
@@ -39,33 +40,34 @@ func (repository *BrokerageRepository) Delete(id uuid.UUID) error {
 
 func (repository *BrokerageRepository) ReturnByID(id uuid.UUID) (*Brokerage, error) {
 	brokerage := new(Brokerage)
-	return brokerage, repository.db.Joins("Resolution").
-		Preload("Markets").Where("brokerages.id = ?", id).First(brokerage).Error
+	return brokerage, repository.db.Where("brokerages.id = ?", id).First(brokerage).Error
 }
 
 func (repository *BrokerageRepository) ReturnEnable() (*Brokerage, error) {
 	brokerage := new(Brokerage)
-	return brokerage, repository.db.Joins("Resolution").Preload("Markets").Preload("Strategy").
+	return brokerage, repository.db.
 		Where("status LIKE ?", api.Status_Enable.String()).Find(&brokerage).Error
 }
 
 func (repository *BrokerageRepository) ReturnEnables() ([]*Brokerage, error) {
 	brokerages := make([]*Brokerage, 0)
-	return brokerages, repository.db.Joins("Resolution").Preload("Markets").Preload("Strategy").
+	return brokerages, repository.db.
 		Where("status LIKE ?", api.Status_Enable.String()).Find(&brokerages).Error
 }
 
 func (repository *BrokerageRepository) List() ([]*Brokerage, error) {
 	brokerages := make([]*Brokerage, 0)
-	return brokerages, repository.db.Joins("Resolution").Find(&brokerages).Error
+	return brokerages, repository.db.Find(&brokerages).Error
 }
 
-func (repository *BrokerageRepository) ChangeStatus(brokerage *Brokerage) error {
-	return repository.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Table("brokerages").Where("status LIKE ?", api.Status_Enable.String()).
-			Update("status", api.Status_Disable.String()).Error; err != nil {
-			return err
-		}
-		return tx.Table("brokerages").Where("id = ?", brokerage.ID).Update("status", brokerage.Status).Error
-	})
+func (repository *BrokerageRepository) ChangeStatus(brokerageID uuid.UUID) error {
+	status := ""
+	if err := repository.db.Model(new(Brokerage)).Where("id = ?", brokerageID).Select("status").Scan(&status).Error; err != nil {
+		return err
+	}
+	newStatus := api.Status_Enable
+	if status == api.Status_Enable.String() {
+		newStatus = api.Status_Disable
+	}
+	return repository.db.Model(new(Brokerage)).Where("id = ?", brokerageID).Update("status", newStatus).Error
 }

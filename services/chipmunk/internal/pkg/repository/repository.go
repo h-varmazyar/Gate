@@ -4,6 +4,7 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/gormext"
 	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 var (
@@ -20,21 +21,27 @@ func InitializingDB() {
 		log.WithError(err).Fatal("can not open db connection")
 	}
 
-	if err := db.AutoMigrate(new(Asset)); err != nil {
-		log.WithError(err).Fatal("migration failed for assets")
+	if err = db.Transaction(func(tx *gorm.DB) error {
+		if err = gormext.EnableExtensions(tx,
+			gormext.UUIDExtension,
+		); err != nil {
+			return err
+		}
+
+		if err = tx.AutoMigrate(
+			new(Asset),
+			new(Candle),
+			new(Indicator),
+			new(Resolution),
+			new(Market),
+		); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		log.WithError(err).Fatal("failed to migrate database")
 	}
-	if err := db.AutoMigrate(new(Candle)); err != nil {
-		log.WithError(err).Fatal("migration failed for candles")
-	}
-	if err := db.AutoMigrate(new(Indicator)); err != nil {
-		log.WithError(err).Fatal("migration failed for indicators")
-	}
-	if err := db.AutoMigrate(new(Resolution)); err != nil {
-		log.WithError(err).Fatal("migration failed for resolutions")
-	}
-	if err := db.AutoMigrate(new(Market)); err != nil {
-		log.WithError(err).Fatal("migration failed for markets")
-	}
+
 	Assets = &AssetRepository{db: db}
 	Candles = &CandleRepository{db: db}
 	Indicators = &IndicatorRepository{db: db}

@@ -1,0 +1,42 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  position: fixed;
+  bottom: inherit;
+  top: inherit;
+  left: inherit;
+  right: inherit;
+
+  .dashboardDesc {
+    text-align: center;
+  }
+
+  table {
+    text-align: center;
+  }
+
+  .brokerageSelectionButtons {
+    padding: 1rem 10rem;
+    text-align: end;
+
+    button {
+      margin: 0 0.5rem;
+      color: #2e323c;
+      border: 1px solid #1a8e5f;
+      border-radius: 4px;
+      padding: 0.5rem 2rem;
+      background-color: transparent;
+      background-repeat: no-repeat;
+      cursor: pointer;
+      overflow: hidden;
+      font-family: inherit;
+    }
+
+    button:hover {
+      background: #1a8e5f;
+      color: #fefefe;
+    }
+  }
+}

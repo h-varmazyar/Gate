@@ -1,0 +1,50 @@
+.button {
+  background-color: rgb(0, 165, 81);
+  color: rgb(255, 255, 255);
+  font-size: 14px;
+  padding-right: 20px;
+  padding-left: 20px;
+  border-radius: 10px;
+  min-height: 42px;
+  min-width: 130px;
+  border: none;
+  outline: none !important;
+
+  .vertical-center {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  .horizontal-center {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-content: center;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .label {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .icon-top {
+    padding-top: 7px;
+  }
+
+  .icon-bottom {
+    padding-bottom: 7px;
+  }
+
+  .icon-right {
+    padding-left: 12px;
+  }
+
+  .icon-left {
+    padding-right: 12px;
+  }
+}

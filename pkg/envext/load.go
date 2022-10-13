@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	envFile := "configs/.env"
+	envFile := "../configs/.env"
 	if _, err := os.Stat(envFile); err != nil {
 		if os.IsNotExist(err) {
 			return

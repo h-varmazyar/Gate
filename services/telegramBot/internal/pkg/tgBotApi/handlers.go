@@ -8,5 +8,6 @@ import (
 type Handlers interface {
 	HandleMessage(ctx context.Context, msg *tgbotapi.Message) error
 	HandleCommand(ctx context.Context, msg *tgbotapi.Message) error
+	HandleCallbackQuery(ctx context.Context, query *tgbotapi.CallbackQuery) error
 	HandleChannelPost(ctx context.Context, msg *tgbotapi.Message) error
 }

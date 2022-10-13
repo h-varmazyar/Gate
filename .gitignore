@@ -18,3 +18,5 @@ build
 #other
 tmp
 old-codes
+
+*.yaml

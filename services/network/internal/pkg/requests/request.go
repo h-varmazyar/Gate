@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -49,10 +50,28 @@ func (req *Request) AddHeaders(headers []*networkAPI.KV) {
 
 func (req *Request) AddQueryParams(params []*networkAPI.KV) {
 	qParams := url.Values{}
+	log.Infof("params: %v", params)
 	for _, param := range params {
-		qParams.Add(param.Key, fmt.Sprint(param.Value))
+		value := ""
+		switch v := param.Value.(type) {
+		case *networkAPI.KV_String_:
+			value = v.String_
+		case *networkAPI.KV_Bool:
+			value = fmt.Sprint(v.Bool)
+		case *networkAPI.KV_Float32:
+			value = fmt.Sprint(v.Float32)
+		case *networkAPI.KV_Float64:
+			value = fmt.Sprint(v.Float64)
+		case *networkAPI.KV_Integer:
+			value = fmt.Sprint(v.Integer)
+		default:
+			continue
+		}
+		qParams.Add(param.Key, value)
 	}
 	req.queryParams = qParams.Encode()
+
+	log.Infof("params formated: %v", req.queryParams)
 }
 
 func (req *Request) AddBody(bodyParams []*networkAPI.KV) error {

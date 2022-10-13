@@ -12,16 +12,18 @@ import (
 )
 
 type Service struct {
+	configs *Configs
 }
 
 var (
 	GrpcService *Service
 )
 
-func NewService() *Service {
+func NewService(configs *Configs) *Service {
 	if GrpcService == nil {
 		GrpcService = new(Service)
 	}
+	GrpcService.configs = configs
 	return GrpcService
 }
 
@@ -30,8 +32,8 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 }
 
 func (s *Service) Start(_ context.Context, _ *api.Void) (*api.Void, error) {
-	handler := new(handlers.Handler)
-	if err := tgBotApi.Run(handler); err != nil {
+	handler := handlers.NewInstance(s.configs.HandlerConfigs)
+	if err := tgBotApi.Run(handler, s.configs.BotConfigs); err != nil {
 		return nil, err
 	}
 	return new(api.Void), nil

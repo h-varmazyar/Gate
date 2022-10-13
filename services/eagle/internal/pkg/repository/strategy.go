@@ -20,9 +20,9 @@ type Strategy struct {
 }
 
 type StrategyIndicator struct {
-	StrategyID  uuid.UUID `gorm:"primary_key;type:uuid REFERENCES strategies(id)"`
-	IndicatorID uuid.UUID `gorm:"primary_key;type:uuid"`
-	Type        chipmunkApi.IndicatorType
+	StrategyID  uuid.UUID                 `gorm:"primary_key;type:uuid REFERENCES strategies(id)"`
+	IndicatorID uuid.UUID                 `gorm:"primary_key;type:uuid"`
+	Type        chipmunkApi.IndicatorType `gorm:"type:varchar(25);not null"`
 }
 
 type StrategyRepository struct {
@@ -40,7 +40,7 @@ func (r *StrategyRepository) Return(strategyID uuid.UUID) (*Strategy, error) {
 
 func (r *StrategyRepository) ReturnIndicators(strategyID uuid.UUID) ([]*StrategyIndicator, error) {
 	strategyIndicators := make([]*StrategyIndicator, 0)
-	return strategyIndicators, r.db.Model(new(StrategyIndicator)).Where("strategy_id = ?", strategyIndicators).Find(&strategyIndicators).Error
+	return strategyIndicators, r.db.Model(new(StrategyIndicator)).Where("strategy_id = ?", strategyID).Find(&strategyIndicators).Error
 }
 
 func (r *StrategyRepository) List() ([]*Strategy, error) {

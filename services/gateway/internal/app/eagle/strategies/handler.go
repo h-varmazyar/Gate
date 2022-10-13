@@ -26,5 +26,5 @@ func ControllerInstance() *Controller {
 }
 
 func (c Controller) RegisterRoutes(router *gorilla.Router) {
-	strategies := router.PathPrefix("/strategies").Subrouter()
+	_ = router.PathPrefix("/strategies").Subrouter()
 }

@@ -35,12 +35,12 @@ func InitializeWorker() {
 
 func (w *worker) Start(brokerage *brokerageApi.Brokerage) error {
 	if w.cancellation == nil {
-		ctx, fn := context.WithCancel(context.Background())
-		w.cancellation = fn
-
 		if brokerage == nil {
 			return errors.New(context.Background(), codes.NotFound)
 		}
+
+		ctx, fn := context.WithCancel(context.Background())
+		w.cancellation = fn
 
 		go w.run(ctx, brokerage)
 		return nil
@@ -105,6 +105,10 @@ func (w *worker) calculateReferenceValue(ctx context.Context, brokerage *brokera
 			reference.ActiveBalance += statistics.Close * wallet.ActiveBalance
 			reference.TotalBalance += statistics.Close * wallet.TotalBalance
 			references[market.Destination.Name] = reference
+
+			if reference.TotalBalance > 0 {
+				log.Infof("wallet %v balance: total si %v locked is %v", reference.AssetName, reference.TotalBalance, reference.BlockedBalance)
+			}
 		}
 	}
 	buffer.Wallets.UpdateReferences(references)
