@@ -18,7 +18,6 @@ func main() {
 
 	service.Serve(configs.Variables.HttpPort, func(lst net.Listener) error {
 		router := mux.NewRouter(true)
-		//router.Use(httpext.Authorization)
 
 		brokerage.RegisterRoutes(router)
 		chipmunk.RegisterRoutes(router)
