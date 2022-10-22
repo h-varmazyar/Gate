@@ -7,6 +7,7 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
 	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/repository"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
@@ -48,6 +49,7 @@ func (s *Service) Return(_ context.Context, req *eagleApi.ReturnStrategyReq) (*e
 	if err != nil {
 		return nil, err
 	}
+	log.Warnf("ind after repo: %v", strategy.Indicators)
 	response := new(eagleApi.Strategy)
 	mapper.Struct(strategy, response)
 	return response, nil

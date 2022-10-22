@@ -30,15 +30,16 @@ type Service struct {
 
 func (service *Service) WalletList(ctx context.Context, runner brokerages.Handler) (*chipmunkApi.Wallets, error) {
 	request := new(networkAPI.Request)
+	currentTime := time.Now().UnixNano() / 1e6
 	request.Type = networkAPI.Type_GET
 	request.Endpoint = "https://api.coinex.com/v1/balance/info"
 	request.Params = []*networkAPI.KV{
 		networkAPI.NewKV("access_id", service.Auth.AccessID),
-		networkAPI.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
+		networkAPI.NewKV("tonce", currentTime),
 	}
 	request.Headers = []*networkAPI.KV{
 		networkAPI.NewKV("authorization", service.generateAuthorization(request.Params)),
-		networkAPI.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
+		networkAPI.NewKV("tonce", currentTime),
 	}
 
 	resp, err := runner(ctx, request)
@@ -53,7 +54,7 @@ func (service *Service) WalletList(ctx context.Context, runner brokerages.Handle
 		return nil, err
 	}
 	response := new(chipmunkApi.Wallets)
-	response.Elements = make([]*chipmunkApi.Wallet, len(data))
+	response.Elements = make([]*chipmunkApi.Wallet, 0)
 	for key, value := range data {
 		w := new(chipmunkApi.Wallet)
 		w.AssetName = key
@@ -74,8 +75,9 @@ func (service *Service) WalletList(ctx context.Context, runner brokerages.Handle
 func (service *Service) OHLC(ctx context.Context, inputs *brokerages.OHLCParams, runner brokerages.Handler) ([]*chipmunkApi.Candle, error) {
 	request := new(networkAPI.Request)
 	request.Type = networkAPI.Type_GET
-	count := (inputs.To.Sub(inputs.From)) / inputs.Resolution.Duration
-	if int64((inputs.To.Sub(inputs.From))%inputs.Resolution.Duration) > 0 {
+	resolutionSeconds := inputs.Resolution.Duration / 1e6
+	count := (inputs.To.Sub(inputs.From)) / resolutionSeconds
+	if int64((inputs.To.Sub(inputs.From))%resolutionSeconds) > 0 {
 		count++
 	}
 	if int64(count) >= 1000 {
@@ -205,7 +207,7 @@ func (service *Service) MarketStatistics(ctx context.Context, inputs *brokerages
 	request := new(networkAPI.Request)
 	request.Type = networkAPI.Type_GET
 	request.Params = []*networkAPI.KV{
-		networkAPI.NewKV("markets", market),
+		networkAPI.NewKV("market", market),
 	}
 	request.Endpoint = "https://api.coinex.com/v1/market/ticker"
 
@@ -393,11 +395,28 @@ func (service *Service) OrderStatus(ctx context.Context, inputs *brokerages.Orde
 func (service *Service) generateAuthorization(params []*networkAPI.KV) string {
 	urlParameters := url.Values{}
 	for _, param := range params {
-		urlParameters.Add(param.Key, fmt.Sprintf("%v", param.GetValue()))
+		urlParameters.Add(param.Key, parseValue(param))
 	}
 	queryParamsString := urlParameters.Encode()
 	toEncodeParamsString := queryParamsString + "&secret_key=" + service.Auth.SecretKey
 	w := md5.New()
 	_, _ = io.WriteString(w, toEncodeParamsString)
 	return strings.ToUpper(fmt.Sprintf("%x", w.Sum(nil)))
+}
+
+func parseValue(param *networkAPI.KV) string {
+	value := ""
+	switch v := param.Value.(type) {
+	case *networkAPI.KV_String_:
+		value = v.String_
+	case *networkAPI.KV_Bool:
+		value = fmt.Sprint(v.Bool)
+	case *networkAPI.KV_Float32:
+		value = fmt.Sprint(v.Float32)
+	case *networkAPI.KV_Float64:
+		value = fmt.Sprint(v.Float64)
+	case *networkAPI.KV_Integer:
+		value = fmt.Sprint(v.Integer)
+	}
+	return value
 }

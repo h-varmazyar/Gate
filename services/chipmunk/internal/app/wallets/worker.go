@@ -28,7 +28,7 @@ var (
 func InitializeWorker() {
 	Worker = new(worker)
 	brokerageConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
-	chipmunkConn := grpcext.NewConnection(fmt.Sprintf(":%v", configs.Variables.GrpcAddresses))
+	chipmunkConn := grpcext.NewConnection(fmt.Sprintf(":%v", configs.Variables.GrpcPort))
 	Worker.functionsService = brokerageApi.NewFunctionsServiceClient(brokerageConn)
 	Worker.marketService = chipmunkApi.NewMarketServiceClient(chipmunkConn)
 }
@@ -57,6 +57,7 @@ func (w *worker) Stop() {
 }
 
 func (w *worker) run(ctx context.Context, brokerage *brokerageApi.Brokerage) {
+	time.Sleep(time.Second)
 	ticker := time.NewTicker(configs.Variables.WalletWorkerHeartbeat)
 
 LOOP:
@@ -105,10 +106,6 @@ func (w *worker) calculateReferenceValue(ctx context.Context, brokerage *brokera
 			reference.ActiveBalance += statistics.Close * wallet.ActiveBalance
 			reference.TotalBalance += statistics.Close * wallet.TotalBalance
 			references[market.Destination.Name] = reference
-
-			if reference.TotalBalance > 0 {
-				log.Infof("wallet %v balance: total si %v locked is %v", reference.AssetName, reference.TotalBalance, reference.BlockedBalance)
-			}
 		}
 	}
 	buffer.Wallets.UpdateReferences(references)

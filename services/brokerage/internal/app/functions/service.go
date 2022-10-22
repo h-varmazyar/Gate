@@ -171,7 +171,13 @@ func (s *Service) OrderStatus(ctx context.Context, req *brokerageApi.OrderStatus
 func loadBrokerage(brokerage *repository.Brokerage) brokerages.Brokerage {
 	switch brokerage.Platform {
 	case brokerageApi.Platform_Coinex:
-		return new(coinex.Service)
+		coinexInstance := new(coinex.Service)
+		coinexInstance.Auth = &api.Auth{
+			Type:      api.AuthType_StaticToken,
+			AccessID:  brokerage.AccessID,
+			SecretKey: brokerage.SecretKey,
+		}
+		return coinexInstance
 	case brokerageApi.Platform_Nobitex:
 		return nil
 	}

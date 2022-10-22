@@ -25,8 +25,8 @@ type automated struct {
 	walletsService   chipmunkApi.WalletsServiceClient
 	candleService    chipmunkApi.CandleServiceClient
 	botService       telegramBotApi.BotServiceClient
-	checkTicker      *time.Ticker
-	withTrading      bool
+	//checkTicker      *time.Ticker
+	withTrading bool
 }
 
 func NewAutomatedStrategy(strategy *eagleApi.Strategy, withTrading bool) (*automated, error) {
@@ -34,8 +34,12 @@ func NewAutomatedStrategy(strategy *eagleApi.Strategy, withTrading bool) (*autom
 		return nil, errors.NewWithSlug(context.Background(), codes.FailedPrecondition, "empty_strategy")
 	}
 	automated := new(automated)
+	automated.Strategy = new(repository.Strategy)
 	mapper.Struct(strategy, automated.Strategy)
+	mapper.Slice(strategy.Indicators, &automated.Indicators)
 	automated.withTrading = withTrading
+
+	log.Warnf("ind1: %v", strategy.Indicators)
 
 	brokerageConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
 	automated.functionsService = brokerageApi.NewFunctionsServiceClient(brokerageConn)
@@ -64,78 +68,87 @@ func (s *automated) CheckForSignals(ctx context.Context, market *chipmunkApi.Mar
 		return
 	}
 
-	s.checkTicker = time.NewTicker(time.Second)
-	for range s.checkTicker.C {
-		reference, err = s.walletsService.ReturnReference(context.Background(), &chipmunkApi.ReturnReferenceReq{ReferenceName: market.Destination.Name})
-		if err != nil {
-			log.WithError(err).Errorf("failed to fetch wallet info for %v", marketID)
-			continue
-		}
-		if reference.ActiveBalance <= 0 || reference.ActiveBalance < reference.TotalBalance/10 {
-			continue
-		}
-		candles, err = s.candleService.ReturnLastNCandles(ctx, &chipmunkApi.BufferedCandlesRequest{
-			ResolutionID: s.WorkingResolutionID.String(),
-			MarketID:     marketID.String(),
-			Count:        2,
-		})
-		if err != nil {
-			continue
-		}
+	time.Sleep(time.Minute)
+	checkTicker := time.NewTicker(time.Second)
+	for {
+		select {
+		case <-ctx.Done():
+			checkTicker.Stop()
+		case <-checkTicker.C:
+			reference, err = s.walletsService.ReturnReference(context.Background(), &chipmunkApi.ReturnReferenceReq{ReferenceName: market.Destination.Name})
+			if err != nil {
+				log.WithError(err).Errorf("failed to fetch wallet info for market %v and reference %v", marketID, market.Destination.Name)
+				continue
+			}
+			//if reference.ActiveBalance <= 0 || reference.ActiveBalance < reference.TotalBalance/10 {
+			//	continue
+			//}
+			candles, err = s.candleService.ReturnLastNCandles(ctx, &chipmunkApi.BufferedCandlesRequest{
+				ResolutionID: s.WorkingResolutionID.String(),
+				MarketID:     marketID.String(),
+				Count:        2,
+			})
+			if err != nil {
+				log.WithError(err).Error("failed to fetch candles")
+				continue
+			}
 
-		strength := s.calculateSignalStrength(candles.Elements, market)
-		if strength >= 0.9 {
-			price := candles.Elements[len(candles.Elements)-1].Close
-			s.sendSignalToBot(ctx, market.Name, price)
-			if s.withTrading {
-				balance := float64(0)
-				if reference.ActiveBalance < reference.TotalBalance/10 {
-					balance = reference.ActiveBalance
-				} else {
-					balance = reference.TotalBalance / 10
+			strength := s.calculateSignalStrength(candles.Elements, market)
+			if strength >= 0.9 {
+				price := candles.Elements[len(candles.Elements)-1].Close
+				s.sendSignalToBot(ctx, market.Name, price, strength)
+				if s.withTrading {
+					balance := float64(0)
+					if reference.ActiveBalance < reference.TotalBalance/10 {
+						balance = reference.ActiveBalance
+					} else {
+						balance = reference.TotalBalance / 10
+					}
+					order, err := s.functionsService.NewOrder(context.Background(), &brokerageApi.NewOrderReq{
+						Market: market,
+						Type:   eagleApi.Order_buy,
+						Amount: balance / price,
+						Price:  price,
+						Option: eagleApi.Order_NORMAL,
+						Model:  eagleApi.OrderModel_limit,
+					})
+					if err != nil {
+						log.WithError(err).Errorf("failed to place new order for markets %v", market.ID)
+					}
+					go s.manageBuyOrder(ctx, market, order)
 				}
-				order, err := s.functionsService.NewOrder(context.Background(), &brokerageApi.NewOrderReq{
-					Market: market,
-					Type:   eagleApi.Order_buy,
-					Amount: balance / price,
-					Price:  price,
-					Option: eagleApi.Order_NORMAL,
-					Model:  eagleApi.OrderModel_limit,
-				})
-				if err != nil {
-					log.WithError(err).Errorf("failed to place new order for markets %v", market.ID)
-				}
-				go s.manageBuyOrder(ctx, market, order)
 			}
 		}
 	}
 }
 
-func (s *automated) Stop() {
-	s.checkTicker.Stop()
-}
-
 func (s *automated) calculateSignalStrength(candles []*chipmunkApi.Candle, market *chipmunkApi.Market) float64 {
 	strength := float64(0)
+	rsi, stochastic, bb := float64(0), float64(0), float64(0)
 	for _, strategyIndicator := range s.Indicators {
 		switch strategyIndicator.Type {
 		case chipmunkApi.Indicator_RSI:
-			strength += s.checkRSI(candles, strategyIndicator.IndicatorID)
+			rsi = s.checkRSI(candles, strategyIndicator.IndicatorID)
+			strength += rsi
 		case chipmunkApi.Indicator_Stochastic:
-			strength += s.checkStochastic(candles, strategyIndicator.IndicatorID)
+			stochastic = s.checkStochastic(candles, strategyIndicator.IndicatorID)
+			strength += stochastic
 		case chipmunkApi.Indicator_BollingerBands:
-			strength += s.checkBollingerBand(candles, strategyIndicator.IndicatorID, market.MakerFeeRate, market.TakerFeeRate)
+			bb = s.checkBollingerBand(candles, strategyIndicator.IndicatorID, market.MakerFeeRate, market.TakerFeeRate)
+			strength += bb
 		}
 	}
-	strength /= float64(len(s.Indicators))
+	strength = strength / float64(len(s.Indicators))
+	log.Infof("market %v - total: %v - rsi: %v - stochastic: %v - bb: %v", market.Name, strength, rsi, stochastic, bb)
 	return strength
 }
 
-func (s *automated) sendSignalToBot(ctx context.Context, market string, price float64) {
+func (s *automated) sendSignalToBot(ctx context.Context, market string, price float64, metadata interface{}) {
 	text := fmt.Sprintf(`new buy signal raise in spot of coinex:
 market: %s
 enter price: %v
-`, market, price)
+other data: %v
+`, market, price, metadata)
 	if _, err := s.botService.SendMessage(ctx, &telegramBotApi.Message{
 		ChatID: configs.Variables.BroadcastChannelID,
 		Text:   text,
@@ -271,21 +284,20 @@ LOOP:
 }
 
 func (s *automated) checkRSI(candles []*chipmunkApi.Candle, indicatorID uuid.UUID) float64 {
-	if candles[0].IndicatorValues[indicatorID.String()].RSIs.RSI < 30 &&
-		candles[1].IndicatorValues[indicatorID.String()].RSIs.RSI >= 30 {
+	if chipmunkApi.GetRSIValue(candles[0].IndicatorValues[indicatorID.String()]).RSI < 30 &&
+		chipmunkApi.GetRSIValue(candles[1].IndicatorValues[indicatorID.String()]).RSI >= 30 {
 		return 1
 	}
 	return 0
 }
 
 func (s *automated) checkStochastic(candles []*chipmunkApi.Candle, indicatorID uuid.UUID) float64 {
-	if candles[1].IndicatorValues[indicatorID.String()].Stochastics.IndexD > 20 ||
-		candles[0].IndicatorValues[indicatorID.String()].Stochastics.IndexK > 20 {
+	stochastic0 := chipmunkApi.GetStochasticValue(candles[0].IndicatorValues[indicatorID.String()])
+	stochastic1 := chipmunkApi.GetStochasticValue(candles[1].IndicatorValues[indicatorID.String()])
+	if stochastic1.IndexD > 20 || stochastic0.IndexK > 20 {
 		return 0
 	}
-
-	if candles[0].IndicatorValues[indicatorID.String()].Stochastics.IndexK <
-		candles[1].IndicatorValues[indicatorID.String()].Stochastics.IndexK {
+	if stochastic0.IndexK < stochastic1.IndexK {
 		return 1
 	}
 
@@ -293,12 +305,14 @@ func (s *automated) checkStochastic(candles []*chipmunkApi.Candle, indicatorID u
 }
 
 func (s *automated) checkBollingerBand(candles []*chipmunkApi.Candle, indicatorID uuid.UUID, makerFeeRate, takerFeeRate float64) float64 {
-	if candles[0].Low > candles[0].IndicatorValues[indicatorID.String()].BollingerBands.LowerBand {
+	bb0 := chipmunkApi.GetBollingerBandsValue(candles[0].IndicatorValues[indicatorID.String()])
+	bb1 := chipmunkApi.GetBollingerBandsValue(candles[1].IndicatorValues[indicatorID.String()])
+	if candles[0].Low > bb0.LowerBand {
 		return 0
 	}
 
 	price := candles[1].Close * (1 + makerFeeRate/100) * (1 + s.MinProfitPerTradeRate/100) * (1 + takerFeeRate/100)
-	if price < candles[1].IndicatorValues[indicatorID.String()].BollingerBands.UpperBand {
+	if price < bb1.UpperBand {
 		return 1
 	}
 	return 0

@@ -58,17 +58,17 @@ message CreateStrategyReq {
 }
 
 message StrategyIndicatorReq {
-  // @inject_tag: json:"basket_id"
+  // @inject_tag: json:"strategy_id"
   string StrategyID = 1;
 }
 
 message StrategyIndicator {
-  // @inject_tag: json:"basket_id"
+  // @inject_tag: json:"strategy_id"
   string StrategyID = 1;
-  // @inject_tag: json:"invoice_id"
+  // @inject_tag: json:"indicator_id"
   string IndicatorID = 2;
-  // @inject_tag: json:"invoice_type"
-  chipmunkApi.Indicator.type IndicatorType = 3;
+  // @inject_tag: json:"type"
+  chipmunkApi.Indicator.type Type = 3;
 }
 
 message StrategyIndicators {

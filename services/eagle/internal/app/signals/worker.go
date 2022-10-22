@@ -30,10 +30,13 @@ func SignalCheckWorkerInstance(strategy strategies.Strategy, markets []*chipmunk
 }
 
 func StopSignalChecker() {
+	if signalCheckWorker == nil {
+		return
+	}
 	signalCheckWorker.running = false
 	time.Sleep(time.Second)
-	signalCheckWorker.strategy = nil
 	signalCheckWorker.cancelFunc()
+	signalCheckWorker.strategy = nil
 }
 
 func (w *worker) Start() {

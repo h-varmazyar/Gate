@@ -11,7 +11,6 @@ import (
 	"github.com/h-varmazyar/Gate/services/eagle/configs"
 	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/strategies/automatedStrategy"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 )
 
 type Service struct {
@@ -44,7 +43,7 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 
 func (s *Service) Start(ctx context.Context, req *eagleApi.SignalStartReq) (*api.Void, error) {
 	if signalCheckWorker != nil && signalCheckWorker.IsRunning() {
-		return nil, errors.New(ctx, codes.AlreadyExists)
+		return new(api.Void), nil
 	}
 	strategy, err := s.strategyService.Return(ctx, &eagleApi.ReturnStrategyReq{
 		ID: req.StrategyID,

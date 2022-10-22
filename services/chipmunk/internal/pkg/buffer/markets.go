@@ -8,7 +8,7 @@ import (
 )
 
 type markets struct {
-	lock         *sync.Mutex
+	lock         *sync.RWMutex
 	data         map[uuid.UUID][]*repository.Candle
 	BufferLength int
 }
@@ -17,33 +17,38 @@ var Markets *markets
 
 func NewMarketInstance() {
 	Markets = &markets{
-		lock:         new(sync.Mutex),
+		lock:         new(sync.RWMutex),
 		data:         make(map[uuid.UUID][]*repository.Candle),
 		BufferLength: configs.Variables.CandleBufferLength,
 	}
 }
 
 func (m *markets) AddList(marketID uuid.UUID) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	candles, ok := m.data[marketID]
 	if !ok || candles == nil || len(candles) == 0 {
-		m.lock.Lock()
-		m.data[marketID] = make([]*repository.Candle, m.BufferLength)
+		emptyCandles := make([]*repository.Candle, 0)
+		for i := 0; i < m.BufferLength; i++ {
+			emptyCandles = append(emptyCandles, new(repository.Candle))
+		}
+		m.data[marketID] = emptyCandles
 	}
-	m.lock.Unlock()
 }
 
 func (m *markets) RemoveList(marketID uuid.UUID) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	delete(m.data, marketID)
 }
 
 func (m *markets) Push(marketID uuid.UUID, candle *repository.Candle) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	candles, ok := m.data[marketID]
 	if !ok || candles == nil || len(candles) == 0 {
 		candles = make([]*repository.Candle, m.BufferLength)
 	}
-
-	m.lock.Lock()
-	defer m.lock.Unlock()
 
 	if candles[m.BufferLength-1] != nil && candles[m.BufferLength-1].Time.Equal(candle.Time) {
 		candles[m.BufferLength-1] = candle
@@ -54,6 +59,8 @@ func (m *markets) Push(marketID uuid.UUID, candle *repository.Candle) {
 }
 
 func (m *markets) GetLastNCandles(marketID uuid.UUID, n int) []*repository.Candle {
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	if candles, ok := m.data[marketID]; !ok || candles == nil {
 		return nil
 	} else {

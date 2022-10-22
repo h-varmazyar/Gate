@@ -35,17 +35,20 @@ message Indicator {
 message indicatorValue{
   // @inject_tag: json:"type"
   Indicator.type Type = 1;
-  // @inject_tag: json:"bollinger_bands,omitempty"
-  BollingerBand BollingerBands = 2;
-  // @inject_tag: json:"moving_average,omitempty"
-  MovingAverage MovingAverages = 3;
-  // @inject_tag: json:"stochastics,omitempty"
-  Stochastic Stochastics = 4;
-  // @inject_tag: json:"rsis,omitempty"
-  RSI RSIs = 5;
+  // @inject_tag: json:"value"
+  oneof Value{
+    // @inject_tag: json:"bollinger_band,omitempty"
+    BollingerBands BollingerBands = 2;
+    // @inject_tag: json:"moving_average,omitempty"
+    MovingAverage MovingAverage = 3;
+    // @inject_tag: json:"stochastic,omitempty"
+    Stochastic Stochastic = 4;
+    // @inject_tag: json:"rsi,omitempty"
+    RSI RSI = 5;
+  }
 }
 
-message BollingerBand {
+message BollingerBands {
   // @inject_tag: json:"upper_band"
   double UpperBand = 1;
   // @inject_tag: json:"lower_band"

@@ -11,15 +11,16 @@ import (
 	"github.com/h-varmazyar/Gate/services/brokerage/configs"
 	"github.com/h-varmazyar/Gate/services/brokerage/internal/pkg/repository"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
+	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
 
 type Service struct {
-	//candleService chipmunkApi.CandleServiceClient
 	marketService chipmunkApi.MarketServiceClient
 	walletService chipmunkApi.WalletsServiceClient
+	signalService eagleApi.SignalServiceClient
 }
 
 var (
@@ -30,9 +31,11 @@ func NewService() *Service {
 	if grpcService == nil {
 		grpcService = new(Service)
 		chipmunkConnection := grpcext.NewConnection(configs.Variables.GrpcAddresses.Chipmunk)
-		//GrpcService.candleService = chipmunkApi.NewCandleServiceClient(chipmunkConnection)
+		eagleConnection := grpcext.NewConnection(configs.Variables.GrpcAddresses.Eagle)
+
 		grpcService.marketService = chipmunkApi.NewMarketServiceClient(chipmunkConnection)
 		grpcService.walletService = chipmunkApi.NewWalletsServiceClient(chipmunkConnection)
+		grpcService.signalService = eagleApi.NewSignalServiceClient(eagleConnection)
 	}
 	return grpcService
 }
@@ -86,9 +89,9 @@ func (s *Service) Start(ctx context.Context, req *brokerageApi.BrokerageStartReq
 	}
 
 	brokerage.Status = api.Status_Enable
-	if err := repository.Brokerages.ChangeStatus(brokerage.ID); err != nil {
-		return nil, err
-	}
+	//if err := repository.Brokerages.ChangeStatus(brokerage.ID); err != nil {
+	//	return nil, err
+	//}
 
 	if req.CollectMarketsData {
 		_, err := s.marketService.StartWorker(ctx, &chipmunkApi.WorkerStartReq{
@@ -96,9 +99,9 @@ func (s *Service) Start(ctx context.Context, req *brokerageApi.BrokerageStartReq
 			ResolutionID: brokerage.ResolutionID.String(),
 			StrategyID:   brokerage.StrategyID.String()})
 		if err != nil {
-			if statusErr := repository.Brokerages.ChangeStatus(brokerage.ID); err != nil {
-				log.WithError(statusErr).Errorf("failed ot change status of brokerage %v to %v", brokerage.ID, brokerage.Status)
-			}
+			//if statusErr := repository.Brokerages.ChangeStatus(brokerage.ID); statusErr != nil {
+			//	log.WithError(statusErr).Errorf("failed ot change status of brokerage %v to %v", brokerage.ID, brokerage.Status)
+			//}
 			return nil, err
 		}
 	}
@@ -107,14 +110,31 @@ func (s *Service) Start(ctx context.Context, req *brokerageApi.BrokerageStartReq
 			BrokerageID: req.ID,
 		}); err != nil {
 			log.WithError(err).WithField("brokerage", brokerage.ID).Error("failed to start wallet worker")
-			if statusErr := repository.Brokerages.ChangeStatus(brokerage.ID); err != nil {
-				log.WithError(statusErr).Errorf("failed ot change status of brokerage %v to %v", brokerage.ID, brokerage.Status)
-			}
+			//if statusErr := repository.Brokerages.ChangeStatus(brokerage.ID); statusErr != nil {
+			//	log.WithError(statusErr).Errorf("failed ot change status of brokerage %v to %v", brokerage.ID, brokerage.Status)
+			//}
 			return nil, err
 		}
-		//todo: add trading worker
+		if _, err = s.signalService.Start(ctx, &eagleApi.SignalStartReq{
+			BrokerageID: brokerage.ID.String(),
+			StrategyID:  brokerage.StrategyID.String(),
+			WithTrading: false,
+		}); err != nil {
+			if _, marketErr := s.marketService.StopWorker(ctx, &chipmunkApi.WorkerStopReq{BrokerageID: brokerageID.String()}); marketErr != nil {
+				log.WithError(marketErr).Errorf("failed to stop market worker for brokerage %v", brokerageID)
+			}
+			if _, walletErr := s.walletService.StopWorker(ctx, new(api.Void)); walletErr != nil {
+				log.WithError(walletErr).Errorf("failed to stop wallet worker for brokerage %v", brokerageID)
+			}
+			//if statusErr := repository.Brokerages.ChangeStatus(brokerage.ID); statusErr != nil {
+			//	log.WithError(statusErr).Errorf("failed ot change status of brokerage %v to %v", brokerage.ID, brokerage.Status)
+			//}
+			return nil, err
+		}
 	}
-
+	if err := repository.Brokerages.ChangeStatus(brokerage.ID); err != nil {
+		return nil, err
+	}
 	response := new(brokerageApi.Brokerage)
 	mapper.Struct(brokerage, response)
 	return response, nil
@@ -139,7 +159,9 @@ func (s *Service) Stop(ctx context.Context, req *brokerageApi.BrokerageStopReq) 
 	if _, err = s.walletService.StopWorker(ctx, &api.Void{}); err != nil {
 		log.WithError(err).WithField("brokerage", brokerage.ID).Error("failed to stop wallet worker")
 	}
-	//todo: stop trading worker
+	if _, err = s.signalService.Stop(ctx, &api.Void{}); err != nil {
+		log.WithError(err).WithField("brokerage", brokerage.ID).Error("failed to stop signal worker")
+	}
 
 	brokerage.Status = api.Status_Enable
 	if err := repository.Brokerages.ChangeStatus(brokerage.ID); err != nil {

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -44,40 +43,22 @@ func New(Type networkAPI.Type, endpoint string) *Request {
 
 func (req *Request) AddHeaders(headers []*networkAPI.KV) {
 	for _, header := range headers {
-		req.headers.Add(header.Key, fmt.Sprint(header.Value))
+		req.headers.Add(header.Key, parseValue(header))
 	}
 }
 
 func (req *Request) AddQueryParams(params []*networkAPI.KV) {
 	qParams := url.Values{}
-	log.Infof("params: %v", params)
 	for _, param := range params {
-		value := ""
-		switch v := param.Value.(type) {
-		case *networkAPI.KV_String_:
-			value = v.String_
-		case *networkAPI.KV_Bool:
-			value = fmt.Sprint(v.Bool)
-		case *networkAPI.KV_Float32:
-			value = fmt.Sprint(v.Float32)
-		case *networkAPI.KV_Float64:
-			value = fmt.Sprint(v.Float64)
-		case *networkAPI.KV_Integer:
-			value = fmt.Sprint(v.Integer)
-		default:
-			continue
-		}
-		qParams.Add(param.Key, value)
+		qParams.Add(param.Key, parseValue(param))
 	}
 	req.queryParams = qParams.Encode()
-
-	log.Infof("params formated: %v", req.queryParams)
 }
 
 func (req *Request) AddBody(bodyParams []*networkAPI.KV) error {
 	bodyMap := make(map[string]string)
 	for _, param := range bodyParams {
-		bodyMap[param.Key] = fmt.Sprint(param.Value)
+		bodyMap[param.Key] = parseValue(param)
 	}
 	jsonBody, err := json.Marshal(bodyMap)
 	if err != nil {
@@ -112,4 +93,21 @@ func (req *Request) Do() (*networkAPI.Response, error) {
 		Code:     int32(response.StatusCode),
 		Response: string(body),
 	}, nil
+}
+
+func parseValue(param *networkAPI.KV) string {
+	value := ""
+	switch v := param.Value.(type) {
+	case *networkAPI.KV_String_:
+		value = v.String_
+	case *networkAPI.KV_Bool:
+		value = fmt.Sprint(v.Bool)
+	case *networkAPI.KV_Float32:
+		value = fmt.Sprint(v.Float32)
+	case *networkAPI.KV_Float64:
+		value = fmt.Sprint(v.Float64)
+	case *networkAPI.KV_Integer:
+		value = fmt.Sprint(v.Integer)
+	}
+	return value
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api"
 	"github.com/h-varmazyar/Gate/services/network/internal/pkg/requests"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
@@ -28,8 +27,6 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 
 func (s *Service) Do(ctx context.Context, req *networkAPI.Request) (*networkAPI.Response, error) {
 	request := requests.New(req.Type, req.Endpoint)
-
-	log.Infof("new %v request: %v", req.Type, req.Endpoint)
 
 	request.AddHeaders(req.Headers)
 	switch req.Type {

@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
+	log "github.com/sirupsen/logrus"
 )
 
 type movingAverage struct {
@@ -54,6 +55,7 @@ func (conf *movingAverage) sma(candles []*repository.Candle) ([]float64, error) 
 			}
 		}
 		response[i] = sum / float64(conf.Length)
+		//log.Infof("sma %v is %v", i, response[i])
 	}
 	return response, nil
 }
@@ -71,14 +73,17 @@ func (conf *movingAverage) updateSMA(candles []*repository.Candle) float64 {
 }
 
 func (conf *movingAverage) Calculate(candles []*repository.Candle) error {
-	values := make([]*repository.MovingAverageValue, len(candles))
+	values := make([]*repository.MovingAverageValue, 0)
 	var sma []float64
 	var err error
 	if sma, err = conf.sma(candles); err != nil {
+		log.WithError(err).Errorf("failed to calculate sma for moving average %v", conf.id)
 		return err
 	}
-	for i := range values {
-		values[i].Simple = sma[i]
+	for _, value := range sma {
+		values = append(values, &repository.MovingAverageValue{
+			Simple: value,
+		})
 	}
 	values[conf.Length-1].Exponential = values[conf.Length-1].Simple
 

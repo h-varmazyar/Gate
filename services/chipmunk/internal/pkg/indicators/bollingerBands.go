@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
+	log "github.com/sirupsen/logrus"
 	"math"
 )
 
@@ -91,6 +92,7 @@ func (conf *bollingerBands) Update(candles []*repository.Candle) *repository.Ind
 	}
 	sma, err := smaConf.sma(candles)
 	if err != nil {
+		log.WithError(err).Error("failed to calculate sma for bollinger bands")
 		return nil
 	}
 	variance := float64(0)

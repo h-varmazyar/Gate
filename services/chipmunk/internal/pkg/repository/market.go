@@ -42,13 +42,17 @@ func (repository *MarketRepository) Info(brokerageID uuid.UUID, marketName strin
 
 func (repository *MarketRepository) List(brokerageID uuid.UUID) ([]*Market, error) {
 	markets := make([]*Market, 0)
-	return markets, repository.db.Model(new(Market)).Where("brokerage_id = ?", brokerageID).Find(&markets).Error
+	return markets, repository.db.Model(new(Market)).Where("brokerage_id = ?", brokerageID).Preload("Source").Preload("Destination").Find(&markets).Error
 }
 
 func (repository *MarketRepository) ListBySource(brokerageID uuid.UUID, source string) ([]*Market, error) {
 	markets := make([]*Market, 0)
-	return markets, repository.db.Model(new(Market)).Joins("Source").Preload("Destination").
-		Where("Source.name LIKE ?", source).
+	return markets, repository.db.Model(new(Market)).
+		Joins("join assets as source on source.id = markets.source_id").
+		//Joins("join assets destination on destination.id = markets.destination_id").
+		//Preload("Source").
+		Preload("Destination").
+		Where("Source.name = ?", source).
 		Where("markets.brokerage_id = ?", brokerageID).Find(&markets).Error
 }
 

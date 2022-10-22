@@ -1,14 +1,51 @@
 .button {
-  background-color: rgb(0, 165, 81);
-  color: rgb(255, 255, 255);
-  font-size: 14px;
-  padding-right: 20px;
-  padding-left: 20px;
+  margin: 0 0.5rem;
+  color: #2e323c;
   border-radius: 10px;
+  padding: 0.5rem 2rem;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  cursor: pointer;
+  overflow: hidden;
+  font-family: inherit;
   min-height: 42px;
   min-width: 130px;
-  border: none;
-  outline: none !important;
+
+  &.info {
+    border: 1px solid #1a4e8e;
+  }
+
+  &.success {
+    border: 1px solid #1a8e5f;
+  }
+
+  &.danger {
+    border: 1px solid #af2323;
+  }
+
+  &.warn {
+    border: 1px solid #d3c528;
+  }
+
+  &:hover {
+    color: #fefefe;
+
+    &.info {
+      background: #1a4e8e;
+    }
+
+    &.success {
+      background-color: #1a8e5f;
+    }
+
+    &.danger {
+      background-color: #af2323;
+    }
+
+    &.warn {
+      background-color: #d3c528;
+    }
+  }
 
   .vertical-center {
     display: flex;
@@ -25,11 +62,6 @@
     align-content: center;
     justify-content: center;
     align-items: center;
-  }
-
-  .label {
-    padding-top: 10px;
-    padding-bottom: 10px;
   }
 
   .icon-top {

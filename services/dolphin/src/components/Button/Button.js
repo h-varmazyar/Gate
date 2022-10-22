@@ -11,10 +11,9 @@ class Button extends Component {
     render() {
         return (
             <button
-                type="button"
                 disabled={this.disabled}
                 onClick={this.props.onClick}
-                className={`button ${this.props.Styles}`}
+                className={`button ${this.props.Type}`}
                 {...this.props}
             >
                 <div className={'vertical-center'}>
@@ -25,7 +24,8 @@ class Button extends Component {
                         {this.props.iconLeft !== null &&
                             <FontAwesomeIcon className={'icon-left'} icon={this.props.iconLeft}></FontAwesomeIcon>
                         }
-                        <span className={'label'}>{this.props.label}</span>
+                        {this.props.children}
+                        {/*<span className={'label'}>{this.props.label}</span>*/}
                         {this.props.iconRight !== null &&
                             <FontAwesomeIcon className={'icon-right'} icon={this.props.iconRight}></FontAwesomeIcon>
                         }
@@ -40,7 +40,7 @@ class Button extends Component {
 }
 
 Button.defaultProps = {
-    Styles: null,
+    Type: "info",
     disabled: false,
     label: "",
     iconTop: null,

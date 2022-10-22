@@ -47,7 +47,6 @@ func (worker *Worker) AddMarket(settings *WorkerSettings) {
 	settings.ctx, worker.Cancellations[settings.Market.ID] = context.WithCancel(context.Background())
 
 	buffer.Markets.AddList(settings.Market.ID)
-	log.Infof("add new market: %v", settings.Market.Name)
 	go worker.run(settings)
 }
 
@@ -65,6 +64,7 @@ func (worker *Worker) DeleteMarket(marketID uuid.UUID) error {
 }
 
 func (worker *Worker) run(settings *WorkerSettings) {
+	time.Sleep(time.Second)
 	log.Infof("runnig worker for %v", settings.Market.Name)
 	if err := worker.loadPrimaryData(settings); err != nil {
 		_ = worker.DeleteMarket(settings.Market.ID)
@@ -92,7 +92,6 @@ LOOP:
 			}
 			candles := make([]*repository.Candle, 0)
 			if candles, err = worker.downloadCandlesInfo(settings, lastTime.Unix(), to.Unix()); err != nil {
-				time.Sleep(time.Minute)
 				log.WithError(err).Error("get candles failed")
 			} else {
 				worker.calculateIndicators(settings, candles)
@@ -113,12 +112,9 @@ func (worker *Worker) loadPrimaryData(ws *WorkerSettings) error {
 
 	for i := 0; ; i += limit {
 		list, err := repository.Candles.ReturnList(ws.Market.ID, ws.Resolution.ID, limit, i)
-		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-			} else {
-				log.WithError(err).Error("load primary candles failed")
-				return err
-			}
+		if err != nil && err != gorm.ErrRecordNotFound {
+			log.WithError(err).Error("load primary candles failed")
+			return err
 		}
 		totalCandles = append(totalCandles, list...)
 		if len(list) < limit {
@@ -126,10 +122,10 @@ func (worker *Worker) loadPrimaryData(ws *WorkerSettings) error {
 		}
 	}
 
-	if count := len(totalCandles); count == 0 {
+	if len(totalCandles) == 0 {
 		from = ws.Market.StartTime
 	} else {
-		from = totalCandles[count-1].Time
+		from = totalCandles[len(totalCandles)-1].Time
 	}
 
 	for !end {
