@@ -6,6 +6,7 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"github.com/h-varmazyar/Gate/services/telegramBot/internal/pkg/tgBotApi"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
@@ -17,12 +18,15 @@ const (
 
 type Handler struct {
 	brokerageService brokerageApi.BrokerageServiceClient
+	marketService    chipmunkApi.MarketServiceClient
 }
 
 func NewInstance(configs *Configs) *Handler {
 	handler := new(Handler)
 	brokerageConn := grpcext.NewConnection(configs.BrokerageAddress)
+	chipmunkConn := grpcext.NewConnection(configs.ChipmunkAddress)
 	handler.brokerageService = brokerageApi.NewBrokerageServiceClient(brokerageConn)
+	handler.marketService = chipmunkApi.NewMarketServiceClient(chipmunkConn)
 
 	return handler
 }
@@ -40,6 +44,8 @@ func (h *Handler) HandleCommand(ctx context.Context, msg *tgbotapi.Message) erro
 		err = h.startCommand(ctx, msg)
 	case CmdBrokerageList:
 		err = h.brokerageList(ctx, msg)
+	case CmdUpdateMarkets:
+		err = h.updateMarkets(ctx, msg)
 	default:
 		err = errors.New(ctx, codes.Unimplemented)
 	}

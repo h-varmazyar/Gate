@@ -3,6 +3,7 @@ package automatedStrategy
 import (
 	"context"
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
@@ -25,8 +26,8 @@ type automated struct {
 	walletsService   chipmunkApi.WalletsServiceClient
 	candleService    chipmunkApi.CandleServiceClient
 	botService       telegramBotApi.BotServiceClient
-	//checkTicker      *time.Ticker
-	withTrading bool
+	withTrading      bool
+	signalPool       *redis.Client
 }
 
 func NewAutomatedStrategy(strategy *eagleApi.Strategy, withTrading bool) (*automated, error) {
@@ -38,6 +39,12 @@ func NewAutomatedStrategy(strategy *eagleApi.Strategy, withTrading bool) (*autom
 	mapper.Struct(strategy, automated.Strategy)
 	mapper.Slice(strategy.Indicators, &automated.Indicators)
 	automated.withTrading = withTrading
+
+	automated.signalPool = redis.NewClient(&redis.Options{
+		Addr:     configs.Variables.RedisAddress,
+		Password: "",
+		DB:       0,
+	})
 
 	log.Warnf("ind1: %v", strategy.Indicators)
 
@@ -94,7 +101,8 @@ func (s *automated) CheckForSignals(ctx context.Context, market *chipmunkApi.Mar
 			}
 
 			strength := s.calculateSignalStrength(candles.Elements, market)
-			if strength >= 0.9 {
+			if strength >= 0.9 && !s.isSignalGeneratedBefore(ctx, market) {
+				_ = s.setSignalIntoPool(ctx, market, candles.Elements[1].Time)
 				price := candles.Elements[len(candles.Elements)-1].Close
 				s.sendSignalToBot(ctx, market.Name, price, strength)
 				if s.withTrading {
@@ -281,6 +289,28 @@ LOOP:
 		}
 	}
 	ticker.Stop()
+}
+
+func (s *automated) isSignalGeneratedBefore(ctx context.Context, market *chipmunkApi.Market) bool {
+	result, err := s.signalPool.Get(ctx, market.Name).Result()
+	if err != nil {
+		log.WithError(err).Errorf("failed to fetch signal from redis for market %v", market)
+		return false
+	}
+	if result == "" {
+		return false
+	}
+	return true
+}
+
+func (s *automated) setSignalIntoPool(ctx context.Context, market *chipmunkApi.Market, unixTime int64) bool {
+	expirationTime := time.Unix(unixTime, 0).Add(time.Minute * 15) //todo: change with trading resolution
+	ok, err := s.signalPool.SetNX(ctx, market.Name, nil, expirationTime.Sub(time.Now())).Result()
+	if err != nil {
+		log.WithError(err).Errorf("failed to set signal into redis for market %v", market)
+		return false
+	}
+	return ok
 }
 
 func (s *automated) checkRSI(candles []*chipmunkApi.Candle, indicatorID uuid.UUID) float64 {

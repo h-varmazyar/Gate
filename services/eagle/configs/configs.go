@@ -17,6 +17,7 @@ type Configs struct {
 	CandleBufferLength        int           `env:"CANDLE_BUFFER_LENGTH,required"`
 	BroadcastChannelID        int64         `env:"BROADCAST_CHANNEL_ID,required"`
 	GrpcPort                  uint16        `env:"GRPC_PORT,required"`
+	RedisAddress              string        `env:"REDIS_ADDRESS,required"`
 	GrpcAddresses             struct {
 		TelegramBot string `env:"TELEGRAM_BOT_GRPC_ADDRESS,required"`
 		Chipmunk    string `env:"CHIPMUNK_GRPC_ADDRESS,required"`

@@ -22,10 +22,11 @@ type Worker struct {
 }
 
 type WorkerSettings struct {
-	ctx        context.Context
-	Market     *repository.Market
-	Resolution *repository.Resolution
-	Indicators map[uuid.UUID]indicators.Indicator
+	ctx         context.Context
+	Market      *repository.Market
+	Resolution  *repository.Resolution
+	Indicators  map[uuid.UUID]indicators.Indicator
+	BrokerageID uuid.UUID
 }
 
 var (
@@ -184,32 +185,32 @@ func (worker *Worker) calculateIndicators(ws *WorkerSettings, candles []*reposit
 }
 
 func (worker *Worker) downloadCandlesInfo(ws *WorkerSettings, from, to int64) ([]*repository.Candle, error) {
-	response := make([]*repository.Candle, 0)
 	resolution := new(chipmunkApi.Resolution)
 	mapper.Struct(ws.Resolution, resolution)
 
 	market := new(chipmunkApi.Market)
 	mapper.Struct(ws.Market, market)
 	candles, err := worker.functionsService.OHLC(ws.ctx, &brokerageApi.OHLCReq{
-		Resolution: resolution,
-		Market:     market,
-		From:       from,
-		To:         to,
+		Resolution:  resolution,
+		Market:      market,
+		From:        from,
+		To:          to,
+		BrokerageID: ws.BrokerageID.String(),
 	})
 	if err != nil {
 		log.WithError(err).Error("failed to get candles")
 		return nil, err
 	}
+	localCandles := make([]*repository.Candle, 0)
 	for _, candle := range candles.Elements {
 		tmp := new(repository.Candle)
 		mapper.Struct(candle, tmp)
 		tmp.MarketID = ws.Market.ID
 		tmp.ResolutionID = ws.Resolution.ID
-		err := repository.Candles.Save(tmp)
-		if err != nil {
-			log.WithError(err).Error("save candles failed")
-		}
-		response = append(response, tmp)
+		localCandles = append(localCandles, tmp)
 	}
-	return response, nil
+	if err = repository.Candles.BulkInsert(localCandles); err != nil {
+		return nil, err
+	}
+	return localCandles, nil
 }

@@ -58,6 +58,10 @@ func (r *CandleRepository) Save(candle *Candle) error {
 	return r.db.Save(candle).Error
 }
 
+func (r *CandleRepository) BulkInsert(candles []*Candle) error {
+	return r.db.CreateInBatches(candles, len(candles)).Error
+}
+
 func (r *CandleRepository) ReturnLast(marketID, resolutionID uuid.UUID) (*Candle, error) {
 	item := new(Candle)
 	return item, r.db.Model(new(Candle)).

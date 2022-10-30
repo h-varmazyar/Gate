@@ -5,6 +5,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"time"
 )
 
 type Type string
@@ -19,7 +20,20 @@ func Open(Type Type, dsn string) (*gorm.DB, error) {
 	case Mariadb:
 		return gorm.Open(mysql.Open(dsn))
 	case PostgreSQL:
-		return gorm.Open(postgres.Open(dsn))
+		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+			SkipDefaultTransaction: true,
+		})
+		if err != nil {
+			return nil, err
+		}
+		pdb, err := db.DB()
+		if err != nil {
+			return nil, err
+		}
+		pdb.SetConnMaxLifetime(time.Minute)
+		pdb.SetMaxIdleConns(10)
+		pdb.SetMaxOpenConns(200)
+		return db, nil
 	default:
 		return nil, fmt.Errorf("db type not supported(%s)", Type)
 	}

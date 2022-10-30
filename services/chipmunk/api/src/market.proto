@@ -8,6 +8,7 @@ service MarketService {
   rpc Create(CreateMarketReq) returns (Market);
   rpc Return(ReturnMarketRequest) returns (Market);
   rpc List(MarketListRequest) returns (Markets);
+  rpc Update(MarketUpdateReq) returns (Markets);
   rpc ReturnBySource(MarketListBySourceRequest) returns (Markets);
   rpc StartWorker(WorkerStartReq) returns (api.Void);
   rpc StopWorker(WorkerStopReq) returns (api.Void);
@@ -88,6 +89,11 @@ message ReturnMarketRequest {
 }
 
 message MarketListRequest {
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 1;
+}
+
+message MarketUpdateReq {
   // @inject_tag: json:"brokerage_id"
   string BrokerageID = 1;
 }

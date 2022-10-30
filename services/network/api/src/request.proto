@@ -13,29 +13,6 @@ enum Type {
   DELETE = 3;
 }
 
-//enum Status {
-//  Success = 0;
-//  Error = 1;
-//  ParameterError = 2;
-//  InternalError = 3;
-//  IpNotAllow = 23;
-//  AccessIdNotExist = 24;
-//  SignatureError = 25;
-//  ServiceUnavailable = 35;
-//  ServiceTimeout = 36;
-//  UnpairedAccount = 40;
-//  TransferToSubRejected = 49;
-//  InsufficientBalance = 107;
-//  ForbidTrading = 115;
-//  TonceCheckError = 227;
-//  OrderNumberNotExist = 600;
-//  OtherUserOrder = 601;
-//  BellowMinLimit = 602;
-//  PriceDeviationLarge = 606;
-//  MergeDepthError = 651;
-//}
-
-
 message KV {
   // @inject_tag: json:"key"
   string key = 1;

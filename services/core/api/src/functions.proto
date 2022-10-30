@@ -1,0 +1,101 @@
+syntax = "proto3";
+package coreApi;
+option go_package = "github.com/h-varmazyar/Gate/services/core/api";
+import "services/chipmunk/api/src/wallet.proto";
+import "services/chipmunk/api/src/resolution.proto";
+import "services/chipmunk/api/src/market.proto";
+import "services/chipmunk/api/src/candle.proto";
+import "services/eagle/api/src/order.proto";
+import "api/src/misc.proto";
+
+service FunctionsService {
+  rpc OHLC(OHLCReq) returns (chipmunkApi.Candles);
+  rpc WalletsBalance(api.Void) returns (chipmunkApi.Wallets);
+  rpc MarketStatistics(MarketStatisticsReq) returns (MarketStatisticsResp);
+  rpc MarketList(MarketListReq) returns (chipmunkApi.Markets);
+  rpc NewOrder(NewOrderReq) returns (eagleApi.Order);
+  rpc CancelOrder(CancelOrderReq) returns (eagleApi.Order);
+  rpc OrderStatus(OrderStatusReq) returns (eagleApi.Order);
+}
+
+message OHLCReq{
+  // @inject_tag: json:"resolution"
+  chipmunkApi.Resolution Resolution = 1;
+  // @inject_tag: json:"market"
+  chipmunkApi.Market Market = 2;
+  // @inject_tag: json:"from"
+  int64 From = 3;
+  // @inject_tag: json:"to"
+  int64 To = 4;
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 5;
+}
+
+message MarketStatisticsReq {
+  // @inject_tag: json:"market_name"
+  string MarketName = 1;
+}
+
+message MarketStatisticsResp {
+  // @inject_tag: json:"server_time"
+  int64 ServerTime = 1;
+  // @inject_tag: json:"last_price"
+  double LastPrice = 2;
+  // @inject_tag: json:"first_buy_price"
+  double FirstBuyPrice = 3;
+  // @inject_tag: json:"first_buy_amount"
+  double FirstBuyAmount = 4;
+  // @inject_tag: json:"first_sell_price"
+  double FirstSellPrice = 5;
+  // @inject_tag: json:"first_sell_amount"
+  double FirstSellAmount = 6;
+  // @inject_tag: json:"open"
+  double Open = 7;
+  // @inject_tag: json:"high"
+  double High = 8;
+  // @inject_tag: json:"low"
+  double Low = 9;
+  // @inject_tag: json:"close"
+  double Close = 10;
+  // @inject_tag: json:"volume"
+  double Volume = 11;
+}
+
+message MarketListReq {
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 1;
+
+}
+
+message NewOrderReq {
+  // @inject_tag: json:"market"
+  chipmunkApi.Market Market = 1;
+  // @inject_tag: json:"type"
+  eagleApi.Order.type Type = 2;
+  // @inject_tag: json:"amount"
+  double Amount = 3;
+  // @inject_tag: json:"price"
+  double Price = 4;
+  // @inject_tag: json:"stop_price"
+  double StopPrice = 5;
+  // @inject_tag: json:"is_hidden"
+  bool ISHidden = 6;
+  // @inject_tag: json:"option"
+  eagleApi.Order.option Option = 7;
+  // @inject_tag: json:"models"
+  eagleApi.OrderModel Model = 8;
+}
+
+message CancelOrderReq {
+  // @inject_tag: json:"server_order_id"
+  int64 ServerOrderID = 1;
+  // @inject_tag: json:"market"
+  chipmunkApi.Market Market = 2;
+}
+
+message OrderStatusReq {
+  // @inject_tag: json:"server_order_id"
+  int64 ServerOrderID = 1;
+  // @inject_tag: json:"market"
+  chipmunkApi.Market Market = 2;
+}
