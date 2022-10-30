@@ -7,6 +7,8 @@ import (
 )
 
 type Configs struct {
+	ServiceName   string              `yaml:"service_name"`
+	Version       string              `yaml:"version"`
 	GRPCPort      uint16              `yaml:"grpc_port"`
 	BrokeragesApp *brokerages.Configs `yaml:"brokerages_app"`
 	FunctionsApp  *functions.Configs  `yaml:"functions_app"`

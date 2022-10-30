@@ -8,11 +8,9 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api"
-	"github.com/h-varmazyar/Gate/services/core/internal/app/brokerages/repository"
 	brokeragesService "github.com/h-varmazyar/Gate/services/core/internal/app/brokerages/service"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages/coinex"
-	"github.com/h-varmazyar/Gate/services/core/internal/pkg/entity"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api"
 	log "github.com/sirupsen/logrus"
@@ -50,18 +48,16 @@ func (s *Service) OHLC(ctx context.Context, req *coreApi.OHLCReq) (*chipmunkApi.
 	if err != nil {
 		return nil, err
 	}
-	brokerage, err := s.db.ReturnByID(brokerageID)
+	brokerage, err := s.brokerageService.Return(ctx, &coreApi.BrokerageReturnReq{
+		ID: brokerageID.String(),
+	})
 	if err != nil {
 		return nil, err
 	}
-	resolution := new(repository.Resolution)
-	mapper.Struct(req.Resolution, resolution)
 
-	market := new(repository.Market)
-	mapper.Struct(req.Market, market)
 	inputs := &brokerages.OHLCParams{
-		Resolution: resolution,
-		Market:     market,
+		Resolution: req.Resolution,
+		Market:     req.Market,
 		From:       time.Unix(req.From, 0),
 		To:         time.Unix(req.To, 0),
 	}
@@ -77,7 +73,7 @@ func (s *Service) OHLC(ctx context.Context, req *coreApi.OHLCReq) (*chipmunkApi.
 }
 
 func (s *Service) WalletsBalance(ctx context.Context, _ *api.Void) (*chipmunkApi.Wallets, error) {
-	brokerage, err := s.db.ReturnEnable()
+	brokerage, err := s.brokerageService.Enable(ctx, new(api.Void))
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +88,7 @@ func (s *Service) WalletsBalance(ctx context.Context, _ *api.Void) (*chipmunkApi
 }
 
 func (s *Service) MarketStatistics(ctx context.Context, req *coreApi.MarketStatisticsReq) (*coreApi.MarketStatisticsResp, error) {
-	brokerage, err := s.db.ReturnEnable()
+	brokerage, err := s.brokerageService.Enable(ctx, new(api.Void))
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +108,7 @@ func (s *Service) MarketStatistics(ctx context.Context, req *coreApi.MarketStati
 }
 
 func (s *Service) MarketList(ctx context.Context, req *coreApi.MarketListReq) (*chipmunkApi.Markets, error) {
-	brokerage, err := s.db.ReturnEnable()
+	brokerage, err := s.brokerageService.Enable(ctx, new(api.Void))
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +123,7 @@ func (s *Service) MarketList(ctx context.Context, req *coreApi.MarketListReq) (*
 }
 
 func (s *Service) NewOrder(ctx context.Context, req *coreApi.NewOrderReq) (*eagleApi.Order, error) {
-	brokerage, err := s.db.ReturnEnable()
+	brokerage, err := s.brokerageService.Enable(ctx, new(api.Void))
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +150,7 @@ func (s *Service) NewOrder(ctx context.Context, req *coreApi.NewOrderReq) (*eagl
 }
 
 func (s *Service) CancelOrder(ctx context.Context, req *coreApi.CancelOrderReq) (*eagleApi.Order, error) {
-	brokerage, err := s.db.ReturnEnable()
+	brokerage, err := s.brokerageService.Enable(ctx, new(api.Void))
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +170,7 @@ func (s *Service) CancelOrder(ctx context.Context, req *coreApi.CancelOrderReq) 
 }
 
 func (s *Service) OrderStatus(ctx context.Context, req *coreApi.OrderStatusReq) (*eagleApi.Order, error) {
-	brokerage, err := s.db.ReturnEnable()
+	brokerage, err := s.brokerageService.Enable(ctx, new(api.Void))
 	if err != nil {
 		return nil, err
 	}
@@ -193,17 +189,17 @@ func (s *Service) OrderStatus(ctx context.Context, req *coreApi.OrderStatusReq) 
 	return order, nil
 }
 
-func loadBrokerage(brokerage *entity.Brokerage) brokerages.Brokerage {
+func loadBrokerage(brokerage *coreApi.Brokerage) brokerages.Brokerage {
 	switch brokerage.Platform {
-	case brokerageApi.Platform_Coinex:
+	case coreApi.Platform_Coinex:
 		coinexInstance := new(coinex.Service)
 		coinexInstance.Auth = &api.Auth{
 			Type:      api.AuthType_StaticToken,
-			AccessID:  brokerage.AccessID,
-			SecretKey: brokerage.SecretKey,
+			AccessID:  brokerage.Auth.AccessID,
+			SecretKey: brokerage.Auth.SecretKey,
 		}
 		return coinexInstance
-	case brokerageApi.Platform_Nobitex:
+	case coreApi.Platform_Nobitex:
 		return nil
 	}
 	return nil

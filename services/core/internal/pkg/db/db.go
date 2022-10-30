@@ -18,6 +18,6 @@ func NewDatabase(ctx context.Context, configs *Configs) (*DB, error) {
 		}
 		db.PostgresDB = postgres
 	}
-	
+
 	return db, nil
 }

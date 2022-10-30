@@ -20,6 +20,6 @@ func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs *Configs
 	}
 	return &App{
 		db:      repositoryInstance,
-		Service: service.NewService(ctx, logger, configs.ServiceConfigs),
+		Service: service.NewService(ctx, logger, configs.ServiceConfigs, repositoryInstance),
 	}, nil
 }

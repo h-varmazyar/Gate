@@ -76,8 +76,8 @@ func (service *Service) OHLC(ctx context.Context, inputs *brokerages.OHLCParams,
 	request := new(networkAPI.Request)
 	request.Type = networkAPI.Type_GET
 	resolutionSeconds := inputs.Resolution.Duration / 1e6
-	count := (inputs.To.Sub(inputs.From)) / resolutionSeconds
-	if int64((inputs.To.Sub(inputs.From))%resolutionSeconds) > 0 {
+	count := int64(inputs.To.Sub(inputs.From)) / resolutionSeconds
+	if (int64(inputs.To.Sub(inputs.From)) % resolutionSeconds) > 0 {
 		count++
 	}
 	if int64(count) >= 1000 {

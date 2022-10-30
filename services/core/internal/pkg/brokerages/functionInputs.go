@@ -2,7 +2,6 @@ package brokerages
 
 import (
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	"github.com/h-varmazyar/Gate/services/core/internal/pkg/repository"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
 	"time"
 )
@@ -12,7 +11,7 @@ type LoginParams struct {
 }
 
 type OrderBookParams struct {
-	Symbol repository.Market
+	Symbol chipmunkApi.Market
 }
 
 type MarketStatisticsParams struct {
@@ -22,8 +21,8 @@ type MarketStatisticsParams struct {
 }
 
 type OHLCParams struct {
-	Resolution *repository.Resolution
-	Market     *repository.Market
+	Resolution *chipmunkApi.Resolution
+	Market     *chipmunkApi.Market
 	From       time.Time
 	To         time.Time
 }
