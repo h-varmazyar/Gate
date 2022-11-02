@@ -5,19 +5,19 @@ import (
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
-	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
+	coreApi "github.com/h-varmazyar/Gate/services/core/api"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"time"
 )
 
 type Worker struct {
-	functionsService brokerageApi.FunctionsServiceClient
+	functionsService coreApi.FunctionsServiceClient
 	Cancellations    map[uuid.UUID]context.CancelFunc
 }
 
@@ -36,7 +36,7 @@ var (
 func InitializeWorker() {
 	worker = new(Worker)
 	brokerageConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
-	worker.functionsService = brokerageApi.NewFunctionsServiceClient(brokerageConn)
+	worker.functionsService = coreApi.NewFunctionsServiceClient(brokerageConn)
 	worker.Cancellations = make(map[uuid.UUID]context.CancelFunc)
 }
 
@@ -190,7 +190,7 @@ func (worker *Worker) downloadCandlesInfo(ws *WorkerSettings, from, to int64) ([
 
 	market := new(chipmunkApi.Market)
 	mapper.Struct(ws.Market, market)
-	candles, err := worker.functionsService.OHLC(ws.ctx, &brokerageApi.OHLCReq{
+	candles, err := worker.functionsService.OHLC(ws.ctx, &coreApi.OHLCReq{
 		Resolution:  resolution,
 		Market:      market,
 		From:        from,

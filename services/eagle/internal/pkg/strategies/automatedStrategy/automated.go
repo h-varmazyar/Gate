@@ -8,8 +8,8 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
-	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
+	coreApi "github.com/h-varmazyar/Gate/services/core/api"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
 	"github.com/h-varmazyar/Gate/services/eagle/configs"
 	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/repository"
@@ -22,7 +22,7 @@ import (
 
 type automated struct {
 	*repository.Strategy
-	functionsService brokerageApi.FunctionsServiceClient
+	functionsService coreApi.FunctionsServiceClient
 	walletsService   chipmunkApi.WalletsServiceClient
 	candleService    chipmunkApi.CandleServiceClient
 	botService       telegramBotApi.BotServiceClient
@@ -49,7 +49,7 @@ func NewAutomatedStrategy(strategy *eagleApi.Strategy, withTrading bool) (*autom
 	log.Warnf("ind1: %v", strategy.Indicators)
 
 	brokerageConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
-	automated.functionsService = brokerageApi.NewFunctionsServiceClient(brokerageConn)
+	automated.functionsService = coreApi.NewFunctionsServiceClient(brokerageConn)
 
 	chipmunkConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Chipmunk)
 	automated.walletsService = chipmunkApi.NewWalletsServiceClient(chipmunkConn)
@@ -112,7 +112,7 @@ func (s *automated) CheckForSignals(ctx context.Context, market *chipmunkApi.Mar
 					} else {
 						balance = reference.TotalBalance / 10
 					}
-					order, err := s.functionsService.NewOrder(context.Background(), &brokerageApi.NewOrderReq{
+					order, err := s.functionsService.NewOrder(context.Background(), &coreApi.NewOrderReq{
 						Market: market,
 						Type:   eagleApi.Order_buy,
 						Amount: balance / price,
@@ -177,7 +177,7 @@ LOOP:
 	for {
 		select {
 		case <-endTicker.C:
-			order, err = s.functionsService.CancelOrder(ctx, &brokerageApi.CancelOrderReq{
+			order, err = s.functionsService.CancelOrder(ctx, &coreApi.CancelOrderReq{
 				ServerOrderID: order.ServerOrderId,
 				Market:        market,
 			})
@@ -188,7 +188,7 @@ LOOP:
 			break LOOP
 
 		case <-checkTicker.C:
-			order, err = s.functionsService.OrderStatus(ctx, &brokerageApi.OrderStatusReq{})
+			order, err = s.functionsService.OrderStatus(ctx, &coreApi.OrderStatusReq{})
 			if err != nil {
 				log.WithError(err).Errorf("failed to get status of order %v", order.ID)
 				break
@@ -221,7 +221,7 @@ LOOP:
 func (s *automated) manageBidOrder(ctx context.Context, pool *AssetBalancePool) {
 	var (
 		err       error
-		last      *brokerageApi.MarketStatisticsResp
+		last      *coreApi.MarketStatisticsResp
 		openOrder *eagleApi.Order
 		sellPrice float64
 	)
@@ -232,7 +232,7 @@ LOOP:
 			continue
 		}
 		if openOrder != nil {
-			openOrder, err = s.functionsService.OrderStatus(ctx, &brokerageApi.OrderStatusReq{
+			openOrder, err = s.functionsService.OrderStatus(ctx, &coreApi.OrderStatusReq{
 				ServerOrderID: openOrder.ServerOrderId,
 				Market:        pool.Market,
 			})
@@ -243,7 +243,7 @@ LOOP:
 				break LOOP
 			}
 		}
-		if last, err = s.functionsService.MarketStatistics(ctx, &brokerageApi.MarketStatisticsReq{
+		if last, err = s.functionsService.MarketStatistics(ctx, &coreApi.MarketStatisticsReq{
 			MarketName: pool.Market.Name,
 		}); err != nil {
 			log.WithError(err).Errorf("failed to get last candles of %v", pool.Market.Name)
@@ -265,7 +265,7 @@ LOOP:
 		if sellPrice != 0 {
 			updateOrder := false
 			if openOrder != nil && openOrder.Amount != pool.Available {
-				if _, err = s.functionsService.CancelOrder(ctx, &brokerageApi.CancelOrderReq{
+				if _, err = s.functionsService.CancelOrder(ctx, &coreApi.CancelOrderReq{
 					ServerOrderID: openOrder.ServerOrderId,
 					Market:        pool.Market,
 				}); err != nil {
@@ -275,7 +275,7 @@ LOOP:
 				updateOrder = true
 			}
 			if updateOrder || openOrder == nil {
-				if openOrder, err = s.functionsService.NewOrder(ctx, &brokerageApi.NewOrderReq{
+				if openOrder, err = s.functionsService.NewOrder(ctx, &coreApi.NewOrderReq{
 					Market: pool.Market,
 					Type:   eagleApi.Order_sell,
 					Amount: pool.Available,

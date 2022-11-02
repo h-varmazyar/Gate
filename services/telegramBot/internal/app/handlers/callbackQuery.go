@@ -6,7 +6,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/errors"
-	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	coreApi "github.com/h-varmazyar/Gate/services/core/api"
 	"github.com/h-varmazyar/Gate/services/telegramBot/internal/pkg/tgBotApi"
 	"google.golang.org/grpc/codes"
 )
@@ -22,8 +22,8 @@ func (h *Handler) startCallback(ctx context.Context, callback *tgbotapi.Callback
 	if err != nil {
 		return err
 	}
-	var brokerage *brokerageApi.Brokerage
-	if brokerage, err = h.brokerageService.Start(ctx, &brokerageApi.BrokerageStartReq{
+	var brokerage *coreApi.Brokerage
+	if brokerage, err = h.brokerageService.Start(ctx, &coreApi.BrokerageStartReq{
 		ID:                 brokerageID.String(),
 		CollectMarketsData: true,
 		StartTrading:       true,
@@ -39,8 +39,8 @@ func (h *Handler) stopCallback(ctx context.Context, callback *tgbotapi.CallbackQ
 	if err != nil {
 		return err
 	}
-	var brokerage *brokerageApi.Brokerage
-	if brokerage, err = h.brokerageService.Stop(ctx, &brokerageApi.BrokerageStopReq{ID: brokerageID.String()}); err != nil {
+	var brokerage *coreApi.Brokerage
+	if brokerage, err = h.brokerageService.Stop(ctx, &coreApi.BrokerageStopReq{ID: brokerageID.String()}); err != nil {
 		return err
 	}
 	startMsg := fmt.Sprintf("brokerage %v stopped successfully", brokerage.Title)

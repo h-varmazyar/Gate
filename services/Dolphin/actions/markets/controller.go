@@ -6,7 +6,7 @@ import (
 	"github.com/h-varmazyar/Gate/services/Dolphin/actions/viewHelpers"
 	"github.com/h-varmazyar/Gate/services/Dolphin/configs"
 	"github.com/h-varmazyar/Gate/services/Dolphin/internal/pkg/app"
-	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	brokerageApi "github.com/h-varmazyar/Gate/services/core/api"
 	"net/http"
 )
 

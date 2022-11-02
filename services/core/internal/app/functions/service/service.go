@@ -10,7 +10,6 @@ import (
 	coreApi "github.com/h-varmazyar/Gate/services/core/api"
 	brokeragesService "github.com/h-varmazyar/Gate/services/core/internal/app/brokerages/service"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
-	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages/coinex"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api"
 	log "github.com/sirupsen/logrus"
@@ -187,20 +186,4 @@ func (s *Service) OrderStatus(ctx context.Context, req *coreApi.OrderStatusReq) 
 		return nil, err
 	}
 	return order, nil
-}
-
-func loadBrokerage(brokerage *coreApi.Brokerage) brokerages.Brokerage {
-	switch brokerage.Platform {
-	case coreApi.Platform_Coinex:
-		coinexInstance := new(coinex.Service)
-		coinexInstance.Auth = &api.Auth{
-			Type:      api.AuthType_StaticToken,
-			AccessID:  brokerage.Auth.AccessID,
-			SecretKey: brokerage.Auth.SecretKey,
-		}
-		return coinexInstance
-	case coreApi.Platform_Nobitex:
-		return nil
-	}
-	return nil
 }

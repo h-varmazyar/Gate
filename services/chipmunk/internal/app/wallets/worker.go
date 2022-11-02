@@ -6,17 +6,17 @@ import (
 	"github.com/h-varmazyar/Gate/api"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
-	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
+	coreApi "github.com/h-varmazyar/Gate/services/core/api"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"time"
 )
 
 type worker struct {
-	functionsService brokerageApi.FunctionsServiceClient
+	functionsService coreApi.FunctionsServiceClient
 	marketService    chipmunkApi.MarketServiceClient
 	cancellation     context.CancelFunc
 }
@@ -29,11 +29,11 @@ func InitializeWorker() {
 	Worker = new(worker)
 	brokerageConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
 	chipmunkConn := grpcext.NewConnection(fmt.Sprintf(":%v", configs.Variables.GrpcPort))
-	Worker.functionsService = brokerageApi.NewFunctionsServiceClient(brokerageConn)
+	Worker.functionsService = coreApi.NewFunctionsServiceClient(brokerageConn)
 	Worker.marketService = chipmunkApi.NewMarketServiceClient(chipmunkConn)
 }
 
-func (w *worker) Start(brokerage *brokerageApi.Brokerage) error {
+func (w *worker) Start(brokerage *coreApi.Brokerage) error {
 	if w.cancellation == nil {
 		if brokerage == nil {
 			return errors.New(context.Background(), codes.NotFound)
@@ -56,7 +56,7 @@ func (w *worker) Stop() {
 	}
 }
 
-func (w *worker) run(ctx context.Context, brokerage *brokerageApi.Brokerage) {
+func (w *worker) run(ctx context.Context, brokerage *coreApi.Brokerage) {
 	time.Sleep(time.Second)
 	ticker := time.NewTicker(configs.Variables.WalletWorkerHeartbeat)
 
@@ -78,7 +78,7 @@ LOOP:
 	}
 }
 
-func (w *worker) calculateReferenceValue(ctx context.Context, brokerage *brokerageApi.Brokerage, wallets []*chipmunkApi.Wallet) {
+func (w *worker) calculateReferenceValue(ctx context.Context, brokerage *coreApi.Brokerage, wallets []*chipmunkApi.Wallet) {
 	references := make(map[string]*chipmunkApi.Reference)
 	for _, wallet := range wallets {
 		list, err := w.marketService.ReturnBySource(ctx, &chipmunkApi.MarketListBySourceRequest{
@@ -90,7 +90,7 @@ func (w *worker) calculateReferenceValue(ctx context.Context, brokerage *brokera
 			continue
 		}
 		for _, market := range list.Elements {
-			statistics, err := w.functionsService.MarketStatistics(ctx, &brokerageApi.MarketStatisticsReq{
+			statistics, err := w.functionsService.MarketStatistics(ctx, &coreApi.MarketStatisticsReq{
 				MarketName: market.Name,
 			})
 			if err != nil {

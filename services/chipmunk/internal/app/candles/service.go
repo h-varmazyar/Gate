@@ -6,16 +6,16 @@ import (
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
-	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
+	coreApi "github.com/h-varmazyar/Gate/services/core/api"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
 	"google.golang.org/grpc"
 )
 
 type Service struct {
-	brokerageService brokerageApi.BrokerageServiceClient
+	brokerageService coreApi.BrokerageServiceClient
 	marketService    chipmunkApi.MarketServiceClient
 	strategyService  eagleApi.StrategyServiceClient
 }
@@ -30,7 +30,7 @@ func NewService() *Service {
 		brokerageConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
 		chipmunkConn := grpcext.NewConnection(fmt.Sprintf(":%v", configs.Variables.GrpcPort))
 		eagleConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Eagle)
-		GrpcService.brokerageService = brokerageApi.NewBrokerageServiceClient(brokerageConn)
+		GrpcService.brokerageService = coreApi.NewBrokerageServiceClient(brokerageConn)
 		GrpcService.marketService = chipmunkApi.NewMarketServiceClient(chipmunkConn)
 		GrpcService.strategyService = eagleApi.NewStrategyServiceClient(eagleConn)
 	}
@@ -45,7 +45,7 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 //	settings := new(WorkerSettings)
 //	var (
 //		err       error
-//		brokerage *brokerageApi.Brokerage
+//		brokerage *coreApi.Brokerage
 //		strategy  *eagleApi.Strategy
 //	)
 //
@@ -56,7 +56,7 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 //		return nil, err
 //	}
 //
-//	brokerage, err = s.brokerageService.Return(ctx, &brokerageApi.ReturnBrokerageReq{ID: req.BrokerageID})
+//	brokerage, err = s.brokerageService.Return(ctx, &coreApi.ReturnBrokerageReq{ID: req.BrokerageID})
 //	if err != nil {
 //		return nil, err
 //	}

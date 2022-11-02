@@ -47,10 +47,10 @@ func (service *Service) WalletList(ctx context.Context, runner brokerages.Handle
 		return nil, err
 	}
 	if resp.Code != http.StatusOK {
-		return nil, errors.NewWithSlug(ctx, codes.Unknown, resp.Response)
+		return nil, errors.NewWithSlug(ctx, codes.Unknown, resp.Body)
 	}
 	data := make(map[string]map[string]interface{})
-	if err := parseResponse(resp.Response, &data); err != nil {
+	if err := parseResponse(resp.Body, &data); err != nil {
 		return nil, err
 	}
 	response := new(chipmunkApi.Wallets)
@@ -100,10 +100,10 @@ func (service *Service) OHLC(ctx context.Context, inputs *brokerages.OHLCParams,
 		return nil, err
 	}
 	if resp.Code != http.StatusOK {
-		return nil, errors.NewWithSlug(ctx, codes.NotFound, resp.Response)
+		return nil, errors.NewWithSlug(ctx, codes.NotFound, resp.Body)
 	}
 	data := make([][]interface{}, 0)
-	if err := parseResponse(resp.Response, &data); err != nil {
+	if err := parseResponse(resp.Body, &data); err != nil {
 		return nil, err
 	}
 	candles := make([]*chipmunkApi.Candle, 0)
@@ -150,10 +150,10 @@ func (service *Service) UpdateMarket(ctx context.Context, runner brokerages.Hand
 		return nil, err
 	}
 	if resp.Code != http.StatusOK {
-		return nil, errors.NewWithSlug(ctx, codes.NotFound, resp.Response)
+		return nil, errors.NewWithSlug(ctx, codes.NotFound, resp.Body)
 	}
 	tmp := new(responseModel)
-	if err := json.Unmarshal([]byte(resp.Response), tmp); err != nil {
+	if err := json.Unmarshal([]byte(resp.Body), tmp); err != nil {
 		return nil, err
 	}
 	if tmp.Code != 0 {
@@ -216,7 +216,7 @@ func (service *Service) MarketStatistics(ctx context.Context, inputs *brokerages
 		return nil, err
 	}
 	if resp.Code != http.StatusOK {
-		return nil, errors.NewWithSlug(ctx, codes.NotFound, resp.Response)
+		return nil, errors.NewWithSlug(ctx, codes.NotFound, resp.Body)
 	}
 	data := struct {
 		Date   float64 `json:"date"`
@@ -232,7 +232,7 @@ func (service *Service) MarketStatistics(ctx context.Context, inputs *brokerages
 			Volume     string `json:"vol"`
 		} `json:"ticker"`
 	}{}
-	if err := parseResponse(resp.Response, &data); err != nil {
+	if err := parseResponse(resp.Body, &data); err != nil {
 		return nil, err
 	}
 	candle := new(chipmunkApi.Candle)
@@ -272,7 +272,7 @@ func (service *Service) MarketList(ctx context.Context, runner brokerages.Handle
 		return nil, err
 	}
 	if resp.Code != http.StatusOK {
-		return nil, errors.NewWithSlug(ctx, codes.NotFound, resp.Response)
+		return nil, errors.NewWithSlug(ctx, codes.NotFound, resp.Body)
 	}
 	data := make(map[string]struct {
 		Name           string  `json:"name"`
@@ -284,7 +284,7 @@ func (service *Service) MarketList(ctx context.Context, runner brokerages.Handle
 		TradingName    string  `json:"trading_name"`
 		TradingDecimal float64 `json:"trading_decimal"`
 	})
-	if err := parseResponse(resp.Response, &data); err != nil {
+	if err := parseResponse(resp.Body, &data); err != nil {
 		return nil, err
 	}
 	markets := new(chipmunkApi.Markets)
@@ -377,10 +377,10 @@ func (service *Service) NewOrder(ctx context.Context, inputs *brokerages.NewOrde
 		return nil, err
 	}
 	if resp.Code != http.StatusOK {
-		return nil, errors.NewWithSlug(ctx, codes.Unknown, resp.Response)
+		return nil, errors.NewWithSlug(ctx, codes.Unknown, resp.Body)
 	}
 	data := make(map[string]interface{})
-	if err := parseResponse(resp.Response, &data); err != nil {
+	if err := parseResponse(resp.Body, &data); err != nil {
 		return nil, err
 	}
 
@@ -409,10 +409,10 @@ func (service *Service) CancelOrder(ctx context.Context, inputs *brokerages.Canc
 		return nil, err
 	}
 	if resp.Code != http.StatusOK {
-		return nil, errors.NewWithSlug(ctx, codes.Unknown, resp.Response)
+		return nil, errors.NewWithSlug(ctx, codes.Unknown, resp.Body)
 	}
 	data := make(map[string]interface{})
-	if err := parseResponse(resp.Response, &data); err != nil {
+	if err := parseResponse(resp.Body, &data); err != nil {
 		return nil, err
 	}
 
@@ -440,10 +440,10 @@ func (service *Service) OrderStatus(ctx context.Context, inputs *brokerages.Orde
 		return nil, err
 	}
 	if resp.Code != http.StatusOK {
-		return nil, errors.NewWithSlug(ctx, codes.Unknown, resp.Response)
+		return nil, errors.NewWithSlug(ctx, codes.Unknown, resp.Body)
 	}
 	data := make(map[string]interface{})
-	if err := parseResponse(resp.Response, &data); err != nil {
+	if err := parseResponse(resp.Body, &data); err != nil {
 		return nil, err
 	}
 

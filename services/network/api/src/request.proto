@@ -45,6 +45,6 @@ message Request {
 message Response {
   // @inject_tag: json:"code"
   int32 Code = 1;
-  // @inject_tag: json:"response"
-  string Response = 2;
+  // @inject_tag: json:"body"
+  string Body = 2;
 }

@@ -5,17 +5,17 @@ import (
 	"github.com/h-varmazyar/Gate/api"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
-	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
+	coreApi "github.com/h-varmazyar/Gate/services/core/api"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
 
 type Service struct {
-	brokerageService brokerageApi.BrokerageServiceClient
+	brokerageService coreApi.BrokerageServiceClient
 	networkService   networkAPI.RequestServiceClient
 }
 
@@ -28,7 +28,7 @@ func NewService() *Service {
 		GrpcService = new(Service)
 		brokerageConnection := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
 		networkConnection := grpcext.NewConnection(configs.Variables.GrpcAddresses.Network)
-		GrpcService.brokerageService = brokerageApi.NewBrokerageServiceClient(brokerageConnection)
+		GrpcService.brokerageService = coreApi.NewBrokerageServiceClient(brokerageConnection)
 		GrpcService.networkService = networkAPI.NewRequestServiceClient(networkConnection)
 	}
 	return GrpcService
@@ -43,7 +43,7 @@ func (s *Service) List(_ context.Context, _ *api.Void) (*chipmunkApi.Wallets, er
 }
 
 func (s *Service) StartWorker(ctx context.Context, req *chipmunkApi.StartWorkerRequest) (*api.Void, error) {
-	brokerage, err := s.brokerageService.Return(ctx, &brokerageApi.BrokerageReturnReq{ID: req.BrokerageID})
+	brokerage, err := s.brokerageService.Return(ctx, &coreApi.BrokerageReturnReq{ID: req.BrokerageID})
 	if err != nil {
 		return nil, err
 	}

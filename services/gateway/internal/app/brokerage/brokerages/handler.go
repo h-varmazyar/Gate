@@ -4,7 +4,7 @@ import (
 	gorilla "github.com/gorilla/mux"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/httpext"
-	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+	coreApi "github.com/h-varmazyar/Gate/services/core/api"
 	"github.com/h-varmazyar/Gate/services/gateway/configs"
 	"net/http"
 )
@@ -14,14 +14,14 @@ var (
 )
 
 type Handler struct {
-	brokerageService brokerageApi.BrokerageServiceClient
+	brokerageService coreApi.BrokerageServiceClient
 }
 
 func HandlerInstance() *Handler {
 	if handler == nil {
 		brokerageConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
 		handler = &Handler{
-			brokerageService: brokerageApi.NewBrokerageServiceClient(brokerageConn),
+			brokerageService: coreApi.NewBrokerageServiceClient(brokerageConn),
 		}
 	}
 	return handler
@@ -37,7 +37,7 @@ func (h Handler) RegisterRoutes(router *gorilla.Router) {
 }
 
 func (h Handler) create(res http.ResponseWriter, req *http.Request) {
-	brokerage := new(brokerageApi.BrokerageCreateReq)
+	brokerage := new(coreApi.BrokerageCreateReq)
 	if err := httpext.BindModel(req, brokerage); err != nil {
 		httpext.SendError(res, req, err)
 		return
@@ -50,7 +50,7 @@ func (h Handler) create(res http.ResponseWriter, req *http.Request) {
 }
 
 func (h Handler) returnActive(res http.ResponseWriter, req *http.Request) {
-	//if brokerage, err := h.brokerageService.Active(req.Context(), &brokerageApi.ActiveBrokerageReq{
+	//if brokerage, err := h.brokerageService.Active(req.Context(), &coreApi.ActiveBrokerageReq{
 	//	WithMarkets:     true,
 	//	WithResolutions: true,
 	//}); err != nil {
@@ -68,7 +68,7 @@ func (h Handler) start(res http.ResponseWriter, req *http.Request) {
 	//	httpext.SendError(res, req, err)
 	//	return
 	//}
-	//change := new(brokerageApi.StatusChangeRequest)
+	//change := new(coreApi.StatusChangeRequest)
 	//mapper.Struct(start, change)
 	//
 	//if status, err := h.brokerageService.Start(req.Context(), change); err != nil {
@@ -79,7 +79,7 @@ func (h Handler) start(res http.ResponseWriter, req *http.Request) {
 }
 
 func (h Handler) stop(res http.ResponseWriter, req *http.Request) {
-	//change := new(brokerageApi.StatusChangeRequest)
+	//change := new(coreApi.StatusChangeRequest)
 	//if status, err := h.brokerageService.Stop(req.Context(), change); err != nil {
 	//	httpext.SendError(res, req, err)
 	//} else {

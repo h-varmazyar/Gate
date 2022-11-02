@@ -7,11 +7,11 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
-	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
+	coreApi "github.com/h-varmazyar/Gate/services/core/api"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api"
 	log "github.com/sirupsen/logrus"
@@ -24,8 +24,8 @@ import (
 type Service struct {
 	networkService   networkAPI.RequestServiceClient
 	strategyService  eagleApi.StrategyServiceClient
-	functionsService brokerageApi.FunctionsServiceClient
-	brokerageService brokerageApi.BrokerageServiceClient
+	functionsService coreApi.FunctionsServiceClient
+	brokerageService coreApi.BrokerageServiceClient
 }
 
 var (
@@ -40,7 +40,7 @@ func NewService() *Service {
 		brokerageConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
 		GrpcService.networkService = networkAPI.NewRequestServiceClient(networkConn)
 		GrpcService.strategyService = eagleApi.NewStrategyServiceClient(eagleConn)
-		GrpcService.functionsService = brokerageApi.NewFunctionsServiceClient(brokerageConn)
+		GrpcService.functionsService = coreApi.NewFunctionsServiceClient(brokerageConn)
 	}
 	return GrpcService
 }
@@ -193,7 +193,7 @@ func (s *Service) Update(ctx context.Context, req *chipmunkApi.MarketUpdateReq) 
 	if err != nil {
 		return nil, err
 	}
-	markets, err := s.functionsService.MarketList(ctx, &brokerageApi.MarketListReq{BrokerageID: brokerageID.String()})
+	markets, err := s.functionsService.MarketList(ctx, &coreApi.MarketListReq{BrokerageID: brokerageID.String()})
 	if err != nil {
 		return nil, err
 	}

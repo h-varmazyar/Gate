@@ -19,3 +19,9 @@ type Brokerage interface {
 	CancelOrder(context.Context, *CancelOrderParams, Handler) (*eagleApi.Order, error)
 	OrderStatus(context.Context, *OrderStatusParams, Handler) (*eagleApi.Order, error)
 }
+
+type Response struct {
+	ID     string
+	Method string
+	*networkAPI.Response
+}
