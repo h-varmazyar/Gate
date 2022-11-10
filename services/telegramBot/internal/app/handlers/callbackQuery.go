@@ -30,7 +30,7 @@ func (h *Handler) startCallback(ctx context.Context, callback *tgbotapi.Callback
 	}); err != nil {
 		return err
 	}
-	startMsg := fmt.Sprintf("brokerage %v started successfully", brokerage.Title)
+	startMsg := fmt.Sprintf("core %v started successfully", brokerage.Title)
 	return tgBotApi.SendMessage(ctx, tgBotApi.NewTextMessage(callback.Message.Chat.ID, callback.Message.MessageID, startMsg, nil))
 }
 
@@ -43,7 +43,7 @@ func (h *Handler) stopCallback(ctx context.Context, callback *tgbotapi.CallbackQ
 	if brokerage, err = h.brokerageService.Stop(ctx, &coreApi.BrokerageStopReq{ID: brokerageID.String()}); err != nil {
 		return err
 	}
-	startMsg := fmt.Sprintf("brokerage %v stopped successfully", brokerage.Title)
+	startMsg := fmt.Sprintf("core %v stopped successfully", brokerage.Title)
 	return tgBotApi.SendMessage(ctx, tgBotApi.NewTextMessage(callback.Message.Chat.ID, callback.Message.MessageID, startMsg, nil))
 }
 

@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/h-varmazyar/Gate/api"
-	coreApi "github.com/h-varmazyar/Gate/services/core/api"
+	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages/coinex"
 )

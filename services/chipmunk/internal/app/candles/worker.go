@@ -6,7 +6,7 @@ package candles
 //	"github.com/google/uuid"
 //	"github.com/h-varmazyar/Gate/pkg/grpcext"
 //	"github.com/h-varmazyar/Gate/pkg/mapper"
-//	brokerageApi "github.com/h-varmazyar/Gate/services/brokerage/api"
+//	brokerageApi "github.com/h-varmazyar/Gate/services/core/api"
 //	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 //	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
 //	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"

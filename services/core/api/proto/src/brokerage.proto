@@ -1,6 +1,6 @@
 syntax = "proto3";
 package coreApi;
-option go_package = "github.com/h-varmazyar/Gate/services/core/api";
+option go_package = "github.com/h-varmazyar/Gate/services/core/api/proto";
 import "api/src/misc.proto";
 import "services/chipmunk/api/src/market.proto";
 import "services/chipmunk/api/src/resolution.proto";

@@ -1,17 +1,12 @@
 syntax = "proto3";
 package networkAPI;
-option go_package = "github.com/h-varmazyar/Gate/services/network/api";
+option go_package = "github.com/h-varmazyar/Gate/services/network/api/proto";
 
 service RequestService {
   rpc Do(Request) returns (Response);
 }
 
-enum Type {
-  Unknown = 0;
-  POST = 1;
-  GET = 2;
-  DELETE = 3;
-}
+
 
 message KV {
   // @inject_tag: json:"key"
@@ -32,14 +27,32 @@ message KV {
 }
 
 message Request {
-  // @inject_tag: json:"type"
-  Type Type = 1;
+  enum method {
+    Unknown = 0;
+    POST = 1;
+    GET = 2;
+    DELETE = 3;
+  }
+  enum type{
+    Sync = 0;
+    Async = 1;
+  }
+  // @inject_tag: json:"method"
+  method Method = 1;
   // @inject_tag: json:"endpoint"
   string Endpoint = 2;
   // @inject_tag: json:"params"
   repeated KV Params = 3;
   // @inject_tag: json:"headers"
   repeated KV Headers = 4;
+  // @inject_tag: json:"metadata"
+  string Metadata = 5;
+  // @inject_tag: json:"type"
+  type Type = 6;
+  // @inject_tag: json:"callback_queue"
+  string CallbackQueue = 7;
+  // @inject_tag: json:"rate_limiter_id"
+  string RateLimiterID = 8;
 }
 
 message Response {

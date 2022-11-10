@@ -9,10 +9,11 @@ import (
 	"github.com/h-varmazyar/Gate/api"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	brokerageApi "github.com/h-varmazyar/Gate/services/core/api"
+	brokerageApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
-	networkAPI "github.com/h-varmazyar/Gate/services/network/api"
+	api2 "github.com/h-varmazyar/Gate/services/network/api/proto"
+	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"io"
@@ -31,15 +32,15 @@ type Service struct {
 func (service *Service) WalletList(ctx context.Context, runner brokerages.Handler) (*chipmunkApi.Wallets, error) {
 	request := new(networkAPI.Request)
 	currentTime := time.Now().UnixNano() / 1e6
-	request.Type = networkAPI.Type_GET
+	request.Method = networkAPI.Request_GET
 	request.Endpoint = "https://api.coinex.com/v1/balance/info"
 	request.Params = []*networkAPI.KV{
-		networkAPI.NewKV("access_id", service.Auth.AccessID),
-		networkAPI.NewKV("tonce", currentTime),
+		api2.NewKV("access_id", service.Auth.AccessID),
+		api2.NewKV("tonce", currentTime),
 	}
 	request.Headers = []*networkAPI.KV{
-		networkAPI.NewKV("authorization", service.generateAuthorization(request.Params)),
-		networkAPI.NewKV("tonce", currentTime),
+		api2.NewKV("authorization", service.generateAuthorization(request.Params)),
+		api2.NewKV("tonce", currentTime),
 	}
 
 	resp, err := runner(ctx, request)
@@ -74,7 +75,7 @@ func (service *Service) WalletList(ctx context.Context, runner brokerages.Handle
 
 func (service *Service) OHLC(ctx context.Context, inputs *brokerages.OHLCParams, runner brokerages.Handler) ([]*chipmunkApi.Candle, error) {
 	request := new(networkAPI.Request)
-	request.Type = networkAPI.Type_GET
+	request.Method = networkAPI.Request_GET
 	resolutionSeconds := inputs.Resolution.Duration / 1e6
 	count := int64(inputs.To.Sub(inputs.From)) / resolutionSeconds
 	if (int64(inputs.To.Sub(inputs.From)) % resolutionSeconds) > 0 {
@@ -82,16 +83,16 @@ func (service *Service) OHLC(ctx context.Context, inputs *brokerages.OHLCParams,
 	}
 	if int64(count) >= 1000 {
 		request.Params = []*networkAPI.KV{
-			networkAPI.NewKV("market", inputs.Market.Name),
-			networkAPI.NewKV("interval", inputs.Resolution.Value),
-			networkAPI.NewKV("start_time", fmt.Sprintf("%v", inputs.From.Unix())),
-			networkAPI.NewKV("end_time", fmt.Sprintf("%v", inputs.To.Unix()))}
+			api2.NewKV("market", inputs.Market.Name),
+			api2.NewKV("interval", inputs.Resolution.Value),
+			api2.NewKV("start_time", fmt.Sprintf("%v", inputs.From.Unix())),
+			api2.NewKV("end_time", fmt.Sprintf("%v", inputs.To.Unix()))}
 		request.Endpoint = "https://www.coinex.com/res/market/kline"
 	} else {
 		request.Params = []*networkAPI.KV{
-			networkAPI.NewKV("markets", inputs.Market.Name),
-			networkAPI.NewKV("type", inputs.Resolution.Label),
-			networkAPI.NewKV("limit", fmt.Sprintf("%v", int64(count))),
+			api2.NewKV("markets", inputs.Market.Name),
+			api2.NewKV("type", inputs.Resolution.Label),
+			api2.NewKV("limit", fmt.Sprintf("%v", int64(count))),
 		}
 		request.Endpoint = "https://api.coinex.com/v1/market/kline"
 	}
@@ -142,7 +143,7 @@ func (service *Service) OHLC(ctx context.Context, inputs *brokerages.OHLCParams,
 
 func (service *Service) UpdateMarket(ctx context.Context, runner brokerages.Handler) ([]*chipmunkApi.Market, error) {
 	request := new(networkAPI.Request)
-	request.Type = networkAPI.Type_GET
+	request.Method = networkAPI.Request_GET
 	request.Endpoint = "https://api.coinex.com/v1/market/info"
 
 	resp, err := runner(ctx, request)
@@ -205,9 +206,9 @@ func (service *Service) MarketStatistics(ctx context.Context, inputs *brokerages
 		market = inputs.Market
 	}
 	request := new(networkAPI.Request)
-	request.Type = networkAPI.Type_GET
+	request.Method = networkAPI.Request_GET
 	request.Params = []*networkAPI.KV{
-		networkAPI.NewKV("market", market),
+		api2.NewKV("market", market),
 	}
 	request.Endpoint = "https://api.coinex.com/v1/market/ticker"
 
@@ -264,7 +265,7 @@ func (service *Service) MarketStatistics(ctx context.Context, inputs *brokerages
 
 func (service *Service) MarketList(ctx context.Context, runner brokerages.Handler) (*chipmunkApi.Markets, error) {
 	request := new(networkAPI.Request)
-	request.Type = networkAPI.Type_GET
+	request.Method = networkAPI.Request_GET
 	request.Endpoint = "https://api.coinex.com/v1/market/info"
 
 	resp, err := runner(ctx, request)
@@ -322,52 +323,52 @@ func (service *Service) MarketList(ctx context.Context, runner brokerages.Handle
 
 func (service *Service) NewOrder(ctx context.Context, inputs *brokerages.NewOrderParams, runner brokerages.Handler) (*eagleApi.Order, error) {
 	request := new(networkAPI.Request)
-	request.Type = networkAPI.Type_POST
+	request.Method = networkAPI.Request_POST
 	request.Params = []*networkAPI.KV{
-		networkAPI.NewKV("access_id", service.Auth.AccessID),
-		networkAPI.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
+		api2.NewKV("access_id", service.Auth.AccessID),
+		api2.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
 	}
 	request.Headers = []*networkAPI.KV{
-		networkAPI.NewKV("authorization", service.generateAuthorization(request.Params)),
-		networkAPI.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
+		api2.NewKV("authorization", service.generateAuthorization(request.Params)),
+		api2.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
 	}
 	switch inputs.OrderModel {
 	case eagleApi.OrderModel_limit:
 		request.Endpoint = "https://api.coinex.com/v1/order/limit"
-		request.Params = append(request.Params, networkAPI.NewKV("markets", inputs.Market.Name))
-		request.Params = append(request.Params, networkAPI.NewKV("type", inputs.BuyOrSell.String()))
-		request.Params = append(request.Params, networkAPI.NewKV("amount", fmt.Sprintf("%f", inputs.Amount)))
-		request.Params = append(request.Params, networkAPI.NewKV("price", fmt.Sprintf("%f", inputs.Price)))
-		request.Params = append(request.Params, networkAPI.NewKV("source_id", fmt.Sprintf("%d", rand.Int())))
-		request.Params = append(request.Params, networkAPI.NewKV("option", inputs.Option.String()))
-		request.Params = append(request.Params, networkAPI.NewKV("client_id", strings.ReplaceAll(uuid.New().String(), "-", "")))
-		request.Params = append(request.Params, networkAPI.NewKV("hide", inputs.HideOrder))
+		request.Params = append(request.Params, api2.NewKV("markets", inputs.Market.Name))
+		request.Params = append(request.Params, api2.NewKV("type", inputs.BuyOrSell.String()))
+		request.Params = append(request.Params, api2.NewKV("amount", fmt.Sprintf("%f", inputs.Amount)))
+		request.Params = append(request.Params, api2.NewKV("price", fmt.Sprintf("%f", inputs.Price)))
+		request.Params = append(request.Params, api2.NewKV("source_id", fmt.Sprintf("%d", rand.Int())))
+		request.Params = append(request.Params, api2.NewKV("option", inputs.Option.String()))
+		request.Params = append(request.Params, api2.NewKV("client_id", strings.ReplaceAll(uuid.New().String(), "-", "")))
+		request.Params = append(request.Params, api2.NewKV("hide", inputs.HideOrder))
 	case eagleApi.OrderModel_market:
 		request.Endpoint = "https://api.coinex.com/v1/order/market"
-		request.Params = append(request.Params, networkAPI.NewKV("markets", inputs.Market.Name))
-		request.Params = append(request.Params, networkAPI.NewKV("type", inputs.BuyOrSell.String()))
-		request.Params = append(request.Params, networkAPI.NewKV("amount", fmt.Sprintf("%f", inputs.Amount)))
-		request.Params = append(request.Params, networkAPI.NewKV("option", inputs.Option.String()))
-		request.Params = append(request.Params, networkAPI.NewKV("client_id", strings.ReplaceAll(uuid.New().String(), "-", "")))
+		request.Params = append(request.Params, api2.NewKV("markets", inputs.Market.Name))
+		request.Params = append(request.Params, api2.NewKV("type", inputs.BuyOrSell.String()))
+		request.Params = append(request.Params, api2.NewKV("amount", fmt.Sprintf("%f", inputs.Amount)))
+		request.Params = append(request.Params, api2.NewKV("option", inputs.Option.String()))
+		request.Params = append(request.Params, api2.NewKV("client_id", strings.ReplaceAll(uuid.New().String(), "-", "")))
 	case eagleApi.OrderModel_stopLimit:
 		request.Endpoint = "https://api.coinex.com/v1/order/stop/limit"
-		request.Params = append(request.Params, networkAPI.NewKV("markets", inputs.Market.Name))
-		request.Params = append(request.Params, networkAPI.NewKV("type", inputs.BuyOrSell.String()))
-		request.Params = append(request.Params, networkAPI.NewKV("amount", fmt.Sprintf("%f", inputs.Amount)))
-		request.Params = append(request.Params, networkAPI.NewKV("price", fmt.Sprintf("%f", inputs.Price)))
-		request.Params = append(request.Params, networkAPI.NewKV("source_id", fmt.Sprintf("%d", rand.Int())))
-		request.Params = append(request.Params, networkAPI.NewKV("option", inputs.Option.String()))
-		request.Params = append(request.Params, networkAPI.NewKV("client_id", strings.ReplaceAll(uuid.New().String(), "-", "")))
-		request.Params = append(request.Params, networkAPI.NewKV("hide", inputs.HideOrder))
-		request.Params = append(request.Params, networkAPI.NewKV("stop_price", fmt.Sprintf("%f", inputs.StopPrice)))
+		request.Params = append(request.Params, api2.NewKV("markets", inputs.Market.Name))
+		request.Params = append(request.Params, api2.NewKV("type", inputs.BuyOrSell.String()))
+		request.Params = append(request.Params, api2.NewKV("amount", fmt.Sprintf("%f", inputs.Amount)))
+		request.Params = append(request.Params, api2.NewKV("price", fmt.Sprintf("%f", inputs.Price)))
+		request.Params = append(request.Params, api2.NewKV("source_id", fmt.Sprintf("%d", rand.Int())))
+		request.Params = append(request.Params, api2.NewKV("option", inputs.Option.String()))
+		request.Params = append(request.Params, api2.NewKV("client_id", strings.ReplaceAll(uuid.New().String(), "-", "")))
+		request.Params = append(request.Params, api2.NewKV("hide", inputs.HideOrder))
+		request.Params = append(request.Params, api2.NewKV("stop_price", fmt.Sprintf("%f", inputs.StopPrice)))
 	case eagleApi.OrderModel_ioc:
 		request.Endpoint = "https://api.coinex.com/v1/order/ioc"
-		request.Params = append(request.Params, networkAPI.NewKV("markets", inputs.Market.Name))
-		request.Params = append(request.Params, networkAPI.NewKV("type", inputs.BuyOrSell.String()))
-		request.Params = append(request.Params, networkAPI.NewKV("amount", fmt.Sprintf("%f", inputs.Amount)))
-		request.Params = append(request.Params, networkAPI.NewKV("price", fmt.Sprintf("%f", inputs.Price)))
-		request.Params = append(request.Params, networkAPI.NewKV("source_id", fmt.Sprintf("%d", rand.Int())))
-		request.Params = append(request.Params, networkAPI.NewKV("client_id", strings.ReplaceAll(uuid.New().String(), "-", "")))
+		request.Params = append(request.Params, api2.NewKV("markets", inputs.Market.Name))
+		request.Params = append(request.Params, api2.NewKV("type", inputs.BuyOrSell.String()))
+		request.Params = append(request.Params, api2.NewKV("amount", fmt.Sprintf("%f", inputs.Amount)))
+		request.Params = append(request.Params, api2.NewKV("price", fmt.Sprintf("%f", inputs.Price)))
+		request.Params = append(request.Params, api2.NewKV("source_id", fmt.Sprintf("%d", rand.Int())))
+		request.Params = append(request.Params, api2.NewKV("client_id", strings.ReplaceAll(uuid.New().String(), "-", "")))
 	default:
 		return nil, errors.New(ctx, codes.Unimplemented)
 	}
@@ -389,19 +390,19 @@ func (service *Service) NewOrder(ctx context.Context, inputs *brokerages.NewOrde
 
 func (service *Service) CancelOrder(ctx context.Context, inputs *brokerages.CancelOrderParams, runner brokerages.Handler) (*eagleApi.Order, error) {
 	request := new(networkAPI.Request)
-	request.Type = networkAPI.Type_DELETE
+	request.Method = networkAPI.Request_DELETE
 	request.Params = []*networkAPI.KV{
-		networkAPI.NewKV("access_id", service.Auth.AccessID),
-		networkAPI.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
+		api2.NewKV("access_id", service.Auth.AccessID),
+		api2.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
 	}
 	request.Headers = []*networkAPI.KV{
-		networkAPI.NewKV("authorization", service.generateAuthorization(request.Params)),
-		networkAPI.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
+		api2.NewKV("authorization", service.generateAuthorization(request.Params)),
+		api2.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
 	}
 	request.Params = []*networkAPI.KV{
-		networkAPI.NewKV("id", inputs.ServerOrderId),
-		networkAPI.NewKV("markets", inputs.Market.Name),
-		networkAPI.NewKV("account_id", 0)}
+		api2.NewKV("id", inputs.ServerOrderId),
+		api2.NewKV("markets", inputs.Market.Name),
+		api2.NewKV("account_id", 0)}
 	request.Endpoint = "https://api.coinex.com/v1/order/pending"
 
 	resp, err := runner(ctx, request)
@@ -421,18 +422,18 @@ func (service *Service) CancelOrder(ctx context.Context, inputs *brokerages.Canc
 
 func (service *Service) OrderStatus(ctx context.Context, inputs *brokerages.OrderStatusParams, runner brokerages.Handler) (*eagleApi.Order, error) {
 	request := new(networkAPI.Request)
-	request.Type = networkAPI.Type_GET
+	request.Method = networkAPI.Request_GET
 	request.Params = []*networkAPI.KV{
-		networkAPI.NewKV("access_id", service.Auth.AccessID),
-		networkAPI.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
+		api2.NewKV("access_id", service.Auth.AccessID),
+		api2.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
 	}
 	request.Headers = []*networkAPI.KV{
-		networkAPI.NewKV("authorization", service.generateAuthorization(request.Params)),
-		networkAPI.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
+		api2.NewKV("authorization", service.generateAuthorization(request.Params)),
+		api2.NewKV("tonce", fmt.Sprintf("%d", time.Now().UnixNano()/1e6)),
 	}
 	request.Params = []*networkAPI.KV{
-		networkAPI.NewKV("id", inputs.ServerOrderId),
-		networkAPI.NewKV("markets", inputs.Market.Name)}
+		api2.NewKV("id", inputs.ServerOrderId),
+		api2.NewKV("markets", inputs.Market.Name)}
 	request.Endpoint = "https://api.coinex.com/v1/order/status"
 
 	resp, err := runner(ctx, request)

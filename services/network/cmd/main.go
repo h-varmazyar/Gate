@@ -1,58 +1,80 @@
 package main
 
 import (
-	"github.com/h-varmazyar/Gate/pkg/envext"
+	"context"
+	"github.com/h-varmazyar/Gate/pkg/amqpext"
 	"github.com/h-varmazyar/Gate/pkg/service"
-	"github.com/h-varmazyar/Gate/services/network/internal/app"
+	"github.com/h-varmazyar/Gate/services/network/internal/app/IPs"
+	"github.com/h-varmazyar/Gate/services/network/internal/app/rateLimiters"
+	"github.com/h-varmazyar/Gate/services/network/internal/app/requests"
+	"github.com/h-varmazyar/Gate/services/network/internal/pkg/db"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"gopkg.in/yaml.v3"
+	"io/ioutil"
 	"net"
 )
 
-/**
-* Dear programmer:
-* When I wrote this code, only god And I know how it worked.
-* Now, only god knows it!
-*
-* Therefore, if you are trying to optimize this code And it fails(most surely),
-* please increase this counter as a warning for the next person:
-*
-* total_hours_wasted_here = 0 !!!
-*
-* Best regards, mr-nobody
-* Date: 12.11.21
-* Github: https://github.com/h-varmazyar
-* Email: hossein.varmazyar@yahoo.com
-**/
-
-type Configs struct {
-	GrpcPort uint16 `env:"GRPC_PORT,required"`
-}
-
-var (
-	Name    = "network"
-	Version = "v0.2.0"
-)
-
-func loadConfig() (*Configs, error) {
-	configs := new(Configs)
-	if err := envext.Load(configs); err != nil {
-		return nil, err
-	}
-	return configs, nil
-}
-
 func main() {
-	configs, err := loadConfig()
+	ctx := context.Background()
+	logger := log.New()
+	configs := loadConfigs(logger)
+
+	dbInstance, err := loadDB(ctx, configs.DB)
 	if err != nil {
-		log.WithError(err).Fatal("can not load service configs")
+		logger.WithError(err).Panic("failed to initiate databases")
 	}
 
-	service.Serve(configs.GrpcPort, func(lst net.Listener) error {
+	if err := amqpext.InitializeAMQP(configs.AMQPConfigs); err != nil {
+		logger.WithError(err).Panic("can not initialize AMQP")
+	}
+
+	initializeAndRegisterApps(ctx, logger, dbInstance, configs)
+}
+
+func loadConfigs(logger *log.Logger) *Configs {
+	configs := new(Configs)
+	confBytes, err := ioutil.ReadFile("../configs/local.yaml")
+	if err != nil {
+		logger.WithError(err).Fatal("can not load yaml file")
+	}
+	if err = yaml.Unmarshal(confBytes, configs); err != nil {
+		logger.WithError(err).Fatal("can not unmarshal yaml file")
+	}
+	return configs
+}
+
+func loadDB(ctx context.Context, configs *db.Configs) (*db.DB, error) {
+	return db.NewDatabase(ctx, configs)
+}
+
+func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, db *db.DB, configs *Configs) {
+	var err error
+	var ipsApp *IPs.App
+	ipsApp, err = IPs.NewApp(ctx, logger, db, configs.IPsApp)
+	if err != nil {
+		logger.Panicf("failed to initiate IPs service with error %v", err)
+	}
+
+	var rateLimitersApp *rateLimiters.App
+	rateLimitersApp, err = rateLimiters.NewApp(ctx, logger, db, configs.RateLimitersApp)
+	if err != nil {
+		logger.Panicf("failed to initiate rate limiters service with error %v", err)
+	}
+
+	var requestsApp *requests.App
+	requestsApp, err = requests.NewApp(ctx, logger, configs.RequestsApp, rateLimitersApp.Service, ipsApp.Service)
+	if err != nil {
+		logger.Panicf("failed to initiate requests service with error %v", err)
+	}
+
+	service.Serve(configs.GRPCPort, func(lst net.Listener) error {
 		server := grpc.NewServer()
-		app.NewService().RegisterServer(server)
+		requestsApp.Service.RegisterServer(server)
+		ipsApp.Service.RegisterServer(server)
+		rateLimitersApp.Service.RegisterServer(server)
 		return server.Serve(lst)
 	})
 
-	service.Start(Name, Version)
+	service.Start(configs.ServiceName, configs.Version)
 }

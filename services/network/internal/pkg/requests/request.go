@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	networkAPI "github.com/h-varmazyar/Gate/services/network/api"
+	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -23,22 +23,40 @@ type Request struct {
 	headers     http.Header
 	queryParams string
 	body        *bytes.Buffer
-	method      networkAPI.Type
+	method      networkAPI.RequestMethod
 }
 
-func New(Type networkAPI.Type, endpoint string) *Request {
-	return &Request{
-		Endpoint: endpoint,
+func New(input *networkAPI.Request, proxyURL *url.URL) (*Request, error) {
+	requestTransport := new(http.Transport)
+
+	if proxyURL != nil {
+		requestTransport.Proxy = http.ProxyURL(proxyURL)
+	}
+	requestTransport.TLSHandshakeTimeout = 30 * time.Second
+
+	request := &Request{
+		Endpoint: input.Endpoint,
 		httpClient: &http.Client{
-			Timeout: 20 * time.Second,
-			Transport: &http.Transport{
-				TLSHandshakeTimeout: 30 * time.Second,
-			},
+			Timeout:   20 * time.Second,
+			Transport: requestTransport,
 		},
-		method:  Type,
+		method:  input.Method,
 		body:    new(bytes.Buffer),
 		headers: http.Header{},
 	}
+
+	request.AddHeaders(input.Headers)
+	switch input.Method {
+	case networkAPI.Request_POST:
+		err := request.SetBody(input.Params)
+		if err != nil {
+			return nil, err
+		}
+	case networkAPI.Request_GET:
+		request.SetQueryParams(input.Params)
+	}
+
+	return request, nil
 }
 
 func (req *Request) AddHeaders(headers []*networkAPI.KV) {
@@ -47,7 +65,7 @@ func (req *Request) AddHeaders(headers []*networkAPI.KV) {
 	}
 }
 
-func (req *Request) AddQueryParams(params []*networkAPI.KV) {
+func (req *Request) SetQueryParams(params []*networkAPI.KV) {
 	qParams := url.Values{}
 	for _, param := range params {
 		qParams.Add(param.Key, parseValue(param))
@@ -55,7 +73,7 @@ func (req *Request) AddQueryParams(params []*networkAPI.KV) {
 	req.queryParams = qParams.Encode()
 }
 
-func (req *Request) AddBody(bodyParams []*networkAPI.KV) error {
+func (req *Request) SetBody(bodyParams []*networkAPI.KV) error {
 	bodyMap := make(map[string]string)
 	for _, param := range bodyParams {
 		bodyMap[param.Key] = parseValue(param)
@@ -76,7 +94,7 @@ func (req *Request) Do() (*networkAPI.Response, error) {
 	request.Header = req.headers
 	request.Header.Set("Content-Type", ContentTypeJson)
 	request.Header.Set("User-Agent", UserAgent)
-	if req.method == networkAPI.Type_GET {
+	if req.method == networkAPI.Request_GET {
 		request.URL.RawQuery = req.queryParams
 	}
 	response, err := req.httpClient.Do(request)
@@ -90,8 +108,8 @@ func (req *Request) Do() (*networkAPI.Response, error) {
 		return nil, err
 	}
 	return &networkAPI.Response{
-		Code:     int32(response.StatusCode),
-		Response: string(body),
+		Code: int32(response.StatusCode),
+		Body: string(body),
 	}, nil
 }
 

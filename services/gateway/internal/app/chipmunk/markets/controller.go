@@ -53,7 +53,7 @@ func (c Controller) create(res http.ResponseWriter, req *http.Request) {
 
 func (c Controller) list(res http.ResponseWriter, req *http.Request) {
 	list := new(chipmunkApi.MarketListRequest)
-	brokerageIDs := mux.QueryParam(req, "brokerage-id")
+	brokerageIDs := mux.QueryParam(req, "core-id")
 	if len(brokerageIDs) != 0 {
 		list.BrokerageID = brokerageIDs[0]
 	}

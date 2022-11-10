@@ -4,7 +4,7 @@ import (
 	gorilla "github.com/gorilla/mux"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/httpext"
-	coreApi "github.com/h-varmazyar/Gate/services/core/api"
+	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	"github.com/h-varmazyar/Gate/services/gateway/configs"
 	"net/http"
 )
@@ -19,9 +19,9 @@ type Handler struct {
 
 func HandlerInstance() *Handler {
 	if handler == nil {
-		brokerageConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
+		coreConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Core)
 		handler = &Handler{
-			brokerageService: coreApi.NewBrokerageServiceClient(brokerageConn),
+			brokerageService: coreApi.NewBrokerageServiceClient(coreConn),
 		}
 	}
 	return handler
@@ -31,9 +31,9 @@ func (h Handler) RegisterRoutes(router *gorilla.Router) {
 	brokerage := router.PathPrefix("/brokerages").Subrouter()
 
 	brokerage.HandleFunc("/create", h.create).Methods(http.MethodPost)
-	//brokerage.HandleFunc("/active", h.returnActive).Methods(http.MethodGet)
-	//brokerage.HandleFunc("/start", h.start).Methods(http.MethodPost)
-	//brokerage.HandleFunc("/stop", h.stop).Methods(http.MethodPost)
+	//core.HandleFunc("/active", h.returnActive).Methods(http.MethodGet)
+	//core.HandleFunc("/start", h.start).Methods(http.MethodPost)
+	//core.HandleFunc("/stop", h.stop).Methods(http.MethodPost)
 }
 
 func (h Handler) create(res http.ResponseWriter, req *http.Request) {
@@ -50,14 +50,14 @@ func (h Handler) create(res http.ResponseWriter, req *http.Request) {
 }
 
 func (h Handler) returnActive(res http.ResponseWriter, req *http.Request) {
-	//if brokerage, err := h.brokerageService.Active(req.Context(), &coreApi.ActiveBrokerageReq{
+	//if core, err := h.brokerageService.Active(req.Context(), &coreApi.ActiveBrokerageReq{
 	//	WithMarkets:     true,
 	//	WithResolutions: true,
 	//}); err != nil {
 	//	httpext.SendError(res, req, err)
 	//} else {
 	//	response := new(Brokerage)
-	//	mapper.Struct(brokerage, response)
+	//	mapper.Struct(core, response)
 	//	httpext.SendModel(res, req, http.StatusOK, response)
 	//}
 }

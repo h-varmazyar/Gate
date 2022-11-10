@@ -1,6 +1,11 @@
 service_name:
 version:
 grpc_port:
+amqp_configs:
+  connection:
+coinex_configs:
+  coinex_callback_queue:
+  chipmunk_ohlc_queue:
 brokerages_app:
   service_configs:
     chipmunk_grpc_address:

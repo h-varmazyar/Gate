@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.12.4
-// source: services/core/api/src/brokerage.proto
+// source: services/core/api/proto/src/brokerage.proto
 
-package api
+package proto
 
 import (
 	context "context"
@@ -316,5 +316,5 @@ var BrokerageService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "services/core/api/src/brokerage.proto",
+	Metadata: "services/core/api/proto/src/brokerage.proto",
 }

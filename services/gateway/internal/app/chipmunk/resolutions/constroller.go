@@ -54,7 +54,7 @@ func (c Controller) create(res http.ResponseWriter, req *http.Request) {
 func (c Controller) list(res http.ResponseWriter, req *http.Request) {
 	listReq := new(chipmunkApi.GetResolutionListRequest)
 
-	brokerageNames := mux.QueryParam(req, "brokerage-id")
+	brokerageNames := mux.QueryParam(req, "core-id")
 	if len(brokerageNames) != 0 {
 		listReq.BrokerageName = brokerageNames[0]
 	}

@@ -51,7 +51,7 @@ func (c *brokerageController) show(ctx app.Context) error {
 		return ctx.Error(http.StatusBadRequest, err)
 	}
 
-	ctx.Set("brokerage", brokerage)
+	ctx.Set("core", brokerage)
 	return ctx.Render(http.StatusOK, "brokerages/show", viewHelpers.Sum, viewHelpers.ResolutionLabel)
 }
 
@@ -102,8 +102,8 @@ func (c *brokerageController) add(ctx app.Context) error {
 	if brokerageName, ok := brokerageApi.Names_value[ctx.Request().Form.Get("brokerageRadio")]; ok {
 		brokerage.Name = brokerageApi.Names(brokerageName)
 	} else {
-		log.Error("brokerage name not:", ctx.Request().Form.Get("brokerageRadio"))
-		return errors.NewWithSlug(ctx, codes.FailedPrecondition, "wrong brokerage name")
+		log.Error("core name not:", ctx.Request().Form.Get("brokerageRadio"))
+		return errors.NewWithSlug(ctx, codes.FailedPrecondition, "wrong core name")
 	}
 	brokerage.Auth = &api.Auth{
 		AccessID:  ctx.Request().Form.Get("access-id"),

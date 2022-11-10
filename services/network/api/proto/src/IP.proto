@@ -1,0 +1,49 @@
+syntax = "proto3";
+package networkAPI;
+option go_package = "github.com/h-varmazyar/Gate/services/network/api/proto";
+
+service IPService {
+  rpc Create(IPCreateReq) returns (IP);
+  rpc Return(IPReturnReq) returns (IP);
+  rpc List(IPListReq) returns (IPs);
+}
+
+message IPCreateReq{
+  // @inject_tag: json:"address"
+  string Address = 1;
+  // @inject_tag: json:"port"
+  uint32 Port = 2;
+  // @inject_tag: json:"username"
+  string Username = 3;
+  // @inject_tag: json:"password"
+  string Password = 4;
+}
+
+message IPReturnReq{
+  // @inject_tag: json:"id"
+  string ID = 1;
+}
+
+message IPListReq{}
+
+message IP{
+  // @inject_tag: json:"id"
+  string ID = 1;
+  // @inject_tag: json:"updated_at"
+  int64 UpdatedAt = 2;
+  // @inject_tag: json:"created_at"
+  int64 CreatedAt = 3;
+  // @inject_tag: json:"address"
+  string Address = 4;
+  // @inject_tag: json:"port"
+  uint32 Port = 5;
+  // @inject_tag: json:"username"
+  string Username = 6;
+  // @inject_tag: json:"password"
+  string Password = 7;
+}
+
+message IPs{
+  // @inject_tag: json:"elements"
+  repeated IP Elements = 1;
+}

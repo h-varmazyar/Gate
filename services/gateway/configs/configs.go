@@ -12,7 +12,7 @@ type Configs struct {
 	Version       string `env:"VERSION,required"`
 	HttpPort      uint16 `env:"HTTP_PORT,required"`
 	GrpcAddresses struct {
-		Brokerage   string `env:"BROKERAGE_GRPC_ADDRESS,required"`
+		Core        string `env:"CORE_GRPC_ADDRESS,required"`
 		Chipmunk    string `env:"CHIPMUNK_GRPC_ADDRESS,required"`
 		Eagle       string `env:"EAGLE_GRPC_ADDRESS,required"`
 		TelegramBot string `env:"TELEGRAM_BOT_ADDRESS,required"`

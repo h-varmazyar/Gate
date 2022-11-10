@@ -3,7 +3,7 @@ package brokerages
 import (
 	"github.com/h-varmazyar/Gate/api"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	coreApi "github.com/h-varmazyar/Gate/services/core/api"
+	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 )
 
 type Brokerage struct {

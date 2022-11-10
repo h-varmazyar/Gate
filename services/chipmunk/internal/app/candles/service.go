@@ -45,7 +45,7 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 //	settings := new(WorkerSettings)
 //	var (
 //		err       error
-//		brokerage *coreApi.Brokerage
+//		core *coreApi.Brokerage
 //		strategy  *eagleApi.Strategy
 //	)
 //
@@ -56,13 +56,13 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 //		return nil, err
 //	}
 //
-//	brokerage, err = s.brokerageService.Return(ctx, &coreApi.ReturnBrokerageReq{ID: req.BrokerageID})
+//	core, err = s.brokerageService.Return(ctx, &coreApi.ReturnBrokerageReq{ID: req.BrokerageID})
 //	if err != nil {
 //		return nil, err
 //	}
 //
 //	strategy, err = s.strategyService.Return(ctx, &eagleApi.ReturnStrategyReq{
-//		ID: brokerage.StrategyID,
+//		ID: core.StrategyID,
 //	})
 //	if err != nil {
 //		return nil, err
@@ -72,7 +72,7 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 //		log.WithError(err).Error("failed to parse indicators")
 //		return nil, err
 //	}
-//	settings.Resolution = brokerage.Resolution
+//	settings.Resolution = core.Resolution
 //	Worker.AddMarket(settings)
 //	return &api.Void{}, nil
 //}

@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.12.4
-// source: services/core/api/src/functions.proto
+// source: services/core/api/proto/src/functions.proto
 
-package api
+package proto
 
 import (
 	context "context"
@@ -32,6 +32,7 @@ type FunctionsServiceClient interface {
 	NewOrder(ctx context.Context, in *NewOrderReq, opts ...grpc.CallOption) (*api2.Order, error)
 	CancelOrder(ctx context.Context, in *CancelOrderReq, opts ...grpc.CallOption) (*api2.Order, error)
 	OrderStatus(ctx context.Context, in *OrderStatusReq, opts ...grpc.CallOption) (*api2.Order, error)
+	AsyncTest(ctx context.Context, in *api1.Void, opts ...grpc.CallOption) (*api1.Void, error)
 }
 
 type functionsServiceClient struct {
@@ -105,6 +106,15 @@ func (c *functionsServiceClient) OrderStatus(ctx context.Context, in *OrderStatu
 	return out, nil
 }
 
+func (c *functionsServiceClient) AsyncTest(ctx context.Context, in *api1.Void, opts ...grpc.CallOption) (*api1.Void, error) {
+	out := new(api1.Void)
+	err := c.cc.Invoke(ctx, "/coreApi.FunctionsService/AsyncTest", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FunctionsServiceServer is the server API for FunctionsService service.
 // All implementations should embed UnimplementedFunctionsServiceServer
 // for forward compatibility
@@ -116,6 +126,7 @@ type FunctionsServiceServer interface {
 	NewOrder(context.Context, *NewOrderReq) (*api2.Order, error)
 	CancelOrder(context.Context, *CancelOrderReq) (*api2.Order, error)
 	OrderStatus(context.Context, *OrderStatusReq) (*api2.Order, error)
+	AsyncTest(context.Context, *api1.Void) (*api1.Void, error)
 }
 
 // UnimplementedFunctionsServiceServer should be embedded to have forward compatible implementations.
@@ -142,6 +153,9 @@ func (UnimplementedFunctionsServiceServer) CancelOrder(context.Context, *CancelO
 }
 func (UnimplementedFunctionsServiceServer) OrderStatus(context.Context, *OrderStatusReq) (*api2.Order, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method OrderStatus not implemented")
+}
+func (UnimplementedFunctionsServiceServer) AsyncTest(context.Context, *api1.Void) (*api1.Void, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AsyncTest not implemented")
 }
 
 // UnsafeFunctionsServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -281,6 +295,24 @@ func _FunctionsService_OrderStatus_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FunctionsService_AsyncTest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(api1.Void)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FunctionsServiceServer).AsyncTest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/coreApi.FunctionsService/AsyncTest",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FunctionsServiceServer).AsyncTest(ctx, req.(*api1.Void))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FunctionsService_ServiceDesc is the grpc.ServiceDesc for FunctionsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -316,7 +348,11 @@ var FunctionsService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "OrderStatus",
 			Handler:    _FunctionsService_OrderStatus_Handler,
 		},
+		{
+			MethodName: "AsyncTest",
+			Handler:    _FunctionsService_AsyncTest_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "services/core/api/src/functions.proto",
+	Metadata: "services/core/api/proto/src/functions.proto",
 }

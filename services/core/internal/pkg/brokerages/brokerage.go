@@ -4,7 +4,7 @@ import (
 	"context"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
-	networkAPI "github.com/h-varmazyar/Gate/services/network/api"
+	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 )
 
 type Handler func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error)
@@ -20,8 +20,8 @@ type Brokerage interface {
 	OrderStatus(context.Context, *OrderStatusParams, Handler) (*eagleApi.Order, error)
 }
 
-type Response struct {
-	ID     string
-	Method string
-	*networkAPI.Response
-}
+//type Response struct {
+//	ID     string
+//	Method string
+//	*networkAPI.Response
+//}

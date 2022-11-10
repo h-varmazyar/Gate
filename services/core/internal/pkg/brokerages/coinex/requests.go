@@ -5,10 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
-	networkAPI "github.com/h-varmazyar/Gate/services/network/api"
+	"github.com/h-varmazyar/Gate/services/network/api/proto"
+	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
+	log "github.com/sirupsen/logrus"
 )
 
 type Request struct {
+	configs *Configs
+}
+
+func NewRequest(configs *Configs) *Request {
+	return &Request{configs: configs}
 }
 
 var (
@@ -18,7 +25,8 @@ var (
 	ErrWrongEndTime   = errors.New("end time must be grater than 0")
 )
 
-func (*Request) OHLC(_ context.Context, inputs *brokerages.OHLCParams) (*networkAPI.Request, error) {
+func (r *Request) OHLC(_ context.Context, inputs *brokerages.OHLCParams) (*networkAPI.Request, error) {
+	log.Infof("in async OHLC")
 	if inputs.Resolution == nil {
 		return nil, ErrNilResolution
 	}
@@ -33,7 +41,8 @@ func (*Request) OHLC(_ context.Context, inputs *brokerages.OHLCParams) (*network
 	}
 
 	request := new(networkAPI.Request)
-	request.Type = networkAPI.Type_GET
+	request.Method = networkAPI.Request_GET
+	request.CallbackQueue = r.configs.CoinexCallbackQueue
 	resolutionSeconds := inputs.Resolution.Duration / 1e6
 	count := int64(inputs.To.Sub(inputs.From)) / resolutionSeconds
 	if (int64(inputs.To.Sub(inputs.From)) % resolutionSeconds) > 0 {
@@ -41,16 +50,16 @@ func (*Request) OHLC(_ context.Context, inputs *brokerages.OHLCParams) (*network
 	}
 	if int64(count) >= 1000 {
 		request.Params = []*networkAPI.KV{
-			networkAPI.NewKV("market", inputs.Market.Name),
-			networkAPI.NewKV("interval", inputs.Resolution.Value),
-			networkAPI.NewKV("start_time", fmt.Sprintf("%v", inputs.From.Unix())),
-			networkAPI.NewKV("end_time", fmt.Sprintf("%v", inputs.To.Unix()))}
+			api.NewKV("market", inputs.Market.Name),
+			api.NewKV("interval", inputs.Resolution.Value),
+			api.NewKV("start_time", fmt.Sprintf("%v", inputs.From.Unix())),
+			api.NewKV("end_time", fmt.Sprintf("%v", inputs.To.Unix()))}
 		request.Endpoint = "https://www.coinex.com/res/market/kline"
 	} else {
 		request.Params = []*networkAPI.KV{
-			networkAPI.NewKV("markets", inputs.Market.Name),
-			networkAPI.NewKV("type", inputs.Resolution.Label),
-			networkAPI.NewKV("limit", fmt.Sprintf("%v", int64(count))),
+			api.NewKV("markets", inputs.Market.Name),
+			api.NewKV("type", inputs.Resolution.Label),
+			api.NewKV("limit", fmt.Sprintf("%v", int64(count))),
 		}
 		request.Endpoint = "https://api.coinex.com/v1/market/kline"
 	}

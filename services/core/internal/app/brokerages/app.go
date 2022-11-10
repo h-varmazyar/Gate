@@ -9,7 +9,6 @@ import (
 )
 
 type App struct {
-	db      repository.BrokerageRepository
 	Service *service.Service
 }
 
@@ -19,7 +18,6 @@ func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs *Configs
 		return nil, err
 	}
 	return &App{
-		db:      repositoryInstance,
 		Service: service.NewService(ctx, logger, configs.ServiceConfigs, repositoryInstance),
 	}, nil
 }

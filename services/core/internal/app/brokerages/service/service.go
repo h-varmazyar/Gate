@@ -8,7 +8,7 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	brokerageApi "github.com/h-varmazyar/Gate/services/core/api"
+	brokerageApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	"github.com/h-varmazyar/Gate/services/core/internal/app/brokerages/repository"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/entity"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
@@ -93,7 +93,7 @@ func (s *Service) Start(ctx context.Context, req *brokerageApi.BrokerageStartReq
 	}
 
 	brokerage.Status = api.Status_Enable
-	//if err := repository.Brokerages.ChangeStatus(brokerage.ID); err != nil {
+	//if err := repository.Brokerages.ChangeStatus(core.ID); err != nil {
 	//	return nil, err
 	//}
 
@@ -103,8 +103,8 @@ func (s *Service) Start(ctx context.Context, req *brokerageApi.BrokerageStartReq
 			ResolutionID: brokerage.ResolutionID.String(),
 			StrategyID:   brokerage.StrategyID.String()})
 		if err != nil {
-			//if statusErr := repository.Brokerages.ChangeStatus(brokerage.ID); statusErr != nil {
-			//	log.WithError(statusErr).Errorf("failed ot change status of brokerage %v to %v", brokerage.ID, brokerage.Status)
+			//if statusErr := repository.Brokerages.ChangeStatus(core.ID); statusErr != nil {
+			//	log.WithError(statusErr).Errorf("failed ot change status of core %v to %v", core.ID, core.Status)
 			//}
 			return nil, err
 		}
@@ -113,9 +113,9 @@ func (s *Service) Start(ctx context.Context, req *brokerageApi.BrokerageStartReq
 		if _, err = s.walletService.StartWorker(ctx, &chipmunkApi.StartWorkerRequest{
 			BrokerageID: req.ID,
 		}); err != nil {
-			log.WithError(err).WithField("brokerage", brokerage.ID).Error("failed to start wallet worker")
-			//if statusErr := repository.Brokerages.ChangeStatus(brokerage.ID); statusErr != nil {
-			//	log.WithError(statusErr).Errorf("failed ot change status of brokerage %v to %v", brokerage.ID, brokerage.Status)
+			log.WithError(err).WithField("core", brokerage.ID).Error("failed to start wallet worker")
+			//if statusErr := repository.Brokerages.ChangeStatus(core.ID); statusErr != nil {
+			//	log.WithError(statusErr).Errorf("failed ot change status of core %v to %v", core.ID, core.Status)
 			//}
 			return nil, err
 		}
@@ -125,13 +125,13 @@ func (s *Service) Start(ctx context.Context, req *brokerageApi.BrokerageStartReq
 			WithTrading: false,
 		}); err != nil {
 			if _, marketErr := s.marketService.StopWorker(ctx, &chipmunkApi.WorkerStopReq{BrokerageID: brokerageID.String()}); marketErr != nil {
-				log.WithError(marketErr).Errorf("failed to stop market worker for brokerage %v", brokerageID)
+				log.WithError(marketErr).Errorf("failed to stop market worker for core %v", brokerageID)
 			}
 			if _, walletErr := s.walletService.StopWorker(ctx, new(api.Void)); walletErr != nil {
-				log.WithError(walletErr).Errorf("failed to stop wallet worker for brokerage %v", brokerageID)
+				log.WithError(walletErr).Errorf("failed to stop wallet worker for core %v", brokerageID)
 			}
-			//if statusErr := repository.Brokerages.ChangeStatus(brokerage.ID); statusErr != nil {
-			//	log.WithError(statusErr).Errorf("failed ot change status of brokerage %v to %v", brokerage.ID, brokerage.Status)
+			//if statusErr := repository.Brokerages.ChangeStatus(core.ID); statusErr != nil {
+			//	log.WithError(statusErr).Errorf("failed ot change status of core %v to %v", core.ID, core.Status)
 			//}
 			return nil, err
 		}
@@ -161,10 +161,10 @@ func (s *Service) Stop(ctx context.Context, req *brokerageApi.BrokerageStopReq) 
 		return nil, err
 	}
 	if _, err = s.walletService.StopWorker(ctx, &api.Void{}); err != nil {
-		log.WithError(err).WithField("brokerage", brokerage.ID).Error("failed to stop wallet worker")
+		log.WithError(err).WithField("core", brokerage.ID).Error("failed to stop wallet worker")
 	}
 	if _, err = s.signalService.Stop(ctx, &api.Void{}); err != nil {
-		log.WithError(err).WithField("brokerage", brokerage.ID).Error("failed to stop signal worker")
+		log.WithError(err).WithField("core", brokerage.ID).Error("failed to stop signal worker")
 	}
 
 	brokerage.Status = api.Status_Enable

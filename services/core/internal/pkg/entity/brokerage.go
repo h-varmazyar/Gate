@@ -4,7 +4,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/api"
 	"github.com/h-varmazyar/Gate/pkg/gormext"
-	coreApi "github.com/h-varmazyar/Gate/services/core/api"
+	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 )
 
 type Brokerage struct {

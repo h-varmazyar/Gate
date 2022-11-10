@@ -10,7 +10,7 @@ import (
 )
 
 type Configs struct {
-	Connection string `env:"RABBITMQ_CONNECTION,file,required"`
+	Connection string `yaml:"connection"`
 }
 
 type client struct {
@@ -22,22 +22,23 @@ type client struct {
 }
 
 var (
-	configs *Configs
-	Client  *client
+	Client *client
 )
 
-func init() {
-	configs = new(Configs)
+func InitializeAMQP(configs *Configs) error {
 	if err := envext.Load(configs); err != nil {
-		log.WithError(err).Fatal("failed to load rabbitMQ configs")
+		log.WithError(err).Error("failed to load rabbitMQ configs")
+		return err
 	}
 	Client = &client{
 		Connection: configs.Connection,
 	}
 	if err := Client.connect(); err != nil {
-		log.WithError(err).Fatal("cannot connect to rabbitMQ")
+		log.WithError(err).Error("cannot connect to rabbitMQ")
+		return err
 	}
 	go Client.check()
+	return nil
 }
 
 func (c *client) QueueDeclare(key string) (*Queue, error) {
@@ -46,7 +47,7 @@ func (c *client) QueueDeclare(key string) (*Queue, error) {
 	q := &Queue{
 		client:   c,
 		key:      key,
-		name:     fmt.Sprintf("%v_name", key),
+		name:     fmt.Sprintf("%v_queue", key),
 		exchange: fmt.Sprintf("%v_exchange", key),
 		done:     make(chan error),
 	}

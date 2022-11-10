@@ -1,6 +1,6 @@
 syntax = "proto3";
 package coreApi;
-option go_package = "github.com/h-varmazyar/Gate/services/core/api";
+option go_package = "github.com/h-varmazyar/Gate/services/core/api/proto";
 import "services/chipmunk/api/src/wallet.proto";
 import "services/chipmunk/api/src/resolution.proto";
 import "services/chipmunk/api/src/market.proto";
@@ -16,6 +16,7 @@ service FunctionsService {
   rpc NewOrder(NewOrderReq) returns (eagleApi.Order);
   rpc CancelOrder(CancelOrderReq) returns (eagleApi.Order);
   rpc OrderStatus(OrderStatusReq) returns (eagleApi.Order);
+  rpc AsyncTest(api.Void) returns (api.Void);
 }
 
 message OHLCReq{
