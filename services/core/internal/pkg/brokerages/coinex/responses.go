@@ -5,7 +5,7 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/amqpext"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
+	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
@@ -28,7 +28,7 @@ func NewResponse(configs *Configs) (*Response, error) {
 	return r, nil
 }
 
-func (r *Response) OHLC(response *brokerages.Response) {
+func (r *Response) OHLC(response *networkAPI.Response) {
 	if response.Code != http.StatusOK {
 		log.Errorf("ohlc request failed with code: %v - %v", response.Code, response.Body)
 		return

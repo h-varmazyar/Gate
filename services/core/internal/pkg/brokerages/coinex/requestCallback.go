@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/h-varmazyar/Gate/pkg/amqpext"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
+	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 )
@@ -43,7 +44,7 @@ func (c *Callback) run() {
 }
 
 func (c *Callback) handleDelivery(delivery amqp.Delivery) {
-	response := new(brokerages.Response)
+	response := new(networkAPI.Response)
 	if err := json.Unmarshal(delivery.Body, response); err != nil {
 		_ = delivery.Nack(false, false)
 		log.WithError(err).Error("failed to unmarshal coinex callback delivery")
@@ -52,7 +53,14 @@ func (c *Callback) handleDelivery(delivery amqp.Delivery) {
 
 	_ = delivery.Ack(false)
 
-	switch response.Method {
+	metadata := new(brokerages.Metadata)
+	if err := json.Unmarshal([]byte(response.Metadata), metadata); err != nil {
+		_ = delivery.Nack(false, false)
+		log.WithError(err).Error("failed to unmarshal coinex callback delivery")
+		return
+	}
+
+	switch metadata.Method {
 	case MethodOHLC:
 		c.r.OHLC(response)
 	}

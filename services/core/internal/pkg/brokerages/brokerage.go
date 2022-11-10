@@ -20,8 +20,6 @@ type Brokerage interface {
 	OrderStatus(context.Context, *OrderStatusParams, Handler) (*eagleApi.Order, error)
 }
 
-//type Response struct {
-//	ID     string
-//	Method string
-//	*networkAPI.Response
-//}
+type Metadata struct {
+	Method string
+}

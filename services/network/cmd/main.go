@@ -53,19 +53,19 @@ func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, db *db.D
 	var ipsApp *IPs.App
 	ipsApp, err = IPs.NewApp(ctx, logger, db, configs.IPsApp)
 	if err != nil {
-		logger.Panicf("failed to initiate IPs service with error %v", err)
+		logger.WithError(err).Panicf("failed to initiate IPs service")
 	}
 
 	var rateLimitersApp *rateLimiters.App
 	rateLimitersApp, err = rateLimiters.NewApp(ctx, logger, db, configs.RateLimitersApp)
 	if err != nil {
-		logger.Panicf("failed to initiate rate limiters service with error %v", err)
+		logger.WithError(err).Panic("failed to initiate rate limiters service")
 	}
 
 	var requestsApp *requests.App
 	requestsApp, err = requests.NewApp(ctx, logger, configs.RequestsApp, rateLimitersApp.Service, ipsApp.Service)
 	if err != nil {
-		logger.Panicf("failed to initiate requests service with error %v", err)
+		logger.WithError(err).Panic("failed to initiate requests service")
 	}
 
 	service.Serve(configs.GRPCPort, func(lst net.Listener) error {

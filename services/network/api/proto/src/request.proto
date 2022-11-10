@@ -6,8 +6,6 @@ service RequestService {
   rpc Do(Request) returns (Response);
 }
 
-
-
 message KV {
   // @inject_tag: json:"key"
   string key = 1;
@@ -60,4 +58,10 @@ message Response {
   int32 Code = 1;
   // @inject_tag: json:"body"
   string Body = 2;
+  // @inject_tag: json:"metadata"
+  string Metadata = 3;
+  // @inject_tag: json:"type"
+  Request.type Type = 4;
+  // @inject_tag: json:"method"
+  Request.method Method = 5;
 }

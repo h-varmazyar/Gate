@@ -2,10 +2,10 @@ package coinex
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
-	"github.com/h-varmazyar/Gate/services/network/api/proto"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
 )
@@ -50,18 +50,23 @@ func (r *Request) OHLC(_ context.Context, inputs *brokerages.OHLCParams) (*netwo
 	}
 	if int64(count) >= 1000 {
 		request.Params = []*networkAPI.KV{
-			api.NewKV("market", inputs.Market.Name),
-			api.NewKV("interval", inputs.Resolution.Value),
-			api.NewKV("start_time", fmt.Sprintf("%v", inputs.From.Unix())),
-			api.NewKV("end_time", fmt.Sprintf("%v", inputs.To.Unix()))}
+			networkAPI.NewKV("market", inputs.Market.Name),
+			networkAPI.NewKV("interval", inputs.Resolution.Value),
+			networkAPI.NewKV("start_time", fmt.Sprintf("%v", inputs.From.Unix())),
+			networkAPI.NewKV("end_time", fmt.Sprintf("%v", inputs.To.Unix()))}
 		request.Endpoint = "https://www.coinex.com/res/market/kline"
 	} else {
 		request.Params = []*networkAPI.KV{
-			api.NewKV("markets", inputs.Market.Name),
-			api.NewKV("type", inputs.Resolution.Label),
-			api.NewKV("limit", fmt.Sprintf("%v", int64(count))),
+			networkAPI.NewKV("markets", inputs.Market.Name),
+			networkAPI.NewKV("type", inputs.Resolution.Label),
+			networkAPI.NewKV("limit", fmt.Sprintf("%v", int64(count))),
 		}
 		request.Endpoint = "https://api.coinex.com/v1/market/kline"
 	}
+
+	metadataBytes, _ := json.Marshal(&brokerages.Metadata{
+		Method: MethodOHLC,
+	})
+	request.Metadata = string(metadataBytes)
 	return request, nil
 }
