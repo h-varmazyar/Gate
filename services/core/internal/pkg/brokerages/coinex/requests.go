@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
-	log "github.com/sirupsen/logrus"
 )
 
 type Request struct {
@@ -26,7 +25,6 @@ var (
 )
 
 func (r *Request) OHLC(_ context.Context, inputs *brokerages.OHLCParams) (*networkAPI.Request, error) {
-	log.Infof("in async OHLC")
 	if inputs.Resolution == nil {
 		return nil, ErrNilResolution
 	}
@@ -43,8 +41,11 @@ func (r *Request) OHLC(_ context.Context, inputs *brokerages.OHLCParams) (*netwo
 	request := new(networkAPI.Request)
 	request.Method = networkAPI.Request_GET
 	request.CallbackQueue = r.configs.CoinexCallbackQueue
-	resolutionSeconds := inputs.Resolution.Duration / 1e6
+	resolutionSeconds := inputs.Resolution.Duration
 	count := int64(inputs.To.Sub(inputs.From)) / resolutionSeconds
+	if count < 0 {
+		count *= -1
+	}
 	if (int64(inputs.To.Sub(inputs.From)) % resolutionSeconds) > 0 {
 		count++
 	}

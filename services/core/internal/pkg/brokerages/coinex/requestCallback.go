@@ -2,6 +2,7 @@ package coinex
 
 import (
 	"encoding/json"
+	"github.com/golang/protobuf/proto"
 	"github.com/h-varmazyar/Gate/pkg/amqpext"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
@@ -45,7 +46,7 @@ func (c *Callback) run() {
 
 func (c *Callback) handleDelivery(delivery amqp.Delivery) {
 	response := new(networkAPI.Response)
-	if err := json.Unmarshal(delivery.Body, response); err != nil {
+	if err := proto.Unmarshal(delivery.Body, response); err != nil {
 		_ = delivery.Nack(false, false)
 		log.WithError(err).Error("failed to unmarshal coinex callback delivery")
 		return

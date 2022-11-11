@@ -14,10 +14,11 @@ import (
 )
 
 type Manager struct {
-	Limiters        map[uuid.UUID]*Limiter
-	IPs             map[uuid.UUID]*IP
-	cancelFunctions map[uuid.UUID]context.CancelFunc
-	lock            *sync.Mutex
+	Limiters         map[uuid.UUID]*Limiter
+	IPs              map[uuid.UUID]*IP
+	cancelFunctions  map[uuid.UUID]context.CancelFunc
+	lock             *sync.Mutex
+	defaultLimiterID uuid.UUID
 }
 
 func NewManager(ctx context.Context, Limiters []*networkAPI.RateLimiter, IPs []*networkAPI.IP) (*Manager, error) {
@@ -54,6 +55,21 @@ func NewManager(ctx context.Context, Limiters []*networkAPI.RateLimiter, IPs []*
 		manager.cancelFunctions[ipID] = cancelFunc
 	}
 
+	if len(IPs) == 0 {
+		ipCtx, cancelFunc := context.WithCancel(ctx)
+		id := uuid.New()
+		manager.IPs[id] = &IP{
+			ID:  id,
+			ctx: ipCtx,
+		}
+		manager.cancelFunctions[id] = cancelFunc
+	}
+
+	if len(Limiters) == 0 {
+		defaultLimiter := manager.getDefaultLimiter()
+		Limiters = append(Limiters, defaultLimiter)
+	}
+
 	for _, limiter := range Limiters {
 		limiterID, err := uuid.Parse(limiter.ID)
 		if err != nil {
@@ -71,11 +87,29 @@ func NewManager(ctx context.Context, Limiters []*networkAPI.RateLimiter, IPs []*
 	}
 	return manager, nil
 }
+func (m *Manager) getDefaultLimiter() *networkAPI.RateLimiter {
+	id := uuid.New()
+	defaultLimiter := &networkAPI.RateLimiter{
+		ID:                id.String(),
+		RequestCountLimit: 400,
+		TimeLimit:         int64(time.Minute),
+		Type:              networkAPI.RateLimiter_Spread,
+	}
+	m.defaultLimiterID = id
+	return defaultLimiter
+}
 
 func (m *Manager) AddNewRequest(ctx context.Context, request *networkAPI.Request) error {
-	limiterID, err := uuid.Parse(request.RateLimiterID)
-	if err != nil {
-		return err
+	var limiterID uuid.UUID
+	if request.RateLimiterID != "" {
+		var err error
+		limiterID, err = uuid.Parse(request.RateLimiterID)
+		if err != nil {
+			log.WithError(err).Errorf("invalid rate limiter id %v", request.RateLimiterID)
+			return err
+		}
+	} else {
+		limiterID = m.defaultLimiterID
 	}
 	_, ok := m.Limiters[limiterID]
 	if !ok {

@@ -36,7 +36,7 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 func (s *Service) Do(ctx context.Context, req *networkAPI.Request) (*networkAPI.Response, error) {
 	log.Infof("new request: %v", req.Endpoint)
 
-	var response *networkAPI.Response
+	response := new(networkAPI.Response)
 	var err error
 	if req.Type == networkAPI.Request_Async {
 		err = s.rateLimiterManager.AddNewRequest(ctx, req)

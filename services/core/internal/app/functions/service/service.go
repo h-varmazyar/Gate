@@ -76,7 +76,7 @@ func (s *Service) AsyncTest(ctx context.Context, req *api.Void) (*api.Void, erro
 	log.Infof("in async test")
 	resolution := &chipmunkApi.Resolution{
 		BrokerageName: "Coinex",
-		Duration:      int64(900000000000),
+		Duration:      int64(time.Minute * 15),
 		Label:         "15min",
 		Value:         "900",
 		ID:            "ab28acd0-3517-483f-b3a1-7bd879fa85d0",
@@ -85,7 +85,7 @@ func (s *Service) AsyncTest(ctx context.Context, req *api.Void) (*api.Void, erro
 	market := &chipmunkApi.Market{
 		Name: "LPTUSDT",
 	}
-	start := time.Now()
+	to := time.Now()
 
 	c := &coinex.Configs{
 		CoinexCallbackQueue: "coinex_callback",
@@ -93,12 +93,12 @@ func (s *Service) AsyncTest(ctx context.Context, req *api.Void) (*api.Void, erro
 	}
 	coinexRequest := coinex.NewRequest(c)
 	for i := 0; i < 5; i++ {
-		end := time.Unix(start.Unix(), start.UnixNano()).Add(time.Duration(resolution.Duration * 1000 * -1))
+		from := to.Add(time.Duration(resolution.Duration * 1000 * -1))
 		inputs := &brokerages.OHLCParams{
 			Resolution: resolution,
 			Market:     market,
-			From:       start,
-			To:         end,
+			From:       from,
+			To:         to,
 		}
 		request, err := coinexRequest.OHLC(ctx, inputs)
 		if err != nil {
@@ -108,7 +108,7 @@ func (s *Service) AsyncTest(ctx context.Context, req *api.Void) (*api.Void, erro
 		request.Type = networkAPI.Request_Async
 
 		go func() {
-			resp, err := s.requestService.Async(context.Background(), request)
+			resp, err := s.requestService.Do(context.Background(), request)
 			if err != nil {
 				log.WithError(err).Errorf("failed to do request: %v", request)
 				return
@@ -116,7 +116,7 @@ func (s *Service) AsyncTest(ctx context.Context, req *api.Void) (*api.Void, erro
 			log.Infof("resp is : %v", resp)
 		}()
 
-		start = end
+		to = from
 	}
 
 	return new(api.Void), nil

@@ -24,6 +24,8 @@ type Request struct {
 	queryParams string
 	body        *bytes.Buffer
 	method      networkAPI.RequestMethod
+	metadata    string
+	Type        networkAPI.RequestType
 }
 
 func New(input *networkAPI.Request, proxyURL *url.URL) (*Request, error) {
@@ -40,9 +42,11 @@ func New(input *networkAPI.Request, proxyURL *url.URL) (*Request, error) {
 			Timeout:   20 * time.Second,
 			Transport: requestTransport,
 		},
-		method:  input.Method,
-		body:    new(bytes.Buffer),
-		headers: http.Header{},
+		method:   input.Method,
+		body:     new(bytes.Buffer),
+		headers:  http.Header{},
+		Type:     input.Type,
+		metadata: input.Metadata,
 	}
 
 	request.AddHeaders(input.Headers)
@@ -108,8 +112,11 @@ func (req *Request) Do() (*networkAPI.Response, error) {
 		return nil, err
 	}
 	return &networkAPI.Response{
-		Code: int32(response.StatusCode),
-		Body: string(body),
+		Code:     int32(response.StatusCode),
+		Body:     string(body),
+		Metadata: req.metadata,
+		Type:     req.Type,
+		Method:   req.method,
 	}, nil
 }
 
