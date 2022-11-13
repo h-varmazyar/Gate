@@ -30,9 +30,9 @@ func NewManager(ctx context.Context, Limiters []*networkAPI.RateLimiter, IPs []*
 	for _, ip := range IPs {
 		proxyAddress := ""
 		if ip.Username != "" && ip.Password != "" {
-			proxyAddress = fmt.Sprintf("%v:%v@%v:%v", ip.Username, ip.Password, ip.Address, ip.Port)
+			proxyAddress = fmt.Sprintf("%v://%v:%v@%v:%v", ip.Schema, ip.Username, ip.Password, ip.Address, ip.Port)
 		} else {
-			proxyAddress = fmt.Sprintf("%v:%v", ip.Address, ip.Port)
+			proxyAddress = fmt.Sprintf("%v://%v:%v", ip.Schema, ip.Address, ip.Port)
 		}
 		proxyURL, err := url.Parse(proxyAddress)
 		if err != nil {
@@ -58,10 +58,25 @@ func NewManager(ctx context.Context, Limiters []*networkAPI.RateLimiter, IPs []*
 	if len(IPs) == 0 {
 		ipCtx, cancelFunc := context.WithCancel(ctx)
 		id := uuid.New()
+
+		proxyAddress := fmt.Sprintf("221.231.13.198:1080")
+		proxyURL, _ := url.Parse(proxyAddress)
+
 		manager.IPs[id] = &IP{
-			ID:  id,
-			ctx: ipCtx,
+			ID:       id,
+			Schema:   "http",
+			Address:  "221.231.13.198",
+			Username: "",
+			Password: "",
+			Port:     1080,
+			proxyURL: proxyURL,
+			ctx:      ipCtx,
 		}
+
+		//manager.IPs[id] = &IP{
+		//	ID:  id,
+		//	ctx: ipCtx,
+		//}
 		manager.cancelFunctions[id] = cancelFunc
 	}
 

@@ -17,6 +17,8 @@ message IPCreateReq{
   string Username = 3;
   // @inject_tag: json:"password"
   string Password = 4;
+  // @inject_tag: json:"schema"
+  string Schema =5;
 }
 
 message IPReturnReq{
@@ -41,6 +43,8 @@ message IP{
   string Username = 6;
   // @inject_tag: json:"password"
   string Password = 7;
+  // @inject_tag: json:"schema"
+  string Schema = 8;
 }
 
 message IPs{

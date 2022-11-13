@@ -2,14 +2,16 @@ package requests
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 )
 
 const (
@@ -33,13 +35,12 @@ func New(input *networkAPI.Request, proxyURL *url.URL) (*Request, error) {
 
 	if proxyURL != nil {
 		requestTransport.Proxy = http.ProxyURL(proxyURL)
+		requestTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
-	requestTransport.TLSHandshakeTimeout = 30 * time.Second
 
 	request := &Request{
 		Endpoint: input.Endpoint,
 		httpClient: &http.Client{
-			Timeout:   20 * time.Second,
 			Transport: requestTransport,
 		},
 		method:   input.Method,
@@ -90,9 +91,36 @@ func (req *Request) SetBody(bodyParams []*networkAPI.KV) error {
 	return nil
 }
 
+func getIP(req *http.Request) {
+
+	ip, port, err := net.SplitHostPort(req.RemoteAddr)
+	if err != nil {
+		//return nil, fmt.Errorf("userip: %q is not IP:port", req.RemoteAddr)
+
+		fmt.Printf("userip: %q is not IP:port\n", req.RemoteAddr)
+	}
+
+	userIP := net.ParseIP(ip)
+	if userIP == nil {
+		//return nil, fmt.Errorf("userip: %q is not IP:port", req.RemoteAddr)
+		fmt.Printf("userip: %q is not IP:port\n", req.RemoteAddr)
+		return
+	}
+
+	// This will only be defined when site is accessed via non-anonymous proxy
+	// and takes precedence over RemoteAddr
+	// Header.Get is case-insensitive
+	forward := req.Header.Get("X-Forwarded-For")
+
+	fmt.Printf("<p>IP: %s</p>\n", ip)
+	fmt.Printf("<p>Port: %s</p>\n", port)
+	fmt.Printf("<p>Forwarded for: %s</p>\n", forward)
+}
+
 func (req *Request) Do() (*networkAPI.Response, error) {
 	request, err := http.NewRequest(strings.ToUpper(req.method.String()), req.Endpoint, req.body)
 	if err != nil {
+		log.WithError(err).Errorf("failed to create request")
 		return nil, err
 	}
 	request.Header = req.headers
@@ -103,6 +131,7 @@ func (req *Request) Do() (*networkAPI.Response, error) {
 	}
 	response, err := req.httpClient.Do(request)
 	if err != nil {
+		log.WithError(err).Errorf("failed to make request")
 		return nil, err
 	}
 	defer response.Body.Close()

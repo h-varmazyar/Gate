@@ -15,6 +15,7 @@ import (
 
 type IP struct {
 	ID       uuid.UUID
+	Schema   string
 	Address  string
 	Username string
 	Password string
