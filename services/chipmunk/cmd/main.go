@@ -5,6 +5,7 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/amqpext"
 	"github.com/h-varmazyar/Gate/pkg/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/assets"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/db"
 	log "github.com/sirupsen/logrus"
@@ -60,10 +61,17 @@ func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstan
 		logger.WithError(err).Panicf("failed to initiate markets app")
 	}
 
+	var candlesApp *candles.App
+	candlesApp, err = candles.NewApp(ctx, logger, dbInstance, configs.CandlesApp)
+	if err != nil {
+		logger.WithError(err).Panicf("failed to initiate markets app")
+	}
+
 	service.Serve(configs.GRPCPort, func(lst net.Listener) error {
 		server := grpc.NewServer()
 		assetsApp.Service.RegisterServer(server)
 		marketsApp.Service.RegisterServer(server)
+		candlesApp.Service.RegisterServer(server)
 		return server.Serve(lst)
 	})
 
