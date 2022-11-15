@@ -1,4 +1,4 @@
-package assets
+package service
 
 import (
 	"context"
@@ -6,21 +6,27 @@ import (
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/api"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/assets/repository"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"time"
 )
 
 type Service struct {
+	logger *log.Logger
+	db     repository.AssetRepository
 }
 
 var (
 	GrpcService *Service
 )
 
-func NewService() *Service {
+func NewService(_ context.Context, logger *log.Logger, _ *Configs, db repository.AssetRepository) *Service {
 	if GrpcService == nil {
 		GrpcService = new(Service)
+		GrpcService.logger = logger
+		GrpcService.db = db
 	}
 	return GrpcService
 }
@@ -30,7 +36,7 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 }
 
 func (s *Service) Set(_ context.Context, asset *chipmunkApi.Asset) (*api.Void, error) {
-	tmp := new(repository.Asset)
+	tmp := new(entity.Asset)
 	tmp.Name = asset.Name
 	tmp.Symbol = asset.Symbol
 	tmp.ID, _ = uuid.Parse(asset.ID)
@@ -39,12 +45,12 @@ func (s *Service) Set(_ context.Context, asset *chipmunkApi.Asset) (*api.Void, e
 	} else {
 		tmp.IssueDate = time.Unix(asset.IssueDate, 0)
 	}
-	_, err := repository.Assets.Set(tmp)
+	_, err := s.db.Set(tmp)
 	return &api.Void{}, err
 }
 
 func (s *Service) Get(_ context.Context, req *chipmunkApi.GetAssetRequest) (*chipmunkApi.Asset, error) {
-	asset, err := repository.Assets.ReturnBySymbol(req.Name)
+	asset, err := s.db.ReturnBySymbol(req.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +63,7 @@ func (s *Service) Get(_ context.Context, req *chipmunkApi.GetAssetRequest) (*chi
 }
 
 func (s *Service) List(_ context.Context, req *chipmunkApi.GetAssetListRequest) (*chipmunkApi.Assets, error) {
-	if list, err := repository.Assets.List(int(req.Page)); err != nil {
+	if list, err := s.db.List(int(req.Page)); err != nil {
 		return nil, err
 	} else {
 		assets := new(chipmunkApi.Assets)

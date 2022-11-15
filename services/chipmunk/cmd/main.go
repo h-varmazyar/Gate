@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/h-varmazyar/Gate/pkg/amqpext"
 	"github.com/h-varmazyar/Gate/pkg/service"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/assets"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/db"
 	log "github.com/sirupsen/logrus"
@@ -46,14 +47,23 @@ func loadDB(ctx context.Context, configs *db.Configs) (*db.DB, error) {
 }
 
 func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstance *db.DB, configs *Configs) {
-	brokeragesApp, err := markets.NewApp(ctx, logger, dbInstance, configs.MarketsApp)
+	var err error
+	var assetsApp *assets.App
+	assetsApp, err = assets.NewApp(ctx, logger, dbInstance, configs.AssetsApp)
+	if err != nil {
+		logger.WithError(err).Panicf("failed to initiate assets app")
+	}
+
+	var marketsApp *markets.App
+	marketsApp, err = markets.NewApp(ctx, logger, dbInstance, configs.MarketsApp)
 	if err != nil {
 		logger.WithError(err).Panicf("failed to initiate markets app")
 	}
 
 	service.Serve(configs.GRPCPort, func(lst net.Listener) error {
 		server := grpc.NewServer()
-		brokeragesApp.Service.RegisterServer(server)
+		assetsApp.Service.RegisterServer(server)
+		marketsApp.Service.RegisterServer(server)
 		return server.Serve(lst)
 	})
 
