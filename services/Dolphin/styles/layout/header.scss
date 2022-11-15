@@ -1,0 +1,15 @@
+header {
+    grid-column: 1 / span 2;
+    padding: 15px 30px;
+
+    h1 {
+        margin: 0;
+        font-size: 1.5em;
+        float: left;
+        padding: 4px 0;
+    }
+
+    .btn {
+        float: right;
+    }
+}

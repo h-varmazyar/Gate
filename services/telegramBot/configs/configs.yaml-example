@@ -1,0 +1,11 @@
+service_configs:
+  service_name: telegram bot
+  version: v1.0.0
+  grpc_port: 14000
+  db_configs:
+    db_connection:
+  bot_configs:
+    debug_mode: true
+    bot_token:
+  handler_configs:
+    brokerage_address: :10000

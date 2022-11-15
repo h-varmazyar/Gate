@@ -1,2 +1,22 @@
-.env
+# IDE
 .idea
+.metals
+# Secret files
+*.secret
+
+# System files
+.DS_Store
+.docker
+
+# Auto generated
+node_modules
+public/assets
+logs
+build
+*.dat
+
+#other
+tmp
+old-codes
+
+*.yaml

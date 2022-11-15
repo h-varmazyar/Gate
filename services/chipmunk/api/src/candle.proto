@@ -1,0 +1,63 @@
+syntax = "proto3";
+package chipmunkApi;
+option go_package = "github.com/h-varmazyar/Gate/services/chipmunk/api";
+import "services/chipmunk/api/src/indicator.proto";
+
+service CandleService {
+//  rpc AddMarket(AddMarketRequest) returns (api.Void);
+  rpc ReturnLastNCandles(BufferedCandlesRequest) returns (Candles);
+  //  rpc DeleteMarket(DeleteMarketRequest) returns (api.Void);
+}
+
+message Candle {
+  // @inject_tag: json:"updated_at"
+  int64 UpdatedAt = 1;
+  // @inject_tag: json:"created_at"
+  int64 CreatedAt = 2;
+  // @inject_tag: json:"volume"
+  double Volume = 3;
+  // @inject_tag: json:"amount"
+  double Amount = 4;
+  // @inject_tag: json:"close"
+  double Close = 5;
+  // @inject_tag: json:"open"
+  double Open = 6;
+  // @inject_tag: json:"time"
+  int64 Time = 7;
+  // @inject_tag: json:"high"
+  double High = 8;
+  // @inject_tag: json:"low"
+  double Low = 9;
+  // @inject_tag: json:"id"
+  uint64 ID = 10;
+  // @inject_tag: json:"indicator_values"
+  map<string, indicatorValue> IndicatorValues = 11; // key is indicator id
+}
+
+message Candles {
+  // @inject_tag: json:"elements"
+  repeated Candle Elements = 1;
+  // @inject_tag: json:"count"
+  int64 Count = 2;
+}
+
+message AddMarketRequest {
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 1;
+  // @inject_tag: json:"market"
+  string MarketID = 2;
+}
+
+message BufferedCandlesRequest {
+  // @inject_tag: json:"resolution_id"
+  string ResolutionID = 1;
+  // @inject_tag: json:"market_id"
+  string MarketID = 2;
+  // @inject_tag: json:"count"
+  int32 Count = 3;
+}
+
+message DeleteMarketRequest {
+  // @inject_tag: json:"market_id"
+  string MarketID = 1;
+}

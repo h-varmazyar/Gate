@@ -1,0 +1,105 @@
+syntax = "proto3";
+package coreApi;
+option go_package = "github.com/h-varmazyar/Gate/services/core/api/proto";
+import "api/src/misc.proto";
+import "services/chipmunk/api/src/market.proto";
+import "services/chipmunk/api/src/resolution.proto";
+
+service BrokerageService {
+  rpc Create(BrokerageCreateReq) returns (Brokerage);
+  rpc Start(BrokerageStartReq) returns (Brokerage);
+  rpc Stop(BrokerageStopReq) returns (Brokerage);
+  rpc Return(BrokerageReturnReq) returns (Brokerage);
+  rpc Enable(api.Void) returns (Brokerage);
+  rpc Delete(BrokerageDeleteReq) returns (api.Void);
+  rpc List(api.Void) returns (Brokerages);
+  //  rpc ChangeStatus(StatusChangeRequest) returns (BrokerageStatus);
+}
+
+enum Platform {
+  UnknownBrokerage = 0;
+  Coinex = 1;
+  Nobitex = 2;
+}
+
+message Brokerage {
+  // @inject_tag: json:"id"
+  string ID = 1;
+  // @inject_tag: json:"title"
+  string Title = 2;
+  // @inject_tag: json:"description"
+  string Description = 3;
+  // @inject_tag: json:"auth"
+  api.Auth Auth = 4;
+  // @inject_tag: json:"platform"
+  Platform Platform = 5;
+  // @inject_tag: json:"markets"
+  chipmunkApi.Markets Markets = 6;
+  // @inject_tag: json:"resolution_id"
+  string ResolutionID = 7;
+  // @inject_tag: json:"resolution"
+  chipmunkApi.Resolution Resolution = 8;
+  // @inject_tag: json:"strategy_id"
+  string StrategyID = 9;
+  // @inject_tag: json:"status"
+  api.Status Status = 10;
+}
+
+message Brokerages {
+  // @inject_tag: json:"elements"
+  repeated Brokerage Elements = 1;
+}
+
+message BrokerageCreateReq {
+  // @inject_tag: json:"title"
+  string Title = 1;
+  // @inject_tag: json:"description"
+  string Description = 2;
+  // @inject_tag: json:"auth"
+  api.Auth Auth = 3;
+  // @inject_tag: json:"platform"
+  Platform Platform = 4;
+  // @inject_tag: json:"markets"
+  chipmunkApi.Markets Markets = 5;
+  // @inject_tag: json:"resolution_id"
+  string ResolutionID = 6;
+  // @inject_tag: json:"strategy_id"
+  string StrategyID = 7;
+}
+
+message StatusChangeRequest {
+  // @inject_tag: json:"id"
+  string ID = 1;
+  // @inject_tag: json:"trading"
+  bool Trading = 2;
+  // @inject_tag: json:"ohlc"
+  bool OHLC = 3;
+}
+
+message BrokerageReturnReq {
+  // @inject_tag: json:"id"
+  string ID = 1;
+  // @inject_tag: json:"with_markets"
+  bool WithMarkets = 2;
+}
+
+message BrokerageDeleteReq {
+  // @inject_tag: json:"id"
+  string ID = 1;
+}
+
+message BrokerageStartReq{
+  // @inject_tag: json:"id"
+  string ID = 1;
+  // @inject_tag: json:"collect_markets_data"
+  bool CollectMarketsData = 2;
+  // @inject_tag: json:"start_trading"
+  bool StartTrading = 3;
+}
+
+message BrokerageStopReq{
+  // @inject_tag: json:"id"
+  string ID = 1;
+}
+
+

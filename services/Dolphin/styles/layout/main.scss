@@ -1,0 +1,61 @@
+main {
+    padding: 2em;
+    overflow: overlay;
+
+    &.login-page {
+        grid-column: 1 / span 2;
+        place-self: center;
+        padding: 3em 4em;
+        margin-top: -10em;
+    }
+
+    &.dashboard-page {
+        background-color: transparent;
+        box-shadow: none;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        padding: 0;
+        margin: 0;
+        height: fit-content;
+    }
+
+    &.account-page {
+        background-color: transparent;
+        box-shadow: none;
+        padding: 0;
+        margin: 0;
+        .box-small {
+            display: inline-block;
+            width: calc(50% - 26px);
+        }
+    }
+
+    .account-content {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+
+        .box-right-side {
+            th {
+                text-align: left;
+                white-space: nowrap;
+            }
+            td {
+                text-align: right;
+                padding: 0.8em;
+            }
+            .title {
+                padding-top: 2em;
+            }
+        }
+    }
+
+    .order-payment {
+        display: grid;
+        grid-template-columns: 30% 30%;
+    }
+}
+
+.add-new {
+    float: right;
+    margin-top: -3.5em;
+}

@@ -1,0 +1,28 @@
+{{ define "title" }}{{ end }}
+
+{{ define "main" }}
+<table class="table custom-table table-striped scrollable-table" id="markets-table">
+    <thead>
+    <tr>
+        <th width="1">#</th>
+        <th>نام</th>
+        <th style="width: 20% "><a href="#all-markets">انتخاب همه</a></th>
+    </tr>
+    </thead>
+    <tbody>
+    {{ range $index, $market := .markets }}
+    <tr>
+        <td>{{ Sum $index 1 }}</td>
+        <td>{{ $market.Name }}</td>
+        <td class="center">
+            <div class="custom-control custom-checkbox custom-control-inline">
+                <input checked class="custom-control-input" id="{{ $market.Name }}" name="marketsCheckbox"
+                       type="checkbox" value="{{ $market.ID }}">
+                <label class="custom-control-label" for="{{ $market.Name }}"></label>
+            </div>
+        </td>
+    </tr>
+    {{ end }}
+    </tbody>
+</table>
+{{ end }}

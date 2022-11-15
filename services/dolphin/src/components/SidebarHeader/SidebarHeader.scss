@@ -1,0 +1,13 @@
+.user {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  background: #2e323c;
+  max-height: 90px;
+
+  .avatar {
+    padding: 1rem;
+    max-width: 60px;
+    border-radius: 50%;
+  }
+}

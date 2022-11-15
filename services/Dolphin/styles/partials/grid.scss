@@ -1,0 +1,26 @@
+.inline-grid {
+    display:-ms-flexbox;
+    display:flex;
+    -ms-flex-flow:row wrap;
+    flex-flow:row wrap;
+    -ms-flex-align:center;
+
+    &.ltr {
+        justify-content: flex-end;
+    }
+
+    &.space-between {
+        justify-content: space-between;
+    }
+
+    &.center-items {
+        align-items: center;
+    }
+
+    &.stretch-align {
+        align-items:stretch;
+    }
+    &.stretch-center {
+        align-items:center;
+    }
+}

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ template "title" .}} - Gate</title>
+    <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
+    <meta content="hossein varmazyar" name="author">
+
+    <link href="/public/img/fav.png" rel="shortcut icon">
+    <link href="/public/assets/style.css" rel="stylesheet">
+
+    <!-- Bootstrap css -->
+    <link href="/public/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Icomoon Font Icons css -->
+    <link href="/public/fonts/style.css" rel="stylesheet">
+
+    <!-- Main css -->
+    <link href="/public/css/main.css" rel="stylesheet">
+</head>
+<body data-template="{{ .Template }}">
+<div class="page-wrapper">
+
+    <!-- Sidebar wrapper start -->
+    {{ template "aside" .}}
+    <!-- Sidebar wrapper end -->
+
+    <!-- Page content start  -->
+    <div class="page-content">
+
+        <!-- Header start -->
+        {{ template "header" .}}
+        <!-- Header end -->
+
+        <!-- Page header start -->
+        <div class="page-header">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">داشبورد ها</li>
+                <li class="breadcrumb-item active">داشبورد ادمین</li>
+            </ol>
+
+            <ul class="app-actions">
+                <li>
+                    <a href="#" id="reportrange">
+                        <span class="range-text"></span>
+                        <i class="icon-chevron-down"></i>
+                    </a>
+                </li>
+                <li>
+                    <a data-original-title="پرینت" data-placement="top" data-toggle="tooltip" href="#" title="">
+                        <i class="icon-print"></i>
+                    </a>
+                </li>
+                <li>
+                    <a data-original-title="دانلود CSV" data-placement="top" data-toggle="tooltip" href="#" title="">
+                        <i class="icon-cloud_download"></i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <!-- Page header end -->
+
+        <!-- Main container start -->
+        {{ template "main" .}}
+        <!-- Main container end -->
+
+    </div>
+    <!-- Page content end -->
+</div>
+</body>
+</html>

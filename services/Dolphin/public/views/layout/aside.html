@@ -1,0 +1,85 @@
+{{ define "aside" }}
+<aside>
+    <nav class="sidebar-wrapper" id="sidebar">
+        <!-- Sidebar brand start  -->
+        <div class="sidebar-brand">
+            <a class="logo" href="/">
+                <img alt="Gate Admin Dashboard" src="/img/logo.png"/>
+            </a>
+            <a class="logo-sm" href="/">
+                <img alt="Gate Admin Dashboard" src="/img/logo-sm.png"/>
+            </a>
+        </div>
+        <!-- Sidebar brand end  -->
+
+        <!-- Sidebar content start -->
+        <div class="sidebar-content">
+
+            <!-- sidebar menu start -->
+            <div class="sidebar-menu">
+                <ul>
+                    <li class="header-menu">مدیریت</li>
+                    <li class="sidebar-dropdown active">
+                        <a href="#">
+                            <i class="icon-devices_other"></i>
+                            <span class="menu-text">صرافی</span>
+                        </a>
+                        <div class="sidebar-submenu">
+                            <ul>
+                                <li>
+                                    <a{{if eq .URL "/brokerages/overview/" }}
+                                    class="current-page"
+                                    {{ end }}
+                                    href="/brokerages/overview">وضعیت کلی</a>
+                                </li>
+                                <li>
+                                    <a{{if eq .URL "/brokerages/list/" }}
+                                    class="current-page"
+                                    {{ end }}
+                                    href="/brokerages/list">لیست صرافی ها</a>
+                                </li>
+                                <li>
+                                    <a{{if eq .URL "/brokerages/add/" }}
+                                    class="current-page"
+                                    {{ end }}
+                                    href="/brokerages/add">افزودن</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li {{if eq .URL "/markets/list/"}}
+                    class="active-page-link"
+                    {{ end }}
+                    >
+                    <a href="/markets/list">
+                        <i class="icon-swap"></i>
+                        <span class="menu-text">بازارها</span>
+                    </a>
+                    </li>
+                    <li {{if eq .URL "/resolutions/list/"}}
+                    class="active-page-link"
+                    {{ end }}
+                    >
+                    <a href="/resolutions/list">
+                        <i class="icon-timer"></i>
+                        <span class="menu-text">بازه های زمانی</span>
+                    </a>
+                    </li>
+                    <li {{if eq .URL "/wallets/list/"}}
+                    class="active-page-link"
+                    {{ end }}
+                    >
+                    <a href="/wallets/list">
+                        <i class="icon-wallet"></i>
+                        <span class="menu-text">کیف های پول</span>
+                    </a>
+                    </li>
+                </ul>
+            </div>
+            <!-- sidebar menu end -->
+
+        </div>
+        <!-- Sidebar content end -->
+    </nav>
+</aside>
+{{ end }}

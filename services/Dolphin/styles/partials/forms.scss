@@ -1,0 +1,30 @@
+.input-group-m {
+    padding-bottom: 1.3em;
+    label {
+        margin-bottom: .3rem;
+        font-size: .8rem;
+        font-weight: 600;
+    }
+
+    input[type=text] {
+        border: 1px solid #c4c9da;
+        -webkit-border-radius: 2px;
+        -moz-border-radius: 2px;
+        border-radius: 2px;
+        font-size: .825rem;
+    }
+
+    input[type=radio] {
+
+    }
+
+    .border-t {
+        background: #ffffff;
+        margin-bottom: 1rem;
+        padding: .6rem;
+        border: 2px solid #dee5f1;
+        -webkit-border-radius: 3px;
+        -moz-border-radius: 3px;
+        border-radius: 3px;
+    }
+}

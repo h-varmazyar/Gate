@@ -1,0 +1,49 @@
+syntax = "proto3";
+package networkAPI;
+option go_package = "github.com/h-varmazyar/Gate/services/network/api/proto";
+
+service RateLimiterService {
+  rpc Create(RateLimiterCreateReq) returns (RateLimiter);
+  rpc Return(RateLimiterReturnReq) returns (RateLimiter);
+  rpc List(RateLimiterListReq) returns (RateLimiters);
+}
+
+message RateLimiterCreateReq{
+  // @inject_tag: json:"request_count_limit"
+  int64 RequestCountLimit = 1;
+  // @inject_tag: json:"time_limit"
+  int64 TimeLimit = 2;
+  // @inject_tag: json:"type"
+  RateLimiter.type Type = 3;
+}
+
+message RateLimiterReturnReq{
+  // @inject_tag: json:"id"
+  string ID = 1;
+}
+
+message RateLimiterListReq{
+  // @inject_tag: json:"type"
+  RateLimiter.type Type = 1;
+}
+
+message RateLimiter{
+  enum type{
+    All = 0;
+    Spread = 1;
+    Immediate = 2;
+  }
+  // @inject_tag: json:"id"
+  string ID = 1;
+  // @inject_tag: json:"request_count_limit"
+  int64 RequestCountLimit = 2;
+  // @inject_tag: json:"time_limit"
+  int64 TimeLimit = 3;
+  // @inject_tag: json:"type"
+  type Type = 4;
+}
+
+message RateLimiters{
+  // @inject_tag: json:"elements"
+  repeated RateLimiter Elements = 1;
+}
