@@ -32,7 +32,7 @@ type FunctionsServiceClient interface {
 	NewOrder(ctx context.Context, in *NewOrderReq, opts ...grpc.CallOption) (*api2.Order, error)
 	CancelOrder(ctx context.Context, in *CancelOrderReq, opts ...grpc.CallOption) (*api2.Order, error)
 	OrderStatus(ctx context.Context, in *OrderStatusReq, opts ...grpc.CallOption) (*api2.Order, error)
-	AsyncTest(ctx context.Context, in *api1.Void, opts ...grpc.CallOption) (*api1.Void, error)
+	AsyncOHLC(ctx context.Context, in *OHLCReq, opts ...grpc.CallOption) (*api1.Void, error)
 }
 
 type functionsServiceClient struct {
@@ -106,9 +106,9 @@ func (c *functionsServiceClient) OrderStatus(ctx context.Context, in *OrderStatu
 	return out, nil
 }
 
-func (c *functionsServiceClient) AsyncTest(ctx context.Context, in *api1.Void, opts ...grpc.CallOption) (*api1.Void, error) {
+func (c *functionsServiceClient) AsyncOHLC(ctx context.Context, in *OHLCReq, opts ...grpc.CallOption) (*api1.Void, error) {
 	out := new(api1.Void)
-	err := c.cc.Invoke(ctx, "/coreApi.FunctionsService/AsyncTest", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/coreApi.FunctionsService/AsyncOHLC", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ type FunctionsServiceServer interface {
 	NewOrder(context.Context, *NewOrderReq) (*api2.Order, error)
 	CancelOrder(context.Context, *CancelOrderReq) (*api2.Order, error)
 	OrderStatus(context.Context, *OrderStatusReq) (*api2.Order, error)
-	AsyncTest(context.Context, *api1.Void) (*api1.Void, error)
+	AsyncOHLC(context.Context, *OHLCReq) (*api1.Void, error)
 }
 
 // UnimplementedFunctionsServiceServer should be embedded to have forward compatible implementations.
@@ -154,8 +154,8 @@ func (UnimplementedFunctionsServiceServer) CancelOrder(context.Context, *CancelO
 func (UnimplementedFunctionsServiceServer) OrderStatus(context.Context, *OrderStatusReq) (*api2.Order, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method OrderStatus not implemented")
 }
-func (UnimplementedFunctionsServiceServer) AsyncTest(context.Context, *api1.Void) (*api1.Void, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AsyncTest not implemented")
+func (UnimplementedFunctionsServiceServer) AsyncOHLC(context.Context, *OHLCReq) (*api1.Void, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AsyncOHLC not implemented")
 }
 
 // UnsafeFunctionsServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -295,20 +295,20 @@ func _FunctionsService_OrderStatus_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FunctionsService_AsyncTest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(api1.Void)
+func _FunctionsService_AsyncOHLC_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OHLCReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FunctionsServiceServer).AsyncTest(ctx, in)
+		return srv.(FunctionsServiceServer).AsyncOHLC(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/coreApi.FunctionsService/AsyncTest",
+		FullMethod: "/coreApi.FunctionsService/AsyncOHLC",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FunctionsServiceServer).AsyncTest(ctx, req.(*api1.Void))
+		return srv.(FunctionsServiceServer).AsyncOHLC(ctx, req.(*OHLCReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -349,8 +349,8 @@ var FunctionsService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _FunctionsService_OrderStatus_Handler,
 		},
 		{
-			MethodName: "AsyncTest",
-			Handler:    _FunctionsService_AsyncTest_Handler,
+			MethodName: "AsyncOHLC",
+			Handler:    _FunctionsService_AsyncOHLC_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

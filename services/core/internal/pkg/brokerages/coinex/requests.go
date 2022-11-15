@@ -5,16 +5,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/h-varmazyar/Gate/api"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 )
 
-type Request struct {
+type Requests struct {
+	Auth    *api.Auth
 	configs *Configs
 }
 
-func NewRequest(configs *Configs) *Request {
-	return &Request{configs: configs}
+func NewRequest(configs *Configs, auth *api.Auth) brokerages.Requests {
+	return &Requests{
+		configs: configs,
+		Auth:    auth,
+	}
 }
 
 var (
@@ -24,7 +29,7 @@ var (
 	ErrWrongEndTime   = errors.New("end time must be grater than 0")
 )
 
-func (r *Request) OHLC(_ context.Context, inputs *brokerages.OHLCParams) (*networkAPI.Request, error) {
+func (r *Requests) AsyncOHLC(_ context.Context, inputs *brokerages.OHLCParams) (*networkAPI.Request, error) {
 	if inputs.Resolution == nil {
 		return nil, ErrNilResolution
 	}

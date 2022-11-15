@@ -25,11 +25,11 @@ import (
 	"time"
 )
 
-type Service struct {
-	Auth *api.Auth
-}
+//type Service struct {
+//	Auth *api.Auth
+//}
 
-func (service *Service) WalletList(ctx context.Context, runner brokerages.Handler) (*chipmunkApi.Wallets, error) {
+func (service *Requests) WalletList(ctx context.Context, runner brokerages.Handler) (*chipmunkApi.Wallets, error) {
 	request := new(networkAPI.Request)
 	currentTime := time.Now().UnixNano() / 1e6
 	request.Method = networkAPI.Request_GET
@@ -73,7 +73,7 @@ func (service *Service) WalletList(ctx context.Context, runner brokerages.Handle
 	return response, nil
 }
 
-func (service *Service) OHLC(ctx context.Context, inputs *brokerages.OHLCParams, runner brokerages.Handler) ([]*chipmunkApi.Candle, error) {
+func (service *Requests) OHLC(ctx context.Context, inputs *brokerages.OHLCParams, runner brokerages.Handler) ([]*chipmunkApi.Candle, error) {
 	request := new(networkAPI.Request)
 	request.Method = networkAPI.Request_GET
 	resolutionSeconds := inputs.Resolution.Duration / 1e6
@@ -141,7 +141,7 @@ func (service *Service) OHLC(ctx context.Context, inputs *brokerages.OHLCParams,
 	return candles, nil
 }
 
-func (service *Service) UpdateMarket(ctx context.Context, runner brokerages.Handler) ([]*chipmunkApi.Market, error) {
+func (service *Requests) UpdateMarket(ctx context.Context, runner brokerages.Handler) ([]*chipmunkApi.Market, error) {
 	request := new(networkAPI.Request)
 	request.Method = networkAPI.Request_GET
 	request.Endpoint = "https://api.coinex.com/v1/market/info"
@@ -198,7 +198,7 @@ func (service *Service) UpdateMarket(ctx context.Context, runner brokerages.Hand
 	return markets, nil
 }
 
-func (service *Service) MarketStatistics(ctx context.Context, inputs *brokerages.MarketStatisticsParams, runner brokerages.Handler) (*chipmunkApi.Candle, error) {
+func (service *Requests) MarketStatistics(ctx context.Context, inputs *brokerages.MarketStatisticsParams, runner brokerages.Handler) (*chipmunkApi.Candle, error) {
 	var market string
 	if inputs.Market == "" {
 		market = strings.ToUpper(fmt.Sprint(inputs.Source, inputs.Destination))
@@ -263,7 +263,7 @@ func (service *Service) MarketStatistics(ctx context.Context, inputs *brokerages
 	return candle, nil
 }
 
-func (service *Service) MarketList(ctx context.Context, runner brokerages.Handler) (*chipmunkApi.Markets, error) {
+func (service *Requests) MarketList(ctx context.Context, runner brokerages.Handler) (*chipmunkApi.Markets, error) {
 	request := new(networkAPI.Request)
 	request.Method = networkAPI.Request_GET
 	request.Endpoint = "https://api.coinex.com/v1/market/info"
@@ -321,7 +321,7 @@ func (service *Service) MarketList(ctx context.Context, runner brokerages.Handle
 	return markets, nil
 }
 
-func (service *Service) NewOrder(ctx context.Context, inputs *brokerages.NewOrderParams, runner brokerages.Handler) (*eagleApi.Order, error) {
+func (service *Requests) NewOrder(ctx context.Context, inputs *brokerages.NewOrderParams, runner brokerages.Handler) (*eagleApi.Order, error) {
 	request := new(networkAPI.Request)
 	request.Method = networkAPI.Request_POST
 	request.Params = []*networkAPI.KV{
@@ -388,7 +388,7 @@ func (service *Service) NewOrder(ctx context.Context, inputs *brokerages.NewOrde
 	return createOrder(data, inputs.Market), nil
 }
 
-func (service *Service) CancelOrder(ctx context.Context, inputs *brokerages.CancelOrderParams, runner brokerages.Handler) (*eagleApi.Order, error) {
+func (service *Requests) CancelOrder(ctx context.Context, inputs *brokerages.CancelOrderParams, runner brokerages.Handler) (*eagleApi.Order, error) {
 	request := new(networkAPI.Request)
 	request.Method = networkAPI.Request_DELETE
 	request.Params = []*networkAPI.KV{
@@ -420,7 +420,7 @@ func (service *Service) CancelOrder(ctx context.Context, inputs *brokerages.Canc
 	return createOrder(data, inputs.Market), nil
 }
 
-func (service *Service) OrderStatus(ctx context.Context, inputs *brokerages.OrderStatusParams, runner brokerages.Handler) (*eagleApi.Order, error) {
+func (service *Requests) OrderStatus(ctx context.Context, inputs *brokerages.OrderStatusParams, runner brokerages.Handler) (*eagleApi.Order, error) {
 	request := new(networkAPI.Request)
 	request.Method = networkAPI.Request_GET
 	request.Params = []*networkAPI.KV{
@@ -451,7 +451,7 @@ func (service *Service) OrderStatus(ctx context.Context, inputs *brokerages.Orde
 	return createOrder(data, inputs.Market), nil
 }
 
-func (service *Service) generateAuthorization(params []*networkAPI.KV) string {
+func (service *Requests) generateAuthorization(params []*networkAPI.KV) string {
 	urlParameters := url.Values{}
 	for _, param := range params {
 		urlParameters.Add(param.Key, parseValue(param))

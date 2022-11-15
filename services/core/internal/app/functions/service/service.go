@@ -10,18 +10,17 @@ import (
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	brokeragesService "github.com/h-varmazyar/Gate/services/core/internal/app/brokerages/service"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
-	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages/coinex"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"time"
 )
 
 type Service struct {
 	requestService   networkAPI.RequestServiceClient
 	brokerageService *brokeragesService.Service
 	logger           *log.Logger
+	configs          *Configs
 }
 
 var (
@@ -35,6 +34,7 @@ func NewService(_ context.Context, logger *log.Logger, configs *Configs, brServi
 		grpcService.requestService = networkAPI.NewRequestServiceClient(networkConn)
 		grpcService.brokerageService = brService
 		grpcService.logger = logger
+		grpcService.configs = configs
 	}
 	return grpcService
 }
@@ -44,80 +44,36 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 }
 
 func (s *Service) OHLC(ctx context.Context, req *coreApi.OHLCReq) (*chipmunkApi.Candles, error) {
-	brokerageID, err := uuid.Parse(req.BrokerageID)
-	if err != nil {
-		return nil, err
-	}
-	brokerage, err := s.brokerageService.Return(ctx, &coreApi.BrokerageReturnReq{
-		ID: brokerageID.String(),
-	})
+	brokerage, err := s.loadBrokerage(ctx, req.BrokerageID)
 	if err != nil {
 		return nil, err
 	}
 
-	inputs := &brokerages.OHLCParams{
-		Resolution: req.Resolution,
-		Market:     req.Market,
-		From:       time.Unix(req.From, 0),
-		To:         time.Unix(req.To, 0),
-	}
-
-	candles, err := loadBrokerage(brokerage).OHLC(ctx, inputs, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
-		resp, err := s.requestService.Do(ctx, request)
-		return resp, err
-	})
+	candles, err := loadRequest(s.configs, brokerage).OHLC(ctx, s.createOHLCParams(req),
+		func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
+			resp, err := s.requestService.Do(ctx, request)
+			return resp, err
+		})
 	if err != nil {
 		return nil, err
 	}
 	return &chipmunkApi.Candles{Elements: candles}, nil
 }
 
-func (s *Service) AsyncTest(ctx context.Context, req *api.Void) (*api.Void, error) {
-	log.Infof("in async test")
-	resolution := &chipmunkApi.Resolution{
-		BrokerageName: "Coinex",
-		Duration:      int64(time.Minute * 15),
-		Label:         "15min",
-		Value:         "900",
-		ID:            "ab28acd0-3517-483f-b3a1-7bd879fa85d0",
+func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.OHLCReq) (*api.Void, error) {
+	brokerage, err := s.loadBrokerage(ctx, req.BrokerageID)
+	if err != nil {
+		return nil, err
 	}
 
-	market := &chipmunkApi.Market{
-		Name: "LPTUSDT",
+	request, err := loadRequest(s.configs, brokerage).AsyncOHLC(ctx, s.createOHLCParams(req))
+	if err != nil {
+		return nil, err
 	}
-	to := time.Now()
 
-	c := &coinex.Configs{
-		CoinexCallbackQueue: "coinex_callback",
-		ChipmunkOHLCQueue:   "chipmunk_ohlc",
-	}
-	coinexRequest := coinex.NewRequest(c)
-	for i := 0; i < 5; i++ {
-		from := to.Add(time.Duration(resolution.Duration * 1000 * -1))
-		inputs := &brokerages.OHLCParams{
-			Resolution: resolution,
-			Market:     market,
-			From:       from,
-			To:         to,
-		}
-		request, err := coinexRequest.OHLC(ctx, inputs)
-		if err != nil {
-			return nil, err
-		}
+	request.Type = networkAPI.Request_Async
 
-		request.Type = networkAPI.Request_Async
-
-		go func() {
-			resp, err := s.requestService.Do(context.Background(), request)
-			if err != nil {
-				log.WithError(err).Errorf("failed to do request: %v", request)
-				return
-			}
-			log.Infof("resp is : %v", resp)
-		}()
-
-		to = from
-	}
+	s.doAsyncRequest(request)
 
 	return new(api.Void), nil
 }
@@ -127,7 +83,7 @@ func (s *Service) WalletsBalance(ctx context.Context, _ *api.Void) (*chipmunkApi
 	if err != nil {
 		return nil, err
 	}
-	wallets, err := loadBrokerage(brokerage).WalletList(ctx, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
+	wallets, err := loadRequest(s.configs, brokerage).WalletList(ctx, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
 		resp, err := s.requestService.Do(ctx, request)
 		return resp, err
 	})
@@ -145,7 +101,7 @@ func (s *Service) MarketStatistics(ctx context.Context, req *coreApi.MarketStati
 	params := &brokerages.MarketStatisticsParams{
 		Market: req.MarketName,
 	}
-	statistics, err := loadBrokerage(brokerage).MarketStatistics(ctx, params, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
+	statistics, err := loadRequest(s.configs, brokerage).MarketStatistics(ctx, params, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
 		resp, err := s.requestService.Do(ctx, request)
 		return resp, err
 	})
@@ -162,7 +118,7 @@ func (s *Service) MarketList(ctx context.Context, req *coreApi.MarketListReq) (*
 	if err != nil {
 		return nil, err
 	}
-	markets, err := loadBrokerage(brokerage).MarketList(ctx, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
+	markets, err := loadRequest(s.configs, brokerage).MarketList(ctx, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
 		resp, err := s.requestService.Do(ctx, request)
 		return resp, err
 	})
@@ -189,7 +145,7 @@ func (s *Service) NewOrder(ctx context.Context, req *coreApi.NewOrderReq) (*eagl
 		Option:     req.Option,
 		HideOrder:  req.ISHidden,
 	}
-	order, err := loadBrokerage(brokerage).NewOrder(ctx, params, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
+	order, err := loadRequest(s.configs, brokerage).NewOrder(ctx, params, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
 		resp, err := s.requestService.Do(ctx, request)
 		return resp, err
 	})
@@ -209,7 +165,7 @@ func (s *Service) CancelOrder(ctx context.Context, req *coreApi.CancelOrderReq) 
 		ServerOrderId: req.ServerOrderID,
 		Market:        req.Market,
 	}
-	order, err := loadBrokerage(brokerage).CancelOrder(ctx, params, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
+	order, err := loadRequest(s.configs, brokerage).CancelOrder(ctx, params, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
 		resp, err := s.requestService.Do(ctx, request)
 		return resp, err
 	})
@@ -229,7 +185,7 @@ func (s *Service) OrderStatus(ctx context.Context, req *coreApi.OrderStatusReq) 
 		ServerOrderId: req.ServerOrderID,
 		Market:        req.Market,
 	}
-	order, err := loadBrokerage(brokerage).OrderStatus(ctx, params, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
+	order, err := loadRequest(s.configs, brokerage).OrderStatus(ctx, params, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
 		resp, err := s.requestService.Do(ctx, request)
 		return resp, err
 	})

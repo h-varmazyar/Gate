@@ -59,24 +59,11 @@ func NewManager(ctx context.Context, Limiters []*networkAPI.RateLimiter, IPs []*
 		ipCtx, cancelFunc := context.WithCancel(ctx)
 		id := uuid.New()
 
-		proxyAddress := fmt.Sprintf("221.231.13.198:1080")
-		proxyURL, _ := url.Parse(proxyAddress)
-
 		manager.IPs[id] = &IP{
-			ID:       id,
-			Schema:   "http",
-			Address:  "221.231.13.198",
-			Username: "",
-			Password: "",
-			Port:     1080,
-			proxyURL: proxyURL,
-			ctx:      ipCtx,
+			ID:  id,
+			ctx: ipCtx,
 		}
 
-		//manager.IPs[id] = &IP{
-		//	ID:  id,
-		//	ctx: ipCtx,
-		//}
 		manager.cancelFunctions[id] = cancelFunc
 	}
 
@@ -107,7 +94,7 @@ func (m *Manager) getDefaultLimiter() *networkAPI.RateLimiter {
 	defaultLimiter := &networkAPI.RateLimiter{
 		ID:                id.String(),
 		RequestCountLimit: 400,
-		TimeLimit:         int64(time.Minute),
+		TimeLimit:         int64(time.Second),
 		Type:              networkAPI.RateLimiter_Spread,
 	}
 	m.defaultLimiterID = id

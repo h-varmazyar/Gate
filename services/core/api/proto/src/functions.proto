@@ -16,7 +16,7 @@ service FunctionsService {
   rpc NewOrder(NewOrderReq) returns (eagleApi.Order);
   rpc CancelOrder(CancelOrderReq) returns (eagleApi.Order);
   rpc OrderStatus(OrderStatusReq) returns (eagleApi.Order);
-  rpc AsyncTest(api.Void) returns (api.Void);
+  rpc AsyncOHLC(OHLCReq) returns (api.Void);
 }
 
 message OHLCReq{
