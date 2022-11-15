@@ -1,4 +1,4 @@
-package markets
+package service
 
 import (
 	"context"
@@ -8,12 +8,14 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
+	markets2 "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/repository"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/workers"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
-	coreApi "github.com/h-varmazyar/Gate/services/core/api"
+	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
-	networkAPI "github.com/h-varmazyar/Gate/services/network/api"
+	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -26,21 +28,25 @@ type Service struct {
 	strategyService  eagleApi.StrategyServiceClient
 	functionsService coreApi.FunctionsServiceClient
 	brokerageService coreApi.BrokerageServiceClient
+	logger           *log.Logger
+	db               repository.MarketRepository
 }
 
 var (
 	GrpcService *Service
 )
 
-func NewService() *Service {
+func NewService(_ context.Context, logger *log.Logger, configs *Configs, db repository.MarketRepository) *Service {
 	if GrpcService == nil {
 		GrpcService = new(Service)
-		networkConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Network)
-		eagleConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Eagle)
-		brokerageConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
+		networkConn := grpcext.NewConnection(configs.NetworkAddress)
+		eagleConn := grpcext.NewConnection(configs.EagleAddress)
+		coreConn := grpcext.NewConnection(configs.CoreAddress)
 		GrpcService.networkService = networkAPI.NewRequestServiceClient(networkConn)
 		GrpcService.strategyService = eagleApi.NewStrategyServiceClient(eagleConn)
-		GrpcService.functionsService = coreApi.NewFunctionsServiceClient(brokerageConn)
+		GrpcService.functionsService = coreApi.NewFunctionsServiceClient(coreConn)
+		GrpcService.db = db
+		GrpcService.logger = logger
 	}
 	return GrpcService
 }
@@ -50,7 +56,7 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 }
 
 func (s *Service) Create(ctx context.Context, req *chipmunkApi.CreateMarketReq) (*chipmunkApi.Market, error) {
-	market := new(repository.Market)
+	market := new(entity.Market)
 	mapper.Struct(req, market)
 	var err error
 	if req.Destination == nil {
@@ -68,7 +74,7 @@ func (s *Service) Create(ctx context.Context, req *chipmunkApi.CreateMarketReq) 
 		return nil, errors.Cast(ctx, err).AddDetailF("invalid source id %v", req.Source.ID)
 	}
 	market.Status = req.Status
-	if err := repository.Markets.SaveOrUpdate(market); err != nil {
+	if err := s.db.SaveOrUpdate(market); err != nil {
 		return nil, err
 	}
 	response := new(chipmunkApi.Market)
@@ -81,7 +87,7 @@ func (s *Service) Return(_ context.Context, req *chipmunkApi.ReturnMarketRequest
 	if err != nil {
 		return nil, err
 	}
-	market, err := repository.Markets.ReturnByID(marketID)
+	market, err := s.db.ReturnByID(marketID)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +101,7 @@ func (s *Service) List(_ context.Context, req *chipmunkApi.MarketListRequest) (*
 	if err != nil {
 		return nil, err
 	}
-	response, err := repository.Markets.List(brID)
+	response, err := s.db.List(brID)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +116,7 @@ func (s *Service) ReturnBySource(_ context.Context, req *chipmunkApi.MarketListB
 		return nil, err
 	}
 	response := new(chipmunkApi.Markets)
-	if markets, err := repository.Markets.ListBySource(brID, req.Source); err != nil {
+	if markets, err := s.db.ListBySource(brID, req.Source); err != nil {
 		return nil, err
 	} else {
 		list := make([]*chipmunkApi.Market, 0)
@@ -125,8 +131,8 @@ func (s *Service) StartWorker(ctx context.Context, req *chipmunkApi.WorkerStartR
 		err                error
 		brokerageID        uuid.UUID
 		resolutionID       uuid.UUID
-		markets            []*repository.Market
-		resolution         *repository.Resolution
+		markets            []*entity.Market
+		resolution         *entity.Resolution
 		strategyIndicators *eagleApi.StrategyIndicators
 		loadedIndicators   map[uuid.UUID]indicators.Indicator
 	)
@@ -135,7 +141,7 @@ func (s *Service) StartWorker(ctx context.Context, req *chipmunkApi.WorkerStartR
 		return nil, err
 	}
 
-	if markets, err = repository.Markets.List(brokerageID); err != nil {
+	if markets, err = s.db.List(brokerageID); err != nil {
 		return nil, err
 	}
 
@@ -158,13 +164,13 @@ func (s *Service) StartWorker(ctx context.Context, req *chipmunkApi.WorkerStartR
 		return nil, err
 	}
 	for _, market := range markets {
-		settings := &WorkerSettings{
+		settings := &workers.WorkerSettings{
 			Market:      market,
 			Resolution:  resolution,
 			Indicators:  loadedIndicators,
 			BrokerageID: brokerageID,
 		}
-		worker.AddMarket(settings)
+		markets2.worker.AddMarket(settings)
 		log.Infof("new market added: %v", market.Name)
 	}
 	return new(api.Void), nil
@@ -175,12 +181,12 @@ func (s *Service) StopWorker(ctx context.Context, req *chipmunkApi.WorkerStopReq
 	if err != nil {
 		return nil, err
 	}
-	markets, err := repository.Markets.List(brokerageID)
+	markets, err := s.db.List(brokerageID)
 	if err != nil {
 		return nil, err
 	}
 	for _, market := range markets {
-		err := worker.DeleteMarket(market.ID)
+		err := markets2.worker.DeleteMarket(market.ID)
 		if err != nil {
 			log.WithError(err).Errorf("failed to delete market %v", market)
 		}
@@ -208,13 +214,13 @@ func (s *Service) Update(ctx context.Context, req *chipmunkApi.MarketUpdateReq) 
 			log.WithError(err).Errorf("failed to load or create destination for market %v", market.Name)
 			continue
 		}
-		localMarket := new(repository.Market)
+		localMarket := new(entity.Market)
 		mapper.Struct(market, localMarket)
 		localMarket.SourceID = source.ID
 		localMarket.DestinationID = destination.ID
 		localMarket.BrokerageID = brokerageID
 
-		err = repository.Markets.SaveOrUpdate(localMarket)
+		err = s.db.SaveOrUpdate(localMarket)
 		if err != nil {
 			log.WithError(err).Error("failed to update markets")
 			continue
@@ -223,11 +229,11 @@ func (s *Service) Update(ctx context.Context, req *chipmunkApi.MarketUpdateReq) 
 	return markets, nil
 }
 
-func loadOrCreateAsset(assetName string) (*repository.Asset, error) {
+func loadOrCreateAsset(assetName string) (*entity.Asset, error) {
 	asset, err := repository.Assets.ReturnBySymbol(assetName)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			asset := new(repository.Asset)
+			asset := new(entity.Asset)
 			asset.Name = assetName
 			asset.Symbol = assetName
 			asset.IssueDate = time.Now()

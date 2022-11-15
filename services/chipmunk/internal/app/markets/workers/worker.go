@@ -1,4 +1,4 @@
-package markets
+package workers
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
-	coreApi "github.com/h-varmazyar/Gate/services/core/api"
+	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"time"
