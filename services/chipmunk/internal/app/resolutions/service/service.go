@@ -1,4 +1,4 @@
-package resolutions
+package service
 
 import (
 	"context"
@@ -7,22 +7,30 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/resolutions/repository"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"time"
 )
 
 type Service struct {
+	db      repository.ResolutionRepository
+	logger  *log.Logger
+	configs *Configs
 }
 
 var (
 	GrpcService *Service
 )
 
-func NewService() *Service {
+func NewService(_ context.Context, logger *log.Logger, configs *Configs, db repository.ResolutionRepository) *Service {
 	if GrpcService == nil {
 		GrpcService = new(Service)
+		GrpcService.logger = logger
+		GrpcService.configs = configs
+		GrpcService.db = db
 	}
 	return GrpcService
 }
@@ -32,10 +40,10 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 }
 
 func (s *Service) Set(_ context.Context, req *chipmunkApi.Resolution) (*api.Void, error) {
-	resolution := new(repository.Resolution)
+	resolution := new(entity.Resolution)
 	mapper.Struct(req, resolution)
 	resolution.ID, _ = uuid.Parse(req.ID)
-	if err := repository.Resolutions.Set(resolution); err != nil {
+	if err := s.db.Set(resolution); err != nil {
 		return nil, err
 	}
 	return new(api.Void), nil
@@ -46,7 +54,7 @@ func (s *Service) GetByID(ctx context.Context, _ *chipmunkApi.GetResolutionByIDR
 }
 
 func (s *Service) GetByDuration(_ context.Context, req *chipmunkApi.GetResolutionByDurationRequest) (*chipmunkApi.Resolution, error) {
-	resolution, err := repository.Resolutions.GetByDuration(time.Duration(req.Duration), req.BrokerageName)
+	resolution, err := s.db.GetByDuration(time.Duration(req.Duration), req.BrokerageName)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +64,7 @@ func (s *Service) GetByDuration(_ context.Context, req *chipmunkApi.GetResolutio
 }
 
 func (s *Service) List(_ context.Context, req *chipmunkApi.GetResolutionListRequest) (*chipmunkApi.Resolutions, error) {
-	resolutions, err := repository.Resolutions.List(req.BrokerageName)
+	resolutions, err := s.db.List(req.BrokerageName)
 	if err != nil {
 		return nil, err
 	}

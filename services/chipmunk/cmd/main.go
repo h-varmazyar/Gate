@@ -8,6 +8,7 @@ import (
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/indicators"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/resolutions"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/db"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -74,12 +75,19 @@ func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstan
 		logger.WithError(err).Panicf("failed to initiate markets app")
 	}
 
+	var resolutionsApp *resolutions.App
+	resolutionsApp, err = resolutions.NewApp(ctx, logger, dbInstance, configs.ResolutionsApp)
+	if err != nil {
+		logger.WithError(err).Panicf("failed to initiate markets app")
+	}
+
 	service.Serve(configs.GRPCPort, func(lst net.Listener) error {
 		server := grpc.NewServer()
 		assetsApp.Service.RegisterServer(server)
 		marketsApp.Service.RegisterServer(server)
 		candlesApp.Service.RegisterServer(server)
 		indicatorsApp.Service.RegisterServer(server)
+		resolutionsApp.Service.RegisterServer(server)
 		return server.Serve(lst)
 	})
 
