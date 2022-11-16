@@ -2,7 +2,7 @@ package entity
 
 import (
 	"github.com/h-varmazyar/Gate/pkg/gormext"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 )
 
 type Indicator struct {

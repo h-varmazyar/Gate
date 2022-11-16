@@ -7,6 +7,7 @@ import (
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/indicators"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/resolutions"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/wallets"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/db"
 )
 
@@ -20,5 +21,6 @@ type Configs struct {
 	CandlesApp     *candles.Configs     `yaml:"candles_app"`
 	IndicatorsApp  *indicators.Configs  `yaml:"indicators_app"`
 	ResolutionsApp *resolutions.Configs `yaml:"resolutions_app"`
+	WalletsApp     *wallets.Configs     `yaml:"wallets_app"`
 	DB             *db.Configs          `yaml:"db"`
 }

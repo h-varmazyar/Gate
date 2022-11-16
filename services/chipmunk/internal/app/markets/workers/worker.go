@@ -5,11 +5,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -23,8 +23,8 @@ type Worker struct {
 
 type WorkerSettings struct {
 	ctx         context.Context
-	Market      *repository.Market
-	Resolution  *repository.Resolution
+	Market      *entity.Market
+	Resolution  *entity.Resolution
 	Indicators  map[uuid.UUID]indicators.Indicator
 	BrokerageID uuid.UUID
 }
@@ -91,7 +91,7 @@ LOOP:
 			if to.Sub(lastTime) <= time.Second {
 				continue
 			}
-			candles := make([]*repository.Candle, 0)
+			candles := make([]*entity.Candle, 0)
 			if candles, err = worker.downloadCandlesInfo(settings, lastTime.Unix(), to.Unix()); err != nil {
 				log.WithError(err).Error("get candles failed")
 			} else {
@@ -106,7 +106,7 @@ LOOP:
 }
 
 func (worker *Worker) loadPrimaryData(ws *WorkerSettings) error {
-	totalCandles := make([]*repository.Candle, 0)
+	totalCandles := make([]*entity.Candle, 0)
 	end := false
 	limit := 10000
 	var from time.Time
@@ -144,7 +144,7 @@ func (worker *Worker) loadPrimaryData(ws *WorkerSettings) error {
 		}
 	}
 	for _, candle := range totalCandles {
-		candle.IndicatorValues = repository.NewIndicatorValues()
+		candle.IndicatorValues = entity.NewIndicatorValues()
 	}
 	for _, indicator := range ws.Indicators {
 		err := indicator.Calculate(totalCandles)
@@ -162,9 +162,9 @@ func (worker *Worker) loadPrimaryData(ws *WorkerSettings) error {
 	return nil
 }
 
-func (worker *Worker) calculateIndicators(ws *WorkerSettings, candles []*repository.Candle) {
+func (worker *Worker) calculateIndicators(ws *WorkerSettings, candles []*entity.Candle) {
 	for _, candle := range candles {
-		candle.IndicatorValues = repository.NewIndicatorValues()
+		candle.IndicatorValues = entity.NewIndicatorValues()
 		for id, indicator := range ws.Indicators {
 			switch indicator.GetType() {
 			case chipmunkApi.Indicator_RSI:
@@ -184,7 +184,7 @@ func (worker *Worker) calculateIndicators(ws *WorkerSettings, candles []*reposit
 	}
 }
 
-func (worker *Worker) downloadCandlesInfo(ws *WorkerSettings, from, to int64) ([]*repository.Candle, error) {
+func (worker *Worker) downloadCandlesInfo(ws *WorkerSettings, from, to int64) ([]*entity.Candle, error) {
 	resolution := new(chipmunkApi.Resolution)
 	mapper.Struct(ws.Resolution, resolution)
 
@@ -201,9 +201,9 @@ func (worker *Worker) downloadCandlesInfo(ws *WorkerSettings, from, to int64) ([
 		log.WithError(err).Error("failed to get candles")
 		return nil, err
 	}
-	localCandles := make([]*repository.Candle, 0)
+	localCandles := make([]*entity.Candle, 0)
 	for _, candle := range candles.Elements {
-		tmp := new(repository.Candle)
+		tmp := new(entity.Candle)
 		mapper.Struct(candle, tmp)
 		tmp.MarketID = ws.Market.ID
 		tmp.ResolutionID = ws.Resolution.ID

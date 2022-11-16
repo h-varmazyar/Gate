@@ -1,11 +1,11 @@
 syntax = "proto3";
 package coreApi;
 option go_package = "github.com/h-varmazyar/Gate/services/core/api/proto";
-import "services/chipmunk/api/src/wallet.proto";
-import "services/chipmunk/api/src/resolution.proto";
-import "services/chipmunk/api/src/market.proto";
-import "services/chipmunk/api/src/candle.proto";
-import "services/eagle/api/src/order.proto";
+import "services/chipmunk/api/proto/src/wallet.proto";
+import "services/chipmunk/api/proto/src/resolution.proto";
+import "services/chipmunk/api/proto/src/market.proto";
+import "services/chipmunk/api/proto/src/candle.proto";
+import "services/eagle/api/proto/src/order.proto";
 import "api/src/misc.proto";
 
 service FunctionsService {
