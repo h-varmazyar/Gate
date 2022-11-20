@@ -1,7 +1,7 @@
 package brokerages
 
 import (
-	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/api/proto"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 )
@@ -15,7 +15,7 @@ type Brokerage struct {
 	ResolutionID string                  `json:"resolution_id"`
 	Resolution   *chipmunkApi.Resolution `json:"resolution"`
 	StrategyID   string                  `json:"strategy_id"`
-	Status       api.Status              `json:"status"`
+	Status       proto.Status            `json:"status"`
 }
 
 type Start struct {

@@ -3,18 +3,18 @@ package indicators
 import (
 	"errors"
 	"github.com/google/uuid"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	log "github.com/sirupsen/logrus"
 	"math"
 )
 
 type bollingerBands struct {
 	id uuid.UUID
-	repository.BollingerBandsConfigs
+	entity.BollingerBandsConfigs
 }
 
-func NewBollingerBands(id uuid.UUID, configs *repository.BollingerBandsConfigs) (*bollingerBands, error) {
+func NewBollingerBands(id uuid.UUID, configs *entity.BollingerBandsConfigs) (*bollingerBands, error) {
 	if err := validateBollingerBandsConfigs(configs); err != nil {
 		return nil, err
 	}
@@ -32,14 +32,14 @@ func (conf *bollingerBands) GetLength() int {
 	return conf.Length
 }
 
-func (conf *bollingerBands) Calculate(candles []*repository.Candle) error {
+func (conf *bollingerBands) Calculate(candles []*entity.Candle) error {
 	if err := conf.validateBollingerBand(len(candles)); err != nil {
 		return err
 	}
 	cloned := cloneCandles(candles)
 	smaConf := movingAverage{
 		id: uuid.New(),
-		MovingAverageConfigs: repository.MovingAverageConfigs{
+		MovingAverageConfigs: entity.MovingAverageConfigs{
 			Length: conf.Length,
 			Source: conf.Source,
 		},
@@ -73,7 +73,7 @@ func (conf *bollingerBands) Calculate(candles []*repository.Candle) error {
 		}
 		variance /= float64(conf.Length)
 
-		candles[i].BollingerBands[conf.id] = &repository.BollingerBandsValue{
+		candles[i].BollingerBands[conf.id] = &entity.BollingerBandsValue{
 			UpperBand: ma + float64(conf.Deviation)*math.Sqrt(variance),
 			LowerBand: ma - float64(conf.Deviation)*math.Sqrt(variance),
 			MA:        ma,
@@ -82,10 +82,10 @@ func (conf *bollingerBands) Calculate(candles []*repository.Candle) error {
 	return nil
 }
 
-func (conf *bollingerBands) Update(candles []*repository.Candle) *repository.IndicatorValue {
+func (conf *bollingerBands) Update(candles []*entity.Candle) *entity.IndicatorValue {
 	smaConf := movingAverage{
 		id: uuid.New(),
-		MovingAverageConfigs: repository.MovingAverageConfigs{
+		MovingAverageConfigs: entity.MovingAverageConfigs{
 			Length: conf.Length,
 			Source: conf.Source,
 		},
@@ -118,8 +118,8 @@ func (conf *bollingerBands) Update(candles []*repository.Candle) *repository.Ind
 		variance += math.Pow(ma-sum, 2)
 	}
 	variance /= float64(conf.Length)
-	return &repository.IndicatorValue{
-		BB: &repository.BollingerBandsValue{
+	return &entity.IndicatorValue{
+		BB: &entity.BollingerBandsValue{
 			UpperBand: ma + float64(conf.Deviation)*math.Sqrt(variance),
 			LowerBand: ma - float64(conf.Deviation)*math.Sqrt(variance),
 			MA:        ma,
@@ -137,6 +137,6 @@ func (conf *bollingerBands) validateBollingerBand(length int) error {
 	return nil
 }
 
-func validateBollingerBandsConfigs(indicator *repository.BollingerBandsConfigs) error {
+func validateBollingerBandsConfigs(indicator *entity.BollingerBandsConfigs) error {
 	return nil
 }

@@ -1,0 +1,56 @@
+syntax = "proto3";
+package chipmunkApi;
+option go_package = "github.com/h-varmazyar/Gate/services/chipmunk/api/proto";
+import "api/proto/src/misc.proto";
+
+service WalletsService {
+  rpc List(api.Void) returns (Wallets);
+  rpc StartWorker(StartWorkerRequest) returns (api.Void);
+  rpc StopWorker(api.Void) returns (api.Void);
+  rpc ReturnWallet(ReturnWalletReq) returns (Wallet);
+  rpc ReturnReference(ReturnReferenceReq) returns (Reference);
+}
+
+message Wallet {
+  // @inject_tag: json:"blocked_balance"
+  double BlockedBalance = 1;
+  // @inject_tag: json:"active_balance"
+  double ActiveBalance = 2;
+  // @inject_tag: json:"total_balance"
+  double TotalBalance = 3;
+  // @inject_tag: json:"asset_name"
+  string AssetName = 4;
+}
+
+message Reference {
+  // @inject_tag: json:"blocked_balance"
+  double BlockedBalance = 1;
+  // @inject_tag: json:"active_balance"
+  double ActiveBalance = 2;
+  // @inject_tag: json:"total_balance"
+  double TotalBalance = 3;
+  // @inject_tag: json:"asset_name"
+  string AssetName = 4;
+}
+
+message Wallets {
+  // @inject_tag: json:"elements"
+  repeated Wallet Elements = 1;
+  // @inject_tag: json:"count"
+  int64 Count = 2;
+}
+
+message ReturnWalletReq {
+  // @inject_tag: json:"asset_name"
+  string AssetName = 1;
+}
+
+message ReturnReferenceReq {
+  // @inject_tag: json:"reference_name"
+  string ReferenceName = 1;
+}
+
+message StartWorkerRequest {
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 1;
+}

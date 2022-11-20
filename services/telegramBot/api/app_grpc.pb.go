@@ -4,7 +4,7 @@ package api
 
 import (
 	context "context"
-	api "github.com/h-varmazyar/Gate/api"
+	api "github.com/h-varmazyar/Gate/api/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"

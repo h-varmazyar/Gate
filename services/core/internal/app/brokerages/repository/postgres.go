@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/entity"
 	log "github.com/sirupsen/logrus"
@@ -42,13 +42,13 @@ func (repository *brokeragePostgresRepository) ReturnByID(id uuid.UUID) (*entity
 func (repository *brokeragePostgresRepository) ReturnEnable() (*entity.Brokerage, error) {
 	brokerage := new(entity.Brokerage)
 	return brokerage, repository.db.
-		Where("status LIKE ?", api.Status_Enable.String()).Find(&brokerage).Error
+		Where("status LIKE ?", proto.Status_Enable.String()).Find(&brokerage).Error
 }
 
 func (repository *brokeragePostgresRepository) ReturnEnables() ([]*entity.Brokerage, error) {
 	brokerages := make([]*entity.Brokerage, 0)
 	return brokerages, repository.db.
-		Where("status LIKE ?", api.Status_Enable.String()).Find(&brokerages).Error
+		Where("status LIKE ?", proto.Status_Enable.String()).Find(&brokerages).Error
 }
 
 func (repository *brokeragePostgresRepository) List() ([]*entity.Brokerage, error) {
@@ -61,9 +61,9 @@ func (repository *brokeragePostgresRepository) ChangeStatus(brokerageID uuid.UUI
 	if err := repository.db.Model(new(entity.Brokerage)).Where("id = ?", brokerageID).Select("status").Scan(&status).Error; err != nil {
 		return err
 	}
-	newStatus := api.Status_Enable
-	if status == api.Status_Enable.String() {
-		newStatus = api.Status_Disable
+	newStatus := proto.Status_Enable
+	if status == proto.Status_Enable.String() {
+		newStatus = proto.Status_Disable
 	}
 	return repository.db.Model(new(entity.Brokerage)).Where("id = ?", brokerageID).Update("status", newStatus).Error
 }

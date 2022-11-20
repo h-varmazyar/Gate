@@ -2,7 +2,7 @@ package app
 
 import (
 	"context"
-	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	telegramBotApi "github.com/h-varmazyar/Gate/services/telegramBot/api"
 	"github.com/h-varmazyar/Gate/services/telegramBot/internal/app/handlers"
@@ -31,22 +31,22 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 	telegramBotApi.RegisterBotServiceServer(server, s)
 }
 
-func (s *Service) Start(_ context.Context, _ *api.Void) (*api.Void, error) {
+func (s *Service) Start(_ context.Context, _ *proto.Void) (*proto.Void, error) {
 	handler := handlers.NewInstance(s.configs.HandlerConfigs)
 	if err := tgBotApi.Run(handler, s.configs.BotConfigs); err != nil {
 		return nil, err
 	}
-	return new(api.Void), nil
+	return new(proto.Void), nil
 }
 
-func (s *Service) Stop(ctx context.Context, _ *api.Void) (*api.Void, error) {
+func (s *Service) Stop(ctx context.Context, _ *proto.Void) (*proto.Void, error) {
 	if err := tgBotApi.Stop(ctx); err != nil {
 		return nil, err
 	}
-	return new(api.Void), nil
+	return new(proto.Void), nil
 }
 
-func (s *Service) SendMessage(ctx context.Context, req *telegramBotApi.Message) (*api.Void, error) {
+func (s *Service) SendMessage(ctx context.Context, req *telegramBotApi.Message) (*proto.Void, error) {
 	if !tgBotApi.IsRunning() {
 		return nil, errors.New(ctx, codes.Aborted).AddDetails("bot is not running")
 	}
@@ -62,7 +62,7 @@ func (s *Service) SendMessage(ctx context.Context, req *telegramBotApi.Message) 
 	if err = tgBotApi.SendMessage(ctx, msg); err != nil {
 		return nil, err
 	}
-	return new(api.Void), nil
+	return new(proto.Void), nil
 }
 
 func parseMessage(_ context.Context, req *telegramBotApi.Message) (tgBotApi.Message, error) {

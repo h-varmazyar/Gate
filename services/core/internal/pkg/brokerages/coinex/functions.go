@@ -6,12 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/h-varmazyar/Gate/api"
+	api "github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/errors"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	brokerageApi "github.com/h-varmazyar/Gate/services/core/api/proto"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
-	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
+	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api/proto"
 	api2 "github.com/h-varmazyar/Gate/services/network/api/proto"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
@@ -166,7 +165,7 @@ func (service *Requests) UpdateMarket(ctx context.Context, runner brokerages.Han
 	for _, value := range data {
 		item := value.(map[string]interface{})
 		m := new(chipmunkApi.Market)
-		m.BrokerageName = brokerageApi.Platform_Coinex.String()
+		m.Platform = api.Platform_Coinex
 		m.PricingDecimal = item["pricing_decimal"].(float64)
 		m.TradingDecimal = item["trading_decimal"].(float64)
 		num, err := strconv.ParseFloat(item["taker_fee_rate"].(string), 64)
@@ -187,9 +186,6 @@ func (service *Requests) UpdateMarket(ctx context.Context, runner brokerages.Han
 			continue
 		}
 		m.MinAmount = num
-		//m.Source = item["trading_name"].(string)
-		//m.Destination = item["pricing_name"].(string)
-		m.StartTime = time.Unix(1641025800, 0).Unix()
 		m.IsAMM = false
 		m.Name = item["name"].(string)
 		m.Status = api.Status_Enable
@@ -295,11 +291,10 @@ func (service *Requests) MarketList(ctx context.Context, runner brokerages.Handl
 		market := &chipmunkApi.Market{
 			PricingDecimal: value.PricingDecimal,
 			TradingDecimal: value.TradingDecimal,
-			StartTime:      time.Now().Add(time.Hour * 24 * 365 * 3 * -1).Unix(),
 			IsAMM:          true,
 			Name:           key,
 			Status:         api.Status_Enable,
-			BrokerageName:  brokerageApi.Platform_Coinex.String(),
+			Platform:       api.Platform_Coinex,
 			Source:         &chipmunkApi.Asset{Name: value.TradingName},
 			Destination:    &chipmunkApi.Asset{Name: value.PricingName},
 		}

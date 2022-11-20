@@ -1,7 +1,7 @@
 package strategies
 
 import (
-	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/services/Dolphin/configs"
@@ -35,7 +35,7 @@ func (c *strategyController) create(ctx app.Context) error {
 }
 
 func (c *strategyController) list(ctx app.Context) error {
-	if strategies, err := c.strategyService.List(ctx, new(api.Void)); err != nil {
+	if strategies, err := c.strategyService.List(ctx, new(proto.Void)); err != nil {
 		errModel := errors.Cast(ctx, err)
 		return ctx.Error(errModel.HttpStatus(), err)
 	} else {

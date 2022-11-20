@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
@@ -49,7 +49,7 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 }
 
 func (s *Service) Create(ctx context.Context, req *brokerageApi.BrokerageCreateReq) (*brokerageApi.Brokerage, error) {
-	if _, ok := api.AuthType_value[req.Auth.Type.String()]; !ok {
+	if _, ok := proto.AuthType_value[req.Auth.Type.String()]; !ok {
 		return nil, errors.NewWithSlug(ctx, codes.FailedPrecondition, "wrong_auth_type")
 	}
 	if _, ok := brokerageApi.Platform_value[req.Platform.String()]; !ok {
@@ -61,7 +61,7 @@ func (s *Service) Create(ctx context.Context, req *brokerageApi.BrokerageCreateR
 	brokerage := new(entity.Brokerage)
 	mapper.Struct(req, brokerage)
 
-	brokerage.Status = api.Status_Disable
+	brokerage.Status = proto.Status_Disable
 
 	if err := s.db.Create(brokerage); err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (s *Service) Start(ctx context.Context, req *brokerageApi.BrokerageStartReq
 		return nil, err
 	}
 
-	brokerage.Status = api.Status_Enable
+	brokerage.Status = proto.Status_Enable
 	//if err := repository.Brokerages.ChangeStatus(core.ID); err != nil {
 	//	return nil, err
 	//}
@@ -113,7 +113,7 @@ func (s *Service) Start(ctx context.Context, req *brokerageApi.BrokerageStartReq
 		if _, err = s.walletService.StartWorker(ctx, &chipmunkApi.StartWorkerRequest{
 			BrokerageID: req.ID,
 		}); err != nil {
-			log.WithError(err).WithField("core", brokerage.ID).Error("failed to start wallet worker")
+			log.WithError(err).WithField("core", brokerage.ID).Error("failed to start wallet workers")
 			//if statusErr := repository.Brokerages.ChangeStatus(core.ID); statusErr != nil {
 			//	log.WithError(statusErr).Errorf("failed ot change status of core %v to %v", core.ID, core.Status)
 			//}
@@ -125,10 +125,10 @@ func (s *Service) Start(ctx context.Context, req *brokerageApi.BrokerageStartReq
 			WithTrading: false,
 		}); err != nil {
 			if _, marketErr := s.marketService.StopWorker(ctx, &chipmunkApi.WorkerStopReq{BrokerageID: brokerageID.String()}); marketErr != nil {
-				log.WithError(marketErr).Errorf("failed to stop market worker for core %v", brokerageID)
+				log.WithError(marketErr).Errorf("failed to stop market workers for core %v", brokerageID)
 			}
-			if _, walletErr := s.walletService.StopWorker(ctx, new(api.Void)); walletErr != nil {
-				log.WithError(walletErr).Errorf("failed to stop wallet worker for core %v", brokerageID)
+			if _, walletErr := s.walletService.StopWorker(ctx, new(proto.Void)); walletErr != nil {
+				log.WithError(walletErr).Errorf("failed to stop wallet workers for core %v", brokerageID)
 			}
 			//if statusErr := repository.Brokerages.ChangeStatus(core.ID); statusErr != nil {
 			//	log.WithError(statusErr).Errorf("failed ot change status of core %v to %v", core.ID, core.Status)
@@ -160,14 +160,14 @@ func (s *Service) Stop(ctx context.Context, req *brokerageApi.BrokerageStopReq) 
 	}); err != nil {
 		return nil, err
 	}
-	if _, err = s.walletService.StopWorker(ctx, &api.Void{}); err != nil {
-		log.WithError(err).WithField("core", brokerage.ID).Error("failed to stop wallet worker")
+	if _, err = s.walletService.StopWorker(ctx, &proto.Void{}); err != nil {
+		log.WithError(err).WithField("core", brokerage.ID).Error("failed to stop wallet workers")
 	}
-	if _, err = s.signalService.Stop(ctx, &api.Void{}); err != nil {
-		log.WithError(err).WithField("core", brokerage.ID).Error("failed to stop signal worker")
+	if _, err = s.signalService.Stop(ctx, &proto.Void{}); err != nil {
+		log.WithError(err).WithField("core", brokerage.ID).Error("failed to stop signal workers")
 	}
 
-	brokerage.Status = api.Status_Enable
+	brokerage.Status = proto.Status_Enable
 	if err := s.db.ChangeStatus(brokerage.ID); err != nil {
 		return nil, err
 	}
@@ -190,7 +190,7 @@ func (s *Service) Return(_ context.Context, req *brokerageApi.BrokerageReturnReq
 	return response, err
 }
 
-func (s *Service) Enable(_ context.Context, req *api.Void) (*brokerageApi.Brokerage, error) {
+func (s *Service) Enable(_ context.Context, req *proto.Void) (*brokerageApi.Brokerage, error) {
 	brokerage, err := s.db.ReturnEnable()
 	if err != nil {
 		return nil, err
@@ -200,7 +200,7 @@ func (s *Service) Enable(_ context.Context, req *api.Void) (*brokerageApi.Broker
 	return response, err
 }
 
-func (s *Service) Delete(ctx context.Context, req *brokerageApi.BrokerageDeleteReq) (*api.Void, error) {
+func (s *Service) Delete(ctx context.Context, req *brokerageApi.BrokerageDeleteReq) (*proto.Void, error) {
 	brokerageID, err := uuid.Parse(req.ID)
 	if err != nil {
 		return nil, err
@@ -211,10 +211,10 @@ func (s *Service) Delete(ctx context.Context, req *brokerageApi.BrokerageDeleteR
 	if err := s.db.Delete(brokerageID); err != nil {
 		return nil, err
 	}
-	return new(api.Void), nil
+	return new(proto.Void), nil
 }
 
-func (s *Service) List(_ context.Context, _ *api.Void) (*brokerageApi.Brokerages, error) {
+func (s *Service) List(_ context.Context, _ *proto.Void) (*brokerageApi.Brokerages, error) {
 	brokerages, err := s.db.List()
 	if err != nil {
 		return nil, err

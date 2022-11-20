@@ -1,0 +1,50 @@
+syntax = "proto3";
+package chipmunkApi;
+option go_package = "github.com/h-varmazyar/Gate/services/chipmunk/api/proto";
+import "api/proto/src/misc.proto";
+
+service ResolutionService {
+  rpc Set(Resolution) returns(api.Void);
+  rpc ReturnByID(ResolutionReturnByIDReq) returns (Resolution);
+  rpc ReturnByDuration(ResolutionReturnByDurationReq) returns (Resolution);
+  rpc List(ResolutionListReq) returns (Resolutions);
+}
+
+message Resolution {
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
+  // @inject_tag: json:"duration"
+  int64 Duration = 2;
+  // @inject_tag: json:"label"
+  string Label = 3;
+  // @inject_tag: json:"value"
+  string Value = 4;
+  // @inject_tag: json:"id"
+  string ID = 5;
+  // @inject_tag: json:"created_at"
+  int64 CreatedAt = 6;
+  // @inject_tag: json:"updated_at"
+  int64 UpdatedAt = 7;
+}
+
+message Resolutions {
+  // @inject_tag: json:"elements"
+  repeated Resolution Elements = 1;
+}
+
+message ResolutionReturnByIDReq {
+  // @inject_tag: json:"id"
+  string ID = 1;
+}
+
+message ResolutionReturnByDurationReq {
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
+  // @inject_tag: json:"duration"
+  int64 Duration = 2;
+}
+
+message ResolutionListReq {
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
+}

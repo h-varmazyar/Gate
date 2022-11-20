@@ -1,0 +1,126 @@
+syntax = "proto3";
+package chipmunkApi;
+option go_package = "github.com/h-varmazyar/Gate/services/chipmunk/api/proto";
+import "api/proto/src/misc.proto";
+import "services/chipmunk/api/proto/src/asset.proto";
+
+service MarketService {
+  rpc Create(CreateMarketReq) returns (Market);
+  rpc Return(MarketReturnReq) returns (Market);
+  rpc Update(Market) returns (Market);
+  rpc UpdateFromPlatform(MarketUpdateFromPlatformReq) returns (Markets);
+  rpc List(MarketListReq) returns (Markets);
+  rpc ListBySource(MarketListBySourceReq) returns (Markets);
+  rpc StartWorker(WorkerStartReq) returns (api.Void);
+  rpc StopWorker(WorkerStopReq) returns (api.Void);
+}
+
+message Market {
+  // @inject_tag: json:"pricing_decimal"
+  double PricingDecimal = 1;
+  // @inject_tag: json:"trading_decimal"
+  double TradingDecimal = 2;
+  // @inject_tag: json:"taker_fee_rate"
+  double TakerFeeRate = 3;
+  // @inject_tag: json:"maker_fee_rate"
+  double MakerFeeRate = 4;
+  // @inject_tag: json:"destination"
+  Asset Destination = 5;
+  // @inject_tag: json:"issue_date"
+  int64 IssueDate = 6;
+  // @inject_tag: json:"min_amount"
+  double MinAmount = 7;
+  // @inject_tag: json:"created_at"
+  int64 CreatedAt = 8;
+  // @inject_tag: json:"updated_at"
+  int64 UpdatedAt = 9;
+  // @inject_tag: json:"source"
+  Asset Source = 10;
+  // @inject_tag: json:"is_amm"
+  bool IsAMM = 11;
+  // @inject_tag: json:"name"
+  string Name = 12;
+  // @inject_tag: json:"id"
+  string ID = 13;
+  // @inject_tag: json:"status"
+  api.Status Status = 14;
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 15;
+}
+
+message CreateMarketReq {
+  // @inject_tag: json:"pricing_decimal"
+  double PricingDecimal = 1;
+  // @inject_tag: json:"trading_decimal"
+  double TradingDecimal = 2;
+  // @inject_tag: json:"taker_fee_rate"
+  double TakerFeeRate = 3;
+  // @inject_tag: json:"maker_fee_rate"
+  double MakerFeeRate = 4;
+  // @inject_tag: json:"destination"
+  Asset Destination = 5;
+  // @inject_tag: json:"start_time"
+  int64 StartTime = 6;
+  // @inject_tag: json:"min_amount"
+  double MinAmount = 7;
+  // @inject_tag: json:"created_at"
+  int64 CreatedAt = 8;
+  // @inject_tag: json:"updated_at"
+  int64 UpdatedAt = 9;
+  // @inject_tag: json:"source"
+  Asset Source = 10;
+  // @inject_tag: json:"is_amm"
+  bool IsAMM = 11;
+  // @inject_tag: json:"name"
+  string Name = 12;
+  // @inject_tag: json:"status"
+  api.Status Status = 14;
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 15;
+}
+
+message Markets {
+  // @inject_tag: json:"elements"
+  repeated Market Elements = 1;
+}
+
+message MarketReturnReq {
+  // @inject_tag: json:"id"
+  string ID = 1;
+}
+
+message MarketListReq {
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
+}
+
+message MarketUpdateReq {
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 1;
+}
+
+message MarketUpdateFromPlatformReq {
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
+}
+
+message MarketListBySourceReq {
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
+  // @inject_tag: json:"source"
+  string Source = 2;
+}
+
+message WorkerStartReq{
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
+  // @inject_tag: json:"resolution_id"
+  string ResolutionID = 2;
+  // @inject_tag: json:"strategy_id"
+  string StrategyID = 3;
+}
+
+message WorkerStopReq {
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
+}

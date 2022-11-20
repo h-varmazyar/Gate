@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"github.com/h-varmazyar/Gate/services/telegramBot/internal/pkg/repository"
@@ -39,7 +39,7 @@ func (*Handler) startCommand(ctx context.Context, msg *tgbotapi.Message) error {
 }
 
 func (h *Handler) brokerageList(ctx context.Context, msg *tgbotapi.Message) error {
-	brokerages, err := h.brokerageService.List(ctx, new(api.Void))
+	brokerages, err := h.brokerageService.List(ctx, new(proto.Void))
 	if err != nil {
 		log.WithError(err).Error("failed to load brokerages")
 		return err
@@ -53,7 +53,7 @@ status: %v
 
 	for i, brokerage := range brokerages.Elements {
 		statusText := QueryStart
-		if brokerage.Status == api.Status_Enable {
+		if brokerage.Status == proto.Status_Enable {
 			statusText = QueryStop
 		}
 
@@ -78,7 +78,7 @@ status: %v
 }
 
 func (h *Handler) updateMarkets(ctx context.Context, msg *tgbotapi.Message) error {
-	brokerage, err := h.brokerageService.Enable(ctx, new(api.Void))
+	brokerage, err := h.brokerageService.Enable(ctx, new(proto.Void))
 	if err != nil {
 		return err
 	}

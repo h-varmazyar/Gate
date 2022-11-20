@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/h-varmazyar/Gate/api"
+	api "github.com/h-varmazyar/Gate/api/proto"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages/coinex"
@@ -14,7 +14,7 @@ import (
 
 func loadRequest(configs *Configs, brokerage *coreApi.Brokerage) brokerages.Requests {
 	switch brokerage.Platform {
-	case coreApi.Platform_Coinex:
+	case api.Platform_Coinex:
 		auth := &api.Auth{
 			Type:      api.AuthType_StaticToken,
 			AccessID:  brokerage.Auth.AccessID,
@@ -22,7 +22,7 @@ func loadRequest(configs *Configs, brokerage *coreApi.Brokerage) brokerages.Requ
 		}
 		coinexInstance := coinex.NewRequest(configs.Coinex, auth)
 		return coinexInstance
-	case coreApi.Platform_Nobitex:
+	case api.Platform_Nobitex:
 		return nil
 	}
 	return nil

@@ -1,56 +1,124 @@
 package main
 
 import (
+	"context"
+	"github.com/h-varmazyar/Gate/pkg/amqpext"
 	"github.com/h-varmazyar/Gate/pkg/service"
-	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/assets"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles"
+	candlesService "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/indicators"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets"
+	marketsService "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/resolutions"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/wallets"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/db"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"gopkg.in/yaml.v3"
+	"io/ioutil"
 	"net"
 )
 
 func main() {
-	//initializing
-	configs.Load()
-	repository.InitializingDB()
-	buffer.NewMarketInstance()
+	ctx := context.Background()
+	conf := loadConfigs()
+	logger := log.New()
+	dbInstance, err := loadDB(ctx, conf.DB)
+	if err != nil {
+		logger.Panicf("failed to initiate databases with error %v", err)
+	}
 
-	service.Serve(configs.Variables.GrpcPort, func(lst net.Listener) error {
+	if err = amqpext.InitializeAMQP(conf.AMQPConfigs); err != nil {
+		logger.Panicf("failed to initialize amqp: %v", err)
+	}
+
+	initializeAndRegisterApps(ctx, logger, dbInstance, conf)
+}
+
+func loadConfigs() *Configs {
+	configs := new(Configs)
+	confBytes, err := ioutil.ReadFile("../configs/local.yaml")
+	if err != nil {
+		log.WithError(err).Fatal("can not load yaml file")
+	}
+	if err = yaml.Unmarshal(confBytes, configs); err != nil {
+		log.WithError(err).Fatal("can not unmarshal yaml file")
+	}
+	return configs
+}
+
+func loadDB(ctx context.Context, configs *db.Configs) (*db.DB, error) {
+	return db.NewDatabase(ctx, configs)
+}
+
+func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstance *db.DB, configs *Configs) {
+	var err error
+	var assetsApp *assets.App
+	assetsApp, err = assets.NewApp(ctx, logger, dbInstance, configs.AssetsApp)
+	if err != nil {
+		logger.WithError(err).Panicf("failed to initiate assets app")
+	}
+
+	var indicatorsApp *indicators.App
+	indicatorsApp, err = indicators.NewApp(ctx, logger, dbInstance, configs.IndicatorsApp)
+	if err != nil {
+		logger.WithError(err).Panicf("failed to initiate markets app")
+	}
+
+	var resolutionsApp *resolutions.App
+	resolutionsApp, err = resolutions.NewApp(ctx, logger, dbInstance, configs.ResolutionsApp)
+	if err != nil {
+		logger.WithError(err).Panicf("failed to initiate markets app")
+	}
+
+	candlesDependencies := &candles.AppDependencies{
+		ServiceDependencies: &candlesService.Dependencies{
+			ResolutionService: resolutionsApp.Service,
+			IndicatorService:  indicatorsApp.Service,
+		},
+	}
+	var candlesApp *candles.App
+	candlesApp, err = candles.NewApp(ctx, logger, dbInstance, configs.CandlesApp, candlesDependencies)
+	if err != nil {
+		logger.WithError(err).Panicf("failed to initiate markets app")
+	}
+
+	marketDependencies := &markets.AppDependencies{
+		CandlesService: candlesApp.Service,
+		ServiceDependencies: &marketsService.Dependencies{
+			AssetsService:      assetsApp.Service,
+			IndicatorsService:  indicatorsApp.Service,
+			ResolutionsService: resolutionsApp.Service,
+		},
+	}
+
+	var marketsApp *markets.App
+	marketsApp, err = markets.NewApp(ctx, logger, dbInstance, configs.MarketsApp, marketDependencies)
+	if err != nil {
+		logger.WithError(err).Panicf("failed to initiate markets app")
+	}
+
+	walletDependencies := &wallets.AppDependencies{
+		MarketService: marketsApp.Service,
+	}
+
+	var walletsApp *wallets.App
+	walletsApp, err = wallets.NewApp(ctx, logger, configs.WalletsApp, walletDependencies)
+	if err != nil {
+		logger.WithError(err).Panicf("failed to initiate markets app")
+	}
+
+	service.Serve(configs.GRPCPort, func(lst net.Listener) error {
 		server := grpc.NewServer()
-		assets.NewService().RegisterServer(server)
-		candles.NewService().RegisterServer(server)
-		wallets.NewService().RegisterServer(server)
-		indicators.NewService().RegisterServer(server)
-		markets.NewService().RegisterServer(server)
-		resolutions.NewService().RegisterServer(server)
+		assetsApp.Service.RegisterServer(server)
+		marketsApp.Service.RegisterServer(server)
+		candlesApp.Service.RegisterServer(server)
+		indicatorsApp.Service.RegisterServer(server)
+		resolutionsApp.Service.RegisterServer(server)
+		walletsApp.Service.RegisterServer(server)
 		return server.Serve(lst)
 	})
 
-	markets.InitializeWorker()
-	wallets.InitializeWorker()
-
-	//rsi := repository.Indicator{
-	//	UniversalModel: gormext.UniversalModel{},
-	//	Type:           chipmunkApi.Indicator_RSI,
-	//	Configs: &repository.IndicatorConfigs{
-	//		RSI: &repository.RsiConfigs{Length: 7},
-	//	},
-	//}
-	//
-	//log.Infof("rsi creation: %v", repository.Indicators.Create(&rsi))
-
-	////id, _ := uuid.Parse("d4cc478a-7783-47f6-9c73-987b6c675d5d")
-	//id, _ := uuid.Parse("1917ae7b-a3cf-4e59-8e78-d1a44c073c81")
-	//rsi, err := repository.Indicators.Return(id)
-	//log.Errorf("rsi fetch err: %v", err)
-	//log.Infof("rsi fetch: %v", rsi)
-	//log.Warnf("rsi fetch: %v", rsi.Configs)
-
-	service.Start(configs.Variables.ServiceName, configs.Variables.Version)
+	service.Start(configs.ServiceName, configs.Version)
 }

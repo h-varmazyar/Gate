@@ -1,8 +1,8 @@
 package brokerages
 
 import (
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
+	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api/proto"
 	"time"
 )
 

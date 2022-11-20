@@ -2,6 +2,7 @@ package brokerages
 
 import (
 	"context"
+	api "github.com/h-varmazyar/Gate/api/proto"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 )
 
@@ -19,5 +20,8 @@ type Handler func(ctx context.Context, request *networkAPI.Request) (*networkAPI
 //}
 
 type Metadata struct {
-	Method string
+	Method       string
+	Platform     api.Platform
+	MarketID     string
+	ResolutionID string
 }

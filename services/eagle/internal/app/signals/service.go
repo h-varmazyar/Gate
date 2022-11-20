@@ -3,7 +3,7 @@ package signals
 import (
 	"context"
 	"fmt"
-	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
@@ -41,9 +41,9 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 	eagleApi.RegisterSignalServiceServer(server, s)
 }
 
-func (s *Service) Start(ctx context.Context, req *eagleApi.SignalStartReq) (*api.Void, error) {
+func (s *Service) Start(ctx context.Context, req *eagleApi.SignalStartReq) (*proto.Void, error) {
 	if signalCheckWorker != nil && signalCheckWorker.IsRunning() {
-		return new(api.Void), nil
+		return new(proto.Void), nil
 	}
 	strategy, err := s.strategyService.Return(ctx, &eagleApi.ReturnStrategyReq{
 		ID: req.StrategyID,
@@ -65,10 +65,10 @@ func (s *Service) Start(ctx context.Context, req *eagleApi.SignalStartReq) (*api
 	signalCheckInstance := SignalCheckWorkerInstance(automated, markets.Elements)
 	signalCheckInstance.Start()
 
-	return new(api.Void), nil
+	return new(proto.Void), nil
 }
 
-func (s *Service) Stop(_ context.Context, _ *api.Void) (*api.Void, error) {
+func (s *Service) Stop(_ context.Context, _ *proto.Void) (*proto.Void, error) {
 	StopSignalChecker()
-	return new(api.Void), nil
+	return new(proto.Void), nil
 }
