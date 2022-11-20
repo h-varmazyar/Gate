@@ -3,18 +3,19 @@ package service
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/h-varmazyar/Gate/api"
+	api "github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	markets2 "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
+	assets "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/assets/service"
+	indicators "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/indicators/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/repository"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/workers"
+	resolutions "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/resolutions/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
-	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
+	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api/proto"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -24,10 +25,15 @@ import (
 )
 
 type Service struct {
-	networkService   networkAPI.RequestServiceClient
-	strategyService  eagleApi.StrategyServiceClient
-	functionsService coreApi.FunctionsServiceClient
-	brokerageService coreApi.BrokerageServiceClient
+	networkService     networkAPI.RequestServiceClient
+	strategyService    eagleApi.StrategyServiceClient
+	functionsService   coreApi.FunctionsServiceClient
+	brokerageService   coreApi.BrokerageServiceClient
+	resolutionsService *resolutions.Service
+	assetsService      *assets.Service
+	indicatorsService  *indicators.Service
+	//worker             *workers.Worker
+	statisticsWorker *workers.StatisticsWorker
 	logger           *log.Logger
 	db               repository.MarketRepository
 }
@@ -36,7 +42,15 @@ var (
 	GrpcService *Service
 )
 
-func NewService(_ context.Context, logger *log.Logger, configs *Configs, db repository.MarketRepository) *Service {
+type Dependencies struct {
+	AssetsService      *assets.Service
+	IndicatorsService  *indicators.Service
+	ResolutionsService *resolutions.Service
+	//Worker             *workers.Worker
+	StatisticsWorker *workers.StatisticsWorker
+}
+
+func NewService(_ context.Context, logger *log.Logger, configs *Configs, db repository.MarketRepository, dependencies *Dependencies) *Service {
 	if GrpcService == nil {
 		GrpcService = new(Service)
 		networkConn := grpcext.NewConnection(configs.NetworkAddress)
@@ -45,6 +59,11 @@ func NewService(_ context.Context, logger *log.Logger, configs *Configs, db repo
 		GrpcService.networkService = networkAPI.NewRequestServiceClient(networkConn)
 		GrpcService.strategyService = eagleApi.NewStrategyServiceClient(eagleConn)
 		GrpcService.functionsService = coreApi.NewFunctionsServiceClient(coreConn)
+		GrpcService.assetsService = dependencies.AssetsService
+		GrpcService.indicatorsService = dependencies.IndicatorsService
+		GrpcService.resolutionsService = dependencies.ResolutionsService
+		//GrpcService.worker = dependencies.Worker
+		GrpcService.statisticsWorker = dependencies.StatisticsWorker
 		GrpcService.db = db
 		GrpcService.logger = logger
 	}
@@ -82,7 +101,7 @@ func (s *Service) Create(ctx context.Context, req *chipmunkApi.CreateMarketReq) 
 	return response, nil
 }
 
-func (s *Service) Return(_ context.Context, req *chipmunkApi.ReturnMarketRequest) (*chipmunkApi.Market, error) {
+func (s *Service) Return(_ context.Context, req *chipmunkApi.MarketReturnReq) (*chipmunkApi.Market, error) {
 	marketID, err := uuid.Parse(req.ID)
 	if err != nil {
 		return nil, err
@@ -96,12 +115,8 @@ func (s *Service) Return(_ context.Context, req *chipmunkApi.ReturnMarketRequest
 	return response, nil
 }
 
-func (s *Service) List(_ context.Context, req *chipmunkApi.MarketListRequest) (*chipmunkApi.Markets, error) {
-	brID, err := uuid.Parse(req.BrokerageID)
-	if err != nil {
-		return nil, err
-	}
-	response, err := s.db.List(brID)
+func (s *Service) List(_ context.Context, req *chipmunkApi.MarketListReq) (*chipmunkApi.Markets, error) {
+	response, err := s.db.List(req.Platform)
 	if err != nil {
 		return nil, err
 	}
@@ -110,13 +125,9 @@ func (s *Service) List(_ context.Context, req *chipmunkApi.MarketListRequest) (*
 	return markets, nil
 }
 
-func (s *Service) ReturnBySource(_ context.Context, req *chipmunkApi.MarketListBySourceRequest) (*chipmunkApi.Markets, error) {
-	brID, err := uuid.Parse(req.BrokerageID)
-	if err != nil {
-		return nil, err
-	}
+func (s *Service) ListBySource(_ context.Context, req *chipmunkApi.MarketListBySourceReq) (*chipmunkApi.Markets, error) {
 	response := new(chipmunkApi.Markets)
-	if markets, err := s.db.ListBySource(brID, req.Source); err != nil {
+	if markets, err := s.db.ListBySource(req.Platform, req.Source); err != nil {
 		return nil, err
 	} else {
 		list := make([]*chipmunkApi.Market, 0)
@@ -127,155 +138,214 @@ func (s *Service) ReturnBySource(_ context.Context, req *chipmunkApi.MarketListB
 }
 
 func (s *Service) StartWorker(ctx context.Context, req *chipmunkApi.WorkerStartReq) (*api.Void, error) {
-	var (
-		err                error
-		brokerageID        uuid.UUID
-		resolutionID       uuid.UUID
-		markets            []*entity.Market
-		resolution         *entity.Resolution
-		strategyIndicators *eagleApi.StrategyIndicators
-		loadedIndicators   map[uuid.UUID]indicators.Indicator
-	)
-
-	if brokerageID, err = uuid.Parse(req.BrokerageID); err != nil {
-		return nil, err
-	}
-
-	if markets, err = s.db.List(brokerageID); err != nil {
-		return nil, err
-	}
-
-	if resolutionID, err = uuid.Parse(req.ResolutionID); err != nil {
-		return nil, err
-	}
-	if resolution, err = repository.Resolutions.Return(resolutionID); err != nil {
-		return nil, err
-	}
-
-	log.Infof("loaded resolution: %v", resolution)
-
-	if strategyIndicators, err = s.strategyService.Indicators(ctx, &eagleApi.StrategyIndicatorReq{StrategyID: req.StrategyID}); err != nil {
-		return nil, err
-	}
-
-	log.Infof("loaded strategies count: %v", len(strategyIndicators.Elements))
-
-	if loadedIndicators, err = loadIndicators(ctx, strategyIndicators); err != nil {
-		return nil, err
-	}
-	for _, market := range markets {
-		settings := &workers.WorkerSettings{
-			Market:      market,
-			Resolution:  resolution,
-			Indicators:  loadedIndicators,
-			BrokerageID: brokerageID,
-		}
-		markets2.worker.AddMarket(settings)
-		log.Infof("new market added: %v", market.Name)
-	}
+	//var (
+	//	markets []*entity.Market
+	//resolution         *entity.Resolution
+	//strategyIndicators *eagleApi.StrategyIndicators
+	//loadedIndicators map[uuid.UUID]indicatorsPkg.Indicator
+	//)
+	//
+	//if markets, err = s.db.List(req.Platform); err != nil {
+	//	return nil, err
+	//}
+	//
+	//if resolution, err = s.resolutionsService.GetByID(ctx, &chipmunkApi.GetResolutionByIDRequest{ID: req.ResolutionID}); err != nil {
+	//	return nil, err
+	//}
+	//
+	//log.Infof("loaded resolution: %v", resolution)
+	//
+	//if strategyIndicators, err = s.strategyService.Indicators(ctx, &eagleApi.StrategyIndicatorReq{StrategyID: req.StrategyID}); err != nil {
+	//	return nil, err
+	//}
+	//
+	//log.Infof("loaded strategies count: %v", len(strategyIndicators.Elements))
+	//
+	//if loadedIndicators, err = s.loadIndicators(ctx, strategyIndicators); err != nil {
+	//	return nil, err
+	//}
+	//for _, market := range markets {
+	//	settings := &workers.WorkerSettings{
+	//		Market:      market,
+	//		Resolution:  resolution,
+	//		Indicators:  loadedIndicators,
+	//		BrokerageID: brokerageID,
+	//	}
+	//	s.workers.AddMarket(settings)
+	//	log.Infof("new market added: %v", market.Name)
+	//}
+	s.statisticsWorker.Start(ctx, req.Platform)
 	return new(api.Void), nil
 }
 
-func (s *Service) StopWorker(ctx context.Context, req *chipmunkApi.WorkerStopReq) (*api.Void, error) {
-	brokerageID, err := uuid.Parse(req.BrokerageID)
-	if err != nil {
-		return nil, err
-	}
-	markets, err := s.db.List(brokerageID)
-	if err != nil {
-		return nil, err
-	}
-	for _, market := range markets {
-		err := markets2.worker.DeleteMarket(market.ID)
-		if err != nil {
-			log.WithError(err).Errorf("failed to delete market %v", market)
-		}
-	}
+func (s *Service) StopWorker(_ context.Context, req *chipmunkApi.WorkerStopReq) (*api.Void, error) {
+
+	//markets, err := s.db.List(brokerageID)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//for _, market := range markets {
+	//	err := s.workers.DeleteMarket(market.ID)
+	//	if err != nil {
+	//		log.WithError(err).Errorf("failed to delete market %v", market)
+	//	}
+	//}
+
+	s.statisticsWorker.Stop(req.Platform)
 	return new(api.Void), nil
 }
 
-func (s *Service) Update(ctx context.Context, req *chipmunkApi.MarketUpdateReq) (*chipmunkApi.Markets, error) {
-	brokerageID, err := uuid.Parse(req.BrokerageID)
-	if err != nil {
-		return nil, err
-	}
-	markets, err := s.functionsService.MarketList(ctx, &coreApi.MarketListReq{BrokerageID: brokerageID.String()})
+func (s *Service) Update(ctx context.Context, _ *chipmunkApi.Market) (*chipmunkApi.Market, error) {
+	return nil, errors.New(ctx, codes.Unimplemented)
+	//brokerageID, err := uuid.Parse(req.BrokerageID)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//markets, err := s.functionsService.MarketList(ctx, &coreApi.MarketListReq{BrokerageID: brokerageID.String()})
+	//if err != nil {
+	//	return nil, err
+	//}
+	//for _, market := range markets.Elements {
+	//	source, sourceErr := s.loadOrCreateAsset(ctx, market.Source.Name)
+	//	if sourceErr != nil {
+	//		log.WithError(err).Errorf("failed to load or create source for market %v", market.Name)
+	//		continue
+	//	}
+	//	destination, destinationErr := s.loadOrCreateAsset(ctx, market.Destination.Name)
+	//	if destinationErr != nil {
+	//		log.WithError(err).Errorf("failed to load or create destination for market %v", market.Name)
+	//		continue
+	//	}
+	//	localMarket := new(entity.Market)
+	//	mapper.Struct(market, localMarket)
+	//	localMarket.SourceID = source.ID
+	//	localMarket.DestinationID = destination.ID
+	//	localMarket.BrokerageID = brokerageID
+	//
+	//	err = s.db.SaveOrUpdate(localMarket)
+	//	if err != nil {
+	//		log.WithError(err).Error("failed to update markets")
+	//		continue
+	//	}
+	//}
+	//return markets, nil
+}
+
+func (s *Service) UpdateFromPlatform(ctx context.Context, req *chipmunkApi.MarketUpdateFromPlatformReq) (*chipmunkApi.Markets, error) {
+	markets, err := s.functionsService.MarketList(ctx, &coreApi.MarketListReq{Platform: req.Platform})
 	if err != nil {
 		return nil, err
 	}
 	for _, market := range markets.Elements {
-		source, sourceErr := loadOrCreateAsset(market.Source.Name)
+		source, sourceErr := s.loadOrCreateAsset(ctx, market.Source.Name)
 		if sourceErr != nil {
-			log.WithError(err).Errorf("failed to load or create source for market %v", market.Name)
+			s.logger.WithError(err).Errorf("failed to load or create source for market %v", market.Name)
 			continue
 		}
-		destination, destinationErr := loadOrCreateAsset(market.Destination.Name)
+		destination, destinationErr := s.loadOrCreateAsset(ctx, market.Destination.Name)
 		if destinationErr != nil {
-			log.WithError(err).Errorf("failed to load or create destination for market %v", market.Name)
+			s.logger.WithError(err).Errorf("failed to load or create destination for market %v", market.Name)
 			continue
 		}
 		localMarket := new(entity.Market)
 		mapper.Struct(market, localMarket)
 		localMarket.SourceID = source.ID
 		localMarket.DestinationID = destination.ID
-		localMarket.BrokerageID = brokerageID
+		localMarket.Platform = req.Platform
+
+		if req.Platform == api.Platform_Coinex {
+			marketInfo, err := s.functionsService.MarketInfo(ctx, &coreApi.MarketInfoReq{Market: market})
+			if err != nil {
+				s.logger.WithError(err).Errorf("failed to get market info for %v in platform %v", market.Name, market.Platform.String())
+				return nil, err
+			}
+			localMarket.IssueDate = time.Unix(marketInfo.IssueDate, 0)
+		} else {
+			return nil, errors.New(ctx, codes.FailedPrecondition).AddDetails("check market issue date")
+		}
 
 		err = s.db.SaveOrUpdate(localMarket)
 		if err != nil {
-			log.WithError(err).Error("failed to update markets")
+			s.logger.WithError(err).Error("failed to update markets")
 			continue
 		}
+	}
+	if err = s.deleteOldMarkets(req.Platform, markets.Elements); err != nil {
+		s.logger.WithError(err).Errorf("failed to delete old markets for %v", req.Platform.String())
+		return nil, err
 	}
 	return markets, nil
 }
 
-func loadOrCreateAsset(assetName string) (*entity.Asset, error) {
-	asset, err := repository.Assets.ReturnBySymbol(assetName)
+func (s *Service) loadOrCreateAsset(ctx context.Context, assetName string) (*entity.Asset, error) {
+	asset, err := s.assetsService.ReturnBySymbol(ctx, &chipmunkApi.AssetReturnBySymbolReq{Symbol: assetName})
+	resp := new(entity.Asset)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			asset := new(entity.Asset)
-			asset.Name = assetName
-			asset.Symbol = assetName
-			asset.IssueDate = time.Now()
-			err = repository.Assets.Create(asset)
+			setAsset := new(chipmunkApi.AssetCreateReq)
+			setAsset.Name = assetName
+			setAsset.Symbol = assetName
+			_, err = s.assetsService.Create(ctx, setAsset)
 			if err != nil {
 				log.WithError(err).WithField("asset_name", assetName).Error("failed to create assets")
 				return nil, err
 			}
-			return asset, nil
+			mapper.Struct(setAsset, resp)
+			return resp, nil
 		}
 		log.WithError(err).WithField("asset_name", assetName).Error("failed to get assets")
 		return nil, err
 	}
-	return asset, nil
+	resp = entity.WrapAsset(asset)
+	return resp, nil
 }
 
-func loadIndicators(_ context.Context, strategyIndicators *eagleApi.StrategyIndicators) (map[uuid.UUID]indicators.Indicator, error) {
-	response := make(map[uuid.UUID]indicators.Indicator)
-	for _, strategyIndicator := range strategyIndicators.Elements {
-		id, err := uuid.Parse(strategyIndicator.IndicatorID)
+func (s *Service) deleteOldMarkets(platform api.Platform, newMarkets []*chipmunkApi.Market) error {
+	localMarkets, err := s.db.List(platform)
+	if err != nil {
+		s.logger.WithError(err).Errorf("failed to return list of markets for %v", platform.String())
+		return err
+	}
+	for _, local := range localMarkets {
+		for _, remote := range newMarkets {
+			if local.ID.String() == remote.ID {
+				continue
+			}
+		}
+		err = s.db.Delete(local)
 		if err != nil {
+			s.logger.WithError(err).Errorf("failed to delete market %v", local.ID)
 			continue
 		}
-		indicator, err := repository.Indicators.Return(id)
-		if err != nil {
-			return nil, err
-		}
-		var indicatorCalculator indicators.Indicator
-		switch indicator.Type {
-		case chipmunkApi.Indicator_RSI:
-			indicatorCalculator, err = indicators.NewRSI(indicator.ID, indicator.Configs.RSI)
-		case chipmunkApi.Indicator_Stochastic:
-			indicatorCalculator, err = indicators.NewStochastic(indicator.ID, indicator.Configs.Stochastic)
-		case chipmunkApi.Indicator_MovingAverage:
-			indicatorCalculator, err = indicators.NewMovingAverage(indicator.ID, indicator.Configs.MovingAverage)
-		case chipmunkApi.Indicator_BollingerBands:
-			indicatorCalculator, err = indicators.NewBollingerBands(indicator.ID, indicator.Configs.BollingerBands)
-		}
-		if err != nil {
-			return nil, err
-		}
-		response[indicator.ID] = indicatorCalculator
 	}
-	return response, nil
+	return nil
 }
+
+//
+//func (s *Service) loadIndicators(ctx context.Context, strategyIndicators *eagleApi.StrategyIndicators) (map[uuid.UUID]indicatorsPkg.Indicator, error) {
+//	response := make(map[uuid.UUID]indicatorsPkg.Indicator)
+//	for _, strategyIndicator := range strategyIndicators.Elements {
+//		indicatorResp, err := s.indicatorsService.Return(ctx, &chipmunkApi.IndicatorReturnReq{ID: strategyIndicator.IndicatorID})
+//		indicator := new(entity.Indicator)
+//		mapper.Struct(indicatorResp, indicator)
+//		if err != nil {
+//			return nil, err
+//		}
+//		var indicatorCalculator indicatorsPkg.Indicator
+//		switch indicator.Type {
+//		case chipmunkApi.Indicator_RSI:
+//			indicatorCalculator, err = indicatorsPkg.NewRSI(indicator.ID, indicator.Configs.RSI)
+//		case chipmunkApi.Indicator_Stochastic:
+//			indicatorCalculator, err = indicatorsPkg.NewStochastic(indicator.ID, indicator.Configs.Stochastic)
+//		case chipmunkApi.Indicator_MovingAverage:
+//			indicatorCalculator, err = indicatorsPkg.NewMovingAverage(indicator.ID, indicator.Configs.MovingAverage)
+//		case chipmunkApi.Indicator_BollingerBands:
+//			indicatorCalculator, err = indicatorsPkg.NewBollingerBands(indicator.ID, indicator.Configs.BollingerBands)
+//		}
+//		if err != nil {
+//			return nil, err
+//		}
+//		response[indicator.ID] = indicatorCalculator
+//	}
+//	return response, nil
+//}

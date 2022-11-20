@@ -8,7 +8,6 @@ package proto
 
 import (
 	context "context"
-	api "github.com/h-varmazyar/Gate/api"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -23,8 +22,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AssetServiceClient interface {
-	Set(ctx context.Context, in *Asset, opts ...grpc.CallOption) (*api.Void, error)
-	Get(ctx context.Context, in *GetAssetRequest, opts ...grpc.CallOption) (*Asset, error)
+	Create(ctx context.Context, in *AssetCreateReq, opts ...grpc.CallOption) (*Asset, error)
+	ReturnByID(ctx context.Context, in *AssetReturnByIDReq, opts ...grpc.CallOption) (*Asset, error)
+	ReturnBySymbol(ctx context.Context, in *AssetReturnBySymbolReq, opts ...grpc.CallOption) (*Asset, error)
 	List(ctx context.Context, in *GetAssetListRequest, opts ...grpc.CallOption) (*Assets, error)
 }
 
@@ -36,18 +36,27 @@ func NewAssetServiceClient(cc grpc.ClientConnInterface) AssetServiceClient {
 	return &assetServiceClient{cc}
 }
 
-func (c *assetServiceClient) Set(ctx context.Context, in *Asset, opts ...grpc.CallOption) (*api.Void, error) {
-	out := new(api.Void)
-	err := c.cc.Invoke(ctx, "/chipmunkApi.AssetService/Set", in, out, opts...)
+func (c *assetServiceClient) Create(ctx context.Context, in *AssetCreateReq, opts ...grpc.CallOption) (*Asset, error) {
+	out := new(Asset)
+	err := c.cc.Invoke(ctx, "/chipmunkApi.AssetService/Create", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *assetServiceClient) Get(ctx context.Context, in *GetAssetRequest, opts ...grpc.CallOption) (*Asset, error) {
+func (c *assetServiceClient) ReturnByID(ctx context.Context, in *AssetReturnByIDReq, opts ...grpc.CallOption) (*Asset, error) {
 	out := new(Asset)
-	err := c.cc.Invoke(ctx, "/chipmunkApi.AssetService/Get", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/chipmunkApi.AssetService/ReturnByID", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *assetServiceClient) ReturnBySymbol(ctx context.Context, in *AssetReturnBySymbolReq, opts ...grpc.CallOption) (*Asset, error) {
+	out := new(Asset)
+	err := c.cc.Invoke(ctx, "/chipmunkApi.AssetService/ReturnBySymbol", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -67,8 +76,9 @@ func (c *assetServiceClient) List(ctx context.Context, in *GetAssetListRequest, 
 // All implementations should embed UnimplementedAssetServiceServer
 // for forward compatibility
 type AssetServiceServer interface {
-	Set(context.Context, *Asset) (*api.Void, error)
-	Get(context.Context, *GetAssetRequest) (*Asset, error)
+	Create(context.Context, *AssetCreateReq) (*Asset, error)
+	ReturnByID(context.Context, *AssetReturnByIDReq) (*Asset, error)
+	ReturnBySymbol(context.Context, *AssetReturnBySymbolReq) (*Asset, error)
 	List(context.Context, *GetAssetListRequest) (*Assets, error)
 }
 
@@ -76,11 +86,14 @@ type AssetServiceServer interface {
 type UnimplementedAssetServiceServer struct {
 }
 
-func (UnimplementedAssetServiceServer) Set(context.Context, *Asset) (*api.Void, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Set not implemented")
+func (UnimplementedAssetServiceServer) Create(context.Context, *AssetCreateReq) (*Asset, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
 }
-func (UnimplementedAssetServiceServer) Get(context.Context, *GetAssetRequest) (*Asset, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+func (UnimplementedAssetServiceServer) ReturnByID(context.Context, *AssetReturnByIDReq) (*Asset, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReturnByID not implemented")
+}
+func (UnimplementedAssetServiceServer) ReturnBySymbol(context.Context, *AssetReturnBySymbolReq) (*Asset, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReturnBySymbol not implemented")
 }
 func (UnimplementedAssetServiceServer) List(context.Context, *GetAssetListRequest) (*Assets, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
@@ -97,38 +110,56 @@ func RegisterAssetServiceServer(s grpc.ServiceRegistrar, srv AssetServiceServer)
 	s.RegisterService(&AssetService_ServiceDesc, srv)
 }
 
-func _AssetService_Set_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Asset)
+func _AssetService_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AssetCreateReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AssetServiceServer).Set(ctx, in)
+		return srv.(AssetServiceServer).Create(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/chipmunkApi.AssetService/Set",
+		FullMethod: "/chipmunkApi.AssetService/Create",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AssetServiceServer).Set(ctx, req.(*Asset))
+		return srv.(AssetServiceServer).Create(ctx, req.(*AssetCreateReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AssetService_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetAssetRequest)
+func _AssetService_ReturnByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AssetReturnByIDReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AssetServiceServer).Get(ctx, in)
+		return srv.(AssetServiceServer).ReturnByID(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/chipmunkApi.AssetService/Get",
+		FullMethod: "/chipmunkApi.AssetService/ReturnByID",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AssetServiceServer).Get(ctx, req.(*GetAssetRequest))
+		return srv.(AssetServiceServer).ReturnByID(ctx, req.(*AssetReturnByIDReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AssetService_ReturnBySymbol_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AssetReturnBySymbolReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AssetServiceServer).ReturnBySymbol(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/chipmunkApi.AssetService/ReturnBySymbol",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AssetServiceServer).ReturnBySymbol(ctx, req.(*AssetReturnBySymbolReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -159,12 +190,16 @@ var AssetService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*AssetServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Set",
-			Handler:    _AssetService_Set_Handler,
+			MethodName: "Create",
+			Handler:    _AssetService_Create_Handler,
 		},
 		{
-			MethodName: "Get",
-			Handler:    _AssetService_Get_Handler,
+			MethodName: "ReturnByID",
+			Handler:    _AssetService_ReturnByID_Handler,
+		},
+		{
+			MethodName: "ReturnBySymbol",
+			Handler:    _AssetService_ReturnBySymbol_Handler,
 		},
 		{
 			MethodName: "List",

@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/resolutions/repository"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	log "github.com/sirupsen/logrus"
@@ -39,22 +39,22 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 	chipmunkApi.RegisterResolutionServiceServer(server, s)
 }
 
-func (s *Service) Set(_ context.Context, req *chipmunkApi.Resolution) (*api.Void, error) {
+func (s *Service) Set(_ context.Context, req *chipmunkApi.Resolution) (*proto.Void, error) {
 	resolution := new(entity.Resolution)
 	mapper.Struct(req, resolution)
 	resolution.ID, _ = uuid.Parse(req.ID)
 	if err := s.db.Set(resolution); err != nil {
 		return nil, err
 	}
-	return new(api.Void), nil
+	return new(proto.Void), nil
 }
 
-func (s *Service) GetByID(ctx context.Context, _ *chipmunkApi.GetResolutionByIDRequest) (*chipmunkApi.Resolution, error) {
+func (s *Service) ReturnByID(ctx context.Context, _ *chipmunkApi.ResolutionReturnByIDReq) (*chipmunkApi.Resolution, error) {
 	return nil, errors.New(ctx, codes.Unimplemented)
 }
 
-func (s *Service) GetByDuration(_ context.Context, req *chipmunkApi.GetResolutionByDurationRequest) (*chipmunkApi.Resolution, error) {
-	resolution, err := s.db.GetByDuration(time.Duration(req.Duration), req.BrokerageName)
+func (s *Service) ReturnByDuration(_ context.Context, req *chipmunkApi.ResolutionReturnByDurationReq) (*chipmunkApi.Resolution, error) {
+	resolution, err := s.db.ReturnByDuration(time.Duration(req.Duration), req.Platform)
 	if err != nil {
 		return nil, err
 	}
@@ -63,8 +63,8 @@ func (s *Service) GetByDuration(_ context.Context, req *chipmunkApi.GetResolutio
 	return response, nil
 }
 
-func (s *Service) List(_ context.Context, req *chipmunkApi.GetResolutionListRequest) (*chipmunkApi.Resolutions, error) {
-	resolutions, err := s.db.List(req.BrokerageName)
+func (s *Service) List(_ context.Context, req *chipmunkApi.ResolutionListReq) (*chipmunkApi.Resolutions, error) {
+	resolutions, err := s.db.List(req.Platform)
 	if err != nil {
 		return nil, err
 	}

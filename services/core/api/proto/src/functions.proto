@@ -6,13 +6,15 @@ import "services/chipmunk/api/proto/src/resolution.proto";
 import "services/chipmunk/api/proto/src/market.proto";
 import "services/chipmunk/api/proto/src/candle.proto";
 import "services/eagle/api/proto/src/order.proto";
-import "api/src/misc.proto";
+import "api/proto/src/misc.proto";
 
 service FunctionsService {
   rpc OHLC(OHLCReq) returns (chipmunkApi.Candles);
   rpc WalletsBalance(api.Void) returns (chipmunkApi.Wallets);
+  rpc AllMarketStatistics(AllMarketStatisticsReq) returns (AllMarketStatisticsResp);
   rpc MarketStatistics(MarketStatisticsReq) returns (MarketStatisticsResp);
   rpc MarketList(MarketListReq) returns (chipmunkApi.Markets);
+  rpc MarketInfo(MarketInfoReq) returns (MarketInfoResp);
   rpc NewOrder(NewOrderReq) returns (eagleApi.Order);
   rpc CancelOrder(CancelOrderReq) returns (eagleApi.Order);
   rpc OrderStatus(OrderStatusReq) returns (eagleApi.Order);
@@ -28,8 +30,22 @@ message OHLCReq{
   int64 From = 3;
   // @inject_tag: json:"to"
   int64 To = 4;
-  // @inject_tag: json:"brokerage_id"
-  string BrokerageID = 5;
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 5;
+}
+
+message AllMarketStatisticsReq {
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
+}
+
+message AllMarketStatisticsResp {
+  // @inject_tag: json:"all_statistics"
+  map<string, MarketStatisticsResp> AllStatistics = 1;
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 2;
+  // @inject_tag: json:"date"
+  int64 date = 3;
 }
 
 message MarketStatisticsReq {
@@ -38,8 +54,8 @@ message MarketStatisticsReq {
 }
 
 message MarketStatisticsResp {
-  // @inject_tag: json:"server_time"
-  int64 ServerTime = 1;
+  // @inject_tag: json:"date"
+  int64 date = 1;
   // @inject_tag: json:"last_price"
   double LastPrice = 2;
   // @inject_tag: json:"first_buy_price"
@@ -63,9 +79,18 @@ message MarketStatisticsResp {
 }
 
 message MarketListReq {
-  // @inject_tag: json:"brokerage_id"
-  string BrokerageID = 1;
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
+}
 
+message MarketInfoReq {
+  // @inject_tag: json:"market"
+  chipmunkApi.Market Market = 1;
+}
+
+message MarketInfoResp {
+  // @inject_tag: json:"issue_date"
+  int64 IssueDate = 1;
 }
 
 message NewOrderReq {

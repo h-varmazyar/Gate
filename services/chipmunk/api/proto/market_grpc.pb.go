@@ -8,7 +8,7 @@ package proto
 
 import (
 	context "context"
-	api "github.com/h-varmazyar/Gate/api"
+	proto "github.com/h-varmazyar/Gate/api/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -24,12 +24,13 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MarketServiceClient interface {
 	Create(ctx context.Context, in *CreateMarketReq, opts ...grpc.CallOption) (*Market, error)
-	Return(ctx context.Context, in *ReturnMarketRequest, opts ...grpc.CallOption) (*Market, error)
-	List(ctx context.Context, in *MarketListRequest, opts ...grpc.CallOption) (*Markets, error)
-	Update(ctx context.Context, in *MarketUpdateReq, opts ...grpc.CallOption) (*Markets, error)
-	ReturnBySource(ctx context.Context, in *MarketListBySourceRequest, opts ...grpc.CallOption) (*Markets, error)
-	StartWorker(ctx context.Context, in *WorkerStartReq, opts ...grpc.CallOption) (*api.Void, error)
-	StopWorker(ctx context.Context, in *WorkerStopReq, opts ...grpc.CallOption) (*api.Void, error)
+	Return(ctx context.Context, in *MarketReturnReq, opts ...grpc.CallOption) (*Market, error)
+	Update(ctx context.Context, in *Market, opts ...grpc.CallOption) (*Market, error)
+	UpdateFromPlatform(ctx context.Context, in *MarketUpdateFromPlatformReq, opts ...grpc.CallOption) (*Markets, error)
+	List(ctx context.Context, in *MarketListReq, opts ...grpc.CallOption) (*Markets, error)
+	ListBySource(ctx context.Context, in *MarketListBySourceReq, opts ...grpc.CallOption) (*Markets, error)
+	StartWorker(ctx context.Context, in *WorkerStartReq, opts ...grpc.CallOption) (*proto.Void, error)
+	StopWorker(ctx context.Context, in *WorkerStopReq, opts ...grpc.CallOption) (*proto.Void, error)
 }
 
 type marketServiceClient struct {
@@ -49,7 +50,7 @@ func (c *marketServiceClient) Create(ctx context.Context, in *CreateMarketReq, o
 	return out, nil
 }
 
-func (c *marketServiceClient) Return(ctx context.Context, in *ReturnMarketRequest, opts ...grpc.CallOption) (*Market, error) {
+func (c *marketServiceClient) Return(ctx context.Context, in *MarketReturnReq, opts ...grpc.CallOption) (*Market, error) {
 	out := new(Market)
 	err := c.cc.Invoke(ctx, "/chipmunkApi.MarketService/Return", in, out, opts...)
 	if err != nil {
@@ -58,7 +59,25 @@ func (c *marketServiceClient) Return(ctx context.Context, in *ReturnMarketReques
 	return out, nil
 }
 
-func (c *marketServiceClient) List(ctx context.Context, in *MarketListRequest, opts ...grpc.CallOption) (*Markets, error) {
+func (c *marketServiceClient) Update(ctx context.Context, in *Market, opts ...grpc.CallOption) (*Market, error) {
+	out := new(Market)
+	err := c.cc.Invoke(ctx, "/chipmunkApi.MarketService/Update", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *marketServiceClient) UpdateFromPlatform(ctx context.Context, in *MarketUpdateFromPlatformReq, opts ...grpc.CallOption) (*Markets, error) {
+	out := new(Markets)
+	err := c.cc.Invoke(ctx, "/chipmunkApi.MarketService/UpdateFromPlatform", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *marketServiceClient) List(ctx context.Context, in *MarketListReq, opts ...grpc.CallOption) (*Markets, error) {
 	out := new(Markets)
 	err := c.cc.Invoke(ctx, "/chipmunkApi.MarketService/List", in, out, opts...)
 	if err != nil {
@@ -67,26 +86,17 @@ func (c *marketServiceClient) List(ctx context.Context, in *MarketListRequest, o
 	return out, nil
 }
 
-func (c *marketServiceClient) Update(ctx context.Context, in *MarketUpdateReq, opts ...grpc.CallOption) (*Markets, error) {
+func (c *marketServiceClient) ListBySource(ctx context.Context, in *MarketListBySourceReq, opts ...grpc.CallOption) (*Markets, error) {
 	out := new(Markets)
-	err := c.cc.Invoke(ctx, "/chipmunkApi.MarketService/Update", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/chipmunkApi.MarketService/ListBySource", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *marketServiceClient) ReturnBySource(ctx context.Context, in *MarketListBySourceRequest, opts ...grpc.CallOption) (*Markets, error) {
-	out := new(Markets)
-	err := c.cc.Invoke(ctx, "/chipmunkApi.MarketService/ReturnBySource", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *marketServiceClient) StartWorker(ctx context.Context, in *WorkerStartReq, opts ...grpc.CallOption) (*api.Void, error) {
-	out := new(api.Void)
+func (c *marketServiceClient) StartWorker(ctx context.Context, in *WorkerStartReq, opts ...grpc.CallOption) (*proto.Void, error) {
+	out := new(proto.Void)
 	err := c.cc.Invoke(ctx, "/chipmunkApi.MarketService/StartWorker", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -94,8 +104,8 @@ func (c *marketServiceClient) StartWorker(ctx context.Context, in *WorkerStartRe
 	return out, nil
 }
 
-func (c *marketServiceClient) StopWorker(ctx context.Context, in *WorkerStopReq, opts ...grpc.CallOption) (*api.Void, error) {
-	out := new(api.Void)
+func (c *marketServiceClient) StopWorker(ctx context.Context, in *WorkerStopReq, opts ...grpc.CallOption) (*proto.Void, error) {
+	out := new(proto.Void)
 	err := c.cc.Invoke(ctx, "/chipmunkApi.MarketService/StopWorker", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -108,12 +118,13 @@ func (c *marketServiceClient) StopWorker(ctx context.Context, in *WorkerStopReq,
 // for forward compatibility
 type MarketServiceServer interface {
 	Create(context.Context, *CreateMarketReq) (*Market, error)
-	Return(context.Context, *ReturnMarketRequest) (*Market, error)
-	List(context.Context, *MarketListRequest) (*Markets, error)
-	Update(context.Context, *MarketUpdateReq) (*Markets, error)
-	ReturnBySource(context.Context, *MarketListBySourceRequest) (*Markets, error)
-	StartWorker(context.Context, *WorkerStartReq) (*api.Void, error)
-	StopWorker(context.Context, *WorkerStopReq) (*api.Void, error)
+	Return(context.Context, *MarketReturnReq) (*Market, error)
+	Update(context.Context, *Market) (*Market, error)
+	UpdateFromPlatform(context.Context, *MarketUpdateFromPlatformReq) (*Markets, error)
+	List(context.Context, *MarketListReq) (*Markets, error)
+	ListBySource(context.Context, *MarketListBySourceReq) (*Markets, error)
+	StartWorker(context.Context, *WorkerStartReq) (*proto.Void, error)
+	StopWorker(context.Context, *WorkerStopReq) (*proto.Void, error)
 }
 
 // UnimplementedMarketServiceServer should be embedded to have forward compatible implementations.
@@ -123,22 +134,25 @@ type UnimplementedMarketServiceServer struct {
 func (UnimplementedMarketServiceServer) Create(context.Context, *CreateMarketReq) (*Market, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
 }
-func (UnimplementedMarketServiceServer) Return(context.Context, *ReturnMarketRequest) (*Market, error) {
+func (UnimplementedMarketServiceServer) Return(context.Context, *MarketReturnReq) (*Market, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Return not implemented")
 }
-func (UnimplementedMarketServiceServer) List(context.Context, *MarketListRequest) (*Markets, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
-}
-func (UnimplementedMarketServiceServer) Update(context.Context, *MarketUpdateReq) (*Markets, error) {
+func (UnimplementedMarketServiceServer) Update(context.Context, *Market) (*Market, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
-func (UnimplementedMarketServiceServer) ReturnBySource(context.Context, *MarketListBySourceRequest) (*Markets, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReturnBySource not implemented")
+func (UnimplementedMarketServiceServer) UpdateFromPlatform(context.Context, *MarketUpdateFromPlatformReq) (*Markets, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateFromPlatform not implemented")
 }
-func (UnimplementedMarketServiceServer) StartWorker(context.Context, *WorkerStartReq) (*api.Void, error) {
+func (UnimplementedMarketServiceServer) List(context.Context, *MarketListReq) (*Markets, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
+}
+func (UnimplementedMarketServiceServer) ListBySource(context.Context, *MarketListBySourceReq) (*Markets, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListBySource not implemented")
+}
+func (UnimplementedMarketServiceServer) StartWorker(context.Context, *WorkerStartReq) (*proto.Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartWorker not implemented")
 }
-func (UnimplementedMarketServiceServer) StopWorker(context.Context, *WorkerStopReq) (*api.Void, error) {
+func (UnimplementedMarketServiceServer) StopWorker(context.Context, *WorkerStopReq) (*proto.Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StopWorker not implemented")
 }
 
@@ -172,7 +186,7 @@ func _MarketService_Create_Handler(srv interface{}, ctx context.Context, dec fun
 }
 
 func _MarketService_Return_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReturnMarketRequest)
+	in := new(MarketReturnReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -184,31 +198,13 @@ func _MarketService_Return_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: "/chipmunkApi.MarketService/Return",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MarketServiceServer).Return(ctx, req.(*ReturnMarketRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MarketService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MarketListRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MarketServiceServer).List(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/chipmunkApi.MarketService/List",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MarketServiceServer).List(ctx, req.(*MarketListRequest))
+		return srv.(MarketServiceServer).Return(ctx, req.(*MarketReturnReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _MarketService_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MarketUpdateReq)
+	in := new(Market)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -220,25 +216,61 @@ func _MarketService_Update_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: "/chipmunkApi.MarketService/Update",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MarketServiceServer).Update(ctx, req.(*MarketUpdateReq))
+		return srv.(MarketServiceServer).Update(ctx, req.(*Market))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MarketService_ReturnBySource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MarketListBySourceRequest)
+func _MarketService_UpdateFromPlatform_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarketUpdateFromPlatformReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MarketServiceServer).ReturnBySource(ctx, in)
+		return srv.(MarketServiceServer).UpdateFromPlatform(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/chipmunkApi.MarketService/ReturnBySource",
+		FullMethod: "/chipmunkApi.MarketService/UpdateFromPlatform",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MarketServiceServer).ReturnBySource(ctx, req.(*MarketListBySourceRequest))
+		return srv.(MarketServiceServer).UpdateFromPlatform(ctx, req.(*MarketUpdateFromPlatformReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MarketService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarketListReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MarketServiceServer).List(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/chipmunkApi.MarketService/List",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MarketServiceServer).List(ctx, req.(*MarketListReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MarketService_ListBySource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarketListBySourceReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MarketServiceServer).ListBySource(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/chipmunkApi.MarketService/ListBySource",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MarketServiceServer).ListBySource(ctx, req.(*MarketListBySourceReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -295,16 +327,20 @@ var MarketService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MarketService_Return_Handler,
 		},
 		{
-			MethodName: "List",
-			Handler:    _MarketService_List_Handler,
-		},
-		{
 			MethodName: "Update",
 			Handler:    _MarketService_Update_Handler,
 		},
 		{
-			MethodName: "ReturnBySource",
-			Handler:    _MarketService_ReturnBySource_Handler,
+			MethodName: "UpdateFromPlatform",
+			Handler:    _MarketService_UpdateFromPlatform_Handler,
+		},
+		{
+			MethodName: "List",
+			Handler:    _MarketService_List_Handler,
+		},
+		{
+			MethodName: "ListBySource",
+			Handler:    _MarketService_ListBySource_Handler,
 		},
 		{
 			MethodName: "StartWorker",

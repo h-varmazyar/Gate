@@ -2,15 +2,13 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"github.com/google/uuid"
-	"github.com/h-varmazyar/Gate/api"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/assets/repository"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"time"
+	"strings"
 )
 
 type Service struct {
@@ -35,31 +33,39 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 	chipmunkApi.RegisterAssetServiceServer(server, s)
 }
 
-func (s *Service) Set(_ context.Context, asset *chipmunkApi.Asset) (*api.Void, error) {
-	tmp := new(entity.Asset)
-	tmp.Name = asset.Name
-	tmp.Symbol = asset.Symbol
-	tmp.ID, _ = uuid.Parse(asset.ID)
-	if asset.IssueDate == 0 {
-		return nil, fmt.Errorf("issue date must be declared")
-	} else {
-		tmp.IssueDate = time.Unix(asset.IssueDate, 0)
-	}
-	_, err := s.db.Set(tmp)
-	return &api.Void{}, err
-}
-
-func (s *Service) Get(_ context.Context, req *chipmunkApi.GetAssetRequest) (*chipmunkApi.Asset, error) {
-	asset, err := s.db.ReturnBySymbol(req.Name)
+func (s *Service) Create(_ context.Context, req *chipmunkApi.AssetCreateReq) (*chipmunkApi.Asset, error) {
+	asset := new(entity.Asset)
+	asset.Name = req.Name
+	asset.Symbol = strings.ToUpper(req.Symbol)
+	err := s.db.Create(asset)
 	if err != nil {
 		return nil, err
 	}
-	return &chipmunkApi.Asset{
-		ID:        asset.ID.String(),
-		Name:      asset.Name,
-		Symbol:    asset.Symbol,
-		IssueDate: asset.IssueDate.Unix(),
-	}, nil
+	resp := entity.UnWrapAsset(asset)
+	return resp, nil
+}
+
+func (s *Service) ReturnByID(_ context.Context, req *chipmunkApi.AssetReturnByIDReq) (*chipmunkApi.Asset, error) {
+	assetID, err := uuid.Parse(req.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	asset, err := s.db.ReturnByID(assetID)
+	if err != nil {
+		return nil, err
+	}
+	resp := entity.UnWrapAsset(asset)
+	return resp, nil
+}
+
+func (s *Service) ReturnBySymbol(_ context.Context, req *chipmunkApi.AssetReturnBySymbolReq) (*chipmunkApi.Asset, error) {
+	asset, err := s.db.ReturnBySymbol(req.Symbol)
+	if err != nil {
+		return nil, err
+	}
+	resp := entity.UnWrapAsset(asset)
+	return resp, nil
 }
 
 func (s *Service) List(_ context.Context, req *chipmunkApi.GetAssetListRequest) (*chipmunkApi.Assets, error) {
@@ -69,12 +75,7 @@ func (s *Service) List(_ context.Context, req *chipmunkApi.GetAssetListRequest) 
 		assets := new(chipmunkApi.Assets)
 		assetList := make([]*chipmunkApi.Asset, len(list))
 		for i, asset := range list {
-			assetList[i] = &chipmunkApi.Asset{
-				ID:        asset.ID.String(),
-				Name:      asset.Name,
-				Symbol:    asset.Symbol,
-				IssueDate: asset.IssueDate.Unix(),
-			}
+			assetList[i] = entity.UnWrapAsset(asset)
 		}
 		assets.Elements = assetList
 		return assets, nil

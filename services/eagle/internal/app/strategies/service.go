@@ -3,7 +3,7 @@ package strategies
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
 	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/repository"
@@ -55,7 +55,7 @@ func (s *Service) Return(_ context.Context, req *eagleApi.ReturnStrategyReq) (*e
 	return response, nil
 }
 
-func (s *Service) List(_ context.Context, _ *api.Void) (*eagleApi.Strategies, error) {
+func (s *Service) List(_ context.Context, _ *proto.Void) (*eagleApi.Strategies, error) {
 	strategies, err := repository.Strategies.List()
 	if err != nil {
 		return nil, err

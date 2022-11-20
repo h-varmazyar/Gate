@@ -3,17 +3,17 @@ package indicators
 import (
 	"errors"
 	"github.com/google/uuid"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	"math"
 )
 
 type stochastic struct {
 	id uuid.UUID
-	repository.StochasticConfigs
+	entity.StochasticConfigs
 }
 
-func NewStochastic(id uuid.UUID, configs *repository.StochasticConfigs) (*stochastic, error) {
+func NewStochastic(id uuid.UUID, configs *entity.StochasticConfigs) (*stochastic, error) {
 	if err := validateStochasticConfigs(configs); err != nil {
 		return nil, err
 	}
@@ -44,13 +44,13 @@ func (conf *stochastic) validateStochastic(length int) error {
 	return nil
 }
 
-func (conf *stochastic) Calculate(candles []*repository.Candle) error {
+func (conf *stochastic) Calculate(candles []*entity.Candle) error {
 	if err := conf.validateStochastic(len(candles)); err != nil {
 		return err
 	}
 	for _, candle := range candles {
 		if candle.Stochastics[conf.id] == nil {
-			candle.Stochastics[conf.id] = new(repository.StochasticValue)
+			candle.Stochastics[conf.id] = new(entity.StochasticValue)
 		}
 	}
 	for i := conf.Length - 1; i < len(candles); i++ {
@@ -64,7 +64,7 @@ func (conf *stochastic) Calculate(candles []*repository.Candle) error {
 				highest = candles[j].High
 			}
 		}
-		stochasticValue := new(repository.StochasticValue)
+		stochasticValue := new(entity.StochasticValue)
 		stochasticValue.FastK = 100 * ((candles[i].Close - lowest) / (highest - lowest))
 
 		sum := stochasticValue.FastK
@@ -79,7 +79,7 @@ func (conf *stochastic) Calculate(candles []*repository.Candle) error {
 	return nil
 }
 
-func (conf *stochastic) Update(candles []*repository.Candle) *repository.IndicatorValue {
+func (conf *stochastic) Update(candles []*entity.Candle) *entity.IndicatorValue {
 	lowest := math.MaxFloat64
 	highest := float64(0)
 	lastIndex := len(candles) - 1
@@ -98,8 +98,8 @@ func (conf *stochastic) Update(candles []*repository.Candle) *repository.Indicat
 		sum += candles[j].Stochastics[conf.id].FastK
 	}
 
-	return &repository.IndicatorValue{
-		Stochastic: &repository.StochasticValue{
+	return &entity.IndicatorValue{
+		Stochastic: &entity.StochasticValue{
 			IndexK: sum / float64(conf.SmoothK),
 			IndexD: calculateIndexD(conf.id, candles[lastIndex-conf.SmoothD+1:]),
 			FastK:  fastK,
@@ -107,7 +107,7 @@ func (conf *stochastic) Update(candles []*repository.Candle) *repository.Indicat
 	}
 }
 
-func calculateIndexD(id uuid.UUID, candles []*repository.Candle) float64 {
+func calculateIndexD(id uuid.UUID, candles []*entity.Candle) float64 {
 	sum := float64(0)
 	for _, candle := range candles {
 		sum += candle.Stochastics[id].IndexK
@@ -115,6 +115,6 @@ func calculateIndexD(id uuid.UUID, candles []*repository.Candle) float64 {
 	return sum / float64(len(candles))
 }
 
-func validateStochasticConfigs(indicator *repository.StochasticConfigs) error {
+func validateStochasticConfigs(indicator *entity.StochasticConfigs) error {
 	return nil
 }

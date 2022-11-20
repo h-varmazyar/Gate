@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/indicators/repository"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"

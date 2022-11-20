@@ -4,17 +4,17 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	log "github.com/sirupsen/logrus"
 )
 
 type movingAverage struct {
 	id uuid.UUID
-	repository.MovingAverageConfigs
+	entity.MovingAverageConfigs
 }
 
-func NewMovingAverage(id uuid.UUID, configs *repository.MovingAverageConfigs) (*movingAverage, error) {
+func NewMovingAverage(id uuid.UUID, configs *entity.MovingAverageConfigs) (*movingAverage, error) {
 	return &movingAverage{
 		id:                   id,
 		MovingAverageConfigs: *configs,
@@ -29,7 +29,7 @@ func (conf *movingAverage) GetLength() int {
 	return conf.Length
 }
 
-func (conf *movingAverage) sma(candles []*repository.Candle) ([]float64, error) {
+func (conf *movingAverage) sma(candles []*entity.Candle) ([]float64, error) {
 	response := make([]float64, len(candles))
 	if err := conf.validateMA(len(candles)); err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func (conf *movingAverage) sma(candles []*repository.Candle) ([]float64, error) 
 	return response, nil
 }
 
-func (conf *movingAverage) updateSMA(candles []*repository.Candle) float64 {
+func (conf *movingAverage) updateSMA(candles []*entity.Candle) float64 {
 	smaConf := movingAverage{
 		id:                   uuid.New(),
 		MovingAverageConfigs: conf.MovingAverageConfigs,
@@ -72,8 +72,8 @@ func (conf *movingAverage) updateSMA(candles []*repository.Candle) float64 {
 	}
 }
 
-func (conf *movingAverage) Calculate(candles []*repository.Candle) error {
-	values := make([]*repository.MovingAverageValue, 0)
+func (conf *movingAverage) Calculate(candles []*entity.Candle) error {
+	values := make([]*entity.MovingAverageValue, 0)
 	var sma []float64
 	var err error
 	if sma, err = conf.sma(candles); err != nil {
@@ -81,7 +81,7 @@ func (conf *movingAverage) Calculate(candles []*repository.Candle) error {
 		return err
 	}
 	for _, value := range sma {
-		values = append(values, &repository.MovingAverageValue{
+		values = append(values, &entity.MovingAverageValue{
 			Simple: value,
 		})
 	}
@@ -110,7 +110,7 @@ func (conf *movingAverage) Calculate(candles []*repository.Candle) error {
 	}
 
 	for i := 0; i < len(candles); i++ {
-		candles[i].MovingAverages[conf.id] = &repository.MovingAverageValue{
+		candles[i].MovingAverages[conf.id] = &entity.MovingAverageValue{
 			Simple:      values[i].Simple,
 			Exponential: values[i].Exponential,
 		}
@@ -118,7 +118,7 @@ func (conf *movingAverage) Calculate(candles []*repository.Candle) error {
 	return nil
 }
 
-func (conf *movingAverage) Update(candles []*repository.Candle) *repository.IndicatorValue {
+func (conf *movingAverage) Update(candles []*entity.Candle) *entity.IndicatorValue {
 	//candles := buffer.Markets.GetLastNCandles(conf.MarketName, 2)
 	//values := buffer.Markets.GetLastNIndicatorValue(conf.MarketName, conf.GetID(), 2)
 
@@ -142,8 +142,8 @@ func (conf *movingAverage) Update(candles []*repository.Candle) *repository.Indi
 	case chipmunkApi.Source_OHLC4:
 		price = (candles[i].Open + candles[i].Close + candles[i].High + candles[i].Low) / 4
 	}
-	return &repository.IndicatorValue{
-		MA: &repository.MovingAverageValue{
+	return &entity.IndicatorValue{
+		MA: &entity.MovingAverageValue{
 			Exponential: price*factor + candles[i-1].MovingAverages[conf.id].Exponential*(1-factor),
 			Simple:      conf.updateSMA(candles),
 		},

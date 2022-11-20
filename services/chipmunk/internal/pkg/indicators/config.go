@@ -1,11 +1,11 @@
 package indicators
 
 import (
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 )
 
-func cloneCandles(input []*repository.Candle) []*repository.Candle {
-	var cloned []*repository.Candle
+func cloneCandles(input []*entity.Candle) []*entity.Candle {
+	var cloned []*entity.Candle
 	for _, candle := range input {
 		c := *candle
 		cloned = append(cloned, &c)

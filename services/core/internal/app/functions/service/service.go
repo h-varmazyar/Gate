@@ -3,14 +3,14 @@ package service
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	brokeragesService "github.com/h-varmazyar/Gate/services/core/internal/app/brokerages/service"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
-	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
+	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api/proto"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -60,7 +60,7 @@ func (s *Service) OHLC(ctx context.Context, req *coreApi.OHLCReq) (*chipmunkApi.
 	return &chipmunkApi.Candles{Elements: candles}, nil
 }
 
-func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.OHLCReq) (*api.Void, error) {
+func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.OHLCReq) (*proto.Void, error) {
 	brokerage, err := s.loadBrokerage(ctx, req.BrokerageID)
 	if err != nil {
 		return nil, err
@@ -75,11 +75,11 @@ func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.OHLCReq) (*api.Voi
 
 	s.doAsyncRequest(request)
 
-	return new(api.Void), nil
+	return new(proto.Void), nil
 }
 
-func (s *Service) WalletsBalance(ctx context.Context, _ *api.Void) (*chipmunkApi.Wallets, error) {
-	brokerage, err := s.brokerageService.Enable(ctx, new(api.Void))
+func (s *Service) WalletsBalance(ctx context.Context, _ *proto.Void) (*chipmunkApi.Wallets, error) {
+	brokerage, err := s.brokerageService.Enable(ctx, new(proto.Void))
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (s *Service) WalletsBalance(ctx context.Context, _ *api.Void) (*chipmunkApi
 }
 
 func (s *Service) MarketStatistics(ctx context.Context, req *coreApi.MarketStatisticsReq) (*coreApi.MarketStatisticsResp, error) {
-	brokerage, err := s.brokerageService.Enable(ctx, new(api.Void))
+	brokerage, err := s.brokerageService.Enable(ctx, new(proto.Void))
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func (s *Service) MarketStatistics(ctx context.Context, req *coreApi.MarketStati
 }
 
 func (s *Service) MarketList(ctx context.Context, req *coreApi.MarketListReq) (*chipmunkApi.Markets, error) {
-	brokerage, err := s.brokerageService.Enable(ctx, new(api.Void))
+	brokerage, err := s.brokerageService.Enable(ctx, new(proto.Void))
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (s *Service) MarketList(ctx context.Context, req *coreApi.MarketListReq) (*
 }
 
 func (s *Service) NewOrder(ctx context.Context, req *coreApi.NewOrderReq) (*eagleApi.Order, error) {
-	brokerage, err := s.brokerageService.Enable(ctx, new(api.Void))
+	brokerage, err := s.brokerageService.Enable(ctx, new(proto.Void))
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (s *Service) NewOrder(ctx context.Context, req *coreApi.NewOrderReq) (*eagl
 }
 
 func (s *Service) CancelOrder(ctx context.Context, req *coreApi.CancelOrderReq) (*eagleApi.Order, error) {
-	brokerage, err := s.brokerageService.Enable(ctx, new(api.Void))
+	brokerage, err := s.brokerageService.Enable(ctx, new(proto.Void))
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func (s *Service) CancelOrder(ctx context.Context, req *coreApi.CancelOrderReq) 
 }
 
 func (s *Service) OrderStatus(ctx context.Context, req *coreApi.OrderStatusReq) (*eagleApi.Order, error) {
-	brokerage, err := s.brokerageService.Enable(ctx, new(api.Void))
+	brokerage, err := s.brokerageService.Enable(ctx, new(proto.Void))
 	if err != nil {
 		return nil, err
 	}

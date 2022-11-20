@@ -1,7 +1,7 @@
 package brokerages
 
 import (
-	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/services/Dolphin/actions/viewHelpers"
@@ -31,13 +31,13 @@ func newBrokerageController() brokerageController {
 }
 
 func (c *brokerageController) list(ctx app.Context) error {
-	brokerages, err := c.brokerageService.List(ctx, new(api.Void))
+	brokerages, err := c.brokerageService.List(ctx, new(proto.Void))
 	if err != nil {
 		return ctx.Error(http.StatusBadRequest, err)
 	}
 	ctx.Set("brokerages", brokerages.Brokerages)
-	ctx.Set("enable", api.Status_Enable)
-	ctx.Set("disable", api.Status_Disable)
+	ctx.Set("enable", proto.Status_Enable)
+	ctx.Set("disable", proto.Status_Disable)
 	return ctx.Render(http.StatusOK, "brokerages/list", viewHelpers.Sum, viewHelpers.ResolutionLabel)
 }
 
@@ -83,7 +83,7 @@ func (c *brokerageController) switchStatus(ctx app.Context) error {
 }
 
 func (c *brokerageController) showAddPage(ctx app.Context) error {
-	strategies, err := c.strategyService.List(ctx, new(api.Void))
+	strategies, err := c.strategyService.List(ctx, new(proto.Void))
 	if err != nil {
 		log.WithError(err).Error("failed to load strategies")
 		return errors.NewWithSlug(ctx, codes.FailedPrecondition, "failed to load strategiess")
@@ -105,7 +105,7 @@ func (c *brokerageController) add(ctx app.Context) error {
 		log.Error("core name not:", ctx.Request().Form.Get("brokerageRadio"))
 		return errors.NewWithSlug(ctx, codes.FailedPrecondition, "wrong core name")
 	}
-	brokerage.Auth = &api.Auth{
+	brokerage.Auth = &proto.Auth{
 		AccessID:  ctx.Request().Form.Get("access-id"),
 		SecretKey: ctx.Request().Form.Get("secret-key"),
 	}

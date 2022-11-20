@@ -1,4 +1,4 @@
-package api
+package proto
 
 import (
 	"database/sql/driver"
@@ -49,5 +49,29 @@ func (d *Status) UnmarshalJSON(b []byte) error {
 	return nil
 }
 func (d Status) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d.String())
+}
+
+//------------------------------------------------
+func (Platform) InRange(v interface{}) bool {
+	i, ok := Platform_value[v.(Platform).String()]
+	return ok && i > 0
+}
+func (d *Platform) Scan(value interface{}) error {
+	*d = Platform(Platform_value[value.(string)])
+	return nil
+}
+func (d Platform) Value() (driver.Value, error) {
+	return d.String(), nil
+}
+func (d *Platform) UnmarshalJSON(b []byte) error {
+	var str string
+	if err := json.Unmarshal(b, &str); err != nil {
+		return err
+	}
+	*d = Platform(Platform_value[str])
+	return nil
+}
+func (d Platform) MarshalJSON() ([]byte, error) {
 	return json.Marshal(d.String())
 }

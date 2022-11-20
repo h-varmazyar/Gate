@@ -44,8 +44,8 @@ type Options struct {
 	SessionName string `json:"session_name"`
 
 	//// Worker implements the Worker interface and can process tasks in the background.
-	//// Default is "github.com/gobuffalo/worker.Simple.
-	//Worker worker.Worker `json:"-"`
+	//// Default is "github.com/gobuffalo/workers.Simple.
+	//Worker workers.Worker `json:"-"`
 	// WorkerOff tells App.Start() whether to start the Worker process or not. Default is "false".
 	WorkerOff bool `json:"worker_off"`
 
@@ -159,7 +159,7 @@ func optionsWithDefaults(opts Options) Options {
 	//	opts.SessionStore = cookieStore
 	//}
 	//if opts.Worker == nil {
-	//	w := worker.NewSimpleWithContext(opts.Context)
+	//	w := workers.NewSimpleWithContext(opts.Context)
 	//	w.Logger = opts.Logger
 	//	opts.Worker = w
 	//}

@@ -1,12 +1,19 @@
 syntax = "proto3";
 package chipmunkApi;
 option go_package = "github.com/h-varmazyar/Gate/services/chipmunk/api/proto";
-import "api/src/misc.proto";
 
 service AssetService {
-  rpc Set(Asset) returns (api.Void);
-  rpc Get(GetAssetRequest) returns (Asset);
+  rpc Create(AssetCreateReq) returns (Asset);
+  rpc ReturnByID(AssetReturnByIDReq) returns (Asset);
+  rpc ReturnBySymbol(AssetReturnBySymbolReq) returns (Asset);
   rpc List(GetAssetListRequest) returns (Assets);
+}
+
+message AssetCreateReq {
+  // @inject_tag: json:"name"
+  string Name = 1;
+  // @inject_tag: json:"symbol"
+  string Symbol = 2;
 }
 
 message Asset {
@@ -16,12 +23,10 @@ message Asset {
   string Name = 2;
   // @inject_tag: json:"symbol"
   string Symbol = 3;
-  // @inject_tag: json:"issue_date"
-  int64 IssueDate = 4;
   // @inject_tag: json:"created_at"
-  int64 CreatedAt = 5;
+  int64 CreatedAt = 4;
   // @inject_tag: json:"updated_at"
-  int64 UpdatedAt = 6;
+  int64 UpdatedAt = 5;
 }
 
 message Assets {
@@ -29,9 +34,15 @@ message Assets {
   repeated Asset Elements = 1;
 }
 
-message GetAssetRequest {
-  // @inject_tag: json:"name"
-  string Name = 1;
+
+message AssetReturnByIDReq {
+  // @inject_tag: json:"id"
+  string ID = 1;
+}
+
+message AssetReturnBySymbolReq {
+  // @inject_tag: json:"symbol"
+  string Symbol = 1;
 }
 
 message GetAssetListRequest {

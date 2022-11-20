@@ -2,11 +2,15 @@ syntax = "proto3";
 package chipmunkApi;
 option go_package = "github.com/h-varmazyar/Gate/services/chipmunk/api/proto";
 import "services/chipmunk/api/proto/src/indicator.proto";
+import "services/chipmunk/api/proto/src/market.proto";
+import "services/chipmunk/api/proto/src/resolution.proto";
+import "api/proto/src/misc.proto";
 
 service CandleService {
-//  rpc AddMarket(AddMarketRequest) returns (api.Void);
-  rpc ReturnLastNCandles(BufferedCandlesRequest) returns (Candles);
-  //  rpc DeleteMarket(DeleteMarketRequest) returns (api.Void);
+  rpc List(CandleListReq) returns (Candles);
+  rpc Update(CandleUpdateReq) returns (Candle);
+  rpc BulkUpdate(CandleBulkUpdateReq) returns (api.Void);
+  rpc DownloadPrimaryCandles(DownloadPrimaryCandlesReq) returns (api.Void);
 }
 
 message Candle {
@@ -32,6 +36,10 @@ message Candle {
   uint64 ID = 10;
   // @inject_tag: json:"indicator_values"
   map<string, indicatorValue> IndicatorValues = 11; // key is indicator id
+  // @inject_tag: json:"market_id"
+  string MarketID = 12;
+  // @inject_tag: json:"resolution_id"
+  string ResolutionID = 13;
 }
 
 message Candles {
@@ -41,14 +49,14 @@ message Candles {
   int64 Count = 2;
 }
 
-message AddMarketRequest {
+message AddMarketReq {
   // @inject_tag: json:"brokerage_id"
   string BrokerageID = 1;
   // @inject_tag: json:"market"
   string MarketID = 2;
 }
 
-message BufferedCandlesRequest {
+message CandleListReq {
   // @inject_tag: json:"resolution_id"
   string ResolutionID = 1;
   // @inject_tag: json:"market_id"
@@ -57,7 +65,53 @@ message BufferedCandlesRequest {
   int32 Count = 3;
 }
 
-message DeleteMarketRequest {
-  // @inject_tag: json:"market_id"
-  string MarketID = 1;
+message CandleUpdateReq {
+  // @inject_tag: json:"volume"
+  double Volume = 1;
+  // @inject_tag: json:"close"
+  double Close = 2;
+  // @inject_tag: json:"open"
+  double Open = 3;
+  // @inject_tag: json:"date"
+  int64 Date = 4;
+  // @inject_tag: json:"high"
+  double High = 5;
+  // @inject_tag: json:"low"
+  double Low = 6;
+  // @inject_tag: json:"market"
+  string Market = 7;
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 8;
+}
+
+message CandleBulkUpdateReq {
+  message ticker{
+    // @inject_tag: json:"volume"
+    double Volume = 1;
+    // @inject_tag: json:"close"
+    double Close = 2;
+    // @inject_tag: json:"open"
+    double Open = 3;
+    // @inject_tag: json:"high"
+    double High = 4;
+    // @inject_tag: json:"low"
+    double Low = 5;
+  }
+  // @inject_tag: json:"date"
+  int64 Date = 1;
+  // @inject_tag: json:"tickers"
+  map<string, ticker> tickers = 2;//key is market id
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 3;
+}
+
+message DownloadPrimaryCandlesReq {
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
+  // @inject_tag: json:"markets"
+  Markets Markets = 2;
+  // @inject_tag: json:"resolutions"
+  Resolutions Resolutions = 3;
+  // @inject_tag: json:"strategy_id"
+  string StrategyID = 4;
 }

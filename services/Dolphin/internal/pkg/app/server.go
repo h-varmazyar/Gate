@@ -53,7 +53,7 @@ func (a *App) Serve() error {
 
 		if !a.WorkerOff {
 			// stop the workers
-			a.Logger.Info("Shutting down worker")
+			a.Logger.Info("Shutting down workers")
 			//events.EmitPayload(EvtWorkerStop, payload)
 			//if err := a.Worker.Stop(); err != nil {
 			//	events.EmitError(EvtWorkerStopErr, err, payload)

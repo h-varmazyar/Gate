@@ -8,6 +8,7 @@ package proto
 
 import (
 	context "context"
+	proto "github.com/h-varmazyar/Gate/api/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -23,7 +24,10 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CandleServiceClient interface {
 	//  rpc AddMarket(AddMarketRequest) returns (api.Void);
-	ReturnLastNCandles(ctx context.Context, in *BufferedCandlesRequest, opts ...grpc.CallOption) (*Candles, error)
+	List(ctx context.Context, in *CandleListReq, opts ...grpc.CallOption) (*Candles, error)
+	Update(ctx context.Context, in *CandleUpdateReq, opts ...grpc.CallOption) (*Candle, error)
+	BulkUpdate(ctx context.Context, in *CandleBulkUpdateReq, opts ...grpc.CallOption) (*proto.Void, error)
+	DownloadPrimaryCandles(ctx context.Context, in *DownloadPrimaryCandlesReq, opts ...grpc.CallOption) (*proto.Void, error)
 }
 
 type candleServiceClient struct {
@@ -34,9 +38,36 @@ func NewCandleServiceClient(cc grpc.ClientConnInterface) CandleServiceClient {
 	return &candleServiceClient{cc}
 }
 
-func (c *candleServiceClient) ReturnLastNCandles(ctx context.Context, in *BufferedCandlesRequest, opts ...grpc.CallOption) (*Candles, error) {
+func (c *candleServiceClient) List(ctx context.Context, in *CandleListReq, opts ...grpc.CallOption) (*Candles, error) {
 	out := new(Candles)
-	err := c.cc.Invoke(ctx, "/chipmunkApi.CandleService/ReturnLastNCandles", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/chipmunkApi.CandleService/List", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *candleServiceClient) Update(ctx context.Context, in *CandleUpdateReq, opts ...grpc.CallOption) (*Candle, error) {
+	out := new(Candle)
+	err := c.cc.Invoke(ctx, "/chipmunkApi.CandleService/Update", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *candleServiceClient) BulkUpdate(ctx context.Context, in *CandleBulkUpdateReq, opts ...grpc.CallOption) (*proto.Void, error) {
+	out := new(proto.Void)
+	err := c.cc.Invoke(ctx, "/chipmunkApi.CandleService/BulkUpdate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *candleServiceClient) DownloadPrimaryCandles(ctx context.Context, in *DownloadPrimaryCandlesReq, opts ...grpc.CallOption) (*proto.Void, error) {
+	out := new(proto.Void)
+	err := c.cc.Invoke(ctx, "/chipmunkApi.CandleService/DownloadPrimaryCandles", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -48,15 +79,27 @@ func (c *candleServiceClient) ReturnLastNCandles(ctx context.Context, in *Buffer
 // for forward compatibility
 type CandleServiceServer interface {
 	//  rpc AddMarket(AddMarketRequest) returns (api.Void);
-	ReturnLastNCandles(context.Context, *BufferedCandlesRequest) (*Candles, error)
+	List(context.Context, *CandleListReq) (*Candles, error)
+	Update(context.Context, *CandleUpdateReq) (*Candle, error)
+	BulkUpdate(context.Context, *CandleBulkUpdateReq) (*proto.Void, error)
+	DownloadPrimaryCandles(context.Context, *DownloadPrimaryCandlesReq) (*proto.Void, error)
 }
 
 // UnimplementedCandleServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedCandleServiceServer struct {
 }
 
-func (UnimplementedCandleServiceServer) ReturnLastNCandles(context.Context, *BufferedCandlesRequest) (*Candles, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReturnLastNCandles not implemented")
+func (UnimplementedCandleServiceServer) List(context.Context, *CandleListReq) (*Candles, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
+}
+func (UnimplementedCandleServiceServer) Update(context.Context, *CandleUpdateReq) (*Candle, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
+}
+func (UnimplementedCandleServiceServer) BulkUpdate(context.Context, *CandleBulkUpdateReq) (*proto.Void, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BulkUpdate not implemented")
+}
+func (UnimplementedCandleServiceServer) DownloadPrimaryCandles(context.Context, *DownloadPrimaryCandlesReq) (*proto.Void, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DownloadPrimaryCandles not implemented")
 }
 
 // UnsafeCandleServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -70,20 +113,74 @@ func RegisterCandleServiceServer(s grpc.ServiceRegistrar, srv CandleServiceServe
 	s.RegisterService(&CandleService_ServiceDesc, srv)
 }
 
-func _CandleService_ReturnLastNCandles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BufferedCandlesRequest)
+func _CandleService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CandleListReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CandleServiceServer).ReturnLastNCandles(ctx, in)
+		return srv.(CandleServiceServer).List(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/chipmunkApi.CandleService/ReturnLastNCandles",
+		FullMethod: "/chipmunkApi.CandleService/List",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CandleServiceServer).ReturnLastNCandles(ctx, req.(*BufferedCandlesRequest))
+		return srv.(CandleServiceServer).List(ctx, req.(*CandleListReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CandleService_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CandleUpdateReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CandleServiceServer).Update(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/chipmunkApi.CandleService/Update",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CandleServiceServer).Update(ctx, req.(*CandleUpdateReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CandleService_BulkUpdate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CandleBulkUpdateReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CandleServiceServer).BulkUpdate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/chipmunkApi.CandleService/BulkUpdate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CandleServiceServer).BulkUpdate(ctx, req.(*CandleBulkUpdateReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CandleService_DownloadPrimaryCandles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DownloadPrimaryCandlesReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CandleServiceServer).DownloadPrimaryCandles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/chipmunkApi.CandleService/DownloadPrimaryCandles",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CandleServiceServer).DownloadPrimaryCandles(ctx, req.(*DownloadPrimaryCandlesReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -96,8 +193,20 @@ var CandleService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*CandleServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "ReturnLastNCandles",
-			Handler:    _CandleService_ReturnLastNCandles_Handler,
+			MethodName: "List",
+			Handler:    _CandleService_List_Handler,
+		},
+		{
+			MethodName: "Update",
+			Handler:    _CandleService_Update_Handler,
+		},
+		{
+			MethodName: "BulkUpdate",
+			Handler:    _CandleService_BulkUpdate_Handler,
+		},
+		{
+			MethodName: "DownloadPrimaryCandles",
+			Handler:    _CandleService_DownloadPrimaryCandles_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

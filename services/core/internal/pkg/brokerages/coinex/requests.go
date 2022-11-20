@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/h-varmazyar/Gate/api"
+	api "github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 )
@@ -71,7 +71,10 @@ func (r *Requests) AsyncOHLC(_ context.Context, inputs *brokerages.OHLCParams) (
 	}
 
 	metadataBytes, _ := json.Marshal(&brokerages.Metadata{
-		Method: MethodOHLC,
+		Method:       MethodOHLC,
+		Platform:     api.Platform_Coinex,
+		MarketID:     inputs.Market.ID,
+		ResolutionID: inputs.Resolution.ID,
 	})
 	request.Metadata = string(metadataBytes)
 	return request, nil

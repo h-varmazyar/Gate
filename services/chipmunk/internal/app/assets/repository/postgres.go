@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	log "github.com/sirupsen/logrus"
@@ -29,12 +30,13 @@ func (repository *assetPostgresRepository) ReturnBySymbol(symbol string) (*entit
 	return asset, repository.db.Model(&entity.Asset{}).Where("symbol = ?", symbol).First(asset).Error
 }
 
-func (repository *assetPostgresRepository) Create(asset *entity.Asset) error {
-	return repository.db.Model(&entity.Asset{}).Create(asset).Error
+func (repository *assetPostgresRepository) ReturnByID(id uuid.UUID) (*entity.Asset, error) {
+	asset := new(entity.Asset)
+	return asset, repository.db.Model(&entity.Asset{}).Where("id = ?", id).First(asset).Error
 }
 
-func (repository *assetPostgresRepository) Set(asset *entity.Asset) (*entity.Asset, error) {
-	return asset, repository.db.Model(&entity.Asset{}).Save(asset).Error
+func (repository *assetPostgresRepository) Create(asset *entity.Asset) error {
+	return repository.db.Model(&entity.Asset{}).Create(asset).Error
 }
 
 func (repository *assetPostgresRepository) List(page int) ([]*entity.Asset, error) {

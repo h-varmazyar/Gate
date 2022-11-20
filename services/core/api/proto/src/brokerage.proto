@@ -1,7 +1,7 @@
 syntax = "proto3";
 package coreApi;
 option go_package = "github.com/h-varmazyar/Gate/services/core/api/proto";
-import "api/src/misc.proto";
+import "api/proto/src/misc.proto";
 import "services/chipmunk/api/proto/src/market.proto";
 import "services/chipmunk/api/proto/src/resolution.proto";
 
@@ -16,12 +16,6 @@ service BrokerageService {
   //  rpc ChangeStatus(StatusChangeRequest) returns (BrokerageStatus);
 }
 
-enum Platform {
-  UnknownBrokerage = 0;
-  Coinex = 1;
-  Nobitex = 2;
-}
-
 message Brokerage {
   // @inject_tag: json:"id"
   string ID = 1;
@@ -32,7 +26,7 @@ message Brokerage {
   // @inject_tag: json:"auth"
   api.Auth Auth = 4;
   // @inject_tag: json:"platform"
-  Platform Platform = 5;
+  api.Platform Platform = 5;
   // @inject_tag: json:"markets"
   chipmunkApi.Markets Markets = 6;
   // @inject_tag: json:"resolution_id"
@@ -58,7 +52,7 @@ message BrokerageCreateReq {
   // @inject_tag: json:"auth"
   api.Auth Auth = 3;
   // @inject_tag: json:"platform"
-  Platform Platform = 4;
+  api.Platform Platform = 4;
   // @inject_tag: json:"markets"
   chipmunkApi.Markets Markets = 5;
   // @inject_tag: json:"resolution_id"

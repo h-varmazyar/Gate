@@ -8,7 +8,7 @@ package proto
 
 import (
 	context "context"
-	api "github.com/h-varmazyar/Gate/api"
+	proto "github.com/h-varmazyar/Gate/api/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -23,10 +23,10 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ResolutionServiceClient interface {
-	Set(ctx context.Context, in *Resolution, opts ...grpc.CallOption) (*api.Void, error)
-	GetByID(ctx context.Context, in *GetResolutionByIDRequest, opts ...grpc.CallOption) (*Resolution, error)
-	GetByDuration(ctx context.Context, in *GetResolutionByDurationRequest, opts ...grpc.CallOption) (*Resolution, error)
-	List(ctx context.Context, in *GetResolutionListRequest, opts ...grpc.CallOption) (*Resolutions, error)
+	Set(ctx context.Context, in *Resolution, opts ...grpc.CallOption) (*proto.Void, error)
+	ReturnByID(ctx context.Context, in *ResolutionReturnByIDReq, opts ...grpc.CallOption) (*Resolution, error)
+	ReturnByDuration(ctx context.Context, in *ResolutionReturnByDurationReq, opts ...grpc.CallOption) (*Resolution, error)
+	List(ctx context.Context, in *ResolutionListReq, opts ...grpc.CallOption) (*Resolutions, error)
 }
 
 type resolutionServiceClient struct {
@@ -37,8 +37,8 @@ func NewResolutionServiceClient(cc grpc.ClientConnInterface) ResolutionServiceCl
 	return &resolutionServiceClient{cc}
 }
 
-func (c *resolutionServiceClient) Set(ctx context.Context, in *Resolution, opts ...grpc.CallOption) (*api.Void, error) {
-	out := new(api.Void)
+func (c *resolutionServiceClient) Set(ctx context.Context, in *Resolution, opts ...grpc.CallOption) (*proto.Void, error) {
+	out := new(proto.Void)
 	err := c.cc.Invoke(ctx, "/chipmunkApi.ResolutionService/Set", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -46,25 +46,25 @@ func (c *resolutionServiceClient) Set(ctx context.Context, in *Resolution, opts 
 	return out, nil
 }
 
-func (c *resolutionServiceClient) GetByID(ctx context.Context, in *GetResolutionByIDRequest, opts ...grpc.CallOption) (*Resolution, error) {
+func (c *resolutionServiceClient) ReturnByID(ctx context.Context, in *ResolutionReturnByIDReq, opts ...grpc.CallOption) (*Resolution, error) {
 	out := new(Resolution)
-	err := c.cc.Invoke(ctx, "/chipmunkApi.ResolutionService/GetByID", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/chipmunkApi.ResolutionService/ReturnByID", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *resolutionServiceClient) GetByDuration(ctx context.Context, in *GetResolutionByDurationRequest, opts ...grpc.CallOption) (*Resolution, error) {
+func (c *resolutionServiceClient) ReturnByDuration(ctx context.Context, in *ResolutionReturnByDurationReq, opts ...grpc.CallOption) (*Resolution, error) {
 	out := new(Resolution)
-	err := c.cc.Invoke(ctx, "/chipmunkApi.ResolutionService/GetByDuration", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/chipmunkApi.ResolutionService/ReturnByDuration", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *resolutionServiceClient) List(ctx context.Context, in *GetResolutionListRequest, opts ...grpc.CallOption) (*Resolutions, error) {
+func (c *resolutionServiceClient) List(ctx context.Context, in *ResolutionListReq, opts ...grpc.CallOption) (*Resolutions, error) {
 	out := new(Resolutions)
 	err := c.cc.Invoke(ctx, "/chipmunkApi.ResolutionService/List", in, out, opts...)
 	if err != nil {
@@ -77,26 +77,26 @@ func (c *resolutionServiceClient) List(ctx context.Context, in *GetResolutionLis
 // All implementations should embed UnimplementedResolutionServiceServer
 // for forward compatibility
 type ResolutionServiceServer interface {
-	Set(context.Context, *Resolution) (*api.Void, error)
-	GetByID(context.Context, *GetResolutionByIDRequest) (*Resolution, error)
-	GetByDuration(context.Context, *GetResolutionByDurationRequest) (*Resolution, error)
-	List(context.Context, *GetResolutionListRequest) (*Resolutions, error)
+	Set(context.Context, *Resolution) (*proto.Void, error)
+	ReturnByID(context.Context, *ResolutionReturnByIDReq) (*Resolution, error)
+	ReturnByDuration(context.Context, *ResolutionReturnByDurationReq) (*Resolution, error)
+	List(context.Context, *ResolutionListReq) (*Resolutions, error)
 }
 
 // UnimplementedResolutionServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedResolutionServiceServer struct {
 }
 
-func (UnimplementedResolutionServiceServer) Set(context.Context, *Resolution) (*api.Void, error) {
+func (UnimplementedResolutionServiceServer) Set(context.Context, *Resolution) (*proto.Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Set not implemented")
 }
-func (UnimplementedResolutionServiceServer) GetByID(context.Context, *GetResolutionByIDRequest) (*Resolution, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetByID not implemented")
+func (UnimplementedResolutionServiceServer) ReturnByID(context.Context, *ResolutionReturnByIDReq) (*Resolution, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReturnByID not implemented")
 }
-func (UnimplementedResolutionServiceServer) GetByDuration(context.Context, *GetResolutionByDurationRequest) (*Resolution, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetByDuration not implemented")
+func (UnimplementedResolutionServiceServer) ReturnByDuration(context.Context, *ResolutionReturnByDurationReq) (*Resolution, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReturnByDuration not implemented")
 }
-func (UnimplementedResolutionServiceServer) List(context.Context, *GetResolutionListRequest) (*Resolutions, error) {
+func (UnimplementedResolutionServiceServer) List(context.Context, *ResolutionListReq) (*Resolutions, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 
@@ -129,44 +129,44 @@ func _ResolutionService_Set_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ResolutionService_GetByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetResolutionByIDRequest)
+func _ResolutionService_ReturnByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResolutionReturnByIDReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ResolutionServiceServer).GetByID(ctx, in)
+		return srv.(ResolutionServiceServer).ReturnByID(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/chipmunkApi.ResolutionService/GetByID",
+		FullMethod: "/chipmunkApi.ResolutionService/ReturnByID",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResolutionServiceServer).GetByID(ctx, req.(*GetResolutionByIDRequest))
+		return srv.(ResolutionServiceServer).ReturnByID(ctx, req.(*ResolutionReturnByIDReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ResolutionService_GetByDuration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetResolutionByDurationRequest)
+func _ResolutionService_ReturnByDuration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResolutionReturnByDurationReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ResolutionServiceServer).GetByDuration(ctx, in)
+		return srv.(ResolutionServiceServer).ReturnByDuration(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/chipmunkApi.ResolutionService/GetByDuration",
+		FullMethod: "/chipmunkApi.ResolutionService/ReturnByDuration",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResolutionServiceServer).GetByDuration(ctx, req.(*GetResolutionByDurationRequest))
+		return srv.(ResolutionServiceServer).ReturnByDuration(ctx, req.(*ResolutionReturnByDurationReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _ResolutionService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetResolutionListRequest)
+	in := new(ResolutionListReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -178,7 +178,7 @@ func _ResolutionService_List_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: "/chipmunkApi.ResolutionService/List",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResolutionServiceServer).List(ctx, req.(*GetResolutionListRequest))
+		return srv.(ResolutionServiceServer).List(ctx, req.(*ResolutionListReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -195,12 +195,12 @@ var ResolutionService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ResolutionService_Set_Handler,
 		},
 		{
-			MethodName: "GetByID",
-			Handler:    _ResolutionService_GetByID_Handler,
+			MethodName: "ReturnByID",
+			Handler:    _ResolutionService_ReturnByID_Handler,
 		},
 		{
-			MethodName: "GetByDuration",
-			Handler:    _ResolutionService_GetByDuration_Handler,
+			MethodName: "ReturnByDuration",
+			Handler:    _ResolutionService_ReturnByDuration_Handler,
 		},
 		{
 			MethodName: "List",

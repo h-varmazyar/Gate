@@ -8,7 +8,7 @@ package proto
 
 import (
 	context "context"
-	api "github.com/h-varmazyar/Gate/api"
+	proto "github.com/h-varmazyar/Gate/api/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -27,9 +27,9 @@ type BrokerageServiceClient interface {
 	Start(ctx context.Context, in *BrokerageStartReq, opts ...grpc.CallOption) (*Brokerage, error)
 	Stop(ctx context.Context, in *BrokerageStopReq, opts ...grpc.CallOption) (*Brokerage, error)
 	Return(ctx context.Context, in *BrokerageReturnReq, opts ...grpc.CallOption) (*Brokerage, error)
-	Enable(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*Brokerage, error)
-	Delete(ctx context.Context, in *BrokerageDeleteReq, opts ...grpc.CallOption) (*api.Void, error)
-	List(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*Brokerages, error)
+	Enable(ctx context.Context, in *proto.Void, opts ...grpc.CallOption) (*Brokerage, error)
+	Delete(ctx context.Context, in *BrokerageDeleteReq, opts ...grpc.CallOption) (*proto.Void, error)
+	List(ctx context.Context, in *proto.Void, opts ...grpc.CallOption) (*Brokerages, error)
 }
 
 type brokerageServiceClient struct {
@@ -76,7 +76,7 @@ func (c *brokerageServiceClient) Return(ctx context.Context, in *BrokerageReturn
 	return out, nil
 }
 
-func (c *brokerageServiceClient) Enable(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*Brokerage, error) {
+func (c *brokerageServiceClient) Enable(ctx context.Context, in *proto.Void, opts ...grpc.CallOption) (*Brokerage, error) {
 	out := new(Brokerage)
 	err := c.cc.Invoke(ctx, "/coreApi.BrokerageService/Enable", in, out, opts...)
 	if err != nil {
@@ -85,8 +85,8 @@ func (c *brokerageServiceClient) Enable(ctx context.Context, in *api.Void, opts 
 	return out, nil
 }
 
-func (c *brokerageServiceClient) Delete(ctx context.Context, in *BrokerageDeleteReq, opts ...grpc.CallOption) (*api.Void, error) {
-	out := new(api.Void)
+func (c *brokerageServiceClient) Delete(ctx context.Context, in *BrokerageDeleteReq, opts ...grpc.CallOption) (*proto.Void, error) {
+	out := new(proto.Void)
 	err := c.cc.Invoke(ctx, "/coreApi.BrokerageService/Delete", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func (c *brokerageServiceClient) Delete(ctx context.Context, in *BrokerageDelete
 	return out, nil
 }
 
-func (c *brokerageServiceClient) List(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*Brokerages, error) {
+func (c *brokerageServiceClient) List(ctx context.Context, in *proto.Void, opts ...grpc.CallOption) (*Brokerages, error) {
 	out := new(Brokerages)
 	err := c.cc.Invoke(ctx, "/coreApi.BrokerageService/List", in, out, opts...)
 	if err != nil {
@@ -111,9 +111,9 @@ type BrokerageServiceServer interface {
 	Start(context.Context, *BrokerageStartReq) (*Brokerage, error)
 	Stop(context.Context, *BrokerageStopReq) (*Brokerage, error)
 	Return(context.Context, *BrokerageReturnReq) (*Brokerage, error)
-	Enable(context.Context, *api.Void) (*Brokerage, error)
-	Delete(context.Context, *BrokerageDeleteReq) (*api.Void, error)
-	List(context.Context, *api.Void) (*Brokerages, error)
+	Enable(context.Context, *proto.Void) (*Brokerage, error)
+	Delete(context.Context, *BrokerageDeleteReq) (*proto.Void, error)
+	List(context.Context, *proto.Void) (*Brokerages, error)
 }
 
 // UnimplementedBrokerageServiceServer should be embedded to have forward compatible implementations.
@@ -132,13 +132,13 @@ func (UnimplementedBrokerageServiceServer) Stop(context.Context, *BrokerageStopR
 func (UnimplementedBrokerageServiceServer) Return(context.Context, *BrokerageReturnReq) (*Brokerage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Return not implemented")
 }
-func (UnimplementedBrokerageServiceServer) Enable(context.Context, *api.Void) (*Brokerage, error) {
+func (UnimplementedBrokerageServiceServer) Enable(context.Context, *proto.Void) (*Brokerage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Enable not implemented")
 }
-func (UnimplementedBrokerageServiceServer) Delete(context.Context, *BrokerageDeleteReq) (*api.Void, error) {
+func (UnimplementedBrokerageServiceServer) Delete(context.Context, *BrokerageDeleteReq) (*proto.Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
-func (UnimplementedBrokerageServiceServer) List(context.Context, *api.Void) (*Brokerages, error) {
+func (UnimplementedBrokerageServiceServer) List(context.Context, *proto.Void) (*Brokerages, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 
@@ -226,7 +226,7 @@ func _BrokerageService_Return_Handler(srv interface{}, ctx context.Context, dec 
 }
 
 func _BrokerageService_Enable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(api.Void)
+	in := new(proto.Void)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -238,7 +238,7 @@ func _BrokerageService_Enable_Handler(srv interface{}, ctx context.Context, dec 
 		FullMethod: "/coreApi.BrokerageService/Enable",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BrokerageServiceServer).Enable(ctx, req.(*api.Void))
+		return srv.(BrokerageServiceServer).Enable(ctx, req.(*proto.Void))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -262,7 +262,7 @@ func _BrokerageService_Delete_Handler(srv interface{}, ctx context.Context, dec 
 }
 
 func _BrokerageService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(api.Void)
+	in := new(proto.Void)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -274,7 +274,7 @@ func _BrokerageService_List_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: "/coreApi.BrokerageService/List",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BrokerageServiceServer).List(ctx, req.(*api.Void))
+		return srv.(BrokerageServiceServer).List(ctx, req.(*proto.Void))
 	}
 	return interceptor(ctx, in, info, handler)
 }

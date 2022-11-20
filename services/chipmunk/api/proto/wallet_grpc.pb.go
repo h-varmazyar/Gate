@@ -8,7 +8,7 @@ package proto
 
 import (
 	context "context"
-	api "github.com/h-varmazyar/Gate/api"
+	proto "github.com/h-varmazyar/Gate/api/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -23,9 +23,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type WalletsServiceClient interface {
-	List(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*Wallets, error)
-	StartWorker(ctx context.Context, in *StartWorkerRequest, opts ...grpc.CallOption) (*api.Void, error)
-	StopWorker(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*api.Void, error)
+	List(ctx context.Context, in *proto.Void, opts ...grpc.CallOption) (*Wallets, error)
+	StartWorker(ctx context.Context, in *StartWorkerRequest, opts ...grpc.CallOption) (*proto.Void, error)
+	StopWorker(ctx context.Context, in *proto.Void, opts ...grpc.CallOption) (*proto.Void, error)
 	ReturnWallet(ctx context.Context, in *ReturnWalletReq, opts ...grpc.CallOption) (*Wallet, error)
 	ReturnReference(ctx context.Context, in *ReturnReferenceReq, opts ...grpc.CallOption) (*Reference, error)
 }
@@ -38,7 +38,7 @@ func NewWalletsServiceClient(cc grpc.ClientConnInterface) WalletsServiceClient {
 	return &walletsServiceClient{cc}
 }
 
-func (c *walletsServiceClient) List(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*Wallets, error) {
+func (c *walletsServiceClient) List(ctx context.Context, in *proto.Void, opts ...grpc.CallOption) (*Wallets, error) {
 	out := new(Wallets)
 	err := c.cc.Invoke(ctx, "/chipmunkApi.WalletsService/List", in, out, opts...)
 	if err != nil {
@@ -47,8 +47,8 @@ func (c *walletsServiceClient) List(ctx context.Context, in *api.Void, opts ...g
 	return out, nil
 }
 
-func (c *walletsServiceClient) StartWorker(ctx context.Context, in *StartWorkerRequest, opts ...grpc.CallOption) (*api.Void, error) {
-	out := new(api.Void)
+func (c *walletsServiceClient) StartWorker(ctx context.Context, in *StartWorkerRequest, opts ...grpc.CallOption) (*proto.Void, error) {
+	out := new(proto.Void)
 	err := c.cc.Invoke(ctx, "/chipmunkApi.WalletsService/StartWorker", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -56,8 +56,8 @@ func (c *walletsServiceClient) StartWorker(ctx context.Context, in *StartWorkerR
 	return out, nil
 }
 
-func (c *walletsServiceClient) StopWorker(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*api.Void, error) {
-	out := new(api.Void)
+func (c *walletsServiceClient) StopWorker(ctx context.Context, in *proto.Void, opts ...grpc.CallOption) (*proto.Void, error) {
+	out := new(proto.Void)
 	err := c.cc.Invoke(ctx, "/chipmunkApi.WalletsService/StopWorker", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -87,9 +87,9 @@ func (c *walletsServiceClient) ReturnReference(ctx context.Context, in *ReturnRe
 // All implementations should embed UnimplementedWalletsServiceServer
 // for forward compatibility
 type WalletsServiceServer interface {
-	List(context.Context, *api.Void) (*Wallets, error)
-	StartWorker(context.Context, *StartWorkerRequest) (*api.Void, error)
-	StopWorker(context.Context, *api.Void) (*api.Void, error)
+	List(context.Context, *proto.Void) (*Wallets, error)
+	StartWorker(context.Context, *StartWorkerRequest) (*proto.Void, error)
+	StopWorker(context.Context, *proto.Void) (*proto.Void, error)
 	ReturnWallet(context.Context, *ReturnWalletReq) (*Wallet, error)
 	ReturnReference(context.Context, *ReturnReferenceReq) (*Reference, error)
 }
@@ -98,13 +98,13 @@ type WalletsServiceServer interface {
 type UnimplementedWalletsServiceServer struct {
 }
 
-func (UnimplementedWalletsServiceServer) List(context.Context, *api.Void) (*Wallets, error) {
+func (UnimplementedWalletsServiceServer) List(context.Context, *proto.Void) (*Wallets, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
-func (UnimplementedWalletsServiceServer) StartWorker(context.Context, *StartWorkerRequest) (*api.Void, error) {
+func (UnimplementedWalletsServiceServer) StartWorker(context.Context, *StartWorkerRequest) (*proto.Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartWorker not implemented")
 }
-func (UnimplementedWalletsServiceServer) StopWorker(context.Context, *api.Void) (*api.Void, error) {
+func (UnimplementedWalletsServiceServer) StopWorker(context.Context, *proto.Void) (*proto.Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StopWorker not implemented")
 }
 func (UnimplementedWalletsServiceServer) ReturnWallet(context.Context, *ReturnWalletReq) (*Wallet, error) {
@@ -126,7 +126,7 @@ func RegisterWalletsServiceServer(s grpc.ServiceRegistrar, srv WalletsServiceSer
 }
 
 func _WalletsService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(api.Void)
+	in := new(proto.Void)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func _WalletsService_List_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: "/chipmunkApi.WalletsService/List",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WalletsServiceServer).List(ctx, req.(*api.Void))
+		return srv.(WalletsServiceServer).List(ctx, req.(*proto.Void))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -162,7 +162,7 @@ func _WalletsService_StartWorker_Handler(srv interface{}, ctx context.Context, d
 }
 
 func _WalletsService_StopWorker_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(api.Void)
+	in := new(proto.Void)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func _WalletsService_StopWorker_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: "/chipmunkApi.WalletsService/StopWorker",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WalletsServiceServer).StopWorker(ctx, req.(*api.Void))
+		return srv.(WalletsServiceServer).StopWorker(ctx, req.(*proto.Void))
 	}
 	return interceptor(ctx, in, info, handler)
 }

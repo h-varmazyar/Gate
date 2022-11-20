@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"github.com/google/uuid"
+	api "github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	log "github.com/sirupsen/logrus"
@@ -30,10 +31,10 @@ func (r *resolutionPostgresRepository) Set(resolution *entity.Resolution) error 
 	found := new(entity.Resolution)
 	tx := r.db.Model(new(entity.Resolution))
 	if resolution.ID.String() == "" {
-		tx.Where("value LIKE ?", resolution.Value).
-			Where("brokerage_name LIKE ?", resolution.BrokerageName).
+		tx.Where("value = ?", resolution.Value).
+			Where("platform = ?", resolution.Platform).
 			Where("duration = ?", resolution.Duration).
-			Where("label LIKE ?", resolution.Label)
+			Where("label = ?", resolution.Label)
 	} else {
 		tx.Where("id = ?", resolution.ID)
 	}
@@ -53,16 +54,16 @@ func (r *resolutionPostgresRepository) Return(id uuid.UUID) (*entity.Resolution,
 		First(resolution).Error
 }
 
-func (r *resolutionPostgresRepository) GetByDuration(duration time.Duration, brokerageName string) (*entity.Resolution, error) {
+func (r *resolutionPostgresRepository) ReturnByDuration(duration time.Duration, platform api.Platform) (*entity.Resolution, error) {
 	resolution := new(entity.Resolution)
 	return resolution, r.db.Model(new(entity.Resolution)).
 		Where("duration = ", duration).
-		Where("brokerage_name = ?", brokerageName).
+		Where("platform = ?", platform).
 		First(resolution).Error
 }
 
-func (r *resolutionPostgresRepository) List(brokerageName string) ([]*entity.Resolution, error) {
+func (r *resolutionPostgresRepository) List(platform api.Platform) ([]*entity.Resolution, error) {
 	resolutions := make([]*entity.Resolution, 0)
-	err := r.db.Model(new(entity.Resolution)).Where("brokerage_Name LIKE ?", brokerageName).Find(&resolutions).Error
+	err := r.db.Model(new(entity.Resolution)).Where("platform = ?", platform).Find(&resolutions).Error
 	return resolutions, err
 }

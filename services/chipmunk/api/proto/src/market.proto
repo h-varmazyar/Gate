@@ -1,15 +1,16 @@
 syntax = "proto3";
 package chipmunkApi;
 option go_package = "github.com/h-varmazyar/Gate/services/chipmunk/api/proto";
-import "api/src/misc.proto";
+import "api/proto/src/misc.proto";
 import "services/chipmunk/api/proto/src/asset.proto";
 
 service MarketService {
   rpc Create(CreateMarketReq) returns (Market);
-  rpc Return(ReturnMarketRequest) returns (Market);
-  rpc List(MarketListRequest) returns (Markets);
-  rpc Update(MarketUpdateReq) returns (Markets);
-  rpc ReturnBySource(MarketListBySourceRequest) returns (Markets);
+  rpc Return(MarketReturnReq) returns (Market);
+  rpc Update(Market) returns (Market);
+  rpc UpdateFromPlatform(MarketUpdateFromPlatformReq) returns (Markets);
+  rpc List(MarketListReq) returns (Markets);
+  rpc ListBySource(MarketListBySourceReq) returns (Markets);
   rpc StartWorker(WorkerStartReq) returns (api.Void);
   rpc StopWorker(WorkerStopReq) returns (api.Void);
 }
@@ -25,8 +26,8 @@ message Market {
   double MakerFeeRate = 4;
   // @inject_tag: json:"destination"
   Asset Destination = 5;
-  // @inject_tag: json:"start_time"
-  int64 StartTime = 6;
+  // @inject_tag: json:"issue_date"
+  int64 IssueDate = 6;
   // @inject_tag: json:"min_amount"
   double MinAmount = 7;
   // @inject_tag: json:"created_at"
@@ -43,8 +44,8 @@ message Market {
   string ID = 13;
   // @inject_tag: json:"status"
   api.Status Status = 14;
-  // @inject_tag: json:"brokerage_name"
-  string BrokerageName = 15;
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 15;
 }
 
 message CreateMarketReq {
@@ -74,8 +75,8 @@ message CreateMarketReq {
   string Name = 12;
   // @inject_tag: json:"status"
   api.Status Status = 14;
-  // @inject_tag: json:"brokerage_name"
-  string BrokerageName = 15;
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 15;
 }
 
 message Markets {
@@ -83,14 +84,14 @@ message Markets {
   repeated Market Elements = 1;
 }
 
-message ReturnMarketRequest {
+message MarketReturnReq {
   // @inject_tag: json:"id"
   string ID = 1;
 }
 
-message MarketListRequest {
-  // @inject_tag: json:"brokerage_id"
-  string BrokerageID = 1;
+message MarketListReq {
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
 }
 
 message MarketUpdateReq {
@@ -98,16 +99,21 @@ message MarketUpdateReq {
   string BrokerageID = 1;
 }
 
-message MarketListBySourceRequest {
-  // @inject_tag: json:"brokerage_id"
-  string BrokerageID = 1;
+message MarketUpdateFromPlatformReq {
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
+}
+
+message MarketListBySourceReq {
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
   // @inject_tag: json:"source"
   string Source = 2;
 }
 
 message WorkerStartReq{
-  // @inject_tag: json:"brokerage_id"
-  string BrokerageID = 1;
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
   // @inject_tag: json:"resolution_id"
   string ResolutionID = 2;
   // @inject_tag: json:"strategy_id"
@@ -115,6 +121,6 @@ message WorkerStartReq{
 }
 
 message WorkerStopReq {
-  // @inject_tag: json:"brokerage_id"
-  string BrokerageID = 1;
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
 }

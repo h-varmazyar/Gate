@@ -2,7 +2,7 @@ package telegramBot
 
 import (
 	gorilla "github.com/gorilla/mux"
-	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/httpext"
 	"github.com/h-varmazyar/Gate/services/gateway/configs"
@@ -34,7 +34,7 @@ func RegisterRoutes(router *gorilla.Router) {
 
 func (c *Controller) start(res http.ResponseWriter, req *http.Request) {
 	log.Info("starting telegram bot...")
-	if _, err := c.telegramBotService.Start(req.Context(), new(api.Void)); err != nil {
+	if _, err := c.telegramBotService.Start(req.Context(), new(proto.Void)); err != nil {
 		httpext.SendError(res, req, err)
 		return
 	}
@@ -44,7 +44,7 @@ func (c *Controller) start(res http.ResponseWriter, req *http.Request) {
 
 func (c *Controller) stop(res http.ResponseWriter, req *http.Request) {
 	log.Info("stoping telegram bot...")
-	if _, err := c.telegramBotService.Stop(req.Context(), new(api.Void)); err != nil {
+	if _, err := c.telegramBotService.Stop(req.Context(), new(proto.Void)); err != nil {
 		httpext.SendError(res, req, err)
 		return
 	}

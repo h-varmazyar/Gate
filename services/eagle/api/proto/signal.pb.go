@@ -7,7 +7,7 @@
 package proto
 
 import (
-	api "github.com/h-varmazyar/Gate/api"
+	api "github.com/h-varmazyar/Gate/api/proto"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

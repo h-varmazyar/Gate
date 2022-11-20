@@ -1,18 +1,18 @@
 syntax = "proto3";
 package chipmunkApi;
 option go_package = "github.com/h-varmazyar/Gate/services/chipmunk/api/proto";
-import "api/src/misc.proto";
+import "api/proto/src/misc.proto";
 
 service ResolutionService {
   rpc Set(Resolution) returns(api.Void);
-  rpc GetByID(GetResolutionByIDRequest) returns (Resolution);
-  rpc GetByDuration(GetResolutionByDurationRequest) returns (Resolution);
-  rpc List(GetResolutionListRequest) returns (Resolutions);
+  rpc ReturnByID(ResolutionReturnByIDReq) returns (Resolution);
+  rpc ReturnByDuration(ResolutionReturnByDurationReq) returns (Resolution);
+  rpc List(ResolutionListReq) returns (Resolutions);
 }
 
 message Resolution {
-  // @inject_tag: json:"brokerage_name"
-  string BrokerageName = 1;
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
   // @inject_tag: json:"duration"
   int64 Duration = 2;
   // @inject_tag: json:"label"
@@ -32,19 +32,19 @@ message Resolutions {
   repeated Resolution Elements = 1;
 }
 
-message GetResolutionByIDRequest {
+message ResolutionReturnByIDReq {
   // @inject_tag: json:"id"
   string ID = 1;
 }
 
-message GetResolutionByDurationRequest {
-  // @inject_tag: json:"brokerage_name"
-  string BrokerageName = 1;
+message ResolutionReturnByDurationReq {
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
   // @inject_tag: json:"duration"
   int64 Duration = 2;
 }
 
-message GetResolutionListRequest {
-  // @inject_tag: json:"brokerage_name"
-  string BrokerageName = 1;
+message ResolutionListReq {
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
 }

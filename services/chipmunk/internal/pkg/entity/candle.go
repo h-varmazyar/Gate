@@ -3,13 +3,11 @@ package entity
 import (
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/gormext"
-	"gorm.io/gorm"
 	"time"
 )
 
 type Candle struct {
 	gormext.UniversalModel
-	DeletedAt       gorm.DeletedAt `gorm:"index"`
 	Time            time.Time
 	Open            float64
 	High            float64

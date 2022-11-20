@@ -1,7 +1,7 @@
 syntax = "proto3";
 package chipmunkApi;
 option go_package = "github.com/h-varmazyar/Gate/services/chipmunk/api/proto";
-import "api/src/misc.proto";
+import "api/proto/src/misc.proto";
 
 service WalletsService {
   rpc List(api.Void) returns (Wallets);

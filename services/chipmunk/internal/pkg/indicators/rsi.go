@@ -3,16 +3,16 @@ package indicators
 import (
 	"errors"
 	"github.com/google/uuid"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/repository"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 )
 
 type rsi struct {
 	id uuid.UUID
-	repository.RsiConfigs
+	entity.RsiConfigs
 }
 
-func NewRSI(id uuid.UUID, configs *repository.RsiConfigs) (*rsi, error) {
+func NewRSI(id uuid.UUID, configs *entity.RsiConfigs) (*rsi, error) {
 	if err := validateRsiConfigs(configs); err != nil {
 		return nil, err
 	}
@@ -30,7 +30,7 @@ func (conf *rsi) GetLength() int {
 	return conf.Length
 }
 
-func (conf *rsi) Calculate(candles []*repository.Candle) error {
+func (conf *rsi) Calculate(candles []*entity.Candle) error {
 	if err := conf.validateRSI(len(candles)); err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func (conf *rsi) Calculate(candles []*repository.Candle) error {
 		gain = gain / float64(conf.Length)
 		loss = loss / float64(conf.Length)
 		rs := gain / loss
-		candles[conf.Length].RSIs[conf.id] = &repository.RSIValue{
+		candles[conf.Length].RSIs[conf.id] = &entity.RSIValue{
 			Gain: gain,
 			Loss: loss,
 			RSI:  100 - (100 / (1 + rs)),
@@ -69,7 +69,7 @@ func (conf *rsi) Calculate(candles []*repository.Candle) error {
 		rs := avgGain / avgLoss
 		rsiValue := 100 - (100 / (1 + rs))
 
-		candles[i].RSIs[conf.id] = &repository.RSIValue{
+		candles[i].RSIs[conf.id] = &entity.RSIValue{
 			Gain: avgGain,
 			Loss: avgLoss,
 			RSI:  rsiValue,
@@ -78,7 +78,7 @@ func (conf *rsi) Calculate(candles []*repository.Candle) error {
 	return nil
 }
 
-func (conf *rsi) Update(candles []*repository.Candle) *repository.IndicatorValue {
+func (conf *rsi) Update(candles []*entity.Candle) *entity.IndicatorValue {
 	gain, loss := float64(0), float64(0)
 	last := len(candles) - 1
 	if last < 1 {
@@ -95,8 +95,8 @@ func (conf *rsi) Update(candles []*repository.Candle) *repository.IndicatorValue
 	rs := avgGain / avgLoss
 	rsiValue := 100 - (100 / (1 + rs))
 
-	return &repository.IndicatorValue{
-		RSI: &repository.RSIValue{
+	return &entity.IndicatorValue{
+		RSI: &entity.RSIValue{
 			Gain: avgGain,
 			Loss: avgLoss,
 			RSI:  rsiValue,
@@ -110,6 +110,6 @@ func (conf *rsi) validateRSI(length int) error {
 	return nil
 }
 
-func validateRsiConfigs(indicator *repository.RsiConfigs) error {
+func validateRsiConfigs(indicator *entity.RsiConfigs) error {
 	return nil
 }

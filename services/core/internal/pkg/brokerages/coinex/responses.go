@@ -4,7 +4,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/h-varmazyar/Gate/pkg/amqpext"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -38,6 +38,7 @@ func (r *Response) OHLC(response *networkAPI.Response) {
 		log.WithError(err).Errorf("ohlc request parse failed: %v", response.Body)
 		return
 	}
+
 	candles := make([]*chipmunkApi.Candle, 0)
 	for _, item := range data {
 		c := new(chipmunkApi.Candle)

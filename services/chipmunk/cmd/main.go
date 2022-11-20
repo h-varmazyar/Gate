@@ -6,8 +6,10 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/assets"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles"
+	candlesService "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/indicators"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets"
+	marketsService "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/resolutions"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/wallets"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/db"
@@ -58,18 +60,6 @@ func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstan
 		logger.WithError(err).Panicf("failed to initiate assets app")
 	}
 
-	var marketsApp *markets.App
-	marketsApp, err = markets.NewApp(ctx, logger, dbInstance, configs.MarketsApp)
-	if err != nil {
-		logger.WithError(err).Panicf("failed to initiate markets app")
-	}
-
-	var candlesApp *candles.App
-	candlesApp, err = candles.NewApp(ctx, logger, dbInstance, configs.CandlesApp)
-	if err != nil {
-		logger.WithError(err).Panicf("failed to initiate markets app")
-	}
-
 	var indicatorsApp *indicators.App
 	indicatorsApp, err = indicators.NewApp(ctx, logger, dbInstance, configs.IndicatorsApp)
 	if err != nil {
@@ -82,8 +72,39 @@ func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstan
 		logger.WithError(err).Panicf("failed to initiate markets app")
 	}
 
+	candlesDependencies := &candles.AppDependencies{
+		ServiceDependencies: &candlesService.Dependencies{
+			ResolutionService: resolutionsApp.Service,
+			IndicatorService:  indicatorsApp.Service,
+		},
+	}
+	var candlesApp *candles.App
+	candlesApp, err = candles.NewApp(ctx, logger, dbInstance, configs.CandlesApp, candlesDependencies)
+	if err != nil {
+		logger.WithError(err).Panicf("failed to initiate markets app")
+	}
+
+	marketDependencies := &markets.AppDependencies{
+		CandlesService: candlesApp.Service,
+		ServiceDependencies: &marketsService.Dependencies{
+			AssetsService:      assetsApp.Service,
+			IndicatorsService:  indicatorsApp.Service,
+			ResolutionsService: resolutionsApp.Service,
+		},
+	}
+
+	var marketsApp *markets.App
+	marketsApp, err = markets.NewApp(ctx, logger, dbInstance, configs.MarketsApp, marketDependencies)
+	if err != nil {
+		logger.WithError(err).Panicf("failed to initiate markets app")
+	}
+
+	walletDependencies := &wallets.AppDependencies{
+		MarketService: marketsApp.Service,
+	}
+
 	var walletsApp *wallets.App
-	walletsApp, err = wallets.NewApp(ctx, logger, configs.ResolutionsApp)
+	walletsApp, err = wallets.NewApp(ctx, logger, configs.WalletsApp, walletDependencies)
 	if err != nil {
 		logger.WithError(err).Panicf("failed to initiate markets app")
 	}

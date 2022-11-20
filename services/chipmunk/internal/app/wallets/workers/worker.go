@@ -2,38 +2,36 @@ package workers
 
 import (
 	"context"
-	"fmt"
-	"github.com/h-varmazyar/Gate/api"
+	"github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
-	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
+	marketsService "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/service"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/wallets/buffer"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"time"
 )
 
-type worker struct {
+type WalletCheck struct {
 	functionsService coreApi.FunctionsServiceClient
-	marketService    chipmunkApi.MarketServiceClient
+	marketService    *marketsService.Service
 	cancellation     context.CancelFunc
+	configs          *Configs
+	buffer           *buffer.WalletBuffer
 }
 
-var (
-	Worker *worker
-)
-
-func InitializeWorker() {
-	Worker = new(worker)
-	brokerageConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
-	chipmunkConn := grpcext.NewConnection(fmt.Sprintf(":%v", configs.Variables.GrpcPort))
-	Worker.functionsService = coreApi.NewFunctionsServiceClient(brokerageConn)
-	Worker.marketService = chipmunkApi.NewMarketServiceClient(chipmunkConn)
+func InitializeWorker(_ context.Context, configs *Configs, marketService *marketsService.Service) *WalletCheck {
+	Worker := new(WalletCheck)
+	coreConn := grpcext.NewConnection(configs.CoreAddress)
+	Worker.functionsService = coreApi.NewFunctionsServiceClient(coreConn)
+	Worker.marketService = marketService
+	Worker.configs = configs
+	return Worker
 }
 
-func (w *worker) Start(brokerage *coreApi.Brokerage) error {
+func (w *WalletCheck) Start(brokerage *coreApi.Brokerage) error {
 	if w.cancellation == nil {
 		if brokerage == nil {
 			return errors.New(context.Background(), codes.NotFound)
@@ -48,17 +46,17 @@ func (w *worker) Start(brokerage *coreApi.Brokerage) error {
 	return errors.New(context.Background(), codes.AlreadyExists)
 }
 
-func (w *worker) Stop() {
+func (w *WalletCheck) Stop() {
 	if w.cancellation != nil {
 		w.cancellation()
 		w.cancellation = nil
-		buffer.Wallets.Flush()
+		w.buffer.Flush()
 	}
 }
 
-func (w *worker) run(ctx context.Context, brokerage *coreApi.Brokerage) {
+func (w *WalletCheck) run(ctx context.Context, brokerage *coreApi.Brokerage) {
 	time.Sleep(time.Second)
-	ticker := time.NewTicker(configs.Variables.WalletWorkerHeartbeat)
+	ticker := time.NewTicker(w.configs.WalletWorkerInterval)
 
 LOOP:
 	for {
@@ -67,23 +65,23 @@ LOOP:
 			ticker.Stop()
 			break LOOP
 		case <-ticker.C:
-			wallets, err := w.functionsService.WalletsBalance(ctx, new(api.Void))
+			wallets, err := w.functionsService.WalletsBalance(ctx, new(proto.Void))
 			if err != nil {
 				log.WithError(err).Error("failed to update wallets")
 			} else {
-				buffer.Wallets.AddOrUpdateList(wallets.Elements)
+				w.buffer.AddOrUpdateList(wallets.Elements)
 				w.calculateReferenceValue(ctx, brokerage, wallets.Elements)
 			}
 		}
 	}
 }
 
-func (w *worker) calculateReferenceValue(ctx context.Context, brokerage *coreApi.Brokerage, wallets []*chipmunkApi.Wallet) {
+func (w *WalletCheck) calculateReferenceValue(ctx context.Context, brokerage *coreApi.Brokerage, wallets []*chipmunkApi.Wallet) {
 	references := make(map[string]*chipmunkApi.Reference)
 	for _, wallet := range wallets {
-		list, err := w.marketService.ReturnBySource(ctx, &chipmunkApi.MarketListBySourceRequest{
-			BrokerageID: brokerage.ID,
-			Source:      wallet.AssetName,
+		list, err := w.marketService.ListBySource(ctx, &chipmunkApi.MarketListBySourceReq{
+			Platform: brokerage.Platform,
+			Source:   wallet.AssetName,
 		})
 		if err != nil {
 			log.WithError(err).Error("failed to get markets list")
@@ -108,5 +106,5 @@ func (w *worker) calculateReferenceValue(ctx context.Context, brokerage *coreApi
 			references[market.Destination.Name] = reference
 		}
 	}
-	buffer.Wallets.UpdateReferences(references)
+	w.buffer.UpdateReferences(references)
 }

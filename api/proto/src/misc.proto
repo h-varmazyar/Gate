@@ -1,11 +1,17 @@
 syntax = "proto3";
 package api;
-option go_package = "github.com/h-varmazyar/Gate/api";
+option go_package = "github.com/h-varmazyar/Gate/api/proto";
 
 enum AuthType {
   None = 0;
   StaticToken = 1;
   UsernamePassword = 2;
+}
+
+enum Platform {
+  UnknownBrokerage = 0;
+  Coinex = 1;
+  Nobitex = 2;
 }
 
 enum Status {
