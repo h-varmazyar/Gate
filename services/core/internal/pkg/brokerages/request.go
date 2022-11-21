@@ -2,8 +2,8 @@ package brokerages
 
 import (
 	"context"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
+	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api/proto"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 )
 

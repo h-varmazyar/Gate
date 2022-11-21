@@ -6,10 +6,10 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/errors"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
 	"github.com/h-varmazyar/Gate/services/telegramBot/internal/pkg/repository"
 	"github.com/h-varmazyar/Gate/services/telegramBot/internal/pkg/tgBotApi"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc/codes"
 )
 
 const (
@@ -78,18 +78,19 @@ status: %v
 }
 
 func (h *Handler) updateMarkets(ctx context.Context, msg *tgbotapi.Message) error {
-	brokerage, err := h.brokerageService.Enable(ctx, new(proto.Void))
-	if err != nil {
-		return err
-	}
-	markets, err := h.marketService.Update(ctx, &chipmunkApi.MarketUpdateReq{BrokerageID: brokerage.ID})
-	if err != nil {
-		return errors.Cast(ctx, err).AddDetailF("failed to update markets")
-	}
-	text := fmt.Sprintf("updated markets: %v", len(markets.Elements))
-	err = tgBotApi.SendMessage(ctx, tgBotApi.NewTextMessage(msg.Chat.ID, 0, text, nil))
-	if err != nil {
-		return errors.Cast(ctx, err).AddDetailF("failed to send start message")
-	}
-	return nil
+	//brokerage, err := h.brokerageService.Enable(ctx, new(proto.Void))
+	//if err != nil {
+	//	return err
+	//}
+	//markets, err := h.marketService.Update(ctx, &chipmunkApi.MarketUpdateReq{BrokerageID: brokerage.ID})
+	//if err != nil {
+	//	return errors.Cast(ctx, err).AddDetailF("failed to update markets")
+	//}
+	//text := fmt.Sprintf("updated markets: %v", len(markets.Elements))
+	//err = tgBotApi.SendMessage(ctx, tgBotApi.NewTextMessage(msg.Chat.ID, 0, text, nil))
+	//if err != nil {
+	//	return errors.Cast(ctx, err).AddDetailF("failed to send start message")
+	//}
+	//return nil
+	return errors.New(ctx, codes.Unimplemented)
 }

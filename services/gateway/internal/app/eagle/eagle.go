@@ -4,10 +4,11 @@ import (
 	gorilla "github.com/gorilla/mux"
 	"github.com/h-varmazyar/Gate/services/gateway/internal/app/eagle/signals"
 	"github.com/h-varmazyar/Gate/services/gateway/internal/app/eagle/strategies"
+	log "github.com/sirupsen/logrus"
 )
 
-func RegisterRoutes(router *gorilla.Router) {
+func RegisterRoutes(router *gorilla.Router, logger *log.Logger, configs *Configs) {
 	eagleRouter := router.PathPrefix("/eagle").Subrouter()
-	signals.ControllerInstance().RegisterRoutes(eagleRouter)
-	strategies.ControllerInstance().RegisterRoutes(eagleRouter)
+	signals.ControllerInstance(logger, configs.EagleAddress).RegisterRoutes(eagleRouter)
+	strategies.ControllerInstance(logger, configs.EagleAddress).RegisterRoutes(eagleRouter)
 }

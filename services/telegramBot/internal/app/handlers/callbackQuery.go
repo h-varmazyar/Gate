@@ -6,7 +6,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/errors"
-	coreApi "github.com/h-varmazyar/Gate/services/core/api"
+	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	"github.com/h-varmazyar/Gate/services/telegramBot/internal/pkg/tgBotApi"
 	"google.golang.org/grpc/codes"
 )

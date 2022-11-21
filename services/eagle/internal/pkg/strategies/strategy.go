@@ -2,7 +2,7 @@ package strategies
 
 import (
 	"context"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 )
 
 type Strategy interface {

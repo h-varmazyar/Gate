@@ -3,8 +3,8 @@ package assets
 import (
 	gorilla "github.com/gorilla/mux"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	"github.com/h-varmazyar/Gate/services/gateway/configs"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,13 +13,15 @@ var (
 
 type Controller struct {
 	assetsService chipmunkApi.AssetServiceClient
+	logger        *log.Logger
 }
 
-func ControllerInstance() *Controller {
+func ControllerInstance(logger *log.Logger, chipmunkAddress string) *Controller {
 	if controller == nil {
-		chipmunkConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Chipmunk)
+		chipmunkConn := grpcext.NewConnection(chipmunkAddress)
 		controller = &Controller{
 			assetsService: chipmunkApi.NewAssetServiceClient(chipmunkConn),
+			logger:        logger,
 		}
 	}
 	return controller

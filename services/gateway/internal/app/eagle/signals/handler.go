@@ -3,8 +3,8 @@ package signals
 import (
 	gorilla "github.com/gorilla/mux"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
-	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
-	"github.com/h-varmazyar/Gate/services/gateway/configs"
+	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api/proto"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,13 +13,15 @@ var (
 
 type Controller struct {
 	signalsService eagleApi.SignalServiceClient
+	logger         *log.Logger
 }
 
-func ControllerInstance() *Controller {
+func ControllerInstance(logger *log.Logger, eagleAddress string) *Controller {
 	if controller == nil {
-		eagleConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Chipmunk)
+		eagleConn := grpcext.NewConnection(eagleAddress)
 		controller = &Controller{
 			signalsService: eagleApi.NewSignalServiceClient(eagleConn),
+			logger:         logger,
 		}
 	}
 	return controller

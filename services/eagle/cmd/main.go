@@ -1,78 +1,67 @@
 package main
 
 import (
-	"github.com/google/uuid"
-	"github.com/h-varmazyar/Gate/pkg/gormext"
+	"context"
 	"github.com/h-varmazyar/Gate/pkg/service"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	"github.com/h-varmazyar/Gate/services/eagle/configs"
-	"github.com/h-varmazyar/Gate/services/eagle/internal/app/signals"
-	"github.com/h-varmazyar/Gate/services/eagle/internal/app/strategies"
-	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/repository"
+	strategies "github.com/h-varmazyar/Gate/services/eagle/internal/app/strategies"
+	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/db"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"gopkg.in/yaml.v3"
+	"io/ioutil"
 	"net"
-	"time"
 )
 
 func main() {
-	//initializing
-	configs.LoadVariables()
-	repository.InitializingDB()
-
-	////testStrategy()
-	//restReturn()
-	//return
-
-	registerGrpcServer()
-
-	service.Start(configs.Variables.ServiceName, configs.Variables.Version)
-}
-
-func restReturn() {
-	if st, err := repository.Strategies.Return(uuid.MustParse("f59e72c5-a842-4843-a769-216c6e8b6caf")); err != nil {
-		log.WithError(err)
-		return
-	} else {
-		log.Infof("st: %v", st)
-		for _, indicator := range st.Indicators {
-			log.Infof("ind: %v", indicator)
-		}
-	}
-}
-
-func testStrategy() {
-	id := uuid.New()
-	strategy := &repository.Strategy{
-		UniversalModel: gormext.UniversalModel{
-			ID:        id,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		},
-		Name:                  "test",
-		Description:           "test indicators",
-		MinDailyProfitRate:    0,
-		MinProfitPerTradeRate: 0,
-		MaxFundPerTrade:       0,
-		MaxFundPerTradeRate:   0,
-		WorkingResolutionID:   uuid.MustParse("ab28acd0-3517-483f-b3a1-7bd879fa85d0"),
-		Indicators: []*repository.StrategyIndicator{
-			{
-				StrategyID:  id,
-				IndicatorID: uuid.MustParse("f93e0959-e55b-4afe-b233-8b30a244cdc8"),
-				Type:        chipmunkApi.Indicator_RSI,
-			},
-		},
+	ctx := context.Background()
+	conf := loadConfigs()
+	logger := log.New()
+	dbInstance, err := loadDB(ctx, conf.DB)
+	if err != nil {
+		logger.Panicf("failed to initiate databases with error %v", err)
 	}
 
-	repository.Strategies.Save(strategy)
+	initializeAndRegisterApps(ctx, logger, dbInstance, conf)
 }
 
-func registerGrpcServer() {
-	service.Serve(configs.Variables.GrpcPort, func(lst net.Listener) error {
+func loadConfigs() *Configs {
+	configs := new(Configs)
+	confBytes, err := ioutil.ReadFile("../configs/local.yaml")
+	if err != nil {
+		log.WithError(err).Fatal("can not load yaml file")
+	}
+	if err = yaml.Unmarshal(confBytes, configs); err != nil {
+		log.WithError(err).Fatal("can not unmarshal yaml file")
+	}
+	return configs
+}
+
+func loadDB(ctx context.Context, configs *db.Configs) (*db.DB, error) {
+	return db.NewDatabase(ctx, configs)
+}
+
+func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstance *db.DB, configs *Configs) {
+	strategiesApp, err := strategies.NewApp(ctx, logger, dbInstance, configs.StrategiesApp)
+	if err != nil {
+		logger.Panicf("failed to initiate functions service with error %v", err)
+	}
+
+	//dependencies := &signals.AppDependencies{
+	//	ServiceDependencies: &signalsService.Dependencies{
+	//		StrategyService: strategiesApp.Service,
+	//	},
+	//}
+	//signalsApp, err := signals.NewApp(ctx, logger, configs.SignalsApp, dependencies)
+	//if err != nil {
+	//	logger.Panicf("failed to initiate brokerages service with error %v", err)
+	//}
+
+	service.Serve(configs.GRPCPort, func(lst net.Listener) error {
 		server := grpc.NewServer()
-		strategies.NewService().RegisterServer(server)
-		signals.NewService().RegisterServer(server)
+		strategiesApp.Service.RegisterServer(server)
+		//signalsApp.Service.RegisterServer(server)
 		return server.Serve(lst)
 	})
+
+	service.Start(configs.ServiceName, configs.Version)
 }
