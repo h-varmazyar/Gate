@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/h-varmazyar/Gate/api/proto"
+	api "github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/services/telegramBot/internal/pkg/repository"
 	"github.com/h-varmazyar/Gate/services/telegramBot/internal/pkg/tgBotApi"
@@ -53,7 +53,7 @@ status: %v
 
 	for i, brokerage := range brokerages.Elements {
 		statusText := QueryStart
-		if brokerage.Status == proto.Status_Enable {
+		if brokerage.Status == api.Status_Enable {
 			statusText = QueryStop
 		}
 
