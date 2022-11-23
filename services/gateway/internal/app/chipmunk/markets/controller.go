@@ -2,11 +2,12 @@ package markets
 
 import (
 	gorilla "github.com/gorilla/mux"
+	api "github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/httpext"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	"github.com/h-varmazyar/Gate/services/gateway/configs"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	"github.com/h-varmazyar/gopack/mux"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -16,13 +17,15 @@ var (
 
 type Controller struct {
 	marketsService chipmunkApi.MarketServiceClient
+	logger         *log.Logger
 }
 
-func ControllerInstance() *Controller {
+func ControllerInstance(logger *log.Logger, chipmunkAddress string) *Controller {
 	if controller == nil {
-		chipmunkConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Chipmunk)
+		chipmunkConn := grpcext.NewConnection(chipmunkAddress)
 		controller = &Controller{
 			marketsService: chipmunkApi.NewMarketServiceClient(chipmunkConn),
+			logger:         logger,
 		}
 	}
 	return controller
@@ -52,10 +55,10 @@ func (c Controller) create(res http.ResponseWriter, req *http.Request) {
 }
 
 func (c Controller) list(res http.ResponseWriter, req *http.Request) {
-	list := new(chipmunkApi.MarketListRequest)
-	brokerageIDs := mux.QueryParam(req, "core-id")
-	if len(brokerageIDs) != 0 {
-		list.BrokerageID = brokerageIDs[0]
+	list := new(chipmunkApi.MarketListReq)
+	platforms := mux.QueryParam(req, "platform")
+	if len(platforms) != 0 {
+		list.Platform = api.Platform(api.Platform_value[platforms[0]])
 	}
 	if markets, err := c.marketsService.List(req.Context(), list); err != nil {
 		httpext.SendError(res, req, err)
@@ -65,7 +68,7 @@ func (c Controller) list(res http.ResponseWriter, req *http.Request) {
 }
 
 func (c Controller) get(res http.ResponseWriter, req *http.Request) {
-	getRequest := new(chipmunkApi.ReturnMarketRequest)
+	getRequest := new(chipmunkApi.MarketReturnReq)
 	getRequest.ID = mux.PathParam(req, "market-id")
 
 	if market, err := c.marketsService.Return(req.Context(), getRequest); err != nil {

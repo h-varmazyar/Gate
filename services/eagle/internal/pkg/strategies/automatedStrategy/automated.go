@@ -7,12 +7,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
-	"github.com/h-varmazyar/Gate/pkg/mapper"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
-	coreApi "github.com/h-varmazyar/Gate/services/core/api"
-	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api"
-	"github.com/h-varmazyar/Gate/services/eagle/configs"
-	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/repository"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
+	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
+	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api/proto"
+	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/entity"
 	telegramBotApi "github.com/h-varmazyar/Gate/services/telegramBot/api"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
@@ -20,48 +18,51 @@ import (
 	"time"
 )
 
-type automated struct {
-	*repository.Strategy
+type Automated struct {
+	*entity.Strategy
 	functionsService coreApi.FunctionsServiceClient
 	walletsService   chipmunkApi.WalletsServiceClient
 	candleService    chipmunkApi.CandleServiceClient
 	botService       telegramBotApi.BotServiceClient
 	withTrading      bool
 	signalPool       *redis.Client
+	configs          *Configs
 }
 
-func NewAutomatedStrategy(strategy *eagleApi.Strategy, withTrading bool) (*automated, error) {
+func NewAutomatedStrategy(strategy *entity.Strategy, withTrading bool, configs *Configs) (*Automated, error) {
 	if strategy == nil {
 		return nil, errors.NewWithSlug(context.Background(), codes.FailedPrecondition, "empty_strategy")
 	}
-	automated := new(automated)
-	automated.Strategy = new(repository.Strategy)
-	mapper.Struct(strategy, automated.Strategy)
-	mapper.Slice(strategy.Indicators, &automated.Indicators)
+	automated := new(Automated)
+	automated.Strategy = strategy
+	//Automated.Strategy = new(entity.Strategy)
+	//mapper.Struct(strategy, Automated.Strategy)
+	//mapper.Slice(strategy.Indicators, &Automated.Indicators)
 	automated.withTrading = withTrading
+	automated.configs = configs
 
 	automated.signalPool = redis.NewClient(&redis.Options{
-		Addr:     configs.Variables.RedisAddress,
+		Addr:     configs.RedisAddress,
 		Password: "",
 		DB:       0,
 	})
 
 	log.Warnf("ind1: %v", strategy.Indicators)
 
-	brokerageConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Brokerage)
+	brokerageConn := grpcext.NewConnection(configs.CoreAddress)
 	automated.functionsService = coreApi.NewFunctionsServiceClient(brokerageConn)
 
-	chipmunkConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Chipmunk)
+	chipmunkConn := grpcext.NewConnection(configs.ChipmunkAddress)
 	automated.walletsService = chipmunkApi.NewWalletsServiceClient(chipmunkConn)
 	automated.candleService = chipmunkApi.NewCandleServiceClient(chipmunkConn)
 
-	telegramBotConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.TelegramBot)
+	telegramBotConn := grpcext.NewConnection(configs.TelegramBotAddress)
 	automated.botService = telegramBotApi.NewBotServiceClient(telegramBotConn)
 
 	return automated, nil
 }
 
-func (s *automated) CheckForSignals(ctx context.Context, market *chipmunkApi.Market) {
+func (s *Automated) CheckForSignals(ctx context.Context, market *chipmunkApi.Market) {
 	var (
 		err       error
 		reference *chipmunkApi.Reference
@@ -90,7 +91,7 @@ func (s *automated) CheckForSignals(ctx context.Context, market *chipmunkApi.Mar
 			//if reference.ActiveBalance <= 0 || reference.ActiveBalance < reference.TotalBalance/10 {
 			//	continue
 			//}
-			candles, err = s.candleService.ReturnLastNCandles(ctx, &chipmunkApi.BufferedCandlesRequest{
+			candles, err = s.candleService.List(ctx, &chipmunkApi.CandleListReq{
 				ResolutionID: s.WorkingResolutionID.String(),
 				MarketID:     marketID.String(),
 				Count:        2,
@@ -130,7 +131,7 @@ func (s *automated) CheckForSignals(ctx context.Context, market *chipmunkApi.Mar
 	}
 }
 
-func (s *automated) calculateSignalStrength(candles []*chipmunkApi.Candle, market *chipmunkApi.Market) float64 {
+func (s *Automated) calculateSignalStrength(candles []*chipmunkApi.Candle, market *chipmunkApi.Market) float64 {
 	strength := float64(0)
 	rsi, stochastic, bb := float64(0), float64(0), float64(0)
 	for _, strategyIndicator := range s.Indicators {
@@ -151,21 +152,21 @@ func (s *automated) calculateSignalStrength(candles []*chipmunkApi.Candle, marke
 	return strength
 }
 
-func (s *automated) sendSignalToBot(ctx context.Context, market string, price float64, metadata interface{}) {
+func (s *Automated) sendSignalToBot(ctx context.Context, market string, price float64, metadata interface{}) {
 	text := fmt.Sprintf(`new buy signal raise in spot of coinex:
 market: %s
 enter price: %v
 other data: %v
 `, market, price, metadata)
 	if _, err := s.botService.SendMessage(ctx, &telegramBotApi.Message{
-		ChatID: configs.Variables.BroadcastChannelID,
+		ChatID: s.configs.BroadcastChannelID,
 		Text:   text,
 	}); err != nil {
 		log.WithError(err).Errorf("failed to send signal message to bot: %v", text)
 	}
 }
 
-func (s *automated) manageBuyOrder(ctx context.Context, market *chipmunkApi.Market, order *eagleApi.Order) {
+func (s *Automated) manageBuyOrder(ctx context.Context, market *chipmunkApi.Market, order *eagleApi.Order) {
 	var err error
 	endTicker := time.NewTicker(time.Minute * 15)
 	checkTicker := time.NewTicker(time.Second)
@@ -218,10 +219,10 @@ LOOP:
 	endTicker.Stop()
 }
 
-func (s *automated) manageBidOrder(ctx context.Context, pool *AssetBalancePool) {
+func (s *Automated) manageBidOrder(ctx context.Context, pool *AssetBalancePool) {
 	var (
 		err       error
-		last      *coreApi.MarketStatisticsResp
+		last      *coreApi.MarketStatistics
 		openOrder *eagleApi.Order
 		sellPrice float64
 	)
@@ -243,7 +244,7 @@ LOOP:
 				break LOOP
 			}
 		}
-		if last, err = s.functionsService.MarketStatistics(ctx, &coreApi.MarketStatisticsReq{
+		if last, err = s.functionsService.SingleMarketStatistics(ctx, &coreApi.MarketStatisticsReq{
 			MarketName: pool.Market.Name,
 		}); err != nil {
 			log.WithError(err).Errorf("failed to get last candles of %v", pool.Market.Name)
@@ -291,7 +292,7 @@ LOOP:
 	ticker.Stop()
 }
 
-func (s *automated) isSignalGeneratedBefore(ctx context.Context, market *chipmunkApi.Market) bool {
+func (s *Automated) isSignalGeneratedBefore(ctx context.Context, market *chipmunkApi.Market) bool {
 	result, err := s.signalPool.Get(ctx, market.Name).Result()
 	if err != nil {
 		log.WithError(err).Errorf("failed to fetch signal from redis for market %v", market)
@@ -303,7 +304,7 @@ func (s *automated) isSignalGeneratedBefore(ctx context.Context, market *chipmun
 	return true
 }
 
-func (s *automated) setSignalIntoPool(ctx context.Context, market *chipmunkApi.Market, unixTime int64) bool {
+func (s *Automated) setSignalIntoPool(ctx context.Context, market *chipmunkApi.Market, unixTime int64) bool {
 	expirationTime := time.Unix(unixTime, 0).Add(time.Minute * 15) //todo: change with trading resolution
 	ok, err := s.signalPool.SetNX(ctx, market.Name, nil, expirationTime.Sub(time.Now())).Result()
 	if err != nil {
@@ -313,7 +314,7 @@ func (s *automated) setSignalIntoPool(ctx context.Context, market *chipmunkApi.M
 	return ok
 }
 
-func (s *automated) checkRSI(candles []*chipmunkApi.Candle, indicatorID uuid.UUID) float64 {
+func (s *Automated) checkRSI(candles []*chipmunkApi.Candle, indicatorID uuid.UUID) float64 {
 	if chipmunkApi.GetRSIValue(candles[0].IndicatorValues[indicatorID.String()]).RSI < 30 &&
 		chipmunkApi.GetRSIValue(candles[1].IndicatorValues[indicatorID.String()]).RSI >= 30 {
 		return 1
@@ -321,7 +322,7 @@ func (s *automated) checkRSI(candles []*chipmunkApi.Candle, indicatorID uuid.UUI
 	return 0
 }
 
-func (s *automated) checkStochastic(candles []*chipmunkApi.Candle, indicatorID uuid.UUID) float64 {
+func (s *Automated) checkStochastic(candles []*chipmunkApi.Candle, indicatorID uuid.UUID) float64 {
 	stochastic0 := chipmunkApi.GetStochasticValue(candles[0].IndicatorValues[indicatorID.String()])
 	stochastic1 := chipmunkApi.GetStochasticValue(candles[1].IndicatorValues[indicatorID.String()])
 	if stochastic1.IndexD > 20 || stochastic0.IndexK > 20 {
@@ -334,7 +335,7 @@ func (s *automated) checkStochastic(candles []*chipmunkApi.Candle, indicatorID u
 	return 0
 }
 
-func (s *automated) checkBollingerBand(candles []*chipmunkApi.Candle, indicatorID uuid.UUID, makerFeeRate, takerFeeRate float64) float64 {
+func (s *Automated) checkBollingerBand(candles []*chipmunkApi.Candle, indicatorID uuid.UUID, makerFeeRate, takerFeeRate float64) float64 {
 	bb0 := chipmunkApi.GetBollingerBandsValue(candles[0].IndicatorValues[indicatorID.String()])
 	bb1 := chipmunkApi.GetBollingerBandsValue(candles[1].IndicatorValues[indicatorID.String()])
 	if candles[0].Low > bb0.LowerBand {

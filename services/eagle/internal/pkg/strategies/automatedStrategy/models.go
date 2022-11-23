@@ -1,7 +1,7 @@
 package automatedStrategy
 
 import (
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api"
+	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	"sync"
 )
 

@@ -8,7 +8,7 @@ package proto
 
 import (
 	context "context"
-	api "github.com/h-varmazyar/Gate/api/proto"
+	proto "github.com/h-varmazyar/Gate/api/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -23,8 +23,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SignalServiceClient interface {
-	Start(ctx context.Context, in *SignalStartReq, opts ...grpc.CallOption) (*api.Void, error)
-	Stop(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*api.Void, error)
+	Start(ctx context.Context, in *SignalStartReq, opts ...grpc.CallOption) (*proto.Void, error)
+	Stop(ctx context.Context, in *proto.Void, opts ...grpc.CallOption) (*proto.Void, error)
 }
 
 type signalServiceClient struct {
@@ -35,8 +35,8 @@ func NewSignalServiceClient(cc grpc.ClientConnInterface) SignalServiceClient {
 	return &signalServiceClient{cc}
 }
 
-func (c *signalServiceClient) Start(ctx context.Context, in *SignalStartReq, opts ...grpc.CallOption) (*api.Void, error) {
-	out := new(api.Void)
+func (c *signalServiceClient) Start(ctx context.Context, in *SignalStartReq, opts ...grpc.CallOption) (*proto.Void, error) {
+	out := new(proto.Void)
 	err := c.cc.Invoke(ctx, "/eagleApi.SignalService/Start", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -44,8 +44,8 @@ func (c *signalServiceClient) Start(ctx context.Context, in *SignalStartReq, opt
 	return out, nil
 }
 
-func (c *signalServiceClient) Stop(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*api.Void, error) {
-	out := new(api.Void)
+func (c *signalServiceClient) Stop(ctx context.Context, in *proto.Void, opts ...grpc.CallOption) (*proto.Void, error) {
+	out := new(proto.Void)
 	err := c.cc.Invoke(ctx, "/eagleApi.SignalService/Stop", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -57,18 +57,18 @@ func (c *signalServiceClient) Stop(ctx context.Context, in *api.Void, opts ...gr
 // All implementations should embed UnimplementedSignalServiceServer
 // for forward compatibility
 type SignalServiceServer interface {
-	Start(context.Context, *SignalStartReq) (*api.Void, error)
-	Stop(context.Context, *api.Void) (*api.Void, error)
+	Start(context.Context, *SignalStartReq) (*proto.Void, error)
+	Stop(context.Context, *proto.Void) (*proto.Void, error)
 }
 
 // UnimplementedSignalServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedSignalServiceServer struct {
 }
 
-func (UnimplementedSignalServiceServer) Start(context.Context, *SignalStartReq) (*api.Void, error) {
+func (UnimplementedSignalServiceServer) Start(context.Context, *SignalStartReq) (*proto.Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Start not implemented")
 }
-func (UnimplementedSignalServiceServer) Stop(context.Context, *api.Void) (*api.Void, error) {
+func (UnimplementedSignalServiceServer) Stop(context.Context, *proto.Void) (*proto.Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Stop not implemented")
 }
 
@@ -102,7 +102,7 @@ func _SignalService_Start_Handler(srv interface{}, ctx context.Context, dec func
 }
 
 func _SignalService_Stop_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(api.Void)
+	in := new(proto.Void)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func _SignalService_Stop_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: "/eagleApi.SignalService/Stop",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SignalServiceServer).Stop(ctx, req.(*api.Void))
+		return srv.(SignalServiceServer).Stop(ctx, req.(*proto.Void))
 	}
 	return interceptor(ctx, in, info, handler)
 }

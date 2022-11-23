@@ -43,13 +43,82 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 	coreApi.RegisterFunctionsServiceServer(server, s)
 }
 
-func (s *Service) OHLC(ctx context.Context, req *coreApi.OHLCReq) (*chipmunkApi.Candles, error) {
-	brokerage, err := s.loadBrokerage(ctx, req.BrokerageID)
+func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.OHLCReq) (*proto.Void, error) {
+	request, err := loadRequest(s.configs, &coreApi.Brokerage{Platform: req.Platform}).AsyncOHLC(ctx, s.createOHLCParams(req))
 	if err != nil {
 		return nil, err
 	}
 
-	candles, err := loadRequest(s.configs, brokerage).OHLC(ctx, s.createOHLCParams(req),
+	request.Type = networkAPI.Request_Async
+
+	_, err = s.doNetworkRequest(request)
+	if err != nil {
+		return nil, err
+	}
+
+	return new(proto.Void), nil
+}
+
+func (s *Service) AllMarketStatistics(ctx context.Context, req *coreApi.AllMarketStatisticsReq) (*coreApi.AllMarketStatisticsResp, error) {
+	brokerage := &coreApi.Brokerage{Platform: req.Platform}
+	request, err := loadRequest(s.configs, brokerage).AllMarketStatistics(ctx, new(brokerages.AllMarketStatisticsParams))
+	if err != nil {
+		return nil, err
+	}
+
+	request.Type = networkAPI.Request_Sync
+
+	networkResponse, err := s.doNetworkRequest(request)
+	if err != nil {
+		return nil, err
+	}
+
+	responseParser, err := loadResponse(s.configs, brokerage)
+	if err != nil {
+		s.logger.WithError(err).Error("failed to load response parser in all market statistics")
+		return nil, err
+	}
+
+	response, err := responseParser.AllMarkerStatistics(ctx, networkResponse)
+	if err != nil {
+		s.logger.WithError(err).Error("failed to parse all market statistics response")
+		return nil, err
+	}
+
+	return response, nil
+}
+
+func (s *Service) GetMarketInfo(ctx context.Context, req *coreApi.MarketInfoReq) (*coreApi.MarketInfo, error) {
+	brokerage := &coreApi.Brokerage{Platform: req.Market.Platform}
+	request, err := loadRequest(s.configs, brokerage).GetMarketInfo(ctx, s.createMarketInfoParams(req))
+	if err != nil {
+		return nil, err
+	}
+
+	request.Type = networkAPI.Request_Sync
+
+	networkResponse, err := s.doNetworkRequest(request)
+	if err != nil {
+		return nil, err
+	}
+
+	responseParser, err := loadResponse(s.configs, brokerage)
+	if err != nil {
+		s.logger.WithError(err).Error("failed to load response parser in all market statistics")
+		return nil, err
+	}
+
+	response, err := responseParser.GetMarketInfo(ctx, networkResponse)
+	if err != nil {
+		s.logger.WithError(err).Error("failed to parse all market statistics response")
+		return nil, err
+	}
+
+	return response, nil
+}
+
+func (s *Service) OHLC(ctx context.Context, req *coreApi.OHLCReq) (*chipmunkApi.Candles, error) {
+	candles, err := loadRequest(s.configs, nil).OHLC(ctx, s.createOHLCParams(req),
 		func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
 			resp, err := s.requestService.Do(ctx, request)
 			return resp, err
@@ -60,26 +129,8 @@ func (s *Service) OHLC(ctx context.Context, req *coreApi.OHLCReq) (*chipmunkApi.
 	return &chipmunkApi.Candles{Elements: candles}, nil
 }
 
-func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.OHLCReq) (*proto.Void, error) {
+func (s *Service) WalletsBalance(ctx context.Context, req *coreApi.WalletsBalanceReq) (*chipmunkApi.Wallets, error) {
 	brokerage, err := s.loadBrokerage(ctx, req.BrokerageID)
-	if err != nil {
-		return nil, err
-	}
-
-	request, err := loadRequest(s.configs, brokerage).AsyncOHLC(ctx, s.createOHLCParams(req))
-	if err != nil {
-		return nil, err
-	}
-
-	request.Type = networkAPI.Request_Async
-
-	s.doAsyncRequest(request)
-
-	return new(proto.Void), nil
-}
-
-func (s *Service) WalletsBalance(ctx context.Context, _ *proto.Void) (*chipmunkApi.Wallets, error) {
-	brokerage, err := s.brokerageService.Enable(ctx, new(proto.Void))
 	if err != nil {
 		return nil, err
 	}
@@ -93,32 +144,24 @@ func (s *Service) WalletsBalance(ctx context.Context, _ *proto.Void) (*chipmunkA
 	return wallets, nil
 }
 
-func (s *Service) MarketStatistics(ctx context.Context, req *coreApi.MarketStatisticsReq) (*coreApi.MarketStatisticsResp, error) {
-	brokerage, err := s.brokerageService.Enable(ctx, new(proto.Void))
-	if err != nil {
-		return nil, err
-	}
+func (s *Service) SingleMarketStatistics(ctx context.Context, req *coreApi.MarketStatisticsReq) (*coreApi.MarketStatistics, error) {
 	params := &brokerages.MarketStatisticsParams{
 		Market: req.MarketName,
 	}
-	statistics, err := loadRequest(s.configs, brokerage).MarketStatistics(ctx, params, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
+	statistics, err := loadRequest(s.configs, nil).MarketStatistics(ctx, params, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
 		resp, err := s.requestService.Do(ctx, request)
 		return resp, err
 	})
 	if err != nil {
 		return nil, err
 	}
-	resp := new(coreApi.MarketStatisticsResp)
+	resp := new(coreApi.MarketStatistics)
 	mapper.Struct(statistics, resp)
 	return resp, nil
 }
 
 func (s *Service) MarketList(ctx context.Context, req *coreApi.MarketListReq) (*chipmunkApi.Markets, error) {
-	brokerage, err := s.brokerageService.Enable(ctx, new(proto.Void))
-	if err != nil {
-		return nil, err
-	}
-	markets, err := loadRequest(s.configs, brokerage).MarketList(ctx, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
+	markets, err := loadRequest(s.configs, nil).MarketList(ctx, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
 		resp, err := s.requestService.Do(ctx, request)
 		return resp, err
 	})
@@ -129,7 +172,7 @@ func (s *Service) MarketList(ctx context.Context, req *coreApi.MarketListReq) (*
 }
 
 func (s *Service) NewOrder(ctx context.Context, req *coreApi.NewOrderReq) (*eagleApi.Order, error) {
-	brokerage, err := s.brokerageService.Enable(ctx, new(proto.Void))
+	brokerage, err := s.loadBrokerage(ctx, req.BrokerageID)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +199,7 @@ func (s *Service) NewOrder(ctx context.Context, req *coreApi.NewOrderReq) (*eagl
 }
 
 func (s *Service) CancelOrder(ctx context.Context, req *coreApi.CancelOrderReq) (*eagleApi.Order, error) {
-	brokerage, err := s.brokerageService.Enable(ctx, new(proto.Void))
+	brokerage, err := s.loadBrokerage(ctx, req.BrokerageID)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +219,7 @@ func (s *Service) CancelOrder(ctx context.Context, req *coreApi.CancelOrderReq) 
 }
 
 func (s *Service) OrderStatus(ctx context.Context, req *coreApi.OrderStatusReq) (*eagleApi.Order, error) {
-	brokerage, err := s.brokerageService.Enable(ctx, new(proto.Void))
+	brokerage, err := s.loadBrokerage(ctx, req.BrokerageID)
 	if err != nil {
 		return nil, err
 	}

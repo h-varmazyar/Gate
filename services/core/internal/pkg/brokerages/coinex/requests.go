@@ -79,3 +79,19 @@ func (r *Requests) AsyncOHLC(_ context.Context, inputs *brokerages.OHLCParams) (
 	request.Metadata = string(metadataBytes)
 	return request, nil
 }
+
+func (r *Requests) AllMarketStatistics(_ context.Context, _ *brokerages.AllMarketStatisticsParams) (*networkAPI.Request, error) {
+	request := new(networkAPI.Request)
+	request.Method = networkAPI.Request_GET
+	request.Endpoint = "https://api.coinex.com/v1/market/ticker/all"
+
+	return request, nil
+}
+
+func (r *Requests) GetMarketInfo(_ context.Context, inputs *brokerages.MarketInfoParams) (*networkAPI.Request, error) {
+	request := new(networkAPI.Request)
+	request.Method = networkAPI.Request_GET
+	request.Endpoint = fmt.Sprintf("https://www.coinex.com/res/vote2/project/%v", inputs.Market.Name)
+
+	return request, nil
+}

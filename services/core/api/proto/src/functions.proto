@@ -9,16 +9,18 @@ import "services/eagle/api/proto/src/order.proto";
 import "api/proto/src/misc.proto";
 
 service FunctionsService {
+  //without authentication
+  rpc AsyncOHLC(OHLCReq) returns (api.Void);
   rpc OHLC(OHLCReq) returns (chipmunkApi.Candles);
-  rpc WalletsBalance(api.Void) returns (chipmunkApi.Wallets);
   rpc AllMarketStatistics(AllMarketStatisticsReq) returns (AllMarketStatisticsResp);
-  rpc MarketStatistics(MarketStatisticsReq) returns (MarketStatisticsResp);
+  rpc SingleMarketStatistics(MarketStatisticsReq) returns (MarketStatistics);
   rpc MarketList(MarketListReq) returns (chipmunkApi.Markets);
-  rpc MarketInfo(MarketInfoReq) returns (MarketInfoResp);
+  rpc GetMarketInfo(MarketInfoReq) returns (MarketInfo);
+  //with authentication
+  rpc WalletsBalance(WalletsBalanceReq) returns (chipmunkApi.Wallets);
   rpc NewOrder(NewOrderReq) returns (eagleApi.Order);
   rpc CancelOrder(CancelOrderReq) returns (eagleApi.Order);
   rpc OrderStatus(OrderStatusReq) returns (eagleApi.Order);
-  rpc AsyncOHLC(OHLCReq) returns (api.Void);
 }
 
 message OHLCReq{
@@ -41,7 +43,7 @@ message AllMarketStatisticsReq {
 
 message AllMarketStatisticsResp {
   // @inject_tag: json:"all_statistics"
-  map<string, MarketStatisticsResp> AllStatistics = 1;
+  map<string, MarketStatistics> AllStatistics = 1;
   // @inject_tag: json:"platform"
   api.Platform Platform = 2;
   // @inject_tag: json:"date"
@@ -53,7 +55,7 @@ message MarketStatisticsReq {
   string MarketName = 1;
 }
 
-message MarketStatisticsResp {
+message MarketStatistics {
   // @inject_tag: json:"date"
   int64 date = 1;
   // @inject_tag: json:"last_price"
@@ -88,9 +90,26 @@ message MarketInfoReq {
   chipmunkApi.Market Market = 1;
 }
 
-message MarketInfoResp {
+message MarketInfo {
   // @inject_tag: json:"issue_date"
   int64 IssueDate = 1;
+  // @inject_tag: json:"short_name"
+  string ShortName = 2;
+  // @inject_tag: json:"full_name"
+  string FullName = 3;
+  // @inject_tag: json:"logo"
+  string Logo = 4;
+  // @inject_tag: json:"website_url"
+  string WebsiteURL = 5;
+  // @inject_tag: json:"introduction"
+  string Introduction = 6;
+  // @inject_tag: json:"status"
+  string  Status = 7;
+}
+
+message WalletsBalanceReq{
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 1;
 }
 
 message NewOrderReq {
@@ -110,6 +129,8 @@ message NewOrderReq {
   eagleApi.Order.option Option = 7;
   // @inject_tag: json:"models"
   eagleApi.OrderModel Model = 8;
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 9;
 }
 
 message CancelOrderReq {
@@ -117,6 +138,8 @@ message CancelOrderReq {
   int64 ServerOrderID = 1;
   // @inject_tag: json:"market"
   chipmunkApi.Market Market = 2;
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 3;
 }
 
 message OrderStatusReq {
@@ -124,4 +147,6 @@ message OrderStatusReq {
   int64 ServerOrderID = 1;
   // @inject_tag: json:"market"
   chipmunkApi.Market Market = 2;
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 3;
 }

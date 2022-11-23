@@ -27,6 +27,12 @@ type OHLCParams struct {
 	To         time.Time
 }
 
+type AllMarketStatisticsParams struct{}
+
+type MarketInfoParams struct {
+	Market *chipmunkApi.Market
+}
+
 type WalletInfoParams struct {
 	WalletName string
 }

@@ -8,7 +8,7 @@ package proto
 
 import (
 	context "context"
-	api "github.com/h-varmazyar/Gate/api/proto"
+	proto "github.com/h-varmazyar/Gate/api/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -25,8 +25,10 @@ const _ = grpc.SupportPackageIsVersion7
 type StrategyServiceClient interface {
 	Create(ctx context.Context, in *CreateStrategyReq, opts ...grpc.CallOption) (*Strategy, error)
 	Return(ctx context.Context, in *ReturnStrategyReq, opts ...grpc.CallOption) (*Strategy, error)
-	List(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*Strategies, error)
+	List(ctx context.Context, in *proto.Void, opts ...grpc.CallOption) (*Strategies, error)
 	Indicators(ctx context.Context, in *StrategyIndicatorReq, opts ...grpc.CallOption) (*StrategyIndicators, error)
+	StartSignalChecker(ctx context.Context, in *StrategySignalCheckStartReq, opts ...grpc.CallOption) (*proto.Void, error)
+	StopSignalChecker(ctx context.Context, in *StrategySignalCheckStopReq, opts ...grpc.CallOption) (*proto.Void, error)
 }
 
 type strategyServiceClient struct {
@@ -55,7 +57,7 @@ func (c *strategyServiceClient) Return(ctx context.Context, in *ReturnStrategyRe
 	return out, nil
 }
 
-func (c *strategyServiceClient) List(ctx context.Context, in *api.Void, opts ...grpc.CallOption) (*Strategies, error) {
+func (c *strategyServiceClient) List(ctx context.Context, in *proto.Void, opts ...grpc.CallOption) (*Strategies, error) {
 	out := new(Strategies)
 	err := c.cc.Invoke(ctx, "/eagleApi.StrategyService/List", in, out, opts...)
 	if err != nil {
@@ -73,14 +75,34 @@ func (c *strategyServiceClient) Indicators(ctx context.Context, in *StrategyIndi
 	return out, nil
 }
 
+func (c *strategyServiceClient) StartSignalChecker(ctx context.Context, in *StrategySignalCheckStartReq, opts ...grpc.CallOption) (*proto.Void, error) {
+	out := new(proto.Void)
+	err := c.cc.Invoke(ctx, "/eagleApi.StrategyService/StartSignalChecker", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *strategyServiceClient) StopSignalChecker(ctx context.Context, in *StrategySignalCheckStopReq, opts ...grpc.CallOption) (*proto.Void, error) {
+	out := new(proto.Void)
+	err := c.cc.Invoke(ctx, "/eagleApi.StrategyService/StopSignalChecker", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StrategyServiceServer is the server API for StrategyService service.
 // All implementations should embed UnimplementedStrategyServiceServer
 // for forward compatibility
 type StrategyServiceServer interface {
 	Create(context.Context, *CreateStrategyReq) (*Strategy, error)
 	Return(context.Context, *ReturnStrategyReq) (*Strategy, error)
-	List(context.Context, *api.Void) (*Strategies, error)
+	List(context.Context, *proto.Void) (*Strategies, error)
 	Indicators(context.Context, *StrategyIndicatorReq) (*StrategyIndicators, error)
+	StartSignalChecker(context.Context, *StrategySignalCheckStartReq) (*proto.Void, error)
+	StopSignalChecker(context.Context, *StrategySignalCheckStopReq) (*proto.Void, error)
 }
 
 // UnimplementedStrategyServiceServer should be embedded to have forward compatible implementations.
@@ -93,11 +115,17 @@ func (UnimplementedStrategyServiceServer) Create(context.Context, *CreateStrateg
 func (UnimplementedStrategyServiceServer) Return(context.Context, *ReturnStrategyReq) (*Strategy, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Return not implemented")
 }
-func (UnimplementedStrategyServiceServer) List(context.Context, *api.Void) (*Strategies, error) {
+func (UnimplementedStrategyServiceServer) List(context.Context, *proto.Void) (*Strategies, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 func (UnimplementedStrategyServiceServer) Indicators(context.Context, *StrategyIndicatorReq) (*StrategyIndicators, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Indicators not implemented")
+}
+func (UnimplementedStrategyServiceServer) StartSignalChecker(context.Context, *StrategySignalCheckStartReq) (*proto.Void, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StartSignalChecker not implemented")
+}
+func (UnimplementedStrategyServiceServer) StopSignalChecker(context.Context, *StrategySignalCheckStopReq) (*proto.Void, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StopSignalChecker not implemented")
 }
 
 // UnsafeStrategyServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -148,7 +176,7 @@ func _StrategyService_Return_Handler(srv interface{}, ctx context.Context, dec f
 }
 
 func _StrategyService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(api.Void)
+	in := new(proto.Void)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -160,7 +188,7 @@ func _StrategyService_List_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: "/eagleApi.StrategyService/List",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StrategyServiceServer).List(ctx, req.(*api.Void))
+		return srv.(StrategyServiceServer).List(ctx, req.(*proto.Void))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -179,6 +207,42 @@ func _StrategyService_Indicators_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(StrategyServiceServer).Indicators(ctx, req.(*StrategyIndicatorReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StrategyService_StartSignalChecker_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StrategySignalCheckStartReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StrategyServiceServer).StartSignalChecker(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/eagleApi.StrategyService/StartSignalChecker",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StrategyServiceServer).StartSignalChecker(ctx, req.(*StrategySignalCheckStartReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StrategyService_StopSignalChecker_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StrategySignalCheckStopReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StrategyServiceServer).StopSignalChecker(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/eagleApi.StrategyService/StopSignalChecker",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StrategyServiceServer).StopSignalChecker(ctx, req.(*StrategySignalCheckStopReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -205,6 +269,14 @@ var StrategyService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Indicators",
 			Handler:    _StrategyService_Indicators_Handler,
+		},
+		{
+			MethodName: "StartSignalChecker",
+			Handler:    _StrategyService_StartSignalChecker_Handler,
+		},
+		{
+			MethodName: "StopSignalChecker",
+			Handler:    _StrategyService_StopSignalChecker_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

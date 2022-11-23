@@ -6,7 +6,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/errors"
-	coreApi "github.com/h-varmazyar/Gate/services/core/api"
+	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	"github.com/h-varmazyar/Gate/services/telegramBot/internal/pkg/tgBotApi"
 	"google.golang.org/grpc/codes"
 )
@@ -24,9 +24,8 @@ func (h *Handler) startCallback(ctx context.Context, callback *tgbotapi.Callback
 	}
 	var brokerage *coreApi.Brokerage
 	if brokerage, err = h.brokerageService.Start(ctx, &coreApi.BrokerageStartReq{
-		ID:                 brokerageID.String(),
-		CollectMarketsData: true,
-		StartTrading:       true,
+		ID:          brokerageID.String(),
+		WithTrading: true,
 	}); err != nil {
 		return err
 	}

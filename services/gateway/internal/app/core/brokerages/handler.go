@@ -5,7 +5,7 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/httpext"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
-	"github.com/h-varmazyar/Gate/services/gateway/configs"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -15,13 +15,15 @@ var (
 
 type Handler struct {
 	brokerageService coreApi.BrokerageServiceClient
+	logger           *log.Logger
 }
 
-func HandlerInstance() *Handler {
+func HandlerInstance(logger *log.Logger, coreAddress string) *Handler {
 	if handler == nil {
-		coreConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.Core)
+		coreConn := grpcext.NewConnection(coreAddress)
 		handler = &Handler{
 			brokerageService: coreApi.NewBrokerageServiceClient(coreConn),
+			logger:           logger,
 		}
 	}
 	return handler

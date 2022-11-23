@@ -1,8 +1,7 @@
-package workers
+package wallets
 
 import (
 	"context"
-	"github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
@@ -65,7 +64,7 @@ LOOP:
 			ticker.Stop()
 			break LOOP
 		case <-ticker.C:
-			wallets, err := w.functionsService.WalletsBalance(ctx, new(proto.Void))
+			wallets, err := w.functionsService.WalletsBalance(ctx, &coreApi.WalletsBalanceReq{BrokerageID: brokerage.ID})
 			if err != nil {
 				log.WithError(err).Error("failed to update wallets")
 			} else {
@@ -88,7 +87,7 @@ func (w *WalletCheck) calculateReferenceValue(ctx context.Context, brokerage *co
 			continue
 		}
 		for _, market := range list.Elements {
-			statistics, err := w.functionsService.MarketStatistics(ctx, &coreApi.MarketStatisticsReq{
+			statistics, err := w.functionsService.SingleMarketStatistics(ctx, &coreApi.MarketStatisticsReq{
 				MarketName: market.Name,
 			})
 			if err != nil {

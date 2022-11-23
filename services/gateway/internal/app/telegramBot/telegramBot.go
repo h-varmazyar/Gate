@@ -5,7 +5,6 @@ import (
 	"github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/httpext"
-	"github.com/h-varmazyar/Gate/services/gateway/configs"
 	telegramBotApi "github.com/h-varmazyar/Gate/services/telegramBot/api"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -17,13 +16,15 @@ var (
 
 type Controller struct {
 	telegramBotService telegramBotApi.BotServiceClient
+	logger             *log.Logger
 }
 
-func RegisterRoutes(router *gorilla.Router) {
+func RegisterRoutes(router *gorilla.Router, logger *log.Logger, configs *Configs) {
 	if controller == nil {
-		telegramBotConn := grpcext.NewConnection(configs.Variables.GrpcAddresses.TelegramBot)
+		telegramBotConn := grpcext.NewConnection(configs.TelegramBotAddress)
 		controller = &Controller{
 			telegramBotService: telegramBotApi.NewBotServiceClient(telegramBotConn),
+			logger:             logger,
 		}
 	}
 	telegramBotRouter := router.PathPrefix("/bot").Subrouter()
