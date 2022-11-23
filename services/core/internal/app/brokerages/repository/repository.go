@@ -12,8 +12,6 @@ type BrokerageRepository interface {
 	Create(brokerage *entity.Brokerage) error
 	Delete(id uuid.UUID) error
 	ReturnByID(id uuid.UUID) (*entity.Brokerage, error)
-	ReturnEnable() (*entity.Brokerage, error)
-	ReturnEnables() ([]*entity.Brokerage, error)
 	List() ([]*entity.Brokerage, error)
 	ChangeStatus(brokerageID uuid.UUID) error
 }

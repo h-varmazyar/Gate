@@ -27,7 +27,6 @@ type BrokerageServiceClient interface {
 	Start(ctx context.Context, in *BrokerageStartReq, opts ...grpc.CallOption) (*Brokerage, error)
 	Stop(ctx context.Context, in *BrokerageStopReq, opts ...grpc.CallOption) (*Brokerage, error)
 	Return(ctx context.Context, in *BrokerageReturnReq, opts ...grpc.CallOption) (*Brokerage, error)
-	Enable(ctx context.Context, in *proto.Void, opts ...grpc.CallOption) (*Brokerage, error)
 	Delete(ctx context.Context, in *BrokerageDeleteReq, opts ...grpc.CallOption) (*proto.Void, error)
 	List(ctx context.Context, in *proto.Void, opts ...grpc.CallOption) (*Brokerages, error)
 }
@@ -76,15 +75,6 @@ func (c *brokerageServiceClient) Return(ctx context.Context, in *BrokerageReturn
 	return out, nil
 }
 
-func (c *brokerageServiceClient) Enable(ctx context.Context, in *proto.Void, opts ...grpc.CallOption) (*Brokerage, error) {
-	out := new(Brokerage)
-	err := c.cc.Invoke(ctx, "/coreApi.BrokerageService/Enable", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *brokerageServiceClient) Delete(ctx context.Context, in *BrokerageDeleteReq, opts ...grpc.CallOption) (*proto.Void, error) {
 	out := new(proto.Void)
 	err := c.cc.Invoke(ctx, "/coreApi.BrokerageService/Delete", in, out, opts...)
@@ -111,7 +101,6 @@ type BrokerageServiceServer interface {
 	Start(context.Context, *BrokerageStartReq) (*Brokerage, error)
 	Stop(context.Context, *BrokerageStopReq) (*Brokerage, error)
 	Return(context.Context, *BrokerageReturnReq) (*Brokerage, error)
-	Enable(context.Context, *proto.Void) (*Brokerage, error)
 	Delete(context.Context, *BrokerageDeleteReq) (*proto.Void, error)
 	List(context.Context, *proto.Void) (*Brokerages, error)
 }
@@ -131,9 +120,6 @@ func (UnimplementedBrokerageServiceServer) Stop(context.Context, *BrokerageStopR
 }
 func (UnimplementedBrokerageServiceServer) Return(context.Context, *BrokerageReturnReq) (*Brokerage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Return not implemented")
-}
-func (UnimplementedBrokerageServiceServer) Enable(context.Context, *proto.Void) (*Brokerage, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Enable not implemented")
 }
 func (UnimplementedBrokerageServiceServer) Delete(context.Context, *BrokerageDeleteReq) (*proto.Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
@@ -225,24 +211,6 @@ func _BrokerageService_Return_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _BrokerageService_Enable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(proto.Void)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(BrokerageServiceServer).Enable(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/coreApi.BrokerageService/Enable",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BrokerageServiceServer).Enable(ctx, req.(*proto.Void))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _BrokerageService_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(BrokerageDeleteReq)
 	if err := dec(in); err != nil {
@@ -301,10 +269,6 @@ var BrokerageService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Return",
 			Handler:    _BrokerageService_Return_Handler,
-		},
-		{
-			MethodName: "Enable",
-			Handler:    _BrokerageService_Enable_Handler,
 		},
 		{
 			MethodName: "Delete",

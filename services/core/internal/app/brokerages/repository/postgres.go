@@ -39,18 +39,6 @@ func (repository *brokeragePostgresRepository) ReturnByID(id uuid.UUID) (*entity
 	return brokerage, repository.db.Where("id = ?", id).First(brokerage).Error
 }
 
-func (repository *brokeragePostgresRepository) ReturnEnable() (*entity.Brokerage, error) {
-	brokerage := new(entity.Brokerage)
-	return brokerage, repository.db.
-		Where("status LIKE ?", proto.Status_Enable.String()).Find(&brokerage).Error
-}
-
-func (repository *brokeragePostgresRepository) ReturnEnables() ([]*entity.Brokerage, error) {
-	brokerages := make([]*entity.Brokerage, 0)
-	return brokerages, repository.db.
-		Where("status LIKE ?", proto.Status_Enable.String()).Find(&brokerages).Error
-}
-
 func (repository *brokeragePostgresRepository) List() ([]*entity.Brokerage, error) {
 	brokerages := make([]*entity.Brokerage, 0)
 	return brokerages, repository.db.Find(&brokerages).Error

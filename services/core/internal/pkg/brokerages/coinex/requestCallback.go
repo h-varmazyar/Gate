@@ -1,6 +1,7 @@
 package coinex
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/golang/protobuf/proto"
 	"github.com/h-varmazyar/Gate/pkg/amqpext"
@@ -21,7 +22,7 @@ func ListenCallbacks(configs *Configs) error {
 		log.WithError(err).Error("failed to declare coinex callback queue")
 		return err
 	} else {
-		r, err := NewResponse(configs)
+		r, err := NewResponse(configs, true)
 		if err != nil {
 			return err
 		}
@@ -63,6 +64,6 @@ func (c *Callback) handleDelivery(delivery amqp.Delivery) {
 
 	switch metadata.Method {
 	case MethodOHLC:
-		c.r.OHLC(response)
+		c.r.AsyncOHLC(context.Background(), response)
 	}
 }

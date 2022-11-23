@@ -222,7 +222,7 @@ LOOP:
 func (s *Automated) manageBidOrder(ctx context.Context, pool *AssetBalancePool) {
 	var (
 		err       error
-		last      *coreApi.MarketStatisticsResp
+		last      *coreApi.MarketStatistics
 		openOrder *eagleApi.Order
 		sellPrice float64
 	)
@@ -244,7 +244,7 @@ LOOP:
 				break LOOP
 			}
 		}
-		if last, err = s.functionsService.MarketStatistics(ctx, &coreApi.MarketStatisticsReq{
+		if last, err = s.functionsService.SingleMarketStatistics(ctx, &coreApi.MarketStatisticsReq{
 			MarketName: pool.Market.Name,
 		}); err != nil {
 			log.WithError(err).Errorf("failed to get last candles of %v", pool.Market.Name)

@@ -4,21 +4,26 @@ import (
 	"context"
 	"github.com/google/uuid"
 	api "github.com/h-varmazyar/Gate/api/proto"
+	"github.com/h-varmazyar/Gate/pkg/errors"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages/coinex"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc/codes"
 	"time"
 )
 
 func loadRequest(configs *Configs, brokerage *coreApi.Brokerage) brokerages.Requests {
 	switch brokerage.Platform {
 	case api.Platform_Coinex:
-		auth := &api.Auth{
-			Type:      api.AuthType_StaticToken,
-			AccessID:  brokerage.Auth.AccessID,
-			SecretKey: brokerage.Auth.SecretKey,
+		var auth *api.Auth
+		if brokerage != nil {
+			auth = &api.Auth{
+				Type:      api.AuthType_StaticToken,
+				AccessID:  brokerage.Auth.AccessID,
+				SecretKey: brokerage.Auth.SecretKey,
+			}
 		}
 		coinexInstance := coinex.NewRequest(configs.Coinex, auth)
 		return coinexInstance
@@ -26,6 +31,16 @@ func loadRequest(configs *Configs, brokerage *coreApi.Brokerage) brokerages.Requ
 		return nil
 	}
 	return nil
+}
+
+func loadResponse(configs *Configs, brokerage *coreApi.Brokerage) (brokerages.Responses, error) {
+	switch brokerage.Platform {
+	case api.Platform_Coinex:
+		return coinex.NewResponse(configs.Coinex, false)
+	case api.Platform_Nobitex:
+		return nil, errors.New(context.Background(), codes.Unimplemented)
+	}
+	return nil, errors.New(context.Background(), codes.Unimplemented)
 }
 
 func (s *Service) loadBrokerage(ctx context.Context, id string) (*coreApi.Brokerage, error) {
@@ -42,6 +57,15 @@ func (s *Service) loadBrokerage(ctx context.Context, id string) (*coreApi.Broker
 	return brokerage, nil
 }
 
+func (s *Service) doNetworkRequest(request *networkAPI.Request) (*networkAPI.Response, error) {
+	resp, err := s.requestService.Do(context.Background(), request)
+	if err != nil {
+		log.WithError(err).Errorf("failed to do request: %v", request)
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (s *Service) createOHLCParams(req *coreApi.OHLCReq) *brokerages.OHLCParams {
 	return &brokerages.OHLCParams{
 		Resolution: req.Resolution,
@@ -51,13 +75,8 @@ func (s *Service) createOHLCParams(req *coreApi.OHLCReq) *brokerages.OHLCParams 
 	}
 }
 
-func (s *Service) doAsyncRequest(request *networkAPI.Request) {
-	go func(request *networkAPI.Request) {
-		resp, err := s.requestService.Do(context.Background(), request)
-		if err != nil {
-			log.WithError(err).Errorf("failed to do request: %v", request)
-			return
-		}
-		log.Infof("resp is : %v", resp)
-	}(request)
+func (s *Service) createMarketInfoParams(req *coreApi.MarketInfoReq) *brokerages.MarketInfoParams {
+	return &brokerages.MarketInfoParams{
+		Market: req.Market,
+	}
 }

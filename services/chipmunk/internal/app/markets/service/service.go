@@ -254,7 +254,7 @@ func (s *Service) UpdateFromPlatform(ctx context.Context, req *chipmunkApi.Marke
 		localMarket.Platform = req.Platform
 
 		if req.Platform == api.Platform_Coinex {
-			marketInfo, err := s.functionsService.MarketInfo(ctx, &coreApi.MarketInfoReq{Market: market})
+			marketInfo, err := s.functionsService.GetMarketInfo(ctx, &coreApi.MarketInfoReq{Market: market})
 			if err != nil {
 				s.logger.WithError(err).Errorf("failed to get market info for %v in platform %v", market.Name, market.Platform.String())
 				return nil, err

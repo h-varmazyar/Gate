@@ -24,9 +24,8 @@ func (h *Handler) startCallback(ctx context.Context, callback *tgbotapi.Callback
 	}
 	var brokerage *coreApi.Brokerage
 	if brokerage, err = h.brokerageService.Start(ctx, &coreApi.BrokerageStartReq{
-		ID:                 brokerageID.String(),
-		CollectMarketsData: true,
-		StartTrading:       true,
+		ID:          brokerageID.String(),
+		WithTrading: true,
 	}); err != nil {
 		return err
 	}
