@@ -26,8 +26,8 @@ type Resolution struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"platform"
-	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
+	// @inject_tag: json:"Platform"
+	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
 	// @inject_tag: json:"duration"
 	Duration int64 `protobuf:"varint,2,opt,name=Duration,proto3" json:"duration"`
 	// @inject_tag: json:"label"
@@ -224,8 +224,8 @@ type ResolutionReturnByDurationReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"platform"
-	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
+	// @inject_tag: json:"Platform"
+	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
 	// @inject_tag: json:"duration"
 	Duration int64 `protobuf:"varint,2,opt,name=Duration,proto3" json:"duration"`
 }
@@ -281,8 +281,8 @@ type ResolutionListReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"platform"
-	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
+	// @inject_tag: json:"Platform"
+	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
 }
 
 func (x *ResolutionListReq) Reset() {

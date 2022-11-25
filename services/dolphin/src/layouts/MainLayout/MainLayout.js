@@ -2,6 +2,7 @@ import React, {Component} from "react"
 import logo from '../../assets/images/logo.jpeg';
 import Sidebar from '../../components/Sidebar/Sidebar'
 import Dashboard from '../../pages/Dashboard/Dashboard'
+import Platform from '../../pages/Platform/Platform'
 
 import './MainLayout.scss'
 
@@ -27,7 +28,8 @@ class MainLayout extends Component {
                         }
                         <div className='contentWrapper'>
                             {this.props.children}
-                            <Dashboard/>
+                            {/*<Dashboard/>*/}
+                            <Platform/>
                         </div>
                     </div>
                 </div>

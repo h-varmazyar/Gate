@@ -256,7 +256,7 @@ func (s *Service) UpdateFromPlatform(ctx context.Context, req *chipmunkApi.Marke
 		if req.Platform == api.Platform_Coinex {
 			marketInfo, err := s.functionsService.GetMarketInfo(ctx, &coreApi.MarketInfoReq{Market: market})
 			if err != nil {
-				s.logger.WithError(err).Errorf("failed to get market info for %v in platform %v", market.Name, market.Platform.String())
+				s.logger.WithError(err).Errorf("failed to get market info for %v in Platform %v", market.Name, market.Platform.String())
 				return nil, err
 			}
 			localMarket.IssueDate = time.Unix(marketInfo.IssueDate, 0)
@@ -269,6 +269,7 @@ func (s *Service) UpdateFromPlatform(ctx context.Context, req *chipmunkApi.Marke
 			s.logger.WithError(err).Error("failed to update markets")
 			continue
 		}
+		market.ID = localMarket.ID.String()
 	}
 	if err = s.deleteOldMarkets(req.Platform, markets.Elements); err != nil {
 		s.logger.WithError(err).Errorf("failed to delete old markets for %v", req.Platform.String())

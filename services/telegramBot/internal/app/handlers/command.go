@@ -47,7 +47,7 @@ func (h *Handler) brokerageList(ctx context.Context, msg *tgbotapi.Message) erro
 
 	brListItemTmp := `
 %v- %s
-platform: %v
+Platform: %v
 status: %v
 `
 

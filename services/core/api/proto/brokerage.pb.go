@@ -35,8 +35,8 @@ type Brokerage struct {
 	Description string `protobuf:"bytes,3,opt,name=Description,proto3" json:"description"`
 	// @inject_tag: json:"auth"
 	Auth *proto.Auth `protobuf:"bytes,4,opt,name=Auth,proto3" json:"auth"`
-	// @inject_tag: json:"platform"
-	Platform proto.Platform `protobuf:"varint,5,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
+	// @inject_tag: json:"Platform"
+	Platform proto.Platform `protobuf:"varint,5,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
 	// @inject_tag: json:"markets"
 	Markets *proto1.Markets `protobuf:"bytes,6,opt,name=Markets,proto3" json:"markets"`
 	// @inject_tag: json:"resolution_id"
@@ -210,8 +210,8 @@ type BrokerageCreateReq struct {
 	Description string `protobuf:"bytes,2,opt,name=Description,proto3" json:"description"`
 	// @inject_tag: json:"auth"
 	Auth *proto.Auth `protobuf:"bytes,3,opt,name=Auth,proto3" json:"auth"`
-	// @inject_tag: json:"platform"
-	Platform proto.Platform `protobuf:"varint,4,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
+	// @inject_tag: json:"Platform"
+	Platform proto.Platform `protobuf:"varint,4,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
 	// @inject_tag: json:"markets"
 	Markets *proto1.Markets `protobuf:"bytes,5,opt,name=Markets,proto3" json:"markets"`
 	// @inject_tag: json:"resolution_id"

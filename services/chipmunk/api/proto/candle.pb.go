@@ -376,8 +376,8 @@ type CandleUpdateReq struct {
 	Low float64 `protobuf:"fixed64,6,opt,name=Low,proto3" json:"low"`
 	// @inject_tag: json:"market"
 	Market string `protobuf:"bytes,7,opt,name=Market,proto3" json:"market"`
-	// @inject_tag: json:"platform"
-	Platform proto.Platform `protobuf:"varint,8,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
+	// @inject_tag: json:"Platform"
+	Platform proto.Platform `protobuf:"varint,8,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
 }
 
 func (x *CandleUpdateReq) Reset() {
@@ -477,8 +477,8 @@ type CandleBulkUpdateReq struct {
 	Date int64 `protobuf:"varint,1,opt,name=Date,proto3" json:"date"`
 	// @inject_tag: json:"tickers"
 	Tickers map[string]*CandleBulkUpdateReqTicker `protobuf:"bytes,2,rep,name=tickers,proto3" json:"tickers" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"` //key is market id
-	// @inject_tag: json:"platform"
-	Platform proto.Platform `protobuf:"varint,3,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
+	// @inject_tag: json:"Platform"
+	Platform proto.Platform `protobuf:"varint,3,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
 }
 
 func (x *CandleBulkUpdateReq) Reset() {
@@ -539,8 +539,8 @@ type DownloadPrimaryCandlesReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"platform"
-	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
+	// @inject_tag: json:"Platform"
+	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
 	// @inject_tag: json:"markets"
 	Markets *Markets `protobuf:"bytes,2,opt,name=Markets,proto3" json:"markets"`
 	// @inject_tag: json:"resolutions"

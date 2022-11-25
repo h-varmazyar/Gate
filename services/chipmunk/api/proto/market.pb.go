@@ -54,8 +54,8 @@ type Market struct {
 	ID string `protobuf:"bytes,13,opt,name=ID,proto3" json:"id"`
 	// @inject_tag: json:"status"
 	Status proto.Status `protobuf:"varint,14,opt,name=Status,proto3,enum=api.Status" json:"status"`
-	// @inject_tag: json:"platform"
-	Platform proto.Platform `protobuf:"varint,15,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
+	// @inject_tag: json:"Platform"
+	Platform proto.Platform `protobuf:"varint,15,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
 }
 
 func (x *Market) Reset() {
@@ -226,8 +226,8 @@ type CreateMarketReq struct {
 	Name string `protobuf:"bytes,12,opt,name=Name,proto3" json:"name"`
 	// @inject_tag: json:"status"
 	Status proto.Status `protobuf:"varint,14,opt,name=Status,proto3,enum=api.Status" json:"status"`
-	// @inject_tag: json:"platform"
-	Platform proto.Platform `protobuf:"varint,15,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
+	// @inject_tag: json:"Platform"
+	Platform proto.Platform `protobuf:"varint,15,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
 }
 
 func (x *CreateMarketReq) Reset() {
@@ -461,8 +461,8 @@ type MarketListReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"platform"
-	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
+	// @inject_tag: json:"Platform"
+	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
 }
 
 func (x *MarketListReq) Reset() {
@@ -557,8 +557,8 @@ type MarketUpdateFromPlatformReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"platform"
-	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
+	// @inject_tag: json:"Platform"
+	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
 }
 
 func (x *MarketUpdateFromPlatformReq) Reset() {
@@ -605,8 +605,8 @@ type MarketListBySourceReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"platform"
-	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
+	// @inject_tag: json:"Platform"
+	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
 	// @inject_tag: json:"source"
 	Source string `protobuf:"bytes,2,opt,name=Source,proto3" json:"source"`
 }
@@ -662,8 +662,8 @@ type WorkerStartReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"platform"
-	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
+	// @inject_tag: json:"Platform"
+	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
 	// @inject_tag: json:"resolution_id"
 	ResolutionID string `protobuf:"bytes,2,opt,name=ResolutionID,proto3" json:"resolution_id"`
 	// @inject_tag: json:"strategy_id"
@@ -728,8 +728,8 @@ type WorkerStopReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"platform"
-	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
+	// @inject_tag: json:"Platform"
+	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
 }
 
 func (x *WorkerStopReq) Reset() {

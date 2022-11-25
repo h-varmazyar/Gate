@@ -18,12 +18,12 @@ import (
 
 func (s *Service) validateDownloadPrimaryCandlesRequest(ctx context.Context, req *chipmunkApi.DownloadPrimaryCandlesReq) error {
 	if req.Resolutions == nil || len(req.Resolutions.Elements) == 0 {
-		err := errors.New(ctx, codes.FailedPrecondition).AddDetailF("invalid resolutions for platform %v", req.Platform)
+		err := errors.New(ctx, codes.FailedPrecondition).AddDetailF("invalid resolutions for Platform %v", req.Platform)
 		s.logger.WithError(err).Errorf("failed to start candles worker")
 		return err
 	}
 	if req.Markets == nil || len(req.Markets.Elements) == 0 {
-		err := errors.New(ctx, codes.FailedPrecondition).AddDetailF("invalid markets for platform %v", req.Platform)
+		err := errors.New(ctx, codes.FailedPrecondition).AddDetailF("invalid markets for Platform %v", req.Platform)
 		s.logger.WithError(err).Errorf("failed to start candles worker")
 		return err
 	}
@@ -33,7 +33,7 @@ func (s *Service) validateDownloadPrimaryCandlesRequest(ctx context.Context, req
 func (s *Service) prepareDownloadPrimaryCandles(req *chipmunkApi.DownloadPrimaryCandlesReq) (uuid.UUID, error) {
 	strategyID, err := uuid.Parse(req.StrategyID)
 	if err != nil {
-		s.logger.WithError(err).Errorf("failed to load strategy id for platform %v", req.Platform)
+		s.logger.WithError(err).Errorf("failed to load strategy id for Platform %v", req.Platform)
 		return uuid.Nil, err
 	}
 	if !s.worker.Started {
@@ -146,7 +146,7 @@ func (s *Service) makePrimaryDataRequests(platform api.Platform, market *chipmun
 			Platform:   platform,
 		})
 		if err != nil {
-			s.logger.WithError(err).Errorf("failed to create async OHLC request for marker %v in resolution %v and platform %v", market.Name, resolution.Duration, platform)
+			s.logger.WithError(err).Errorf("failed to create async OHLC request for marker %v in resolution %v and Platform %v", market.Name, resolution.Duration, platform)
 		}
 		from = to
 	}

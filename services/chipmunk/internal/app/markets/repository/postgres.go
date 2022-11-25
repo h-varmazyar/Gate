@@ -29,14 +29,14 @@ func NewMarketPostgresRepository(ctx context.Context, logger *log.Logger, db *go
 func (repository *marketPostgresRepository) Info(platform api.Platform, marketName string) (*entity.Market, error) {
 	market := new(entity.Market)
 	return market, repository.db.Model(new(entity.Market)).
-		Where("platform = ?", platform).
+		Where("Platform = ?", platform).
 		Where("name = ?", marketName).
 		First(market).Error
 }
 
 func (repository *marketPostgresRepository) List(platform api.Platform) ([]*entity.Market, error) {
 	markets := make([]*entity.Market, 0)
-	return markets, repository.db.Model(new(entity.Market)).Where("platform = ?", platform).Preload("Source").Preload("Destination").Find(&markets).Error
+	return markets, repository.db.Model(new(entity.Market)).Where("Platform = ?", platform).Preload("Source").Preload("Destination").Find(&markets).Error
 }
 
 func (repository *marketPostgresRepository) ListBySource(platform api.Platform, source string) ([]*entity.Market, error) {
@@ -45,7 +45,7 @@ func (repository *marketPostgresRepository) ListBySource(platform api.Platform, 
 		Joins("join assets as source on source.id = markets.source_id").
 		Preload("Destination").
 		Where("Source.name = ?", source).
-		Where("markets.platform = ?", platform).Find(&markets).Error
+		Where("markets.Platform = ?", platform).Find(&markets).Error
 }
 
 func (repository *marketPostgresRepository) ReturnByID(id uuid.UUID) (*entity.Market, error) {

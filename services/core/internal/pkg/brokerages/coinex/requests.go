@@ -91,7 +91,7 @@ func (r *Requests) AllMarketStatistics(_ context.Context, _ *brokerages.AllMarke
 func (r *Requests) GetMarketInfo(_ context.Context, inputs *brokerages.MarketInfoParams) (*networkAPI.Request, error) {
 	request := new(networkAPI.Request)
 	request.Method = networkAPI.Request_GET
-	request.Endpoint = fmt.Sprintf("https://www.coinex.com/res/vote2/project/%v", inputs.Market.Name)
+	request.Endpoint = fmt.Sprintf("https://www.coinex.com/res/vote2/project/%v", inputs.Market.Source.Name)
 
 	return request, nil
 }

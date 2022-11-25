@@ -1,4 +1,4 @@
-package wallets
+package workers
 
 import (
 	"context"

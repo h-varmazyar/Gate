@@ -118,7 +118,8 @@ func (s *Service) GetMarketInfo(ctx context.Context, req *coreApi.MarketInfoReq)
 }
 
 func (s *Service) OHLC(ctx context.Context, req *coreApi.OHLCReq) (*chipmunkApi.Candles, error) {
-	candles, err := loadRequest(s.configs, nil).OHLC(ctx, s.createOHLCParams(req),
+	brokerage := &coreApi.Brokerage{Platform: req.Market.Platform}
+	candles, err := loadRequest(s.configs, brokerage).OHLC(ctx, s.createOHLCParams(req),
 		func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
 			resp, err := s.requestService.Do(ctx, request)
 			return resp, err
@@ -161,7 +162,13 @@ func (s *Service) SingleMarketStatistics(ctx context.Context, req *coreApi.Marke
 }
 
 func (s *Service) MarketList(ctx context.Context, req *coreApi.MarketListReq) (*chipmunkApi.Markets, error) {
-	markets, err := loadRequest(s.configs, nil).MarketList(ctx, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
+	brokerage := &coreApi.Brokerage{Platform: req.Platform}
+	s.logger.Infof("req is: %v", req.Platform)
+	s.logger.Infof("conf: %v", s.configs)
+	br := loadRequest(s.configs, brokerage)
+	s.logger.Infof("br is: %v", br)
+	markets, err := br.MarketList(ctx, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
+		s.logger.Infof("before network request")
 		resp, err := s.requestService.Do(ctx, request)
 		return resp, err
 	})

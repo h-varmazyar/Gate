@@ -32,7 +32,7 @@ func (r *resolutionPostgresRepository) Set(resolution *entity.Resolution) error 
 	tx := r.db.Model(new(entity.Resolution))
 	if resolution.ID.String() == "" {
 		tx.Where("value = ?", resolution.Value).
-			Where("platform = ?", resolution.Platform).
+			Where("Platform = ?", resolution.Platform).
 			Where("duration = ?", resolution.Duration).
 			Where("label = ?", resolution.Label)
 	} else {
@@ -58,12 +58,12 @@ func (r *resolutionPostgresRepository) ReturnByDuration(duration time.Duration, 
 	resolution := new(entity.Resolution)
 	return resolution, r.db.Model(new(entity.Resolution)).
 		Where("duration = ", duration).
-		Where("platform = ?", platform).
+		Where("Platform = ?", platform).
 		First(resolution).Error
 }
 
 func (r *resolutionPostgresRepository) List(platform api.Platform) ([]*entity.Resolution, error) {
 	resolutions := make([]*entity.Resolution, 0)
-	err := r.db.Model(new(entity.Resolution)).Where("platform = ?", platform).Find(&resolutions).Error
+	err := r.db.Model(new(entity.Resolution)).Where("Platform = ?", platform).Find(&resolutions).Error
 	return resolutions, err
 }
