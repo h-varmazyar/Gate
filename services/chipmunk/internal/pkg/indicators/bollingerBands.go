@@ -73,6 +73,10 @@ func (conf *bollingerBands) Calculate(candles []*entity.Candle) error {
 		}
 		variance /= float64(conf.Length)
 
+		if candles[i] == nil {
+			log.Errorf("nil candle")
+		}
+
 		candles[i].BollingerBands[conf.id] = &entity.BollingerBandsValue{
 			UpperBand: ma + float64(conf.Deviation)*math.Sqrt(variance),
 			LowerBand: ma - float64(conf.Deviation)*math.Sqrt(variance),

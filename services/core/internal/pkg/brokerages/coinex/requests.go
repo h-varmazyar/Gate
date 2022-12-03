@@ -44,6 +44,7 @@ func (r *Requests) AsyncOHLC(_ context.Context, inputs *brokerages.OHLCParams) (
 	}
 
 	request := new(networkAPI.Request)
+	request.RateLimiterID = r.configs.CoinexPublicRateLimiterID
 	request.Method = networkAPI.Request_GET
 	request.CallbackQueue = r.configs.CoinexCallbackQueue
 	resolutionSeconds := inputs.Resolution.Duration
@@ -63,7 +64,7 @@ func (r *Requests) AsyncOHLC(_ context.Context, inputs *brokerages.OHLCParams) (
 		request.Endpoint = "https://www.coinex.com/res/market/kline"
 	} else {
 		request.Params = []*networkAPI.KV{
-			networkAPI.NewKV("markets", inputs.Market.Name),
+			networkAPI.NewKV("market", inputs.Market.Name),
 			networkAPI.NewKV("type", inputs.Resolution.Label),
 			networkAPI.NewKV("limit", fmt.Sprintf("%v", int64(count))),
 		}

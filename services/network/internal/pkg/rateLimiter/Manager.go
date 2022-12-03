@@ -82,7 +82,7 @@ func NewManager(ctx context.Context, Limiters []*networkAPI.RateLimiter, IPs []*
 			RequestCountLimit: limiter.RequestCountLimit,
 			TimeLimit:         time.Duration(limiter.TimeLimit),
 			Type:              limiter.Type,
-			RequestChannel:    make(chan *networkAPI.Request),
+			RequestChannel:    make(chan *networkAPI.Request, 1000000),
 		}
 		manager.assignLimiterToIPs(tmpLimiter)
 		manager.Limiters[limiterID] = tmpLimiter

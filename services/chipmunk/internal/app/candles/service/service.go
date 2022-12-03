@@ -196,8 +196,10 @@ func (s *Service) DownloadPrimaryCandles(ctx context.Context, req *chipmunkApi.D
 		return nil, err
 	}
 
-	for _, market := range req.Markets.Elements {
-		go s.preparePrimaryDataRequests(req.Platform, market, req.Resolutions, strategyID)
-	}
+	go func() {
+		for _, market := range req.Markets.Elements {
+			s.preparePrimaryDataRequests(req.Platform, market, req.Resolutions, strategyID)
+		}
+	}()
 	return new(api.Void), nil
 }

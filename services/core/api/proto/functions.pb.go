@@ -36,8 +36,8 @@ type OHLCReq struct {
 	From int64 `protobuf:"varint,3,opt,name=From,proto3" json:"from"`
 	// @inject_tag: json:"to"
 	To int64 `protobuf:"varint,4,opt,name=To,proto3" json:"to"`
-	// @inject_tag: json:"Platform"
-	Platform proto1.Platform `protobuf:"varint,5,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
+	// @inject_tag: json:"platform"
+	Platform proto1.Platform `protobuf:"varint,5,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
 }
 
 func (x *OHLCReq) Reset() {
@@ -112,8 +112,8 @@ type AllMarketStatisticsReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"Platform"
-	Platform proto1.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
+	// @inject_tag: json:"platform"
+	Platform proto1.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
 }
 
 func (x *AllMarketStatisticsReq) Reset() {
@@ -162,8 +162,8 @@ type AllMarketStatisticsResp struct {
 
 	// @inject_tag: json:"all_statistics"
 	AllStatistics map[string]*MarketStatistics `protobuf:"bytes,1,rep,name=AllStatistics,proto3" json:"all_statistics" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// @inject_tag: json:"Platform"
-	Platform proto1.Platform `protobuf:"varint,2,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
+	// @inject_tag: json:"platform"
+	Platform proto1.Platform `protobuf:"varint,2,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
 	// @inject_tag: json:"date"
 	Date int64 `protobuf:"varint,3,opt,name=date,proto3" json:"date"`
 }
@@ -412,8 +412,8 @@ type MarketListReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"Platform"
-	Platform proto1.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
+	// @inject_tag: json:"platform"
+	Platform proto1.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
 }
 
 func (x *MarketListReq) Reset() {

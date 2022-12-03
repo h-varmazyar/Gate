@@ -25,6 +25,8 @@ type IP struct {
 }
 
 func (ip *IP) spreadAlgorithm(limiter *Limiter) {
+	log.Infof("time: %v", limiter.TimeLimit)
+	log.Infof("req: %v", limiter.RequestCountLimit)
 	interval := limiter.TimeLimit / time.Duration(limiter.RequestCountLimit)
 	ticker := time.NewTicker(interval)
 	for {
@@ -33,18 +35,22 @@ func (ip *IP) spreadAlgorithm(limiter *Limiter) {
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			systemRequest := <-limiter.RequestChannel
-			networkURL, err := requests.New(systemRequest, ip.proxyURL)
-			if err != nil {
-				log.WithError(err).Errorf("failed to create async network request")
-				continue
-			}
-			response, err := networkURL.Do()
-			if err != nil {
-				log.WithError(err).Errorf("failed to do network request")
-				continue
-			}
-			ip.sendResponse(systemRequest, response)
+			go func() {
+				systemRequest := <-limiter.RequestChannel
+				networkURL, err := requests.New(systemRequest, ip.proxyURL)
+				if err != nil {
+					log.WithError(err).Errorf("failed to create async network request")
+					//continue
+					return
+				}
+				response, err := networkURL.Do()
+				if err != nil {
+					log.WithError(err).Errorf("failed to do network request")
+					//continue
+					return
+				}
+				ip.sendResponse(systemRequest, response)
+			}()
 		}
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/golang/protobuf/proto"
+	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/amqpext"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
@@ -37,9 +38,14 @@ func ListenCallbacks(configs *Configs) error {
 }
 
 func (c *Callback) run() {
+	counter := 0
 	callbackDeliveries := c.queue.Consume(c.configs.CoinexCallbackQueue)
 	go func() {
 		for delivery := range callbackDeliveries {
+			counter++
+			if counter%100 == 0 {
+				log.Infof("new 100 delivery: %v", counter/100)
+			}
 			c.handleDelivery(delivery)
 		}
 	}()
@@ -64,6 +70,9 @@ func (c *Callback) handleDelivery(delivery amqp.Delivery) {
 
 	switch metadata.Method {
 	case MethodOHLC:
-		c.r.AsyncOHLC(context.Background(), response)
+		if metadata.MarketID == uuid.Nil.String() || metadata.ResolutionID == uuid.Nil.String() {
+			return
+		}
+		c.r.AsyncOHLC(context.Background(), response, metadata)
 	}
 }

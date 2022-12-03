@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/h-varmazyar/Gate/pkg/httpext"
 	"github.com/h-varmazyar/Gate/pkg/service"
-	"github.com/h-varmazyar/Gate/services/gateway/internal/app/base"
 	"github.com/h-varmazyar/Gate/services/gateway/internal/app/chipmunk"
 	"github.com/h-varmazyar/Gate/services/gateway/internal/app/core"
 	"github.com/h-varmazyar/Gate/services/gateway/internal/app/eagle"
@@ -41,7 +40,6 @@ func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, configs 
 	service.Serve(configs.HttpPort, func(lst net.Listener) error {
 		router := mux.NewRouter(true)
 
-		base.ControllerInstance(logger).RegisterRoutes(router)
 		core.RegisterRoutes(router, logger, configs.CoreRouter)
 		chipmunk.RegisterRoutes(router, logger, configs.ChipmunkRouter)
 		eagle.RegisterRoutes(router, logger, configs.EagleRouter)

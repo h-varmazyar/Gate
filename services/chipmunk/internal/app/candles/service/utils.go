@@ -44,7 +44,7 @@ func (s *Service) prepareDownloadPrimaryCandles(req *chipmunkApi.DownloadPrimary
 
 func (s *Service) preparePrimaryDataRequests(platform api.Platform, market *chipmunkApi.Market, resolutions *chipmunkApi.Resolutions, strategyID uuid.UUID) {
 	for _, resolution := range resolutions.Elements {
-		go s.preparePrimaryDataRequestsByResolution(platform, market, resolution, strategyID)
+		s.preparePrimaryDataRequestsByResolution(platform, market, resolution, strategyID)
 	}
 }
 
@@ -80,6 +80,10 @@ func (s *Service) prepareLocalCandles(resolutionID, strategyID uuid.UUID, market
 		}
 	}
 
+	for _, candle := range candles {
+		candle.IndicatorValues = entity.NewIndicatorValues()
+	}
+
 	if len(candles) > 0 {
 		if err = s.calculateIndicators(candles, strategyID); err != nil {
 			s.logger.WithError(err).Errorf("failed to calculate indicators for market %v in resolution %v", marketID, resolutionID)
@@ -90,13 +94,15 @@ func (s *Service) prepareLocalCandles(resolutionID, strategyID uuid.UUID, market
 		for _, candle := range candles {
 			s.buffer.Push(candle)
 		}
+	} else {
+		from = time.Unix(market.IssueDate, 0)
 	}
 	return from, nil
 }
 
 func (s *Service) loadLocalCandles(marketID, resolutionID uuid.UUID) ([]*entity.Candle, error) {
 	end := false
-	limit := 10000
+	limit := 1000000
 	candles := make([]*entity.Candle, 0)
 	for offset := 0; !end; offset += limit {
 		list, err := s.db.ReturnList(marketID, resolutionID, limit, offset)

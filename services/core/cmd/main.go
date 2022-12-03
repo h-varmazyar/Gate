@@ -6,6 +6,7 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/service"
 	"github.com/h-varmazyar/Gate/services/core/internal/app/brokerages"
 	"github.com/h-varmazyar/Gate/services/core/internal/app/functions"
+	"github.com/h-varmazyar/Gate/services/core/internal/app/platforms"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages/coinex"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/db"
 	log "github.com/sirupsen/logrus"
@@ -69,10 +70,17 @@ func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstan
 		logger.Panicf("failed to initiate functions service with error %v", err)
 	}
 
+	var platformsApp *platforms.App
+	platformsApp, err = platforms.NewApp(ctx, logger, configs.PlatformsApp)
+	if err != nil {
+		logger.WithError(err).Panicf("failed to initiate assets app")
+	}
+
 	service.Serve(configs.GRPCPort, func(lst net.Listener) error {
 		server := grpc.NewServer()
 		brokeragesApp.Service.RegisterServer(server)
 		functionsApp.Service.RegisterServer(server)
+		platformsApp.Service.RegisterServer(server)
 		return server.Serve(lst)
 	})
 

@@ -23,7 +23,6 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CandleServiceClient interface {
-	//  rpc AddMarket(AddMarketRequest) returns (api.Void);
 	List(ctx context.Context, in *CandleListReq, opts ...grpc.CallOption) (*Candles, error)
 	Update(ctx context.Context, in *CandleUpdateReq, opts ...grpc.CallOption) (*Candle, error)
 	BulkUpdate(ctx context.Context, in *CandleBulkUpdateReq, opts ...grpc.CallOption) (*proto.Void, error)
@@ -78,7 +77,6 @@ func (c *candleServiceClient) DownloadPrimaryCandles(ctx context.Context, in *Do
 // All implementations should embed UnimplementedCandleServiceServer
 // for forward compatibility
 type CandleServiceServer interface {
-	//  rpc AddMarket(AddMarketRequest) returns (api.Void);
 	List(context.Context, *CandleListReq) (*Candles, error)
 	Update(context.Context, *CandleUpdateReq) (*Candle, error)
 	BulkUpdate(context.Context, *CandleBulkUpdateReq) (*proto.Void, error)

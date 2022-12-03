@@ -3,7 +3,6 @@ package workers
 import (
 	"context"
 	"github.com/golang/protobuf/proto"
-	api "github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/amqpext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
@@ -22,13 +21,6 @@ type PrimaryData struct {
 	Started bool
 }
 
-type Runner struct {
-	ctx        context.Context
-	platform   api.Platform
-	Market     *entity.Market
-	Resolution *entity.Resolution
-}
-
 func NewPrimaryDataWorker(_ context.Context, db repository.CandleRepository, configs *Configs, buffer *buffer.CandleBuffer) (*PrimaryData, error) {
 	ohlcQueue, err := amqpext.Client.QueueDeclare(configs.PrimaryDataQueue)
 	if err != nil {
@@ -44,11 +36,13 @@ func NewPrimaryDataWorker(_ context.Context, db repository.CandleRepository, con
 
 func (w *PrimaryData) Start() {
 	deliveries := w.queue.Consume(w.configs.PrimaryDataQueue)
-	go func() {
-		for delivery := range deliveries {
-			w.handle(delivery)
-		}
-	}()
+	for i := 0; i < w.configs.ConsumerCount; i++ {
+		go func() {
+			for delivery := range deliveries {
+				w.handle(delivery)
+			}
+		}()
+	}
 	w.Started = true
 }
 
@@ -56,6 +50,7 @@ func (w *PrimaryData) handle(delivery amqp.Delivery) {
 	candles := new(chipmunkApi.Candles)
 	if err := proto.Unmarshal(delivery.Body, candles); err != nil {
 		log.WithError(err).Errorf("failed to unmarshal delivery")
+		_ = delivery.Nack(false, false)
 		return
 	}
 	localCandles := make([]*entity.Candle, 0)
@@ -64,10 +59,12 @@ func (w *PrimaryData) handle(delivery amqp.Delivery) {
 		mapper.Struct(candle, tmp)
 		localCandles = append(localCandles, tmp)
 	}
+	log.Infof("inserted :%v", len(localCandles))
 	if err := w.db.BulkInsert(localCandles); err != nil {
 		log.WithError(err).Errorf("failed to save candles")
 	}
 	for _, candle := range localCandles {
 		w.buffer.Push(candle)
 	}
+	_ = delivery.Ack(false)
 }
