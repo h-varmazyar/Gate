@@ -41,6 +41,14 @@ func (r *candlePostgresRepository) Save(candle *entity.Candle) error {
 	return r.db.Save(candle).Error
 }
 
+func (r *candlePostgresRepository) HardDelete(candle *entity.Candle) error {
+	err := r.db.Model(new(entity.Candle)).Where("id = ?", candle.ID).Unscoped().Delete(candle).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *candlePostgresRepository) BulkInsert(candles []*entity.Candle) error {
 	return r.db.CreateInBatches(candles, len(candles)).Error
 }

@@ -19,12 +19,12 @@ import (
 func (s *Service) validateDownloadPrimaryCandlesRequest(ctx context.Context, req *chipmunkApi.DownloadPrimaryCandlesReq) error {
 	if req.Resolutions == nil || len(req.Resolutions.Elements) == 0 {
 		err := errors.New(ctx, codes.FailedPrecondition).AddDetailF("invalid resolutions for Platform %v", req.Platform)
-		s.logger.WithError(err).Errorf("failed to start candles worker")
+		s.logger.WithError(err).Errorf("failed to start candles primaryDataWorker")
 		return err
 	}
 	if req.Markets == nil || len(req.Markets.Elements) == 0 {
 		err := errors.New(ctx, codes.FailedPrecondition).AddDetailF("invalid markets for Platform %v", req.Platform)
-		s.logger.WithError(err).Errorf("failed to start candles worker")
+		s.logger.WithError(err).Errorf("failed to start candles primaryDataWorker")
 		return err
 	}
 	return nil
@@ -36,8 +36,8 @@ func (s *Service) prepareDownloadPrimaryCandles(req *chipmunkApi.DownloadPrimary
 		s.logger.WithError(err).Errorf("failed to load strategy id for Platform %v", req.Platform)
 		return uuid.Nil, err
 	}
-	if !s.worker.Started {
-		s.worker.Start()
+	if !s.primaryDataWorker.Started {
+		s.primaryDataWorker.Start()
 	}
 	return strategyID, nil
 }
@@ -49,13 +49,7 @@ func (s *Service) preparePrimaryDataRequests(platform api.Platform, market *chip
 }
 
 func (s *Service) preparePrimaryDataRequestsByResolution(platform api.Platform, market *chipmunkApi.Market, resolution *chipmunkApi.Resolution, strategyID uuid.UUID) {
-	resolutionID, err := uuid.Parse(resolution.ID)
-	if err != nil {
-		s.logger.WithError(err).Errorf("invalid resolution id %v", resolution)
-		return
-	}
-
-	from, err := s.prepareLocalCandles(resolutionID, strategyID, market)
+	from, err := s.prepareLocalCandles(strategyID, market, resolution)
 	if err != nil {
 		return
 	}
@@ -63,10 +57,15 @@ func (s *Service) preparePrimaryDataRequestsByResolution(platform api.Platform, 
 	s.makePrimaryDataRequests(platform, market, resolution, from)
 }
 
-func (s *Service) prepareLocalCandles(resolutionID, strategyID uuid.UUID, market *chipmunkApi.Market) (time.Time, error) {
+func (s *Service) prepareLocalCandles(strategyID uuid.UUID, market *chipmunkApi.Market, resolution *chipmunkApi.Resolution) (time.Time, error) {
 	marketID, err := uuid.Parse(market.ID)
 	if err != nil {
 		s.logger.WithError(err).Errorf("invalid market id %v", market)
+		return time.Unix(0, 0), err
+	}
+	resolutionID, err := uuid.Parse(resolution.ID)
+	if err != nil {
+		s.logger.WithError(err).Errorf("invalid resolution id %v", resolution)
 		return time.Unix(0, 0), err
 	}
 	var from time.Time
@@ -89,7 +88,7 @@ func (s *Service) prepareLocalCandles(resolutionID, strategyID uuid.UUID, market
 			s.logger.WithError(err).Errorf("failed to calculate indicators for market %v in resolution %v", marketID, resolutionID)
 			return time.Unix(0, 0), err
 		}
-		from = candles[len(candles)-1].Time
+		from = candles[len(candles)-1].Time.Add(time.Duration(resolution.Duration))
 
 		for _, candle := range candles {
 			s.buffer.Push(candle)
@@ -154,7 +153,7 @@ func (s *Service) makePrimaryDataRequests(platform api.Platform, market *chipmun
 		if err != nil {
 			s.logger.WithError(err).Errorf("failed to create async OHLC request for marker %v in resolution %v and Platform %v", market.Name, resolution.Duration, platform)
 		}
-		from = to
+		from = to.Add(time.Duration(resolution.Duration))
 	}
 }
 

@@ -23,22 +23,26 @@ import (
 )
 
 type Service struct {
-	db                repository.CandleRepository
-	buffer            *buffer.CandleBuffer
-	logger            *log.Logger
-	configs           *Configs
-	functionsService  coreApi.FunctionsServiceClient
-	strategyService   eagleApi.StrategyServiceClient
-	resolutionService *resolutions.Service
-	indicatorService  *indicators.Service
-	worker            *workers.PrimaryData
+	db                     repository.CandleRepository
+	buffer                 *buffer.CandleBuffer
+	logger                 *log.Logger
+	configs                *Configs
+	functionsService       coreApi.FunctionsServiceClient
+	strategyService        eagleApi.StrategyServiceClient
+	resolutionService      *resolutions.Service
+	indicatorService       *indicators.Service
+	primaryDataWorker      *workers.PrimaryData
+	missedCandlesWorker    *workers.MissedCandles
+	redundantRemoverWorker *workers.RedundantRemover
 }
 
 type Dependencies struct {
-	Buffer            *buffer.CandleBuffer
-	ResolutionService *resolutions.Service
-	IndicatorService  *indicators.Service
-	Worker            *workers.PrimaryData
+	Buffer                 *buffer.CandleBuffer
+	ResolutionService      *resolutions.Service
+	IndicatorService       *indicators.Service
+	PrimaryDataWorker      *workers.PrimaryData
+	MissedCandlesWorker    *workers.MissedCandles
+	RedundantRemoverWorker *workers.RedundantRemover
 }
 
 var (
@@ -58,7 +62,9 @@ func NewService(_ context.Context, logger *log.Logger, configs *Configs, db repo
 		GrpcService.indicatorService = dependencies.IndicatorService
 		GrpcService.resolutionService = dependencies.ResolutionService
 		GrpcService.buffer = dependencies.Buffer
-		GrpcService.worker = dependencies.Worker
+		GrpcService.primaryDataWorker = dependencies.PrimaryDataWorker
+		GrpcService.missedCandlesWorker = dependencies.MissedCandlesWorker
+		GrpcService.redundantRemoverWorker = dependencies.RedundantRemoverWorker
 	}
 	return GrpcService
 }
@@ -201,5 +207,8 @@ func (s *Service) DownloadPrimaryCandles(ctx context.Context, req *chipmunkApi.D
 			s.preparePrimaryDataRequests(req.Platform, market, req.Resolutions, strategyID)
 		}
 	}()
+
+	s.missedCandlesWorker.Start(req.Markets.Elements, req.Resolutions.Elements)
+	s.redundantRemoverWorker.Start(req.Markets.Elements, req.Resolutions.Elements)
 	return new(api.Void), nil
 }

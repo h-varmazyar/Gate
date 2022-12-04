@@ -32,7 +32,7 @@ type Service struct {
 	resolutionsService *resolutions.Service
 	assetsService      *assets.Service
 	indicatorsService  *indicators.Service
-	//worker             *workers.Worker
+	//worker             *workers.PrimaryDataWorker
 	statisticsWorker *workers.StatisticsWorker
 	logger           *log.Logger
 	db               repository.MarketRepository
@@ -46,7 +46,7 @@ type Dependencies struct {
 	AssetsService      *assets.Service
 	IndicatorsService  *indicators.Service
 	ResolutionsService *resolutions.Service
-	//Worker             *workers.Worker
+	//PrimaryDataWorker             *workers.PrimaryDataWorker
 	StatisticsWorker *workers.StatisticsWorker
 }
 
@@ -62,7 +62,7 @@ func NewService(_ context.Context, logger *log.Logger, configs *Configs, db repo
 		GrpcService.assetsService = dependencies.AssetsService
 		GrpcService.indicatorsService = dependencies.IndicatorsService
 		GrpcService.resolutionsService = dependencies.ResolutionsService
-		//GrpcService.worker = dependencies.Worker
+		//GrpcService.worker = dependencies.PrimaryDataWorker
 		GrpcService.statisticsWorker = dependencies.StatisticsWorker
 		GrpcService.db = db
 		GrpcService.logger = logger
