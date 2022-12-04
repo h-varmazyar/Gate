@@ -137,23 +137,15 @@ func (s *Service) calculateIndicators(candles []*entity.Candle, strategyID uuid.
 }
 
 func (s *Service) makePrimaryDataRequests(platform api.Platform, market *chipmunkApi.Market, resolution *chipmunkApi.Resolution, from time.Time) {
-	for end := false; !end; {
-		to := from.Add(time.Duration(resolution.Duration * 1000))
-		if to.After(time.Now()) {
-			to = time.Now()
-			end = true
-		}
-		_, err := s.functionsService.AsyncOHLC(context.Background(), &coreApi.OHLCReq{
-			Resolution: resolution,
-			Market:     market,
-			From:       from.Unix(),
-			To:         to.Unix(),
-			Platform:   platform,
-		})
-		if err != nil {
-			s.logger.WithError(err).Errorf("failed to create async OHLC request for marker %v in resolution %v and Platform %v", market.Name, resolution.Duration, platform)
-		}
-		from = to.Add(time.Duration(resolution.Duration))
+	_, err := s.functionsService.AsyncOHLC(context.Background(), &coreApi.OHLCReq{
+		Resolution: resolution,
+		Market:     market,
+		From:       from.Unix(),
+		To:         time.Now().Unix(),
+		Platform:   platform,
+	})
+	if err != nil {
+		s.logger.WithError(err).Errorf("failed to create async OHLC request for marker %v in resolution %v and Platform %v", market.Name, resolution.Duration, platform)
 	}
 }
 

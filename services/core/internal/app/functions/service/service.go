@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/api/proto"
+	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
@@ -14,6 +15,8 @@ import (
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"time"
 )
 
 type Service struct {
@@ -44,16 +47,39 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 }
 
 func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.OHLCReq) (*proto.Void, error) {
-	request, err := loadRequest(s.configs, &coreApi.Brokerage{Platform: req.Platform}).AsyncOHLC(ctx, s.createOHLCParams(req))
-	if err != nil {
-		return nil, err
+	if req.From == req.To {
+		return nil, errors.New(ctx, codes.FailedPrecondition).AddDetailF("from and to can not equal")
 	}
 
-	request.Type = networkAPI.Request_Async
+	brokerageRequests := loadRequest(s.configs, &coreApi.Brokerage{Platform: req.Platform})
 
-	_, err = s.doNetworkRequest(request)
-	if err != nil {
-		return nil, err
+	from := time.Unix(req.From, 0)
+
+	for end := false; !end; {
+		to := from.Add(time.Duration(req.Resolution.Duration) * 999)
+		if to.After(time.Now()) {
+			to = time.Now()
+			end = true
+		}
+
+		params := &brokerages.OHLCParams{
+			Resolution: req.Resolution,
+			Market:     req.Market,
+			From:       from,
+			To:         to,
+		}
+
+		request, err := brokerageRequests.AsyncOHLC(ctx, params)
+		if err != nil {
+			return nil, err
+		}
+		request.Type = networkAPI.Request_Async
+		_, err = s.doNetworkRequest(request)
+		if err != nil {
+			return nil, err
+		}
+
+		from = to.Add(time.Duration(req.Resolution.Duration))
 	}
 
 	return new(proto.Void), nil

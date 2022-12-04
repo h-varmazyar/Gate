@@ -32,6 +32,7 @@ func NewMissedCandles(_ context.Context, db repository.CandleRepository, configs
 
 func (w *MissedCandles) Start(markets []*chipmunkApi.Market, resolutions []*chipmunkApi.Resolution) {
 	if !w.Started {
+		w.logger.Infof("starting missed candle")
 		w.ctx = context.Background()
 		go w.run(markets, resolutions)
 		w.Started = true
@@ -43,11 +44,13 @@ func (w *MissedCandles) run(markets []*chipmunkApi.Market, resolutions []*chipmu
 	for {
 		select {
 		case <-w.ctx.Done():
+			w.logger.Infof("missed stopped")
 			ticker.Stop()
 			return
 		case <-ticker.C:
+			w.logger.Infof("missed added: %v", time.Now())
 			if err := w.prepareMarkets(markets, resolutions); err != nil {
-				log.WithError(err).Error("failed to prepare missed candles")
+				w.logger.WithError(err).Error("failed to prepare missed candles")
 			}
 		}
 	}
@@ -82,7 +85,7 @@ func (w *MissedCandles) checkForMissedCandles(market *chipmunkApi.Market, resolu
 	if err != nil {
 		return err
 	}
-	candles, err := w.db.ReturnList(marketID, resolutionID, 0, 1000000)
+	candles, err := w.db.ReturnList(marketID, resolutionID, 1000000000, 0)
 	if err != nil {
 		return err
 	}

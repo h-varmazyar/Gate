@@ -10,11 +10,12 @@ import (
 )
 
 type RedundantRemover struct {
-	db      repository.CandleRepository
-	configs *Configs
-	ctx     context.Context
-	logger  *log.Logger
-	Started bool
+	db           repository.CandleRepository
+	configs      *Configs
+	ctx          context.Context
+	logger       *log.Logger
+	Started      bool
+	removedCount int
 }
 
 func NewRedundantRemover(_ context.Context, db repository.CandleRepository, configs *Configs, logger *log.Logger) *RedundantRemover {
@@ -27,6 +28,7 @@ func NewRedundantRemover(_ context.Context, db repository.CandleRepository, conf
 
 func (w *RedundantRemover) Start(markets []*chipmunkApi.Market, resolutions []*chipmunkApi.Resolution) {
 	if !w.Started {
+		w.logger.Infof("starting redundant candles")
 		w.ctx = context.Background()
 		go w.run(markets, resolutions)
 		w.Started = true
@@ -41,9 +43,12 @@ func (w *RedundantRemover) run(markets []*chipmunkApi.Market, resolutions []*chi
 			ticker.Stop()
 			return
 		case <-ticker.C:
+			w.removedCount = 0
+			w.logger.Infof("prepare removed candles")
 			if err := w.prepareMarkets(markets, resolutions); err != nil {
 				log.WithError(err).Error("failed to prepare missed candles")
 			}
+			w.logger.Infof("removed candles: %v", w.removedCount)
 		}
 	}
 }
@@ -77,7 +82,7 @@ func (w *RedundantRemover) removeRedundantCandles(market *chipmunkApi.Market, re
 	if err != nil {
 		return err
 	}
-	candles, err := w.db.ReturnList(marketID, resolutionID, 0, 1000000)
+	candles, err := w.db.ReturnList(marketID, resolutionID, 1000000, 0)
 	if err != nil {
 		return err
 	}
@@ -87,6 +92,7 @@ func (w *RedundantRemover) removeRedundantCandles(market *chipmunkApi.Market, re
 			if err := w.db.HardDelete(candles[i-1]); err != nil {
 				w.logger.WithError(err).Errorf("failed to delete candle %v", candles[i-1].ID)
 			}
+			w.removedCount++
 		}
 	}
 	return nil

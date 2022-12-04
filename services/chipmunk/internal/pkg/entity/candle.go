@@ -8,7 +8,7 @@ import (
 
 type Candle struct {
 	gormext.UniversalModel
-	Time            time.Time `gorm:"index"`
+	Time            time.Time
 	Open            float64
 	High            float64
 	Low             float64

@@ -193,6 +193,7 @@ func (s *Service) BulkUpdate(ctx context.Context, req *chipmunkApi.CandleBulkUpd
 }
 
 func (s *Service) DownloadPrimaryCandles(ctx context.Context, req *chipmunkApi.DownloadPrimaryCandlesReq) (*api.Void, error) {
+	s.logger.Infof("starting candle data at %v", time.Now())
 	if err := s.validateDownloadPrimaryCandlesRequest(ctx, req); err != nil {
 		return nil, err
 	}
@@ -208,7 +209,7 @@ func (s *Service) DownloadPrimaryCandles(ctx context.Context, req *chipmunkApi.D
 		}
 	}()
 
-	s.missedCandlesWorker.Start(req.Markets.Elements, req.Resolutions.Elements)
+	//s.missedCandlesWorker.Start(req.Markets.Elements, req.Resolutions.Elements)
 	s.redundantRemoverWorker.Start(req.Markets.Elements, req.Resolutions.Elements)
 	return new(api.Void), nil
 }

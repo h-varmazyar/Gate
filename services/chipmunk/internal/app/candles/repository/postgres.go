@@ -66,5 +66,5 @@ func (r *candlePostgresRepository) ReturnList(marketID, resolutionID uuid.UUID, 
 	return items, r.db.Model(new(entity.Candle)).
 		Where("market_id = ?", marketID).
 		Where("resolution_id = ?", resolutionID).
-		Order("time desc").Offset(offset).Limit(limit).Find(&items).Error
+		Order("time asc").Offset(offset).Limit(limit).Find(&items).Error
 }

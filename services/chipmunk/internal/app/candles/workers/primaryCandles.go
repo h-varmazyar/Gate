@@ -35,11 +35,16 @@ func NewPrimaryDataWorker(_ context.Context, db repository.CandleRepository, con
 }
 
 func (w *PrimaryData) Start() {
+	handled := int64(0)
 	deliveries := w.queue.Consume(w.configs.PrimaryDataQueue)
 	for i := 0; i < w.configs.ConsumerCount; i++ {
 		go func() {
 			for delivery := range deliveries {
+				handled++
 				w.handle(delivery)
+				if handled%1000 == 0 {
+					log.Infof("handled: %v", handled)
+				}
 			}
 		}()
 	}
@@ -59,7 +64,6 @@ func (w *PrimaryData) handle(delivery amqp.Delivery) {
 		mapper.Struct(candle, tmp)
 		localCandles = append(localCandles, tmp)
 	}
-	log.Infof("inserted :%v", len(localCandles))
 	if err := w.db.BulkInsert(localCandles); err != nil {
 		log.WithError(err).Errorf("failed to save candles")
 	}
