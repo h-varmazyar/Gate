@@ -209,7 +209,7 @@ func (s *Service) DownloadPrimaryCandles(ctx context.Context, req *chipmunkApi.D
 		}
 	}()
 
-	//s.missedCandlesWorker.Start(req.Markets.Elements, req.Resolutions.Elements)
+	s.missedCandlesWorker.Start(req.Markets.Elements, req.Resolutions.Elements)
 	s.redundantRemoverWorker.Start(req.Markets.Elements, req.Resolutions.Elements)
 	return new(api.Void), nil
 }

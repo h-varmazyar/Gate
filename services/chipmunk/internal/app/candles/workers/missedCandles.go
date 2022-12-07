@@ -16,6 +16,7 @@ type MissedCandles struct {
 	configs          *Configs
 	functionsService coreApi.FunctionsServiceClient
 	ctx              context.Context
+	cancelFunc       context.CancelFunc
 	logger           *log.Logger
 	Started          bool
 }
@@ -33,9 +34,15 @@ func NewMissedCandles(_ context.Context, db repository.CandleRepository, configs
 func (w *MissedCandles) Start(markets []*chipmunkApi.Market, resolutions []*chipmunkApi.Resolution) {
 	if !w.Started {
 		w.logger.Infof("starting missed candle")
-		w.ctx = context.Background()
+		w.ctx, w.cancelFunc = context.WithCancel(context.Background())
 		go w.run(markets, resolutions)
 		w.Started = true
+	}
+}
+
+func (w *MissedCandles) Stop() {
+	if w.Started {
+		w.cancelFunc()
 	}
 }
 

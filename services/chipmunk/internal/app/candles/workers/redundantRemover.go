@@ -13,6 +13,7 @@ type RedundantRemover struct {
 	db           repository.CandleRepository
 	configs      *Configs
 	ctx          context.Context
+	cancelFunc   context.CancelFunc
 	logger       *log.Logger
 	Started      bool
 	removedCount int
@@ -29,9 +30,15 @@ func NewRedundantRemover(_ context.Context, db repository.CandleRepository, conf
 func (w *RedundantRemover) Start(markets []*chipmunkApi.Market, resolutions []*chipmunkApi.Resolution) {
 	if !w.Started {
 		w.logger.Infof("starting redundant candles")
-		w.ctx = context.Background()
+		w.ctx, w.cancelFunc = context.WithCancel(context.Background())
 		go w.run(markets, resolutions)
 		w.Started = true
+	}
+}
+
+func (w *RedundantRemover) Stop() {
+	if w.Started {
+		w.cancelFunc()
 	}
 }
 
@@ -87,12 +94,27 @@ func (w *RedundantRemover) removeRedundantCandles(market *chipmunkApi.Market, re
 		return err
 	}
 
+	ids := make([]uuid.UUID, 0)
+
 	for i := 1; i < len(candles); i++ {
 		if candles[i-1].Time.Equal(candles[i].Time) {
-			if err := w.db.HardDelete(candles[i-1]); err != nil {
-				w.logger.WithError(err).Errorf("failed to delete candle %v", candles[i-1].ID)
-			}
+			//if err := w.db.HardDelete(candles[i-1]); err != nil {
+			//	w.logger.WithError(err).Errorf("failed to delete candle %v", candles[i-1].ID)
+			//}
+			ids = append(ids, candles[i-1].ID)
 			w.removedCount++
+		}
+	}
+	if len(ids) > 0 {
+		w.logger.Infof("removing: %v", len(ids))
+		for i := 0; i < len(ids); i += 1000 {
+			end := i + 1000
+			if end > len(ids) {
+				end = len(ids)
+			}
+			if err := w.db.BulkHardDelete(ids[i:end]); err != nil {
+				w.logger.WithError(err).Errorf("failed to delete candles")
+			}
 		}
 	}
 	return nil

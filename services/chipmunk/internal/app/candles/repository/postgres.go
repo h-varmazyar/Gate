@@ -49,6 +49,10 @@ func (r *candlePostgresRepository) HardDelete(candle *entity.Candle) error {
 	return nil
 }
 
+func (r *candlePostgresRepository) BulkHardDelete(candleIDs []uuid.UUID) error {
+	return r.db.Unscoped().Where("id in ?", candleIDs).Delete(new(entity.Candle)).Error
+}
+
 func (r *candlePostgresRepository) BulkInsert(candles []*entity.Candle) error {
 	return r.db.CreateInBatches(candles, len(candles)).Error
 }
