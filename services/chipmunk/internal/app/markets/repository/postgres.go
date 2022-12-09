@@ -29,7 +29,7 @@ func NewMarketPostgresRepository(ctx context.Context, logger *log.Logger, db *go
 func (repository *marketPostgresRepository) Info(platform api.Platform, marketName string) (*entity.Market, error) {
 	market := new(entity.Market)
 	return market, repository.db.Model(new(entity.Market)).
-		Where("Platform = ?", platform).
+		Where("platform = ?", platform).
 		Where("name = ?", marketName).
 		First(market).Error
 }

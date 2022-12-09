@@ -25,7 +25,7 @@ func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs *Configs
 		return nil, err
 	}
 	//worker := workers.InitializeWorker(ctx, configs.WorkerConfigs, dependencies.CandlesService)
-	statisticsWorker := workers.NewStatisticsWorker(ctx, configs.WorkerConfigs, dependencies.CandlesService)
+	statisticsWorker := workers.NewStatisticsWorker(ctx, configs.WorkerConfigs, dependencies.CandlesService, repositoryInstance)
 	//dependencies.ServiceDependencies.PrimaryDataWorker = worker
 	dependencies.ServiceDependencies.StatisticsWorker = statisticsWorker
 	return &App{

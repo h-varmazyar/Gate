@@ -101,6 +101,7 @@ func (r *Response) AllMarkerStatistics(ctx context.Context, response *networkAPI
 	allMarketStatistics := new(coreApi.AllMarketStatisticsResp)
 	allMarketStatistics.Platform = api.Platform_Coinex
 	allMarketStatistics.Date = int64(data.Date)
+	allMarketStatistics.AllStatistics = make(map[string]*coreApi.MarketStatistics)
 	marketStatistics := new(coreApi.MarketStatistics)
 	marketStatistics.Date = int64(data.Date)
 	var err error

@@ -112,7 +112,7 @@ func (w *MissedCandles) checkForMissedCandles(market *chipmunkApi.Market, resolu
 				Platform:   market.Platform,
 			})
 			if err != nil {
-				w.logger.WithError(err).Errorf("failed to create async OHLC request for marker %v in resolution %v and Platform %v", market.Name, resolution.Duration, market.Platform)
+				w.logger.WithError(err).Errorf("failed to create missed async OHLC request %v in resolution %v and Platform %v", market.Name, resolution.Duration, market.Platform)
 			}
 		}
 	}

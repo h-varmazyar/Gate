@@ -145,7 +145,7 @@ func (s *Service) makePrimaryDataRequests(platform api.Platform, market *chipmun
 		Platform:   platform,
 	})
 	if err != nil {
-		s.logger.WithError(err).Errorf("failed to create async OHLC request for marker %v in resolution %v and Platform %v", market.Name, resolution.Duration, platform)
+		s.logger.WithError(err).Errorf("failed to create primary async OHLC request %v in resolution %v and Platform %v", market.Name, resolution.Duration, platform)
 	}
 }
 

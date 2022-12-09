@@ -138,6 +138,7 @@ func (s *Service) ListBySource(_ context.Context, req *chipmunkApi.MarketListByS
 }
 
 func (s *Service) StartWorker(ctx context.Context, req *chipmunkApi.WorkerStartReq) (*api.Void, error) {
+	s.logger.Infof("starting market worker for platform %v", req.Platform)
 	//var (
 	//	markets []*entity.Market
 	//resolution         *entity.Resolution
@@ -174,12 +175,12 @@ func (s *Service) StartWorker(ctx context.Context, req *chipmunkApi.WorkerStartR
 	//	s.workers.AddMarket(settings)
 	//	log.Infof("new market added: %v", market.Name)
 	//}
-	s.statisticsWorker.Start(ctx, req.Platform)
+	s.statisticsWorker.Start(req.Platform)
 	return new(api.Void), nil
 }
 
 func (s *Service) StopWorker(_ context.Context, req *chipmunkApi.WorkerStopReq) (*api.Void, error) {
-
+	s.logger.Infof("stopping market statistics...")
 	//markets, err := s.db.List(brokerageID)
 	//if err != nil {
 	//	return nil, err

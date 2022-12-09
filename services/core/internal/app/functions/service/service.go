@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/api/proto"
-	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
@@ -15,7 +14,6 @@ import (
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"time"
 )
 
@@ -47,10 +45,6 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 }
 
 func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.OHLCReq) (*proto.Void, error) {
-	if req.From == req.To {
-		return nil, errors.New(ctx, codes.FailedPrecondition).AddDetailF("from and to can not equal")
-	}
-
 	brokerageRequests := loadRequest(s.configs, &coreApi.Brokerage{Platform: req.Platform})
 
 	from := time.Unix(req.From, 0)
@@ -62,6 +56,10 @@ func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.OHLCReq) (*proto.V
 			end = true
 		}
 
+		if to.Sub(from) < time.Duration(req.Resolution.Duration) {
+			continue
+		}
+
 		params := &brokerages.OHLCParams{
 			Resolution: req.Resolution,
 			Market:     req.Market,
@@ -71,11 +69,13 @@ func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.OHLCReq) (*proto.V
 
 		request, err := brokerageRequests.AsyncOHLC(ctx, params)
 		if err != nil {
+			s.logger.WithError(err).Error("failed to create async OHLC")
 			return nil, err
 		}
 		request.Type = networkAPI.Request_Async
 		_, err = s.doNetworkRequest(request)
 		if err != nil {
+			s.logger.WithError(err).Error("failed to do async OHLC")
 			return nil, err
 		}
 
@@ -87,7 +87,11 @@ func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.OHLCReq) (*proto.V
 
 func (s *Service) AllMarketStatistics(ctx context.Context, req *coreApi.AllMarketStatisticsReq) (*coreApi.AllMarketStatisticsResp, error) {
 	brokerage := &coreApi.Brokerage{Platform: req.Platform}
-	request, err := loadRequest(s.configs, brokerage).AllMarketStatistics(ctx, new(brokerages.AllMarketStatisticsParams))
+	br := loadRequest(s.configs, brokerage)
+	if br == nil {
+		s.logger.Fatalf("nil br: %v", req.Platform)
+	}
+	request, err := br.AllMarketStatistics(ctx, new(brokerages.AllMarketStatisticsParams))
 	if err != nil {
 		return nil, err
 	}
