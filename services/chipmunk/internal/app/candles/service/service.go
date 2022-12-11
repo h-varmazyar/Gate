@@ -174,10 +174,12 @@ func (s *Service) BulkUpdate(ctx context.Context, req *chipmunkApi.CandleBulkUpd
 			if last == nil {
 				continue
 			}
-			if last[0].Time.Add(time.Duration(resolution.Duration)).After(time.Unix(req.Date, 0)) {
+			lastTime := last[0].Time
+			lastTime.Add(time.Duration(resolution.Duration))
+			if lastTime.After(time.Unix(req.Date, 0)) {
 				c.Time = last[0].Time
 			} else {
-				if last[0].Time.Add(time.Duration(resolution.Duration)).Before(time.Unix(req.Date, 0).Add(time.Duration(resolution.Duration) * -1)) {
+				if lastTime.Before(time.Unix(req.Date, 0).Add(time.Duration(resolution.Duration) * -1)) {
 					continue
 				}
 				c.Time = last[0].Time.Add(time.Duration(resolution.Duration))

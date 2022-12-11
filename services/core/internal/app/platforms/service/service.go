@@ -47,6 +47,7 @@ func (s *Service) CollectMarketData(ctx context.Context, req *coreApi.PlatformCo
 		return nil, err
 	}
 
+	s.logger.Infof("market len: %v", len(markets.Elements))
 	resolutions, err := s.resolutionService.List(ctx, &chipmunkApi.ResolutionListReq{
 		Platform: req.Platform,
 	})

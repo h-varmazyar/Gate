@@ -14,6 +14,7 @@ type MarketRepository interface {
 	List(Platform api.Platform) ([]*entity.Market, error)
 	ListBySource(Platform api.Platform, source string) ([]*entity.Market, error)
 	ReturnByID(id uuid.UUID) (*entity.Market, error)
+	ReturnByName(name string) (*entity.Market, error)
 	SaveOrUpdate(market *entity.Market) error
 	Delete(market *entity.Market) error
 }

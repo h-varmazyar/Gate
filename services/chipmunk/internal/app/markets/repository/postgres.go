@@ -55,16 +55,24 @@ func (repository *marketPostgresRepository) ReturnByID(id uuid.UUID) (*entity.Ma
 		Find(market).Error
 }
 
+func (repository *marketPostgresRepository) ReturnByName(name string) (*entity.Market, error) {
+	market := new(entity.Market)
+	return market, repository.db.Model(new(entity.Market)).
+		Where("name LIKE ?", name).
+		Find(market).Error
+}
+
 func (repository *marketPostgresRepository) SaveOrUpdate(market *entity.Market) error {
-	count := int64(0)
-	err := repository.db.Model(new(entity.Market)).Where("name LIKE ?", market.Name).Count(&count).Error
+	m := new(entity.Market)
+	err := repository.db.Model(new(entity.Market)).Where("name LIKE ?", market.Name).First(m).Error
 	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return repository.db.Model(new(entity.Market)).Create(market).Error
+		}
 		return err
 	}
-	if count == 0 {
-		return repository.db.Model(new(entity.Market)).Create(market).Error
-	}
-	return repository.db.Updates(market).Where("name = ?", market.Name).Error
+	market.ID = m.ID
+	return repository.db.Updates(market).Error
 }
 
 func (repository *marketPostgresRepository) Delete(market *entity.Market) error {

@@ -83,7 +83,7 @@ func (w *StatisticsWorker) run(runner *Runner) {
 			for marketName, data := range statistics.AllStatistics {
 				market, err := w.db.Info(runner.platform, marketName)
 				if err != nil {
-					log.Infof("failed to fetch market %v", marketName)
+					//log.Infof("failed to fetch market %v", marketName)
 					continue
 				}
 				tickers[market.ID.String()] = &chipmunkApi.CandleBulkUpdateReqTicker{

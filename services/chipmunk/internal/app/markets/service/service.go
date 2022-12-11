@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
+	"strings"
 	"time"
 )
 
@@ -237,42 +238,44 @@ func (s *Service) UpdateFromPlatform(ctx context.Context, req *chipmunkApi.Marke
 	if err != nil {
 		return nil, err
 	}
+	availableMarkets := make([]uuid.UUID, 0)
 	for _, market := range markets.Elements {
-		source, sourceErr := s.loadOrCreateAsset(ctx, market.Source.Name)
-		if sourceErr != nil {
-			s.logger.WithError(err).Errorf("failed to load or create source for market %v", market.Name)
-			continue
-		}
-		destination, destinationErr := s.loadOrCreateAsset(ctx, market.Destination.Name)
-		if destinationErr != nil {
-			s.logger.WithError(err).Errorf("failed to load or create destination for market %v", market.Name)
-			continue
-		}
-		localMarket := new(entity.Market)
-		mapper.Struct(market, localMarket)
-		localMarket.SourceID = source.ID
-		localMarket.DestinationID = destination.ID
-		localMarket.Platform = req.Platform
-
-		if req.Platform == api.Platform_Coinex {
-			marketInfo, err := s.functionsService.GetMarketInfo(ctx, &coreApi.MarketInfoReq{Market: market})
-			if err != nil {
-				s.logger.WithError(err).Errorf("failed to get market info for %v in Platform %v", market.Name, market.Platform.String())
-				return nil, err
-			}
-			localMarket.IssueDate = time.Unix(marketInfo.IssueDate, 0)
-		} else {
-			return nil, errors.New(ctx, codes.FailedPrecondition).AddDetails("check market issue date")
-		}
-
-		err = s.db.SaveOrUpdate(localMarket)
+		localMarket, err := s.db.ReturnByName(market.Name)
 		if err != nil {
-			s.logger.WithError(err).Error("failed to update markets")
-			continue
+			if err == gorm.ErrRecordNotFound {
+				source, sourceErr := s.loadOrCreateAsset(ctx, market.Source.Name)
+				if sourceErr != nil {
+					s.logger.WithError(err).Errorf("failed to load or create source for market %v", market.Name)
+					continue
+				}
+				destination, destinationErr := s.loadOrCreateAsset(ctx, market.Destination.Name)
+				if destinationErr != nil {
+					s.logger.WithError(err).Errorf("failed to load or create destination for market %v", market.Name)
+					continue
+				}
+				localMarket.SourceID = source.ID
+				localMarket.DestinationID = destination.ID
+				localMarket.Platform = req.Platform
+				if req.Platform == api.Platform_Coinex {
+					marketInfo, err := s.functionsService.GetMarketInfo(ctx, &coreApi.MarketInfoReq{Market: market})
+					if err != nil {
+						s.logger.WithError(err).Errorf("failed to get market info for %v in Platform %v", market.Name, market.Platform.String())
+						return nil, err
+					}
+					localMarket.IssueDate = time.Unix(marketInfo.IssueDate, 0)
+				} else {
+					return nil, errors.New(ctx, codes.FailedPrecondition).AddDetails("check market issue date")
+				}
+				err = s.db.SaveOrUpdate(localMarket)
+				if err != nil {
+					s.logger.WithError(err).Error("failed to update markets")
+					continue
+				}
+			}
 		}
-		market.ID = localMarket.ID.String()
+		availableMarkets = append(availableMarkets, localMarket.ID)
 	}
-	if err = s.deleteOldMarkets(req.Platform, markets.Elements); err != nil {
+	if err = s.deleteOldMarkets(req.Platform, availableMarkets); err != nil {
 		s.logger.WithError(err).Errorf("failed to delete old markets for %v", req.Platform.String())
 		return nil, err
 	}
@@ -283,7 +286,7 @@ func (s *Service) loadOrCreateAsset(ctx context.Context, assetName string) (*ent
 	asset, err := s.assetsService.ReturnBySymbol(ctx, &chipmunkApi.AssetReturnBySymbolReq{Symbol: assetName})
 	resp := new(entity.Asset)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if strings.Contains(err.Error(), gorm.ErrRecordNotFound.Error()) {
 			setAsset := new(chipmunkApi.AssetCreateReq)
 			setAsset.Name = assetName
 			setAsset.Symbol = assetName
@@ -302,16 +305,30 @@ func (s *Service) loadOrCreateAsset(ctx context.Context, assetName string) (*ent
 	return resp, nil
 }
 
-func (s *Service) deleteOldMarkets(platform api.Platform, newMarkets []*chipmunkApi.Market) error {
+func (s *Service) deleteOldMarkets(platform api.Platform, availableMarkets []uuid.UUID) error {
 	localMarkets, err := s.db.List(platform)
 	if err != nil {
 		s.logger.WithError(err).Errorf("failed to return list of markets for %v", platform.String())
 		return err
 	}
+	//for _, local := range localMarkets {
+	//	for _, remote := range newMarkets {
+	//		if local.Name == remote.Name {
+	//			continue
+	//		}
+	//	}
+	//	err = s.db.Delete(local)
+	//	if err != nil {
+	//		s.logger.WithError(err).Errorf("failed to delete market %v", local.ID)
+	//		continue
+	//	}
+	//}
+	//return nil
+OUTER:
 	for _, local := range localMarkets {
-		for _, remote := range newMarkets {
-			if local.ID.String() == remote.ID {
-				continue
+		for _, available := range availableMarkets {
+			if local.ID == available {
+				continue OUTER
 			}
 		}
 		err = s.db.Delete(local)

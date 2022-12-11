@@ -20,12 +20,12 @@ func Open(Type Type, dsn string) (*gorm.DB, error) {
 	switch Type {
 	case Mariadb:
 		return gorm.Open(mysql.Open(dsn), &gorm.Config{
-			Logger: logger.Default.LogMode(logger.Error),
+			Logger: logger.Default.LogMode(logger.Silent),
 		})
 	case PostgreSQL:
 		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 			SkipDefaultTransaction: true,
-			Logger:                 logger.Default.LogMode(logger.Error),
+			Logger:                 logger.Default.LogMode(logger.Silent),
 		})
 		if err != nil {
 			return nil, err
