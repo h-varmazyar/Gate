@@ -33,12 +33,13 @@ func (r *candlePostgresRepository) Save(candle *entity.Candle) error {
 		Where("resolution_id = ?", candle.ResolutionID).First(item).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
+			r.logger.Infof("created: %v - %v", candle.MarketID, candle.ResolutionID)
 			return r.db.Model(new(entity.Candle)).Create(candle).Error
 		}
 		return err
 	}
 	candle.ID = item.ID
-	return r.db.Save(candle).Error
+	return r.db.Updates(candle).Error
 }
 
 func (r *candlePostgresRepository) HardDelete(candle *entity.Candle) error {

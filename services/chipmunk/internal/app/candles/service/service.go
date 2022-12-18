@@ -146,6 +146,8 @@ func (s *Service) BulkUpdate(ctx context.Context, req *chipmunkApi.CandleBulkUpd
 	resolutionList, err := s.resolutionService.List(ctx, &chipmunkApi.ResolutionListReq{
 		Platform: req.Platform,
 	})
+
+	s.logger.Infof("update bulk")
 	if err != nil {
 		s.logger.WithError(err).Errorf("failed to get resolutionList")
 		return nil, err
@@ -157,32 +159,57 @@ func (s *Service) BulkUpdate(ctx context.Context, req *chipmunkApi.CandleBulkUpd
 			return nil, err
 		}
 		for _, resolution := range resolutionList.Elements {
+			if ticker.Close == 0 {
+				continue
+			}
 			resolutionID, err := uuid.Parse(resolution.ID)
 			if err != nil {
 				continue
 			}
+
+			last := s.buffer.ReturnCandles(marketID, resolutionID, 1)
+			if last == nil || len(last) == 0 {
+				continue
+			}
+
+			lastTime := last[len(last)-1].Time
+			lastAddedResolution := time.Unix(last[len(last)-1].Time.Unix(), 0).Add(time.Duration(resolution.Duration))
+			lastAdded2xResolution := time.Unix(last[len(last)-1].Time.Unix(), 0).Add(time.Duration(resolution.Duration * 2))
+			reqTime := time.Unix(req.Date, 0)
+
+			lastVol := ticker.Volume
+			for i := 0; i < len(last)-1; i++ {
+				lastVol -= last[i].Volume
+			}
+
 			c := &entity.Candle{
-				Open:         ticker.Open,
-				High:         ticker.High,
-				Low:          ticker.Low,
-				Close:        ticker.Close,
-				Volume:       ticker.Volume,
+				Time:         last[len(last)-1].Time,
+				Open:         last[len(last)-1].Open,
+				High:         last[len(last)-1].High,
+				Low:          last[len(last)-1].Low,
+				Close:        last[len(last)-1].Close,
+				Volume:       lastVol,
+				Amount:       0,
 				MarketID:     marketID,
 				ResolutionID: resolutionID,
 			}
-			last := s.buffer.ReturnCandles(marketID, resolutionID, 1)
-			if last == nil {
-				continue
-			}
-			lastTime := last[0].Time
-			lastTime.Add(time.Duration(resolution.Duration))
-			if lastTime.After(time.Unix(req.Date, 0)) {
-				c.Time = last[0].Time
-			} else {
-				if lastTime.Before(time.Unix(req.Date, 0).Add(time.Duration(resolution.Duration) * -1)) {
-					continue
+
+			if reqTime.After(lastTime) && reqTime.Before(lastAddedResolution) {
+				c.Close = ticker.Close
+				if ticker.Close < c.Low {
+					c.Low = ticker.Close
 				}
-				c.Time = last[0].Time.Add(time.Duration(resolution.Duration))
+				if ticker.Close > c.High {
+					c.High = ticker.Close
+				}
+			} else if reqTime.After(lastAddedResolution) && reqTime.Before(lastAdded2xResolution) {
+				c.Time = lastAddedResolution
+				c.Open = ticker.Close
+				c.High = ticker.Close
+				c.Low = ticker.Close
+				c.Close = ticker.Close
+			} else {
+				continue
 			}
 			if err = s.db.Save(c); err != nil {
 				s.logger.WithError(err).Errorf("failed to save candle")

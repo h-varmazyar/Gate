@@ -98,14 +98,15 @@ func (r *Response) AllMarkerStatistics(ctx context.Context, response *networkAPI
 	if err := parseResponse(response.Body, &data); err != nil {
 		return nil, err
 	}
-	allMarketStatistics := new(coreApi.AllMarketStatisticsResp)
-	allMarketStatistics.Platform = api.Platform_Coinex
-	allMarketStatistics.Date = int64(data.Date)
-	allMarketStatistics.AllStatistics = make(map[string]*coreApi.MarketStatistics)
-	marketStatistics := new(coreApi.MarketStatistics)
-	marketStatistics.Date = int64(data.Date)
+	resp := new(coreApi.AllMarketStatisticsResp)
+	resp.Platform = api.Platform_Coinex
+	resp.Date = int64(data.Date / 1000)
+	resp.AllStatistics = make(map[string]*coreApi.MarketStatistics)
+
 	var err error
 	for key, value := range data.Ticker {
+		marketStatistics := new(coreApi.MarketStatistics)
+		marketStatistics.Date = int64(data.Date / 1000)
 		if marketStatistics.Volume, err = strconv.ParseFloat(value.Volume, 64); err != nil {
 			log.WithError(err).Error("failed to parse volume")
 			return nil, err
@@ -126,9 +127,9 @@ func (r *Response) AllMarkerStatistics(ctx context.Context, response *networkAPI
 			log.WithError(err).Error("failed to parse low")
 			return nil, err
 		}
-		allMarketStatistics.AllStatistics[key] = marketStatistics
+		resp.AllStatistics[key] = marketStatistics
 	}
-	return allMarketStatistics, nil
+	return resp, nil
 }
 
 func (r *Response) GetMarketInfo(ctx context.Context, response *networkAPI.Response) (*coreApi.MarketInfo, error) {

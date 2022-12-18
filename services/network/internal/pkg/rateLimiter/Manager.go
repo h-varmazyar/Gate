@@ -8,6 +8,7 @@ import (
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
+	"math/rand"
 	"net/url"
 	"sync"
 	"time"
@@ -26,6 +27,7 @@ func NewManager(ctx context.Context, Limiters []*networkAPI.RateLimiter, IPs []*
 	manager.Limiters = make(map[uuid.UUID]*Limiter)
 	manager.IPs = make(map[uuid.UUID]*IP)
 	manager.cancelFunctions = make(map[uuid.UUID]context.CancelFunc)
+	manager.lock = new(sync.Mutex)
 
 	for _, ip := range IPs {
 		proxyAddress := ""
@@ -49,7 +51,7 @@ func NewManager(ctx context.Context, Limiters []*networkAPI.RateLimiter, IPs []*
 			Username: ip.Username,
 			Password: ip.Password,
 			Port:     uint16(ip.Port),
-			proxyURL: proxyURL,
+			ProxyURL: proxyURL,
 			ctx:      ipCtx,
 		}
 		manager.cancelFunctions[ipID] = cancelFunc
@@ -119,6 +121,23 @@ func (m *Manager) AddNewRequest(ctx context.Context, request *networkAPI.Request
 	}
 	m.Limiters[limiterID].RequestChannel <- request
 	return nil
+}
+
+func (m *Manager) GetRandomIP(ctx context.Context) (*IP, error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	rand.Seed(time.Now().Unix())
+	rndNum := rand.Intn(len(m.IPs))
+
+	i := 0
+	for _, ip := range m.IPs {
+		if i == rndNum {
+			return ip, nil
+		}
+		i++
+	}
+	return nil, errors.New(ctx, codes.NotFound)
 }
 
 func (m *Manager) assignLimiterToIPs(limiter *Limiter) {

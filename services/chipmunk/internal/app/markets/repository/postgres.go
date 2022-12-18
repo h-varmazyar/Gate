@@ -26,14 +26,6 @@ func NewMarketPostgresRepository(ctx context.Context, logger *log.Logger, db *go
 	}, nil
 }
 
-func (repository *marketPostgresRepository) Info(platform api.Platform, marketName string) (*entity.Market, error) {
-	market := new(entity.Market)
-	return market, repository.db.Model(new(entity.Market)).
-		Where("platform = ?", platform).
-		Where("name = ?", marketName).
-		First(market).Error
-}
-
 func (repository *marketPostgresRepository) List(platform api.Platform) ([]*entity.Market, error) {
 	markets := make([]*entity.Market, 0)
 	return markets, repository.db.Model(new(entity.Market)).Where("Platform = ?", platform).Preload("Source").Preload("Destination").Find(&markets).Error
@@ -55,11 +47,12 @@ func (repository *marketPostgresRepository) ReturnByID(id uuid.UUID) (*entity.Ma
 		Find(market).Error
 }
 
-func (repository *marketPostgresRepository) ReturnByName(name string) (*entity.Market, error) {
+func (repository *marketPostgresRepository) ReturnByName(platform api.Platform, marketName string) (*entity.Market, error) {
 	market := new(entity.Market)
 	return market, repository.db.Model(new(entity.Market)).
-		Where("name LIKE ?", name).
-		Find(market).Error
+		Where("platform = ?", platform).
+		Where("name = ?", marketName).
+		First(market).Error
 }
 
 func (repository *marketPostgresRepository) SaveOrUpdate(market *entity.Market) error {

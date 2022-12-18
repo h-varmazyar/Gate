@@ -71,6 +71,7 @@ func (w *StatisticsWorker) run(runner *Runner) {
 			ticker.Stop()
 			return
 		case <-ticker.C:
+			log.Infof("run market")
 			statistics, err := w.functionsService.AllMarketStatistics(runner.ctx, &coreApi.AllMarketStatisticsReq{
 				Platform: runner.platform,
 			})
@@ -81,9 +82,8 @@ func (w *StatisticsWorker) run(runner *Runner) {
 
 			tickers := make(map[string]*chipmunkApi.CandleBulkUpdateReqTicker)
 			for marketName, data := range statistics.AllStatistics {
-				market, err := w.db.Info(runner.platform, marketName)
+				market, err := w.db.ReturnByName(runner.platform, marketName)
 				if err != nil {
-					//log.Infof("failed to fetch market %v", marketName)
 					continue
 				}
 				tickers[market.ID.String()] = &chipmunkApi.CandleBulkUpdateReqTicker{

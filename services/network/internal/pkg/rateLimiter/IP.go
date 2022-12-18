@@ -20,13 +20,14 @@ type IP struct {
 	Username string
 	Password string
 	Port     uint16
-	proxyURL *url.URL
+	ProxyURL *url.URL
 	ctx      context.Context
 }
 
 func (ip *IP) spreadAlgorithm(limiter *Limiter) {
 	log.Infof("time: %v", limiter.TimeLimit)
 	log.Infof("req: %v", limiter.RequestCountLimit)
+	log.Infof("ip: %v", ip.Address)
 	interval := limiter.TimeLimit / time.Duration(limiter.RequestCountLimit)
 	ticker := time.NewTicker(interval)
 	for {
@@ -37,7 +38,7 @@ func (ip *IP) spreadAlgorithm(limiter *Limiter) {
 		case <-ticker.C:
 			go func() {
 				systemRequest := <-limiter.RequestChannel
-				networkURL, err := requests.New(systemRequest, ip.proxyURL)
+				networkURL, err := requests.New(systemRequest, ip.ProxyURL)
 				if err != nil {
 					log.WithError(err).Errorf("failed to create async network request")
 					//continue

@@ -8,7 +8,6 @@ import (
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -91,32 +90,6 @@ func (req *Request) SetBody(bodyParams []*networkAPI.KV) error {
 	return nil
 }
 
-func getIP(req *http.Request) {
-
-	ip, port, err := net.SplitHostPort(req.RemoteAddr)
-	if err != nil {
-		//return nil, fmt.Errorf("userip: %q is not IP:port", req.RemoteAddr)
-
-		fmt.Printf("userip: %q is not IP:port\n", req.RemoteAddr)
-	}
-
-	userIP := net.ParseIP(ip)
-	if userIP == nil {
-		//return nil, fmt.Errorf("userip: %q is not IP:port", req.RemoteAddr)
-		fmt.Printf("userip: %q is not IP:port\n", req.RemoteAddr)
-		return
-	}
-
-	// This will only be defined when site is accessed via non-anonymous proxy
-	// and takes precedence over RemoteAddr
-	// Header.Get is case-insensitive
-	forward := req.Header.Get("X-Forwarded-For")
-
-	fmt.Printf("<p>IP: %s</p>\n", ip)
-	fmt.Printf("<p>Port: %s</p>\n", port)
-	fmt.Printf("<p>Forwarded for: %s</p>\n", forward)
-}
-
 func (req *Request) Do() (*networkAPI.Response, error) {
 	request, err := http.NewRequest(strings.ToUpper(req.method.String()), req.Endpoint, req.body)
 	if err != nil {
@@ -129,13 +102,15 @@ func (req *Request) Do() (*networkAPI.Response, error) {
 	if req.method == networkAPI.Request_GET {
 		request.URL.RawQuery = req.queryParams
 	}
+
+	log.Infof(req.Endpoint)
 	response, err := req.httpClient.Do(request)
 	if err != nil {
 		log.WithError(err).Errorf("failed to make request")
 		return nil, err
 	}
 	defer response.Body.Close()
-	log.Info(response.Request.URL)
+	//log.Info(response.Request.URL)
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return nil, err

@@ -240,7 +240,7 @@ func (s *Service) UpdateFromPlatform(ctx context.Context, req *chipmunkApi.Marke
 	}
 	availableMarkets := make([]uuid.UUID, 0)
 	for _, market := range markets.Elements {
-		localMarket, err := s.db.ReturnByName(market.Name)
+		localMarket, err := s.db.ReturnByName(req.Platform, market.Name)
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				source, sourceErr := s.loadOrCreateAsset(ctx, market.Source.Name)
