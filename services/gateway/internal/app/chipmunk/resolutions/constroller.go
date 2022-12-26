@@ -57,7 +57,7 @@ func (c Controller) create(res http.ResponseWriter, req *http.Request) {
 func (c Controller) list(res http.ResponseWriter, req *http.Request) {
 	listReq := new(chipmunkApi.ResolutionListReq)
 
-	platforms := mux.QueryParam(req, "platform")
+	platforms := mux.QueryParam(req, "Platform")
 	if len(platforms) != 0 {
 		listReq.Platform = api.Platform(api.Platform_value[platforms[0]])
 	}

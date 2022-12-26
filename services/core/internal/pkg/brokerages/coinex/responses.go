@@ -9,6 +9,7 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
+	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
@@ -35,7 +36,7 @@ func NewResponse(configs *Configs, isAsync bool) (*Response, error) {
 	return r, nil
 }
 
-func (r *Response) AsyncOHLC(_ context.Context, response *networkAPI.Response) {
+func (r *Response) AsyncOHLC(_ context.Context, response *networkAPI.Response, metadata *brokerages.Metadata) {
 	if response.Code != http.StatusOK {
 		log.Errorf("ohlc request failed with code: %v - %v", response.Code, response.Body)
 		return
@@ -56,18 +57,22 @@ func (r *Response) AsyncOHLC(_ context.Context, response *networkAPI.Response) {
 		c.Low, _ = strconv.ParseFloat(item[4].(string), 64)
 		c.Volume, _ = strconv.ParseFloat(item[5].(string), 64)
 		c.Amount, _ = strconv.ParseFloat(item[6].(string), 64)
+		c.ResolutionID = metadata.ResolutionID
+		c.MarketID = metadata.MarketID
 		candles = append(candles, c)
 	}
 	message := &chipmunkApi.Candles{
 		Elements: candles,
 		Count:    int64(len(candles)),
 	}
-	if bytes, err := proto.Marshal(message); err != nil {
-		log.WithError(err).Errorf("faled to marshal candles")
-		return
-	} else {
-		if publishErr := r.ohlcQueue.Publish(bytes, grpcext.ProtobufContentType); publishErr != nil {
-			log.WithError(err).Errorf("faled to publish candles")
+	if message.Count > 0 {
+		if bytes, err := proto.Marshal(message); err != nil {
+			log.WithError(err).Errorf("faled to marshal candles")
+			return
+		} else {
+			if publishErr := r.ohlcQueue.Publish(bytes, grpcext.ProtobufContentType); publishErr != nil {
+				log.WithError(err).Errorf("faled to publish candles")
+			}
 		}
 	}
 }
@@ -93,13 +98,15 @@ func (r *Response) AllMarkerStatistics(ctx context.Context, response *networkAPI
 	if err := parseResponse(response.Body, &data); err != nil {
 		return nil, err
 	}
-	allMarketStatistics := new(coreApi.AllMarketStatisticsResp)
-	allMarketStatistics.Platform = api.Platform_Coinex
-	allMarketStatistics.Date = int64(data.Date)
-	marketStatistics := new(coreApi.MarketStatistics)
-	marketStatistics.Date = int64(data.Date)
+	resp := new(coreApi.AllMarketStatisticsResp)
+	resp.Platform = api.Platform_Coinex
+	resp.Date = int64(data.Date / 1000)
+	resp.AllStatistics = make(map[string]*coreApi.MarketStatistics)
+
 	var err error
 	for key, value := range data.Ticker {
+		marketStatistics := new(coreApi.MarketStatistics)
+		marketStatistics.Date = int64(data.Date / 1000)
 		if marketStatistics.Volume, err = strconv.ParseFloat(value.Volume, 64); err != nil {
 			log.WithError(err).Error("failed to parse volume")
 			return nil, err
@@ -120,9 +127,9 @@ func (r *Response) AllMarkerStatistics(ctx context.Context, response *networkAPI
 			log.WithError(err).Error("failed to parse low")
 			return nil, err
 		}
-		allMarketStatistics.AllStatistics[key] = marketStatistics
+		resp.AllStatistics[key] = marketStatistics
 	}
-	return allMarketStatistics, nil
+	return resp, nil
 }
 
 func (r *Response) GetMarketInfo(ctx context.Context, response *networkAPI.Response) (*coreApi.MarketInfo, error) {

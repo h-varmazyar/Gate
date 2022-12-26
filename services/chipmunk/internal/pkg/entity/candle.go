@@ -15,8 +15,8 @@ type Candle struct {
 	Close           float64
 	Volume          float64
 	Amount          float64
-	MarketID        uuid.UUID
-	ResolutionID    uuid.UUID
+	MarketID        uuid.UUID `gorm:"index"`
+	ResolutionID    uuid.UUID `gorm:"index"`
 	IndicatorValues `gorm:"-"`
 }
 

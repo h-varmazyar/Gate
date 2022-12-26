@@ -516,8 +516,8 @@ type StrategySignalCheckStartReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"platform"
-	Platform proto1.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
+	// @inject_tag: json:"Platform"
+	Platform proto1.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"Platform"`
 	// @inject_tag: json:"strategy_id"
 	StrategyID string `protobuf:"bytes,2,opt,name=StrategyID,proto3" json:"strategy_id"`
 	// @inject_tag: json:"brokerage_id"

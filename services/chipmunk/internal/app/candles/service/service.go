@@ -23,22 +23,26 @@ import (
 )
 
 type Service struct {
-	db                repository.CandleRepository
-	buffer            *buffer.CandleBuffer
-	logger            *log.Logger
-	configs           *Configs
-	functionsService  coreApi.FunctionsServiceClient
-	strategyService   eagleApi.StrategyServiceClient
-	resolutionService *resolutions.Service
-	indicatorService  *indicators.Service
-	worker            *workers.PrimaryData
+	db                     repository.CandleRepository
+	buffer                 *buffer.CandleBuffer
+	logger                 *log.Logger
+	configs                *Configs
+	functionsService       coreApi.FunctionsServiceClient
+	strategyService        eagleApi.StrategyServiceClient
+	resolutionService      *resolutions.Service
+	indicatorService       *indicators.Service
+	primaryDataWorker      *workers.PrimaryData
+	missedCandlesWorker    *workers.MissedCandles
+	redundantRemoverWorker *workers.RedundantRemover
 }
 
 type Dependencies struct {
-	Buffer            *buffer.CandleBuffer
-	ResolutionService *resolutions.Service
-	IndicatorService  *indicators.Service
-	Worker            *workers.PrimaryData
+	Buffer                 *buffer.CandleBuffer
+	ResolutionService      *resolutions.Service
+	IndicatorService       *indicators.Service
+	PrimaryDataWorker      *workers.PrimaryData
+	MissedCandlesWorker    *workers.MissedCandles
+	RedundantRemoverWorker *workers.RedundantRemover
 }
 
 var (
@@ -58,7 +62,9 @@ func NewService(_ context.Context, logger *log.Logger, configs *Configs, db repo
 		GrpcService.indicatorService = dependencies.IndicatorService
 		GrpcService.resolutionService = dependencies.ResolutionService
 		GrpcService.buffer = dependencies.Buffer
-		GrpcService.worker = dependencies.Worker
+		GrpcService.primaryDataWorker = dependencies.PrimaryDataWorker
+		GrpcService.missedCandlesWorker = dependencies.MissedCandlesWorker
+		GrpcService.redundantRemoverWorker = dependencies.RedundantRemoverWorker
 	}
 	return GrpcService
 }
@@ -140,6 +146,8 @@ func (s *Service) BulkUpdate(ctx context.Context, req *chipmunkApi.CandleBulkUpd
 	resolutionList, err := s.resolutionService.List(ctx, &chipmunkApi.ResolutionListReq{
 		Platform: req.Platform,
 	})
+
+	s.logger.Infof("update bulk")
 	if err != nil {
 		s.logger.WithError(err).Errorf("failed to get resolutionList")
 		return nil, err
@@ -151,30 +159,57 @@ func (s *Service) BulkUpdate(ctx context.Context, req *chipmunkApi.CandleBulkUpd
 			return nil, err
 		}
 		for _, resolution := range resolutionList.Elements {
+			if ticker.Close == 0 {
+				continue
+			}
 			resolutionID, err := uuid.Parse(resolution.ID)
 			if err != nil {
 				continue
 			}
+
+			last := s.buffer.ReturnCandles(marketID, resolutionID, 1)
+			if last == nil || len(last) == 0 {
+				continue
+			}
+
+			lastTime := last[len(last)-1].Time
+			lastAddedResolution := time.Unix(last[len(last)-1].Time.Unix(), 0).Add(time.Duration(resolution.Duration))
+			lastAdded2xResolution := time.Unix(last[len(last)-1].Time.Unix(), 0).Add(time.Duration(resolution.Duration * 2))
+			reqTime := time.Unix(req.Date, 0)
+
+			lastVol := ticker.Volume
+			for i := 0; i < len(last)-1; i++ {
+				lastVol -= last[i].Volume
+			}
+
 			c := &entity.Candle{
-				Open:         ticker.Open,
-				High:         ticker.High,
-				Low:          ticker.Low,
-				Close:        ticker.Close,
-				Volume:       ticker.Volume,
+				Time:         last[len(last)-1].Time,
+				Open:         last[len(last)-1].Open,
+				High:         last[len(last)-1].High,
+				Low:          last[len(last)-1].Low,
+				Close:        last[len(last)-1].Close,
+				Volume:       lastVol,
+				Amount:       0,
 				MarketID:     marketID,
 				ResolutionID: resolutionID,
 			}
-			last := s.buffer.ReturnCandles(marketID, resolutionID, 1)
-			if last == nil {
-				continue
-			}
-			if last[0].Time.Add(time.Duration(resolution.Duration)).After(time.Unix(req.Date, 0)) {
-				c.Time = last[0].Time
-			} else {
-				if last[0].Time.Add(time.Duration(resolution.Duration)).Before(time.Unix(req.Date, 0).Add(time.Duration(resolution.Duration) * -1)) {
-					continue
+
+			if reqTime.After(lastTime) && reqTime.Before(lastAddedResolution) {
+				c.Close = ticker.Close
+				if ticker.Close < c.Low {
+					c.Low = ticker.Close
 				}
-				c.Time = last[0].Time.Add(time.Duration(resolution.Duration))
+				if ticker.Close > c.High {
+					c.High = ticker.Close
+				}
+			} else if reqTime.After(lastAddedResolution) && reqTime.Before(lastAdded2xResolution) {
+				c.Time = lastAddedResolution
+				c.Open = ticker.Close
+				c.High = ticker.Close
+				c.Low = ticker.Close
+				c.Close = ticker.Close
+			} else {
+				continue
 			}
 			if err = s.db.Save(c); err != nil {
 				s.logger.WithError(err).Errorf("failed to save candle")
@@ -187,6 +222,7 @@ func (s *Service) BulkUpdate(ctx context.Context, req *chipmunkApi.CandleBulkUpd
 }
 
 func (s *Service) DownloadPrimaryCandles(ctx context.Context, req *chipmunkApi.DownloadPrimaryCandlesReq) (*api.Void, error) {
+	s.logger.Infof("starting candle data at %v", time.Now())
 	if err := s.validateDownloadPrimaryCandlesRequest(ctx, req); err != nil {
 		return nil, err
 	}
@@ -196,8 +232,13 @@ func (s *Service) DownloadPrimaryCandles(ctx context.Context, req *chipmunkApi.D
 		return nil, err
 	}
 
-	for _, market := range req.Markets.Elements {
-		go s.preparePrimaryDataRequests(req.Platform, market, req.Resolutions, strategyID)
-	}
+	go func() {
+		for _, market := range req.Markets.Elements {
+			s.preparePrimaryDataRequests(req.Platform, market, req.Resolutions, strategyID)
+		}
+	}()
+
+	s.missedCandlesWorker.Start(req.Markets.Elements, req.Resolutions.Elements)
+	s.redundantRemoverWorker.Start(req.Markets.Elements, req.Resolutions.Elements)
 	return new(api.Void), nil
 }

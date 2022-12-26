@@ -59,8 +59,8 @@ message CreateMarketReq {
   double MakerFeeRate = 4;
   // @inject_tag: json:"destination"
   Asset Destination = 5;
-  // @inject_tag: json:"start_time"
-  int64 StartTime = 6;
+  // @inject_tag: json:"issue_date"
+  int64 IssueDate = 6;
   // @inject_tag: json:"min_amount"
   double MinAmount = 7;
   // @inject_tag: json:"created_at"
@@ -114,10 +114,6 @@ message MarketListBySourceReq {
 message WorkerStartReq{
   // @inject_tag: json:"platform"
   api.Platform Platform = 1;
-  // @inject_tag: json:"resolution_id"
-  string ResolutionID = 2;
-  // @inject_tag: json:"strategy_id"
-  string StrategyID = 3;
 }
 
 message WorkerStopReq {

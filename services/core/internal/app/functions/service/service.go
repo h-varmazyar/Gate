@@ -14,6 +14,7 @@ import (
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"time"
 )
 
 type Service struct {
@@ -44,16 +45,41 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 }
 
 func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.OHLCReq) (*proto.Void, error) {
-	request, err := loadRequest(s.configs, &coreApi.Brokerage{Platform: req.Platform}).AsyncOHLC(ctx, s.createOHLCParams(req))
-	if err != nil {
-		return nil, err
-	}
+	brokerageRequests := loadRequest(s.configs, &coreApi.Brokerage{Platform: req.Platform})
 
-	request.Type = networkAPI.Request_Async
+	from := time.Unix(req.From, 0)
 
-	_, err = s.doNetworkRequest(request)
-	if err != nil {
-		return nil, err
+	for end := false; !end; {
+		to := from.Add(time.Duration(req.Resolution.Duration) * 999)
+		if to.After(time.Now()) {
+			to = time.Now()
+			end = true
+		}
+
+		if to.Sub(from) < time.Duration(req.Resolution.Duration) {
+			continue
+		}
+
+		params := &brokerages.OHLCParams{
+			Resolution: req.Resolution,
+			Market:     req.Market,
+			From:       from,
+			To:         to,
+		}
+
+		request, err := brokerageRequests.AsyncOHLC(ctx, params)
+		if err != nil {
+			s.logger.WithError(err).Error("failed to create async OHLC")
+			return nil, err
+		}
+		request.Type = networkAPI.Request_Async
+		_, err = s.doNetworkRequest(request)
+		if err != nil {
+			s.logger.WithError(err).Error("failed to do async OHLC")
+			return nil, err
+		}
+
+		from = to.Add(time.Duration(req.Resolution.Duration))
 	}
 
 	return new(proto.Void), nil
@@ -61,7 +87,11 @@ func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.OHLCReq) (*proto.V
 
 func (s *Service) AllMarketStatistics(ctx context.Context, req *coreApi.AllMarketStatisticsReq) (*coreApi.AllMarketStatisticsResp, error) {
 	brokerage := &coreApi.Brokerage{Platform: req.Platform}
-	request, err := loadRequest(s.configs, brokerage).AllMarketStatistics(ctx, new(brokerages.AllMarketStatisticsParams))
+	br := loadRequest(s.configs, brokerage)
+	if br == nil {
+		s.logger.Fatalf("nil br: %v", req.Platform)
+	}
+	request, err := br.AllMarketStatistics(ctx, new(brokerages.AllMarketStatisticsParams))
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +148,8 @@ func (s *Service) GetMarketInfo(ctx context.Context, req *coreApi.MarketInfoReq)
 }
 
 func (s *Service) OHLC(ctx context.Context, req *coreApi.OHLCReq) (*chipmunkApi.Candles, error) {
-	candles, err := loadRequest(s.configs, nil).OHLC(ctx, s.createOHLCParams(req),
+	brokerage := &coreApi.Brokerage{Platform: req.Market.Platform}
+	candles, err := loadRequest(s.configs, brokerage).OHLC(ctx, s.createOHLCParams(req),
 		func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
 			resp, err := s.requestService.Do(ctx, request)
 			return resp, err
@@ -161,7 +192,13 @@ func (s *Service) SingleMarketStatistics(ctx context.Context, req *coreApi.Marke
 }
 
 func (s *Service) MarketList(ctx context.Context, req *coreApi.MarketListReq) (*chipmunkApi.Markets, error) {
-	markets, err := loadRequest(s.configs, nil).MarketList(ctx, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
+	brokerage := &coreApi.Brokerage{Platform: req.Platform}
+	s.logger.Infof("req is: %v", req.Platform)
+	s.logger.Infof("conf: %v", s.configs)
+	br := loadRequest(s.configs, brokerage)
+	s.logger.Infof("br is: %v", br)
+	markets, err := br.MarketList(ctx, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
+		s.logger.Infof("before network request")
 		resp, err := s.requestService.Do(ctx, request)
 		return resp, err
 	})

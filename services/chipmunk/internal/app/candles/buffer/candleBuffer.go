@@ -60,11 +60,10 @@ func (buffer *CandleBuffer) Push(candle *entity.Candle) {
 	}
 	candles, ok := buffer.data[candle.MarketID][candle.ResolutionID]
 	if !ok || candles == nil || len(candles) == 0 {
-		emptyCandles := make([]*entity.Candle, 0)
+		candles = make([]*entity.Candle, 0)
 		for i := 0; i < buffer.BufferLength; i++ {
-			emptyCandles = append(emptyCandles, new(entity.Candle))
+			candles = append(candles, new(entity.Candle))
 		}
-		buffer.data[candle.MarketID][candle.ResolutionID] = emptyCandles
 	}
 
 	if candles[buffer.BufferLength-1] != nil && candles[buffer.BufferLength-1].Time.Equal(candle.Time) {

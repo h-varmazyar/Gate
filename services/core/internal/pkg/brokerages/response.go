@@ -7,7 +7,7 @@ import (
 )
 
 type Responses interface {
-	AsyncOHLC(ctx context.Context, response *networkAPI.Response)
+	AsyncOHLC(ctx context.Context, response *networkAPI.Response, metadata *Metadata)
 	AllMarkerStatistics(ctx context.Context, response *networkAPI.Response) (*coreApi.AllMarketStatisticsResp, error)
 	GetMarketInfo(ctx context.Context, response *networkAPI.Response) (*coreApi.MarketInfo, error)
 }

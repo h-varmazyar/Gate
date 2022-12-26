@@ -33,12 +33,25 @@ func (r *candlePostgresRepository) Save(candle *entity.Candle) error {
 		Where("resolution_id = ?", candle.ResolutionID).First(item).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
+			r.logger.Infof("created: %v - %v", candle.MarketID, candle.ResolutionID)
 			return r.db.Model(new(entity.Candle)).Create(candle).Error
 		}
 		return err
 	}
 	candle.ID = item.ID
-	return r.db.Save(candle).Error
+	return r.db.Updates(candle).Error
+}
+
+func (r *candlePostgresRepository) HardDelete(candle *entity.Candle) error {
+	err := r.db.Model(new(entity.Candle)).Where("id = ?", candle.ID).Unscoped().Delete(candle).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *candlePostgresRepository) BulkHardDelete(candleIDs []uuid.UUID) error {
+	return r.db.Unscoped().Where("id in ?", candleIDs).Delete(new(entity.Candle)).Error
 }
 
 func (r *candlePostgresRepository) BulkInsert(candles []*entity.Candle) error {
@@ -58,5 +71,5 @@ func (r *candlePostgresRepository) ReturnList(marketID, resolutionID uuid.UUID, 
 	return items, r.db.Model(new(entity.Candle)).
 		Where("market_id = ?", marketID).
 		Where("resolution_id = ?", resolutionID).
-		Order("time desc").Offset(offset).Limit(limit).Find(&items).Error
+		Order("time asc").Offset(offset).Limit(limit).Find(&items).Error
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/amqpext"
 	"github.com/h-varmazyar/Gate/services/core/internal/app/brokerages"
 	"github.com/h-varmazyar/Gate/services/core/internal/app/functions"
+	"github.com/h-varmazyar/Gate/services/core/internal/app/platforms"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages/coinex"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/db"
 )
@@ -15,6 +16,7 @@ type Configs struct {
 	AMQPConfigs   *amqpext.Configs    `yaml:"amqp_configs"`
 	CoinexConfigs *coinex.Configs     `yaml:"coinex_configs"`
 	BrokeragesApp *brokerages.Configs `yaml:"brokerages_app"`
+	PlatformsApp  *platforms.Configs  `yaml:"platforms_app"`
 	FunctionsApp  *functions.Configs  `yaml:"functions_app"`
 	DB            *db.Configs         `yaml:"db"`
 }

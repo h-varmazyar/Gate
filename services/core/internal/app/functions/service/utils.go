@@ -18,7 +18,7 @@ func loadRequest(configs *Configs, brokerage *coreApi.Brokerage) brokerages.Requ
 	switch brokerage.Platform {
 	case api.Platform_Coinex:
 		var auth *api.Auth
-		if brokerage != nil {
+		if brokerage.Auth != nil {
 			auth = &api.Auth{
 				Type:      api.AuthType_StaticToken,
 				AccessID:  brokerage.Auth.AccessID,

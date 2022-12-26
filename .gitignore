@@ -4,6 +4,8 @@
 # Secret files
 *.secret
 
+.env
+
 # System files
 .DS_Store
 .docker

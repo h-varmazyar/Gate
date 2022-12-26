@@ -10,10 +10,10 @@ import (
 )
 
 type MarketRepository interface {
-	Info(Platform api.Platform, marketName string) (*entity.Market, error)
 	List(Platform api.Platform) ([]*entity.Market, error)
 	ListBySource(Platform api.Platform, source string) ([]*entity.Market, error)
 	ReturnByID(id uuid.UUID) (*entity.Market, error)
+	ReturnByName(platform api.Platform, marketName string) (*entity.Market, error)
 	SaveOrUpdate(market *entity.Market) error
 	Delete(market *entity.Market) error
 }

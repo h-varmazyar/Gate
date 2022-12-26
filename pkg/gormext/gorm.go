@@ -5,6 +5,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"time"
 )
 
@@ -18,10 +19,13 @@ const (
 func Open(Type Type, dsn string) (*gorm.DB, error) {
 	switch Type {
 	case Mariadb:
-		return gorm.Open(mysql.Open(dsn))
+		return gorm.Open(mysql.Open(dsn), &gorm.Config{
+			Logger: logger.Default.LogMode(logger.Silent),
+		})
 	case PostgreSQL:
 		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 			SkipDefaultTransaction: true,
+			Logger:                 logger.Default.LogMode(logger.Silent),
 		})
 		if err != nil {
 			return nil, err

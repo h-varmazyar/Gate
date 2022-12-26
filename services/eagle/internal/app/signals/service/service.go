@@ -6,39 +6,28 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api/proto"
-	"github.com/h-varmazyar/Gate/services/eagle/internal/app/signals/workers"
-	strategies "github.com/h-varmazyar/Gate/services/eagle/internal/app/strategies/service"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
 type Service struct {
-	strategyService   *strategies.Service
-	marketService     chipmunkApi.MarketServiceClient
-	indicatorService  chipmunkApi.IndicatorServiceClient
-	signalCheckWorker *workers.SignalCheckWorker
-	configs           *Configs
-	logger            *log.Logger
-}
-
-type Dependencies struct {
-	StrategyService   *strategies.Service
-	SignalCheckWorker *workers.SignalCheckWorker
+	marketService    chipmunkApi.MarketServiceClient
+	indicatorService chipmunkApi.IndicatorServiceClient
+	configs          *Configs
+	logger           *log.Logger
 }
 
 var (
 	GrpcService *Service
 )
 
-func NewService(_ context.Context, logger *log.Logger, configs *Configs, dependencies *Dependencies) *Service {
+func NewService(_ context.Context, logger *log.Logger, configs *Configs) *Service {
 	if GrpcService == nil {
 		GrpcService = new(Service)
 
 		chipmunkConn := grpcext.NewConnection(configs.ChipmunkAddress)
 		GrpcService.marketService = chipmunkApi.NewMarketServiceClient(chipmunkConn)
 		GrpcService.indicatorService = chipmunkApi.NewIndicatorServiceClient(chipmunkConn)
-		GrpcService.strategyService = dependencies.StrategyService
-		GrpcService.signalCheckWorker = dependencies.SignalCheckWorker
 		GrpcService.configs = configs
 		GrpcService.logger = logger
 	}

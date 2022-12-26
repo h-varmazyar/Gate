@@ -18,7 +18,7 @@ package workers
 //	"time"
 //)
 //
-//type Worker struct {
+//type PrimaryDataWorker struct {
 //	functionsService coreApi.FunctionsServiceClient
 //	Cancellations    map[uuid.UUID]context.CancelFunc
 //	configs          *Configs
@@ -33,8 +33,8 @@ package workers
 //	BrokerageID uuid.UUID
 //}
 //
-//func InitializeWorker(_ context.Context, configs *Configs, candlesService *candles.Service) *Worker {
-//	worker := new(Worker)
+//func InitializeWorker(_ context.Context, configs *Configs, candlesService *candles.Service) *PrimaryDataWorker {
+//	worker := new(PrimaryDataWorker)
 //	brokerageConn := grpcext.NewConnection(configs.CoreAddress)
 //	worker.functionsService = coreApi.NewFunctionsServiceClient(brokerageConn)
 //	worker.Cancellations = make(map[uuid.UUID]context.CancelFunc)
@@ -44,7 +44,7 @@ package workers
 //	return worker
 //}
 //
-//func (worker *Worker) AddMarket(settings *WorkerSettings) {
+//func (worker *PrimaryDataWorker) AddMarket(settings *WorkerSettings) {
 //	cancel, ok := worker.Cancellations[settings.Market.ID]
 //	if ok {
 //		cancel()
@@ -55,7 +55,7 @@ package workers
 //	go worker.run(settings)
 //}
 //
-//func (worker *Worker) DeleteMarket(marketID uuid.UUID) error {
+//func (worker *PrimaryDataWorker) DeleteMarket(marketID uuid.UUID) error {
 //	log.Infof("deleting market: %v", marketID)
 //	fn, ok := worker.Cancellations[marketID]
 //	if !ok {
@@ -68,7 +68,7 @@ package workers
 //	return nil
 //}
 //
-//func (worker *Worker) run(settings *WorkerSettings) {
+//func (worker *PrimaryDataWorker) run(settings *WorkerSettings) {
 //	time.Sleep(time.Second)
 //	log.Infof("runnig workers for %v", settings.Market.Name)
 //	if err := worker.loadPrimaryData(settings); err != nil {
@@ -109,7 +109,7 @@ package workers
 //	}
 //}
 //
-//func (worker *Worker) loadPrimaryData(ws *WorkerSettings) error {
+//func (worker *PrimaryDataWorker) loadPrimaryData(ws *WorkerSettings) error {
 //	totalCandles := make([]*entity.Candle, 0)
 //	end := false
 //	limit := 10000
@@ -166,7 +166,7 @@ package workers
 //	return nil
 //}
 //
-//func (worker *Worker) calculateIndicators(ws *WorkerSettings, candles []*entity.Candle) {
+//func (worker *PrimaryDataWorker) calculateIndicators(ws *WorkerSettings, candles []*entity.Candle) {
 //	for _, candle := range candles {
 //		candle.IndicatorValues = entity.NewIndicatorValues()
 //		for id, indicator := range ws.Indicators {
@@ -188,7 +188,7 @@ package workers
 //	}
 //}
 //
-//func (worker *Worker) downloadCandlesInfo(ws *WorkerSettings, from, to int64) ([]*entity.Candle, error) {
+//func (worker *PrimaryDataWorker) downloadCandlesInfo(ws *WorkerSettings, from, to int64) ([]*entity.Candle, error) {
 //	resolution := new(chipmunkApi.Resolution)
 //	mapper.Struct(ws.Resolution, resolution)
 //

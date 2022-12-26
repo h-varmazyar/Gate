@@ -26,17 +26,9 @@ func NewMarketPostgresRepository(ctx context.Context, logger *log.Logger, db *go
 	}, nil
 }
 
-func (repository *marketPostgresRepository) Info(platform api.Platform, marketName string) (*entity.Market, error) {
-	market := new(entity.Market)
-	return market, repository.db.Model(new(entity.Market)).
-		Where("platform = ?", platform).
-		Where("name = ?", marketName).
-		First(market).Error
-}
-
 func (repository *marketPostgresRepository) List(platform api.Platform) ([]*entity.Market, error) {
 	markets := make([]*entity.Market, 0)
-	return markets, repository.db.Model(new(entity.Market)).Where("platform = ?", platform).Preload("Source").Preload("Destination").Find(&markets).Error
+	return markets, repository.db.Model(new(entity.Market)).Where("Platform = ?", platform).Preload("Source").Preload("Destination").Find(&markets).Error
 }
 
 func (repository *marketPostgresRepository) ListBySource(platform api.Platform, source string) ([]*entity.Market, error) {
@@ -45,7 +37,7 @@ func (repository *marketPostgresRepository) ListBySource(platform api.Platform, 
 		Joins("join assets as source on source.id = markets.source_id").
 		Preload("Destination").
 		Where("Source.name = ?", source).
-		Where("markets.platform = ?", platform).Find(&markets).Error
+		Where("markets.Platform = ?", platform).Find(&markets).Error
 }
 
 func (repository *marketPostgresRepository) ReturnByID(id uuid.UUID) (*entity.Market, error) {
@@ -55,16 +47,25 @@ func (repository *marketPostgresRepository) ReturnByID(id uuid.UUID) (*entity.Ma
 		Find(market).Error
 }
 
+func (repository *marketPostgresRepository) ReturnByName(platform api.Platform, marketName string) (*entity.Market, error) {
+	market := new(entity.Market)
+	return market, repository.db.Model(new(entity.Market)).
+		Where("platform = ?", platform).
+		Where("name = ?", marketName).
+		First(market).Error
+}
+
 func (repository *marketPostgresRepository) SaveOrUpdate(market *entity.Market) error {
-	count := int64(0)
-	err := repository.db.Model(new(entity.Market)).Where("name LIKE ?", market.Name).Count(&count).Error
+	m := new(entity.Market)
+	err := repository.db.Model(new(entity.Market)).Where("name LIKE ?", market.Name).First(m).Error
 	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return repository.db.Model(new(entity.Market)).Create(market).Error
+		}
 		return err
 	}
-	if count == 0 {
-		return repository.db.Model(new(entity.Market)).Create(market).Error
-	}
-	return repository.db.Updates(market).Where("name = ?", market.Name).Error
+	market.ID = m.ID
+	return repository.db.Updates(market).Error
 }
 
 func (repository *marketPostgresRepository) Delete(market *entity.Market) error {

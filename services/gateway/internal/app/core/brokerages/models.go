@@ -9,7 +9,7 @@ type Brokerage struct {
 	ID           string                  `json:"id"`
 	Title        string                  `json:"title"`
 	Description  string                  `json:"description"`
-	Platform     api.Platform            `json:"platform"`
+	Platform     api.Platform            `json:"Platform"`
 	Markets      *chipmunkApi.Markets    `json:"markets"`
 	ResolutionID string                  `json:"resolution_id"`
 	Resolution   *chipmunkApi.Resolution `json:"resolution"`

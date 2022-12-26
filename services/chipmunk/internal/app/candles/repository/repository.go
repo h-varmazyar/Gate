@@ -10,6 +10,8 @@ import (
 
 type CandleRepository interface {
 	Save(candle *entity.Candle) error
+	HardDelete(candle *entity.Candle) error
+	BulkHardDelete(candleIDs []uuid.UUID) error
 	BulkInsert(candles []*entity.Candle) error
 	ReturnLast(marketID, resolutionID uuid.UUID) (*entity.Candle, error)
 	ReturnList(marketID, resolutionID uuid.UUID, limit, offset int) ([]*entity.Candle, error)
