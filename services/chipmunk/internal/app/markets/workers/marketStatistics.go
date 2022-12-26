@@ -71,7 +71,7 @@ func (w *StatisticsWorker) run(runner *Runner) {
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			log.Infof("run market")
+			start := time.Now()
 			statistics, err := w.functionsService.AllMarketStatistics(runner.ctx, &coreApi.AllMarketStatisticsReq{
 				Platform: runner.platform,
 			})
@@ -100,7 +100,10 @@ func (w *StatisticsWorker) run(runner *Runner) {
 				Date:     statistics.Date,
 				Tickers:  tickers,
 			}
-			_, err = w.candlesService.BulkUpdate(runner.ctx, bulkUpdateReq)
+			go func() {
+				_, err = w.candlesService.BulkUpdate(runner.ctx, bulkUpdateReq)
+			}()
+			log.Infof("time: %v", time.Now().Sub(start))
 		}
 	}
 }
