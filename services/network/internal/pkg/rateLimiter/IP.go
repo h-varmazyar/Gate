@@ -38,16 +38,19 @@ func (ip *IP) spreadAlgorithm(limiter *Limiter) {
 		case <-ticker.C:
 			go func() {
 				systemRequest := <-limiter.RequestChannel
+				if systemRequest.IssueTime != 0 && systemRequest.Timeout != 0 {
+					if systemRequest.IssueTime+systemRequest.Timeout < time.Now().Unix() {
+						return
+					}
+				}
 				networkURL, err := requests.New(systemRequest, ip.ProxyURL)
 				if err != nil {
 					log.WithError(err).Errorf("failed to create async network request")
-					//continue
 					return
 				}
 				response, err := networkURL.Do()
 				if err != nil {
 					log.WithError(err).Errorf("failed to do network request")
-					//continue
 					return
 				}
 				ip.sendResponse(systemRequest, response)

@@ -1,14 +1,13 @@
 package buffer
 
 import (
-	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	"sync"
 )
 
 type CandleBuffer struct {
 	lock         *sync.RWMutex
-	data         map[uuid.UUID]map[uuid.UUID][]*entity.Candle // first key is market id and second key is resolution id
+	data         map[string]map[string][]*entity.Candle // first key is market id and second key is resolution id
 	BufferLength int
 }
 
@@ -18,7 +17,7 @@ func NewMarketInstance(configs *Configs) *CandleBuffer {
 	if bufferInstance == nil {
 		bufferInstance = &CandleBuffer{
 			lock:         new(sync.RWMutex),
-			data:         make(map[uuid.UUID]map[uuid.UUID][]*entity.Candle),
+			data:         make(map[string]map[string][]*entity.Candle),
 			BufferLength: configs.CandleBufferLength,
 		}
 	}
@@ -42,7 +41,7 @@ func NewMarketInstance(configs *Configs) *CandleBuffer {
 //	}
 //}
 
-func (buffer *CandleBuffer) RemoveCandlePool(marketID, resolutionID uuid.UUID) {
+func (buffer *CandleBuffer) RemoveCandlePool(marketID, resolutionID string) {
 	buffer.lock.Lock()
 	defer buffer.lock.Unlock()
 	delete(buffer.data[marketID], resolutionID)
@@ -54,11 +53,11 @@ func (buffer *CandleBuffer) RemoveCandlePool(marketID, resolutionID uuid.UUID) {
 func (buffer *CandleBuffer) Push(candle *entity.Candle) {
 	buffer.lock.Lock()
 	defer buffer.lock.Unlock()
-	resolutions, ok := buffer.data[candle.MarketID]
+	resolutions, ok := buffer.data[candle.MarketID.String()]
 	if !ok || resolutions == nil || len(resolutions) == 0 {
-		buffer.data[candle.MarketID] = make(map[uuid.UUID][]*entity.Candle)
+		buffer.data[candle.MarketID.String()] = make(map[string][]*entity.Candle)
 	}
-	candles, ok := buffer.data[candle.MarketID][candle.ResolutionID]
+	candles, ok := buffer.data[candle.MarketID.String()][candle.ResolutionID.String()]
 	if !ok || candles == nil || len(candles) == 0 {
 		candles = make([]*entity.Candle, 0)
 		for i := 0; i < buffer.BufferLength; i++ {
@@ -71,10 +70,10 @@ func (buffer *CandleBuffer) Push(candle *entity.Candle) {
 	} else {
 		candles = append(candles[1:], candle)
 	}
-	buffer.data[candle.MarketID][candle.ResolutionID] = candles
+	buffer.data[candle.MarketID.String()][candle.ResolutionID.String()] = candles
 }
 
-func (buffer *CandleBuffer) ReturnCandles(marketID, resolutionID uuid.UUID, n int) []*entity.Candle {
+func (buffer *CandleBuffer) ReturnCandles(marketID, resolutionID string, n int) []*entity.Candle {
 	buffer.lock.Lock()
 	defer buffer.lock.Unlock()
 	if candles, ok := buffer.data[marketID][resolutionID]; !ok || candles == nil {

@@ -51,6 +51,10 @@ message Request {
   string CallbackQueue = 7;
   // @inject_tag: json:"rate_limiter_id"
   string RateLimiterID = 8;
+  // @inject_tag: json:"timeout"
+  int64 Timeout = 9;
+  // @inject_tag: json:"issue_time"
+  int64 IssueTime = 10;
 }
 
 message Response {

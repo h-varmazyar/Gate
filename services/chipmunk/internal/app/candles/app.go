@@ -31,6 +31,12 @@ func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs *Configs
 		return nil, err
 	}
 
+	lastCandleWorker := workers.NewLastCandles(ctx, repositoryInstance, configs.WorkerConfigs, logger, candleBuffer)
+	if err != nil {
+		logger.WithError(err).Error("failed to initialize primary data worker")
+		return nil, err
+	}
+
 	missedCandleWorker := workers.NewMissedCandles(ctx, repositoryInstance, configs.WorkerConfigs, logger)
 	if err != nil {
 		logger.WithError(err).Error("failed to initialize primary data worker")
@@ -45,6 +51,7 @@ func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs *Configs
 
 	appDependencies.ServiceDependencies.Buffer = candleBuffer
 	appDependencies.ServiceDependencies.PrimaryDataWorker = primaryDataWorker
+	appDependencies.ServiceDependencies.LastCandleWorker = lastCandleWorker
 	appDependencies.ServiceDependencies.MissedCandlesWorker = missedCandleWorker
 	appDependencies.ServiceDependencies.RedundantRemoverWorker = redundantRemover
 	return &App{

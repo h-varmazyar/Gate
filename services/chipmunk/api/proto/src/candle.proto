@@ -112,6 +112,4 @@ message DownloadPrimaryCandlesReq {
   Markets Markets = 2;
   // @inject_tag: json:"resolutions"
   Resolutions Resolutions = 3;
-  // @inject_tag: json:"strategy_id"
-  string StrategyID = 4;
 }

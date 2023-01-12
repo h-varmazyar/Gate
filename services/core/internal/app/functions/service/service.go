@@ -73,6 +73,8 @@ func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.OHLCReq) (*proto.V
 			return nil, err
 		}
 		request.Type = networkAPI.Request_Async
+		request.Timeout = req.Timeout
+		request.IssueTime = req.IssueTime
 		_, err = s.doNetworkRequest(request)
 		if err != nil {
 			s.logger.WithError(err).Error("failed to do async OHLC")
