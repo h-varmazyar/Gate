@@ -55,13 +55,8 @@ func (s *Service) Create(ctx context.Context, req *brokerageApi.BrokerageCreateR
 	if _, ok := api.Platform_value[req.Platform.String()]; !ok {
 		return nil, errors.NewWithSlug(ctx, codes.FailedPrecondition, "wrong_platform")
 	}
-	if _, err := uuid.Parse(req.ResolutionID); err != nil {
-		return nil, errors.NewWithSlug(ctx, codes.FailedPrecondition, "invalid_resolution")
-	}
 	brokerage := new(entity.Brokerage)
 	mapper.Struct(req, brokerage)
-
-	brokerage.Status = api.Status_Disable
 
 	if err := s.db.Create(brokerage); err != nil {
 		return nil, err

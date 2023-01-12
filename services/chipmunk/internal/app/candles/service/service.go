@@ -32,6 +32,7 @@ type Service struct {
 	resolutionService      *resolutions.Service
 	indicatorService       *indicators.Service
 	primaryDataWorker      *workers.PrimaryData
+	lastCandleWorker       *workers.LastCandles
 	missedCandlesWorker    *workers.MissedCandles
 	redundantRemoverWorker *workers.RedundantRemover
 }
@@ -41,6 +42,7 @@ type Dependencies struct {
 	ResolutionService      *resolutions.Service
 	IndicatorService       *indicators.Service
 	PrimaryDataWorker      *workers.PrimaryData
+	LastCandleWorker       *workers.LastCandles
 	MissedCandlesWorker    *workers.MissedCandles
 	RedundantRemoverWorker *workers.RedundantRemover
 }
@@ -53,18 +55,20 @@ func NewService(_ context.Context, logger *log.Logger, configs *Configs, db repo
 	if GrpcService == nil {
 		coreConn := grpcext.NewConnection(configs.CoreAddress)
 		eagleConn := grpcext.NewConnection(configs.EagleAddress)
-		GrpcService = new(Service)
-		GrpcService.db = db
-		GrpcService.logger = logger
-		GrpcService.configs = configs
-		GrpcService.functionsService = coreApi.NewFunctionsServiceClient(coreConn)
-		GrpcService.strategyService = eagleApi.NewStrategyServiceClient(eagleConn)
-		GrpcService.indicatorService = dependencies.IndicatorService
-		GrpcService.resolutionService = dependencies.ResolutionService
-		GrpcService.buffer = dependencies.Buffer
-		GrpcService.primaryDataWorker = dependencies.PrimaryDataWorker
-		GrpcService.missedCandlesWorker = dependencies.MissedCandlesWorker
-		GrpcService.redundantRemoverWorker = dependencies.RedundantRemoverWorker
+		GrpcService = &Service{
+			db:                     db,
+			buffer:                 dependencies.Buffer,
+			logger:                 logger,
+			configs:                configs,
+			functionsService:       coreApi.NewFunctionsServiceClient(coreConn),
+			strategyService:        eagleApi.NewStrategyServiceClient(eagleConn),
+			resolutionService:      dependencies.ResolutionService,
+			indicatorService:       dependencies.IndicatorService,
+			primaryDataWorker:      dependencies.PrimaryDataWorker,
+			lastCandleWorker:       dependencies.LastCandleWorker,
+			missedCandlesWorker:    dependencies.MissedCandlesWorker,
+			redundantRemoverWorker: dependencies.RedundantRemoverWorker,
+		}
 	}
 	return GrpcService
 }
@@ -74,15 +78,15 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 }
 
 func (s *Service) List(_ context.Context, req *chipmunkApi.CandleListReq) (*chipmunkApi.Candles, error) {
-	marketID, err := uuid.Parse(req.MarketID)
+	_, err := uuid.Parse(req.MarketID)
 	if err != nil {
 		return nil, err
 	}
-	resolutionID, err := uuid.Parse(req.ResolutionID)
+	_, err = uuid.Parse(req.ResolutionID)
 	if err != nil {
 		return nil, err
 	}
-	candles := s.buffer.ReturnCandles(marketID, resolutionID, int(req.Count))
+	candles := s.buffer.ReturnCandles(req.MarketID, req.ResolutionID, int(req.Count))
 	response := new(chipmunkApi.Candles)
 
 	for _, candle := range candles {
@@ -167,7 +171,7 @@ func (s *Service) BulkUpdate(ctx context.Context, req *chipmunkApi.CandleBulkUpd
 				continue
 			}
 
-			last := s.buffer.ReturnCandles(marketID, resolutionID, 1)
+			last := s.buffer.ReturnCandles(key, resolution.ID, 1)
 			if last == nil || len(last) == 0 {
 				continue
 			}
@@ -222,19 +226,21 @@ func (s *Service) BulkUpdate(ctx context.Context, req *chipmunkApi.CandleBulkUpd
 }
 
 func (s *Service) DownloadPrimaryCandles(ctx context.Context, req *chipmunkApi.DownloadPrimaryCandlesReq) (*api.Void, error) {
-	s.logger.Infof("starting candle data at %v", time.Now())
 	if err := s.validateDownloadPrimaryCandlesRequest(ctx, req); err != nil {
 		return nil, err
 	}
 
-	strategyID, err := s.prepareDownloadPrimaryCandles(req)
-	if err != nil {
-		return nil, err
+	if !s.primaryDataWorker.Started {
+		s.primaryDataWorker.Start()
 	}
 
 	go func() {
 		for _, market := range req.Markets.Elements {
-			s.preparePrimaryDataRequests(req.Platform, market, req.Resolutions, strategyID)
+			s.preparePrimaryDataRequests(req.Platform, market, req.Resolutions)
+		}
+
+		if !s.lastCandleWorker.Started {
+			s.lastCandleWorker.Start(req.Markets.Elements, req.Resolutions.Elements)
 		}
 	}()
 

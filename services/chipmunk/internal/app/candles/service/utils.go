@@ -30,26 +30,14 @@ func (s *Service) validateDownloadPrimaryCandlesRequest(ctx context.Context, req
 	return nil
 }
 
-func (s *Service) prepareDownloadPrimaryCandles(req *chipmunkApi.DownloadPrimaryCandlesReq) (uuid.UUID, error) {
-	strategyID, err := uuid.Parse(req.StrategyID)
-	if err != nil {
-		s.logger.WithError(err).Errorf("failed to load strategy id for Platform %v", req.Platform)
-		return uuid.Nil, err
-	}
-	if !s.primaryDataWorker.Started {
-		s.primaryDataWorker.Start()
-	}
-	return strategyID, nil
-}
-
-func (s *Service) preparePrimaryDataRequests(platform api.Platform, market *chipmunkApi.Market, resolutions *chipmunkApi.Resolutions, strategyID uuid.UUID) {
+func (s *Service) preparePrimaryDataRequests(platform api.Platform, market *chipmunkApi.Market, resolutions *chipmunkApi.Resolutions) {
 	for _, resolution := range resolutions.Elements {
-		s.preparePrimaryDataRequestsByResolution(platform, market, resolution, strategyID)
+		s.preparePrimaryDataRequestsByResolution(platform, market, resolution)
 	}
 }
 
-func (s *Service) preparePrimaryDataRequestsByResolution(platform api.Platform, market *chipmunkApi.Market, resolution *chipmunkApi.Resolution, strategyID uuid.UUID) {
-	from, err := s.prepareLocalCandles(strategyID, market, resolution)
+func (s *Service) preparePrimaryDataRequestsByResolution(platform api.Platform, market *chipmunkApi.Market, resolution *chipmunkApi.Resolution) {
+	from, err := s.prepareLocalCandles(market, resolution)
 	if err != nil {
 		return
 	}
@@ -57,7 +45,7 @@ func (s *Service) preparePrimaryDataRequestsByResolution(platform api.Platform, 
 	s.makePrimaryDataRequests(platform, market, resolution, from)
 }
 
-func (s *Service) prepareLocalCandles(strategyID uuid.UUID, market *chipmunkApi.Market, resolution *chipmunkApi.Resolution) (time.Time, error) {
+func (s *Service) prepareLocalCandles(market *chipmunkApi.Market, resolution *chipmunkApi.Resolution) (time.Time, error) {
 	marketID, err := uuid.Parse(market.ID)
 	if err != nil {
 		s.logger.WithError(err).Errorf("invalid market id %v", market)
@@ -79,15 +67,15 @@ func (s *Service) prepareLocalCandles(strategyID uuid.UUID, market *chipmunkApi.
 		}
 	}
 
-	for _, candle := range candles {
-		candle.IndicatorValues = entity.NewIndicatorValues()
-	}
+	//for _, candle := range candles {
+	//	candle.IndicatorValues = entity.NewIndicatorValues()
+	//}
 
 	if len(candles) > 0 {
-		if err = s.calculateIndicators(candles, strategyID); err != nil {
-			s.logger.WithError(err).Errorf("failed to calculate indicators for market %v in resolution %v", marketID, resolutionID)
-			return time.Unix(0, 0), err
-		}
+		//if err = s.calculateIndicators(candles, strategyID); err != nil {
+		//	s.logger.WithError(err).Errorf("failed to calculate indicators for market %v in resolution %v", marketID, resolutionID)
+		//	return time.Unix(0, 0), err
+		//}
 		from = candles[len(candles)-1].Time.Add(time.Duration(resolution.Duration))
 
 		for _, candle := range candles {

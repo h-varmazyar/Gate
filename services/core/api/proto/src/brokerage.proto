@@ -53,8 +53,6 @@ message BrokerageCreateReq {
   api.Platform Platform = 4;
   // @inject_tag: json:"markets"
   chipmunkApi.Markets Markets = 5;
-  // @inject_tag: json:"resolution_id"
-  string ResolutionID = 6;
   // @inject_tag: json:"strategy_id"
   string StrategyID = 7;
 }

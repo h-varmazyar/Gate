@@ -34,6 +34,10 @@ message OHLCReq{
   int64 To = 4;
   // @inject_tag: json:"platform"
   api.Platform Platform = 5;
+  // @inject_tag: json:"timeout"
+  int64 Timeout = 6;
+  // @inject_tag: json:"issue_time"
+  int64 IssueTime = 7;
 }
 
 message AllMarketStatisticsReq {

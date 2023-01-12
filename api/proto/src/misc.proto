@@ -12,6 +12,8 @@ enum Platform {
   UnknownBrokerage = 0;
   Coinex = 1;
   Nobitex = 2;
+  Mazdax = 3;
+  Binance = 4;
 }
 
 enum Status {
