@@ -3,16 +3,21 @@ package eagleApi;
 option go_package = "github.com/h-varmazyar/Gate/services/eagle/api/proto";
 import "api/proto/src/misc.proto";
 import "services/chipmunk/api/proto/src/resolution.proto";
-import "services/chipmunk/api/proto/src/indicator.proto";
 import "services/chipmunk/api/proto/src/market.proto";
+import "services/chipmunk/api/proto/src/indicator.proto";
 
 service StrategyService {
   rpc Create(CreateStrategyReq) returns(Strategy);
   rpc Return(ReturnStrategyReq) returns(Strategy);
   rpc List(api.Void) returns (Strategies);
   rpc Indicators(StrategyIndicatorReq) returns (StrategyIndicators);
-  rpc StartSignalChecker(StrategySignalCheckStartReq) returns (api.Void);
-  rpc StopSignalChecker(StrategySignalCheckStopReq) returns (api.Void);
+//  rpc StartWorker(StrategyStartWorkerReq) returns (api.Void);
+//  rpc StartSignalChecker(StrategySignalCheckStartReq) returns (api.Void);
+//  rpc StopSignalChecker(StrategySignalCheckStopReq) returns (api.Void);
+}
+
+enum StrategyType{
+  Automated = 0;
 }
 
 message Strategy {
@@ -36,8 +41,18 @@ message Strategy {
   double MaxFundPerTradeRate = 9;
   // @inject_tag: json:"working_resolution"
   chipmunkApi.Resolution WorkingResolution = 10;
+  // @inject_tag: json:"market_ids"
+  repeated string MarketIDs = 11;
   // @inject_tag: json:"indicators"
-  repeated StrategyIndicator Indicators = 11;
+  repeated StrategyIndicator Indicators = 12;
+  // @inject_tag: json:"is_active"
+  bool IsActive = 13;
+  // @inject_tag: json:"type"
+  StrategyType Type = 14;
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 15;
+  // @inject_tag: json:"with_trading"
+  bool WithTrading = 16;
 }
 
 message Strategies {
@@ -58,6 +73,17 @@ message CreateStrategyReq {
   string MaxFundPerTrade = 5;
   // @inject_tag: json:"indicators"
   repeated StrategyIndicator Indicators = 6;
+  // @inject_tag: json:"working_resolution"
+  chipmunkApi.Resolution WorkingResolution = 7;
+  // @inject_tag: json:"markets"
+  repeated chipmunkApi.Market Markets = 8;
+  bool IsActive = 9;
+  // @inject_tag: json:"type"
+  StrategyType Type = 10;
+  // @inject_tag: json:"brokerage_id"
+  string BrokerageID = 11;
+  // @inject_tag: json:"with_trading"
+  bool WithTrading = 12;
 }
 
 message StrategyIndicatorReq {
@@ -84,20 +110,23 @@ message ReturnStrategyReq {
   string ID = 1;
 }
 
-message StrategySignalCheckStartReq{
-  // @inject_tag: json:"platform"
-  api.Platform Platform = 1;
-  // @inject_tag: json:"strategy_id"
-  string StrategyID = 2;
-  // @inject_tag: json:"brokerage_id"
-  string BrokerageID = 3;
-  // @inject_tag: json:"with_trading"
-  bool WithTrading = 4;
-  // @inject_tag: json:"market"
-  chipmunkApi.Markets Markets = 5;
-}
-
-message StrategySignalCheckStopReq{
-  // @inject_tag: json:"brokerage_id"
-  string BrokerageID = 1;
-}
+//message StrategySignalCheckStartReq{
+//  // @inject_tag: json:"platform"
+//  api.Platform Platform = 1;
+//  // @inject_tag: json:"strategy_id"
+//  string StrategyID = 2;
+//  // @inject_tag: json:"brokerage_id"
+//  string BrokerageID = 3;
+//  // @inject_tag: json:"with_trading"
+//  bool WithTrading = 4;
+//  // @inject_tag: json:"market"
+//  chipmunkApi.Markets Markets = 5;
+//}
+//
+//message StrategyStartWorkerReq{
+//}
+//
+//message StrategySignalCheckStopReq{
+//  // @inject_tag: json:"brokerage_id"
+//  string BrokerageID = 1;
+//}

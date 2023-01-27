@@ -43,7 +43,7 @@ func loadDB(ctx context.Context, configs *db.Configs) (*db.DB, error) {
 func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstance *db.DB, configs *Configs) {
 	strategiesApp, err := strategies.NewApp(ctx, logger, dbInstance, configs.StrategiesApp)
 	if err != nil {
-		logger.Panicf("failed to initiate functions service with error %v", err)
+		logger.Panicf("failed to initiate strategies service with error: %v", err)
 	}
 
 	//dependencies := &signals.AppDependencies{

@@ -11,6 +11,7 @@ import (
 type StrategyRepository interface {
 	Save(strategy *entity.Strategy) error
 	Return(strategyID uuid.UUID) (*entity.Strategy, error)
+	ReturnActives(ctx context.Context) ([]*entity.Strategy, error)
 	ReturnIndicators(strategyID uuid.UUID) ([]*entity.StrategyIndicator, error)
 	List() ([]*entity.Strategy, error)
 }

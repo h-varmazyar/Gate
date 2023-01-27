@@ -4,16 +4,13 @@ import (
 	"context"
 	"github.com/google/uuid"
 	api "github.com/h-varmazyar/Gate/api/proto"
-	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api/proto"
 	"github.com/h-varmazyar/Gate/services/eagle/internal/app/strategies/repository"
 	"github.com/h-varmazyar/Gate/services/eagle/internal/app/strategies/workers"
 	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/entity"
-	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/strategies/automatedStrategy"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 )
 
 type Service struct {
@@ -96,43 +93,66 @@ func (s *Service) Indicators(_ context.Context, req *eagleApi.StrategyIndicatorR
 	return response, nil
 }
 
-func (s *Service) StartSignalChecker(ctx context.Context, req *eagleApi.StrategySignalCheckStartReq) (*api.Void, error) {
-	if req.Markets == nil || len(req.Markets.Elements) == 0 {
-		err := errors.New(ctx, codes.FailedPrecondition)
-		s.logger.WithError(err).Errorf("invalid markets")
-		return nil, err
-	}
-	brokerageID, err := uuid.Parse(req.BrokerageID)
-	if err != nil {
-		s.logger.WithError(err).Errorf("failed to start worker. invalid brokerage id %v", req.BrokerageID)
-		return nil, err
-	}
-	strategyID, err := uuid.Parse(req.BrokerageID)
-	if err != nil {
-		s.logger.WithError(err).Errorf("failed to start worker. invalid strategy id %v", req.StrategyID)
-		return nil, err
-	}
-	strategy, err := s.db.Return(strategyID)
-	if err != nil {
-		s.logger.WithError(err).Errorf("failed to return strategy with id %v", req.StrategyID)
-	}
-
-	automated, err := automatedStrategy.NewAutomatedStrategy(strategy, req.WithTrading, s.configs.Automated)
-	if err != nil {
-		s.logger.WithError(err).Errorf("failed to create new instance of automated strategy for %v", req.StrategyID)
-		return nil, err
-	}
-
-	s.signalCheckWorker.Start(automated, req.Markets.Elements, brokerageID)
-	return new(api.Void), nil
-}
-
-func (s *Service) StopSignalChecker(_ context.Context, req *eagleApi.StrategySignalCheckStopReq) (*api.Void, error) {
-	brokerageID, err := uuid.Parse(req.BrokerageID)
-	if err != nil {
-		s.logger.WithError(err).Errorf("failed to stop worker. invalid brokerage id %v", req.BrokerageID)
-		return nil, err
-	}
-	s.signalCheckWorker.Stop(brokerageID)
-	return new(api.Void), nil
-}
+//func (s *Service) StartWorker(ctx context.Context, req *eagleApi.StrategyStartWorkerReq) (*api.Void, error) {
+//	strategies, err := s.db.ReturnActives(ctx)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	for _, strategy := range strategies {
+//		switch strategy.Type {
+//		case eagleApi.StrategyType_Automated:
+//			automated, err := automatedStrategy.NewAutomatedStrategy(strategy, s.configs.Automa)
+//			if err != nil {
+//				s.logger.WithError(err).Errorf("failed to create new instance of automated strategy")
+//				return nil, err
+//			}
+//
+//			s.signalCheckWorker.Start(automated, req.Markets.Elements, strategy.BrokerageID)
+//		default:
+//		}
+//	}
+//
+//	return new(api.Void), nil
+//}
+//
+//func (s *Service) StartSignalChecker(ctx context.Context, req *eagleApi.StrategySignalCheckStartReq) (*api.Void, error) {
+//	if req.Markets == nil || len(req.Markets.Elements) == 0 {
+//		err := errors.New(ctx, codes.FailedPrecondition)
+//		s.logger.WithError(err).Errorf("invalid markets")
+//		return nil, err
+//	}
+//	brokerageID, err := uuid.Parse(req.BrokerageID)
+//	if err != nil {
+//		s.logger.WithError(err).Errorf("failed to start worker. invalid brokerage id %v", req.BrokerageID)
+//		return nil, err
+//	}
+//	strategyID, err := uuid.Parse(req.BrokerageID)
+//	if err != nil {
+//		s.logger.WithError(err).Errorf("failed to start worker. invalid strategy id %v", req.StrategyID)
+//		return nil, err
+//	}
+//	strategy, err := s.db.Return(strategyID)
+//	if err != nil {
+//		s.logger.WithError(err).Errorf("failed to return strategy with id %v", req.StrategyID)
+//	}
+//
+//	automated, err := automatedStrategy.NewAutomatedStrategy(strategy, req.WithTrading, s.configs.Automated)
+//	if err != nil {
+//		s.logger.WithError(err).Errorf("failed to create new instance of automated strategy for %v", req.StrategyID)
+//		return nil, err
+//	}
+//
+//	s.signalCheckWorker.Start(automated, req.Markets.Elements, brokerageID)
+//	return new(api.Void), nil
+//}
+//
+//func (s *Service) StopSignalChecker(_ context.Context, req *eagleApi.StrategySignalCheckStopReq) (*api.Void, error) {
+//	brokerageID, err := uuid.Parse(req.BrokerageID)
+//	if err != nil {
+//		s.logger.WithError(err).Errorf("failed to stop worker. invalid brokerage id %v", req.BrokerageID)
+//		return nil, err
+//	}
+//	s.signalCheckWorker.Stop(brokerageID)
+//	return new(api.Void), nil
+//}

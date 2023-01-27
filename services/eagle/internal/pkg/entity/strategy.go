@@ -4,6 +4,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/gormext"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
+	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api/proto"
+	"github.com/lib/pq"
 )
 
 type Strategy struct {
@@ -16,6 +18,11 @@ type Strategy struct {
 	MaxFundPerTradeRate   float64
 	WorkingResolutionID   uuid.UUID
 	Indicators            []*StrategyIndicator `->;gorm:"foreignkey:StrategyID;references:ID"`
+	IsActive              bool
+	MarketIDs             pq.StringArray `gorm:"type:varchar(20000)[]"`
+	Type                  eagleApi.StrategyType
+	BrokerageID           uuid.UUID
+	WithTrading           bool
 }
 
 type StrategyIndicator struct {

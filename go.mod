@@ -16,6 +16,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/h-varmazyar/gopack v0.0.0-20220610164634-ed526fc19938
 	github.com/joho/godotenv v1.4.0
+	github.com/lib/pq v1.10.2
 	github.com/markbates/errx v1.1.0
 	github.com/markbates/oncer v1.0.0
 	github.com/markbates/sigtx v1.0.0

@@ -2,11 +2,6 @@ package actions
 
 import (
 	"fmt"
-	"github.com/h-varmazyar/Gate/services/Dolphin/actions/brokerages"
-	"github.com/h-varmazyar/Gate/services/Dolphin/actions/markets"
-	"github.com/h-varmazyar/Gate/services/Dolphin/actions/resolutions"
-	"github.com/h-varmazyar/Gate/services/Dolphin/actions/strategies"
-	"github.com/h-varmazyar/Gate/services/Dolphin/actions/wallets"
 	"github.com/h-varmazyar/Gate/services/Dolphin/configs"
 	"github.com/h-varmazyar/Gate/services/Dolphin/internal/pkg/app"
 	"log"
@@ -52,11 +47,11 @@ func App() *app.App {
 			return c.Render(200, "dashboard")
 		})
 
-		brokerages.RegisterRoutes(application)
-		markets.RegisterRoutes(application)
-		resolutions.RegisterRoutes(application)
-		strategies.RegisterRoutes(application)
-		wallets.RegisterRoutes(application)
+		//brokerages.RegisterRoutes(application)
+		//markets.RegisterRoutes(application)
+		//resolutions.RegisterRoutes(application)
+		//strategies.RegisterRoutes(application)
+		//wallets.RegisterRoutes(application)
 
 		application.ServeFiles("/", packr.New("../public", "../public"))
 	}

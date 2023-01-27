@@ -34,6 +34,11 @@ func (r *strategyPostgresRepository) Return(strategyID uuid.UUID) (*entity.Strat
 	return strategy, r.db.Model(new(entity.Strategy)).Preload("Indicators").Where("id = ?", strategyID).Find(strategy).Error
 }
 
+func (r *strategyPostgresRepository) ReturnActives(_ context.Context) ([]*entity.Strategy, error) {
+	strategies := make([]*entity.Strategy, 0)
+	return strategies, r.db.Model(new(entity.Strategy)).Where("is_active = ?", true).Find(&strategies).Error
+}
+
 func (r *strategyPostgresRepository) ReturnIndicators(strategyID uuid.UUID) ([]*entity.StrategyIndicator, error) {
 	strategyIndicators := make([]*entity.StrategyIndicator, 0)
 	return strategyIndicators, r.db.Model(new(entity.StrategyIndicator)).Where("strategy_id = ?", strategyID).Find(&strategyIndicators).Error

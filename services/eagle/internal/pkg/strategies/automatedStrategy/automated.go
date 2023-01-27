@@ -24,21 +24,16 @@ type Automated struct {
 	walletsService   chipmunkApi.WalletsServiceClient
 	candleService    chipmunkApi.CandleServiceClient
 	botService       telegramBotApi.BotServiceClient
-	withTrading      bool
 	signalPool       *redis.Client
 	configs          *Configs
 }
 
-func NewAutomatedStrategy(strategy *entity.Strategy, withTrading bool, configs *Configs) (*Automated, error) {
+func NewAutomatedStrategy(strategy *entity.Strategy, configs *Configs) (*Automated, error) {
 	if strategy == nil {
 		return nil, errors.NewWithSlug(context.Background(), codes.FailedPrecondition, "empty_strategy")
 	}
 	automated := new(Automated)
 	automated.Strategy = strategy
-	//Automated.Strategy = new(entity.Strategy)
-	//mapper.Struct(strategy, Automated.Strategy)
-	//mapper.Slice(strategy.Indicators, &Automated.Indicators)
-	automated.withTrading = withTrading
 	automated.configs = configs
 
 	automated.signalPool = redis.NewClient(&redis.Options{
@@ -106,7 +101,7 @@ func (s *Automated) CheckForSignals(ctx context.Context, market *chipmunkApi.Mar
 				_ = s.setSignalIntoPool(ctx, market, candles.Elements[1].Time)
 				price := candles.Elements[len(candles.Elements)-1].Close
 				s.sendSignalToBot(ctx, market.Name, price, strength)
-				if s.withTrading {
+				if s.WithTrading {
 					balance := float64(0)
 					if reference.ActiveBalance < reference.TotalBalance/10 {
 						balance = reference.ActiveBalance
