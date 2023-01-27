@@ -32,6 +32,8 @@ message Auth {
   string AccessID = 4;
   // @inject_tag: json:"secret_key"
   string SecretKey = 5;
+  // @inject_tag: json:"nobitex_token"
+  string NobitexToken = 6;
 }
 
 message Void {

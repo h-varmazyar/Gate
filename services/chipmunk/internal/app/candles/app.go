@@ -24,7 +24,7 @@ func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs *Configs
 		return nil, err
 	}
 
-	candleBuffer := buffer.NewMarketInstance(configs.BufferConfigs)
+	candleBuffer := buffer.NewCandleBufferInstance(configs.BufferConfigs)
 	primaryDataWorker, err := workers.NewPrimaryDataWorker(ctx, repositoryInstance, configs.WorkerConfigs, candleBuffer)
 	if err != nil {
 		logger.WithError(err).Error("failed to initialize primary data worker")

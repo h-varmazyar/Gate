@@ -69,7 +69,7 @@ func (c *Callback) handleDelivery(delivery amqp.Delivery) {
 	}
 
 	switch metadata.Method {
-	case MethodOHLC:
+	case brokerages.MethodOHLC:
 		if metadata.MarketID == uuid.Nil.String() || metadata.ResolutionID == uuid.Nil.String() {
 			return
 		}

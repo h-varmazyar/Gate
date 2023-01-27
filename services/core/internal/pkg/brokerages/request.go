@@ -11,8 +11,8 @@ type Requests interface {
 	AsyncOHLC(ctx context.Context, inputs *OHLCParams) (*networkAPI.Request, error)
 	AllMarketStatistics(ctx context.Context, inputs *AllMarketStatisticsParams) (*networkAPI.Request, error)
 	GetMarketInfo(ctx context.Context, inputs *MarketInfoParams) (*networkAPI.Request, error)
+	WalletsBalance(ctx context.Context, inputs *WalletsBalanceParams) (*networkAPI.Request, error)
 
-	WalletList(context.Context, Handler) (*chipmunkApi.Wallets, error)
 	OHLC(context.Context, *OHLCParams, Handler) ([]*chipmunkApi.Candle, error)
 	MarketStatistics(context.Context, *MarketStatisticsParams, Handler) (*chipmunkApi.Candle, error)
 	MarketList(context.Context, Handler) (*chipmunkApi.Markets, error)

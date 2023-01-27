@@ -28,13 +28,14 @@ func NewLastCandles(_ context.Context, db repository.CandleRepository, configs *
 		db:               db,
 		logger:           logger,
 		configs:          configs,
+		buffer:           buffer,
 		functionsService: coreApi.NewFunctionsServiceClient(coreConn),
 	}
 }
 
 func (w *LastCandles) Start(markets []*chipmunkApi.Market, resolutions []*chipmunkApi.Resolution) {
 	if !w.Started {
-		w.logger.Infof("starting missed candle")
+		w.logger.Infof("starting last candle")
 		w.ctx, w.cancelFunc = context.WithCancel(context.Background())
 		go w.run(markets, resolutions)
 		w.Started = true
@@ -56,7 +57,7 @@ func (w *LastCandles) run(markets []*chipmunkApi.Market, resolutions []*chipmunk
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			w.logger.Infof("missed added: %v", time.Now())
+			w.logger.Infof("running last: %v - %v", len(markets), len(resolutions))
 			w.prepareMarkets(markets, resolutions)
 		}
 	}

@@ -51,22 +51,21 @@ func (s *Service) CollectMarketData(ctx context.Context, req *coreApi.PlatformCo
 	resolutions, err := s.resolutionService.List(ctx, &chipmunkApi.ResolutionListReq{
 		Platform: req.Platform,
 	})
-	_, err = s.candleService.DownloadPrimaryCandles(ctx, &chipmunkApi.DownloadPrimaryCandlesReq{
+	_, err = s.candleService.StartWorkers(ctx, &chipmunkApi.CandleWorkerStartReq{
 		Platform:    req.Platform,
 		Markets:     markets,
 		Resolutions: resolutions,
-		StrategyID:  req.StrategyID,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = s.marketService.StartWorker(ctx, &chipmunkApi.WorkerStartReq{
-		Platform: req.Platform,
-	})
-	if err != nil {
-		return nil, err
-	}
+	//_, err = s.marketService.StartWorker(ctx, &chipmunkApi.WorkerStartReq{
+	//	Platform: req.Platform,
+	//})
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	return new(api.Void), nil
 }

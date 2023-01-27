@@ -37,8 +37,8 @@ func loadResponse(configs *Configs, brokerage *coreApi.Brokerage) (brokerages.Re
 	switch brokerage.Platform {
 	case api.Platform_Coinex:
 		return coinex.NewResponse(configs.Coinex, false)
-	case api.Platform_Nobitex:
-		return nil, errors.New(context.Background(), codes.Unimplemented)
+		//case api.Platform_Nobitex:
+		//return nil, nobitex.NewResponse(configs.Nobitex, false)
 	}
 	return nil, errors.New(context.Background(), codes.Unimplemented)
 }

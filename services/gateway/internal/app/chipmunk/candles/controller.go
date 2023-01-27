@@ -32,16 +32,30 @@ func ControllerInstance(logger *log.Logger, chipmunkAddress string) *Controller 
 func (c Controller) RegisterRoutes(router *gorilla.Router) {
 	candles := router.PathPrefix("/candles").Subrouter()
 
-	candles.HandleFunc("/primary-candles", c.downloadPrimaryCandles).Methods(http.MethodPost)
+	candles.HandleFunc("/workers/start", c.startWorkers).Methods(http.MethodPost)
+	candles.HandleFunc("/workers/stop", c.stopWorkers).Methods(http.MethodPost)
 }
 
-func (c Controller) downloadPrimaryCandles(res http.ResponseWriter, req *http.Request) {
-	worker := new(chipmunkApi.DownloadPrimaryCandlesReq)
+func (c Controller) startWorkers(res http.ResponseWriter, req *http.Request) {
+	worker := new(chipmunkApi.CandleWorkerStartReq)
 	if err := httpext.BindModel(req, worker); err != nil {
 		httpext.SendError(res, req, err)
 		return
 	}
-	if _, err := c.candlesService.DownloadPrimaryCandles(req.Context(), worker); err != nil {
+	if _, err := c.candlesService.StartWorkers(req.Context(), worker); err != nil {
+		httpext.SendError(res, req, err)
+	} else {
+		httpext.SendCode(res, req, http.StatusOK)
+	}
+}
+
+func (c Controller) stopWorkers(res http.ResponseWriter, req *http.Request) {
+	worker := new(chipmunkApi.CandleWorkerStopReq)
+	if err := httpext.BindModel(req, worker); err != nil {
+		httpext.SendError(res, req, err)
+		return
+	}
+	if _, err := c.candlesService.StopWorkers(req.Context(), worker); err != nil {
 		httpext.SendError(res, req, err)
 	} else {
 		httpext.SendCode(res, req, http.StatusOK)

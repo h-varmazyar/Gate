@@ -26,7 +26,8 @@ type CandleServiceClient interface {
 	List(ctx context.Context, in *CandleListReq, opts ...grpc.CallOption) (*Candles, error)
 	Update(ctx context.Context, in *CandleUpdateReq, opts ...grpc.CallOption) (*Candle, error)
 	BulkUpdate(ctx context.Context, in *CandleBulkUpdateReq, opts ...grpc.CallOption) (*proto.Void, error)
-	DownloadPrimaryCandles(ctx context.Context, in *DownloadPrimaryCandlesReq, opts ...grpc.CallOption) (*proto.Void, error)
+	StartWorkers(ctx context.Context, in *CandleWorkerStartReq, opts ...grpc.CallOption) (*proto.Void, error)
+	StopWorkers(ctx context.Context, in *CandleWorkerStopReq, opts ...grpc.CallOption) (*proto.Void, error)
 }
 
 type candleServiceClient struct {
@@ -64,9 +65,18 @@ func (c *candleServiceClient) BulkUpdate(ctx context.Context, in *CandleBulkUpda
 	return out, nil
 }
 
-func (c *candleServiceClient) DownloadPrimaryCandles(ctx context.Context, in *DownloadPrimaryCandlesReq, opts ...grpc.CallOption) (*proto.Void, error) {
+func (c *candleServiceClient) StartWorkers(ctx context.Context, in *CandleWorkerStartReq, opts ...grpc.CallOption) (*proto.Void, error) {
 	out := new(proto.Void)
-	err := c.cc.Invoke(ctx, "/chipmunkApi.CandleService/DownloadPrimaryCandles", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/chipmunkApi.CandleService/StartWorkers", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *candleServiceClient) StopWorkers(ctx context.Context, in *CandleWorkerStopReq, opts ...grpc.CallOption) (*proto.Void, error) {
+	out := new(proto.Void)
+	err := c.cc.Invoke(ctx, "/chipmunkApi.CandleService/StopWorkers", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +90,8 @@ type CandleServiceServer interface {
 	List(context.Context, *CandleListReq) (*Candles, error)
 	Update(context.Context, *CandleUpdateReq) (*Candle, error)
 	BulkUpdate(context.Context, *CandleBulkUpdateReq) (*proto.Void, error)
-	DownloadPrimaryCandles(context.Context, *DownloadPrimaryCandlesReq) (*proto.Void, error)
+	StartWorkers(context.Context, *CandleWorkerStartReq) (*proto.Void, error)
+	StopWorkers(context.Context, *CandleWorkerStopReq) (*proto.Void, error)
 }
 
 // UnimplementedCandleServiceServer should be embedded to have forward compatible implementations.
@@ -96,8 +107,11 @@ func (UnimplementedCandleServiceServer) Update(context.Context, *CandleUpdateReq
 func (UnimplementedCandleServiceServer) BulkUpdate(context.Context, *CandleBulkUpdateReq) (*proto.Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BulkUpdate not implemented")
 }
-func (UnimplementedCandleServiceServer) DownloadPrimaryCandles(context.Context, *DownloadPrimaryCandlesReq) (*proto.Void, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DownloadPrimaryCandles not implemented")
+func (UnimplementedCandleServiceServer) StartWorkers(context.Context, *CandleWorkerStartReq) (*proto.Void, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StartWorkers not implemented")
+}
+func (UnimplementedCandleServiceServer) StopWorkers(context.Context, *CandleWorkerStopReq) (*proto.Void, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StopWorkers not implemented")
 }
 
 // UnsafeCandleServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -165,20 +179,38 @@ func _CandleService_BulkUpdate_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CandleService_DownloadPrimaryCandles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DownloadPrimaryCandlesReq)
+func _CandleService_StartWorkers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CandleWorkerStartReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CandleServiceServer).DownloadPrimaryCandles(ctx, in)
+		return srv.(CandleServiceServer).StartWorkers(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/chipmunkApi.CandleService/DownloadPrimaryCandles",
+		FullMethod: "/chipmunkApi.CandleService/StartWorkers",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CandleServiceServer).DownloadPrimaryCandles(ctx, req.(*DownloadPrimaryCandlesReq))
+		return srv.(CandleServiceServer).StartWorkers(ctx, req.(*CandleWorkerStartReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CandleService_StopWorkers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CandleWorkerStopReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CandleServiceServer).StopWorkers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/chipmunkApi.CandleService/StopWorkers",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CandleServiceServer).StopWorkers(ctx, req.(*CandleWorkerStopReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -203,8 +235,12 @@ var CandleService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CandleService_BulkUpdate_Handler,
 		},
 		{
-			MethodName: "DownloadPrimaryCandles",
-			Handler:    _CandleService_DownloadPrimaryCandles_Handler,
+			MethodName: "StartWorkers",
+			Handler:    _CandleService_StartWorkers_Handler,
+		},
+		{
+			MethodName: "StopWorkers",
+			Handler:    _CandleService_StopWorkers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

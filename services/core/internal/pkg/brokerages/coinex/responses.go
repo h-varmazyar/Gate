@@ -160,3 +160,31 @@ func (r *Response) GetMarketInfo(ctx context.Context, response *networkAPI.Respo
 	}
 	return marketInfo, nil
 }
+
+func (r *Response) WalletsBalance(ctx context.Context, response *networkAPI.Response) (*chipmunkApi.Wallets, error) {
+	if response.Code != http.StatusOK {
+		return nil, errors.NewWithSlug(ctx, codes.Unknown, response.Body)
+	}
+	data := make(map[string]map[string]interface{})
+	if err := parseResponse(response.Body, &data); err != nil {
+		return nil, err
+	}
+	wallets := new(chipmunkApi.Wallets)
+	wallets.Elements = make([]*chipmunkApi.Wallet, 0)
+	var err error
+	for key, value := range data {
+		w := new(chipmunkApi.Wallet)
+		w.AssetName = key
+		w.ActiveBalance, err = strconv.ParseFloat(value["available"].(string), 64)
+		if err != nil {
+			continue
+		}
+		w.BlockedBalance, err = strconv.ParseFloat(value["frozen"].(string), 64)
+		if err != nil {
+			continue
+		}
+		w.TotalBalance = w.ActiveBalance + w.BlockedBalance
+		wallets.Elements = append(wallets.Elements, w)
+	}
+	return wallets, nil
+}

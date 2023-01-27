@@ -74,7 +74,7 @@ func (r *Requests) AsyncOHLC(_ context.Context, inputs *brokerages.OHLCParams) (
 	}
 
 	metadataBytes, _ := json.Marshal(&brokerages.Metadata{
-		Method:       MethodOHLC,
+		Method:       brokerages.MethodOHLC,
 		Platform:     api.Platform_Coinex,
 		MarketID:     inputs.Market.ID,
 		ResolutionID: inputs.Resolution.ID,
@@ -95,6 +95,23 @@ func (r *Requests) GetMarketInfo(_ context.Context, inputs *brokerages.MarketInf
 	request := new(networkAPI.Request)
 	request.Method = networkAPI.Request_GET
 	request.Endpoint = fmt.Sprintf("https://www.coinex.com/res/vote2/project/%v", inputs.Market.Source.Name)
+
+	return request, nil
+}
+
+func (r *Requests) WalletsBalance(_ context.Context, _ *brokerages.WalletsBalanceParams) (*networkAPI.Request, error) {
+	request := new(networkAPI.Request)
+	currentTime := time.Now().UnixNano() / 1e6
+	request.Method = networkAPI.Request_GET
+	request.Endpoint = "https://api.coinex.com/v1/balance/info"
+	request.Params = []*networkAPI.KV{
+		networkAPI.NewKV("access_id", r.Auth.AccessID),
+		networkAPI.NewKV("tonce", currentTime),
+	}
+	request.Headers = []*networkAPI.KV{
+		networkAPI.NewKV("authorization", r.generateAuthorization(request.Params)),
+		networkAPI.NewKV("tonce", currentTime),
+	}
 
 	return request, nil
 }

@@ -33,8 +33,7 @@ type MarketInfoParams struct {
 	Market *chipmunkApi.Market
 }
 
-type WalletInfoParams struct {
-	WalletName string
+type WalletsBalanceParams struct {
 }
 
 type WalletBalanceParams struct {

@@ -13,7 +13,7 @@ type CandleBuffer struct {
 
 var bufferInstance *CandleBuffer
 
-func NewMarketInstance(configs *Configs) *CandleBuffer {
+func NewCandleBufferInstance(configs *Configs) *CandleBuffer {
 	if bufferInstance == nil {
 		bufferInstance = &CandleBuffer{
 			lock:         new(sync.RWMutex),

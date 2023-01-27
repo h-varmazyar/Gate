@@ -225,12 +225,12 @@ func (s *Service) BulkUpdate(ctx context.Context, req *chipmunkApi.CandleBulkUpd
 	return new(api.Void), nil
 }
 
-func (s *Service) DownloadPrimaryCandles(ctx context.Context, req *chipmunkApi.DownloadPrimaryCandlesReq) (*api.Void, error) {
+func (s *Service) StartWorkers(ctx context.Context, req *chipmunkApi.CandleWorkerStartReq) (*api.Void, error) {
 	if err := s.validateDownloadPrimaryCandlesRequest(ctx, req); err != nil {
 		return nil, err
 	}
 
-	if !s.primaryDataWorker.Started {
+	if !s.primaryDataWorker.IsStarted() {
 		s.primaryDataWorker.Start()
 	}
 
@@ -246,5 +246,25 @@ func (s *Service) DownloadPrimaryCandles(ctx context.Context, req *chipmunkApi.D
 
 	s.missedCandlesWorker.Start(req.Markets.Elements, req.Resolutions.Elements)
 	s.redundantRemoverWorker.Start(req.Markets.Elements, req.Resolutions.Elements)
+	return new(api.Void), nil
+}
+
+func (s *Service) StopWorkers(ctx context.Context, req *chipmunkApi.CandleWorkerStopReq) (*api.Void, error) {
+	//todo: must be implement based on platform
+	if s.primaryDataWorker.IsStarted() {
+		s.primaryDataWorker.Stop()
+	}
+
+	if s.lastCandleWorker.Started {
+		s.lastCandleWorker.Stop()
+	}
+
+	if s.missedCandlesWorker.Started {
+		s.missedCandlesWorker.Stop()
+	}
+
+	if s.redundantRemoverWorker.Started {
+		s.redundantRemoverWorker.Stop()
+	}
 	return new(api.Void), nil
 }

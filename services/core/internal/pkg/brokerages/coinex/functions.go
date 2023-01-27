@@ -24,54 +24,6 @@ import (
 	"time"
 )
 
-//type Service struct {
-//	Auth *api.Auth
-//}
-
-func (r *Requests) WalletList(ctx context.Context, runner brokerages.Handler) (*chipmunkApi.Wallets, error) {
-	request := new(networkAPI.Request)
-	currentTime := time.Now().UnixNano() / 1e6
-	request.Method = networkAPI.Request_GET
-	request.Endpoint = "https://api.coinex.com/v1/balance/info"
-	request.Params = []*networkAPI.KV{
-		api2.NewKV("access_id", r.Auth.AccessID),
-		api2.NewKV("tonce", currentTime),
-	}
-	request.Headers = []*networkAPI.KV{
-		api2.NewKV("authorization", r.generateAuthorization(request.Params)),
-		api2.NewKV("tonce", currentTime),
-	}
-
-	resp, err := runner(ctx, request)
-	if err != nil {
-		return nil, err
-	}
-	if resp.Code != http.StatusOK {
-		return nil, errors.NewWithSlug(ctx, codes.Unknown, resp.Body)
-	}
-	data := make(map[string]map[string]interface{})
-	if err := parseResponse(resp.Body, &data); err != nil {
-		return nil, err
-	}
-	response := new(chipmunkApi.Wallets)
-	response.Elements = make([]*chipmunkApi.Wallet, 0)
-	for key, value := range data {
-		w := new(chipmunkApi.Wallet)
-		w.AssetName = key
-		w.ActiveBalance, err = strconv.ParseFloat(value["available"].(string), 64)
-		if err != nil {
-			continue
-		}
-		w.BlockedBalance, err = strconv.ParseFloat(value["frozen"].(string), 64)
-		if err != nil {
-			continue
-		}
-		w.TotalBalance = w.ActiveBalance + w.BlockedBalance
-		response.Elements = append(response.Elements, w)
-	}
-	return response, nil
-}
-
 func (r *Requests) OHLC(ctx context.Context, inputs *brokerages.OHLCParams, runner brokerages.Handler) ([]*chipmunkApi.Candle, error) {
 	request := new(networkAPI.Request)
 	request.Method = networkAPI.Request_GET

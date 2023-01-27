@@ -11,6 +11,7 @@ import (
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
+	"sync"
 )
 
 type PrimaryData struct {
@@ -18,7 +19,8 @@ type PrimaryData struct {
 	buffer  *buffer.CandleBuffer
 	configs *Configs
 	queue   *amqpext.Queue
-	Started bool
+	started bool
+	lock    *sync.Mutex
 }
 
 func NewPrimaryDataWorker(_ context.Context, db repository.CandleRepository, configs *Configs, buffer *buffer.CandleBuffer) (*PrimaryData, error) {
@@ -31,6 +33,7 @@ func NewPrimaryDataWorker(_ context.Context, db repository.CandleRepository, con
 		configs: configs,
 		queue:   ohlcQueue,
 		buffer:  buffer,
+		lock:    new(sync.Mutex),
 	}, nil
 }
 
@@ -48,7 +51,19 @@ func (w *PrimaryData) Start() {
 			}
 		}()
 	}
-	w.Started = true
+	w.lock.Lock()
+	w.started = true
+	w.lock.Unlock()
+}
+
+func (w *PrimaryData) Stop() {
+	w.lock.Lock()
+	w.started = false
+	w.lock.Unlock()
+}
+
+func (w *PrimaryData) IsStarted() bool {
+	return w.started
 }
 
 func (w *PrimaryData) handle(delivery amqp.Delivery) {

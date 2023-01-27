@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func (s *Service) validateDownloadPrimaryCandlesRequest(ctx context.Context, req *chipmunkApi.DownloadPrimaryCandlesReq) error {
+func (s *Service) validateDownloadPrimaryCandlesRequest(ctx context.Context, req *chipmunkApi.CandleWorkerStartReq) error {
 	if req.Resolutions == nil || len(req.Resolutions.Elements) == 0 {
 		err := errors.New(ctx, codes.FailedPrecondition).AddDetailF("invalid resolutions for Platform %v", req.Platform)
 		s.logger.WithError(err).Errorf("failed to start candles primaryDataWorker")

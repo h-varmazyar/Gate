@@ -167,14 +167,29 @@ func (s *Service) WalletsBalance(ctx context.Context, req *coreApi.WalletsBalanc
 	if err != nil {
 		return nil, err
 	}
-	wallets, err := loadRequest(s.configs, brokerage).WalletList(ctx, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
-		resp, err := s.requestService.Do(ctx, request)
-		return resp, err
-	})
+	request, err := loadRequest(s.configs, brokerage).WalletsBalance(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	return wallets, nil
+
+	networkResponse, err := s.doNetworkRequest(request)
+	if err != nil {
+		return nil, err
+	}
+
+	responseParser, err := loadResponse(s.configs, brokerage)
+	if err != nil {
+		s.logger.WithError(err).Error("failed to load response parser in all market statistics")
+		return nil, err
+	}
+
+	response, err := responseParser.WalletsBalance(ctx, networkResponse)
+	if err != nil {
+		s.logger.WithError(err).Error("failed to parse all market statistics response")
+		return nil, err
+	}
+
+	return response, nil
 }
 
 func (s *Service) SingleMarketStatistics(ctx context.Context, req *coreApi.MarketStatisticsReq) (*coreApi.MarketStatistics, error) {

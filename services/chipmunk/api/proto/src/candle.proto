@@ -10,7 +10,8 @@ service CandleService {
   rpc List(CandleListReq) returns (Candles);
   rpc Update(CandleUpdateReq) returns (Candle);
   rpc BulkUpdate(CandleBulkUpdateReq) returns (api.Void);
-  rpc DownloadPrimaryCandles(DownloadPrimaryCandlesReq) returns (api.Void);
+  rpc StartWorkers(CandleWorkerStartReq) returns (api.Void);
+  rpc StopWorkers(CandleWorkerStopReq) returns (api.Void);
 }
 
 message Candle {
@@ -105,7 +106,16 @@ message CandleBulkUpdateReq {
   api.Platform Platform = 3;
 }
 
-message DownloadPrimaryCandlesReq {
+message CandleWorkerStartReq {
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
+  // @inject_tag: json:"markets"
+  Markets Markets = 2;
+  // @inject_tag: json:"resolutions"
+  Resolutions Resolutions = 3;
+}
+
+message CandleWorkerStopReq {
   // @inject_tag: json:"platform"
   api.Platform Platform = 1;
   // @inject_tag: json:"markets"
