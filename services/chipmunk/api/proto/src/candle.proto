@@ -9,9 +9,9 @@ import "api/proto/src/misc.proto";
 service CandleService {
   rpc List(CandleListReq) returns (Candles);
   rpc Update(CandleUpdateReq) returns (Candle);
-  rpc BulkUpdate(CandleBulkUpdateReq) returns (api.Void);
-  rpc StartWorkers(CandleWorkerStartReq) returns (api.Void);
-  rpc StopWorkers(CandleWorkerStopReq) returns (api.Void);
+  //  rpc BulkUpdate(CandleBulkUpdateReq) returns (api.Void);
+  //  rpc StartWorkers(CandleWorkerStartReq) returns (api.Void);
+  //  rpc StopWorkers(CandleWorkerStopReq) returns (api.Void);
 }
 
 message Candle {

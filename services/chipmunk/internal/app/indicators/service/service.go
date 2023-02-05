@@ -48,3 +48,16 @@ func (s *Service) Return(_ context.Context, req *chipmunkApi.IndicatorReturnReq)
 	mapper.Struct(indicator, response)
 	return response, nil
 }
+
+func (s *Service) List(ctx context.Context, req *chipmunkApi.IndicatorListReq) (*chipmunkApi.Indicators, error) {
+	indicators, err := s.db.List(ctx, req.Type)
+	if err != nil {
+		s.logger.WithError(err).Errorf("failed to get list of indicators with type %v", req.Type)
+		return nil, err
+	}
+
+	resp := new(chipmunkApi.Indicators)
+	mapper.Slice(indicators, resp.Elements)
+
+	return resp, nil
+}

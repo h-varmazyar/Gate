@@ -4,6 +4,7 @@ option go_package = "github.com/h-varmazyar/Gate/services/chipmunk/api/proto";
 
 service indicatorService{
   rpc Return(IndicatorReturnReq) returns (Indicator);
+  rpc List(IndicatorListReq) returns (Indicators);
 }
 
 enum Source {
@@ -19,10 +20,11 @@ enum Source {
 
 message Indicator {
   enum type{
-    RSI = 0;
-    Stochastic = 1;
-    MovingAverage = 2;
-    BollingerBands = 3;
+    All = 0;
+    RSI = 1;
+    Stochastic = 2;
+    MovingAverage = 3;
+    BollingerBands = 4;
   }
   // @inject_tag: json:"id"
   string ID = 1;
@@ -30,6 +32,17 @@ message Indicator {
   type Type = 2;
   // @inject_tag: json:"configs"
   IndicatorConfigs Configs = 3;
+}
+
+message IndicatorConfigs {
+  // @inject_tag: json:"rsi,omitempty"
+  RsiConfigs RSI = 1;
+  // @inject_tag: json:"stochastic,omitempty"
+  StochasticConfigs Stochastic = 2;
+  // @inject_tag: json:"moving_average,omitempty"
+  MovingAverageConfigs MovingAverage = 3;
+  // @inject_tag: json:"bollinger_bands,omitempty"
+  BollingerBandsConfigs BollingerBands = 4;
 }
 
 message indicatorValue{
@@ -76,17 +89,6 @@ message RSI {
   double RSI = 1;
 }
 
-message IndicatorConfigs {
-  // @inject_tag: json:"rsi,omitempty"
-  RsiConfigs RSI = 1;
-  // @inject_tag: json:"stochastic,omitempty"
-  StochasticConfigs Stochastic = 2;
-  // @inject_tag: json:"moving_average,omitempty"
-  MovingAverageConfigs MovingAverage = 3;
-  // @inject_tag: json:"bollinger_bands,omitempty"
-  BollingerBandsConfigs BollingerBands = 4;
-}
-
 message IndicatorReturnReq{
   // @inject_tag: json:"id"
   string ID = 1;
@@ -120,4 +122,14 @@ message BollingerBandsConfigs{
   int32 Deviation = 2;
   // @inject_tag: json:"source"
   Source Source = 3;
+}
+
+message IndicatorListReq{
+  // @inject_tag: json:"type"
+  Indicator.type Type = 1;
+}
+
+message Indicators{
+  // @inject_tag: json:"elements"
+  repeated Indicator Elements = 1;
 }
