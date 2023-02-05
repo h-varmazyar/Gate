@@ -9,35 +9,34 @@ import (
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/repository"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
+	indicatorsPkg "github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
 	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
-	"sync"
 )
 
-type PrimaryData struct {
-	db      repository.CandleRepository
-	buffer  *buffer.CandleBuffer
-	configs *Configs
-	queue   *amqpext.Queue
-	started bool
-	lock    *sync.Mutex
+type CandleReader struct {
+	db         repository.CandleRepository
+	buffer     *buffer.CandleBuffer
+	configs    *Configs
+	queue      *amqpext.Queue
+	indicators []indicatorsPkg.Indicator
 }
 
-func NewPrimaryDataWorker(_ context.Context, db repository.CandleRepository, configs *Configs, buffer *buffer.CandleBuffer) (*PrimaryData, error) {
+func NewCandleReaderWorker(_ context.Context, db repository.CandleRepository, configs *Configs, buffer *buffer.CandleBuffer) (*CandleReader, error) {
 	ohlcQueue, err := amqpext.Client.QueueDeclare(configs.PrimaryDataQueue)
 	if err != nil {
 		return nil, err
 	}
-	return &PrimaryData{
+	return &CandleReader{
 		db:      db,
 		configs: configs,
 		queue:   ohlcQueue,
 		buffer:  buffer,
-		lock:    new(sync.Mutex),
 	}, nil
 }
 
-func (w *PrimaryData) Start() {
+func (w *CandleReader) Start(indicators []indicatorsPkg.Indicator) {
+	w.indicators = indicators
 	handled := int64(0)
 	deliveries := w.queue.Consume(w.configs.PrimaryDataQueue)
 	for i := 0; i < w.configs.ConsumerCount; i++ {
@@ -51,22 +50,9 @@ func (w *PrimaryData) Start() {
 			}
 		}()
 	}
-	w.lock.Lock()
-	w.started = true
-	w.lock.Unlock()
 }
 
-func (w *PrimaryData) Stop() {
-	w.lock.Lock()
-	w.started = false
-	w.lock.Unlock()
-}
-
-func (w *PrimaryData) IsStarted() bool {
-	return w.started
-}
-
-func (w *PrimaryData) handle(delivery amqp.Delivery) {
+func (w *CandleReader) handle(delivery amqp.Delivery) {
 	candles := new(chipmunkApi.Candles)
 	if err := proto.Unmarshal(delivery.Body, candles); err != nil {
 		log.WithError(err).Errorf("failed to unmarshal delivery")
@@ -79,6 +65,11 @@ func (w *PrimaryData) handle(delivery amqp.Delivery) {
 		mapper.Struct(candle, tmp)
 		localCandles = append(localCandles, tmp)
 	}
+
+	for _, indicator := range w.indicators {
+		indicator.Update(localCandles)
+	}
+
 	if err := w.db.BulkInsert(localCandles); err != nil {
 		log.WithError(err).Errorf("failed to save candles")
 	}

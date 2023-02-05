@@ -95,14 +95,14 @@ func (w *StatisticsWorker) run(runner *Runner) {
 				}
 			}
 
-			bulkUpdateReq := &chipmunkApi.CandleBulkUpdateReq{
-				Platform: runner.platform,
-				Date:     statistics.Date,
-				Tickers:  tickers,
-			}
-			go func() {
-				_, err = w.candlesService.BulkUpdate(runner.ctx, bulkUpdateReq)
-			}()
+			//bulkUpdateReq := &chipmunkApi.CandleBulkUpdateReq{
+			//	Platform: runner.platform,
+			//	Date:     statistics.Date,
+			//	Tickers:  tickers,
+			//}
+			//go func() {
+			//	_, err = w.candlesService.BulkUpdate(runner.ctx, bulkUpdateReq)
+			//}()
 			log.Infof("time: %v", time.Now().Sub(start))
 		}
 	}

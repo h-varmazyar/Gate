@@ -5,7 +5,6 @@ import (
 	candles "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/repository"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/service"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/workers"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/db"
 	log "github.com/sirupsen/logrus"
 )
@@ -25,9 +24,9 @@ func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs *Configs
 		return nil, err
 	}
 	//worker := workers.InitializeWorker(ctx, configs.WorkerConfigs, dependencies.CandlesService)
-	statisticsWorker := workers.NewStatisticsWorker(ctx, configs.WorkerConfigs, dependencies.CandlesService, repositoryInstance)
+	//statisticsWorker := workers.NewStatisticsWorker(ctx, configs.WorkerConfigs, dependencies.CandlesService, repositoryInstance)
 	//dependencies.ServiceDependencies.PrimaryDataWorker = worker
-	dependencies.ServiceDependencies.StatisticsWorker = statisticsWorker
+	//dependencies.ServiceDependencies.StatisticsWorker = statisticsWorker
 	return &App{
 		Service: service.NewService(ctx, logger, configs.ServiceConfigs, repositoryInstance, dependencies.ServiceDependencies),
 	}, nil

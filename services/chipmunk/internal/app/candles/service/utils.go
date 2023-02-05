@@ -10,7 +10,6 @@ import (
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	indicatorsPkg "github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
-	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api/proto"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
 	"time"
@@ -19,25 +18,25 @@ import (
 func (s *Service) validateDownloadPrimaryCandlesRequest(ctx context.Context, req *chipmunkApi.CandleWorkerStartReq) error {
 	if req.Resolutions == nil || len(req.Resolutions.Elements) == 0 {
 		err := errors.New(ctx, codes.FailedPrecondition).AddDetailF("invalid resolutions for Platform %v", req.Platform)
-		s.logger.WithError(err).Errorf("failed to start candles primaryDataWorker")
+		s.logger.WithError(err).Errorf("failed to start candles candleReaderWorker")
 		return err
 	}
 	if req.Markets == nil || len(req.Markets.Elements) == 0 {
 		err := errors.New(ctx, codes.FailedPrecondition).AddDetailF("invalid markets for Platform %v", req.Platform)
-		s.logger.WithError(err).Errorf("failed to start candles primaryDataWorker")
+		s.logger.WithError(err).Errorf("failed to start candles candleReaderWorker")
 		return err
 	}
 	return nil
 }
 
-func (s *Service) preparePrimaryDataRequests(platform api.Platform, market *chipmunkApi.Market, resolutions *chipmunkApi.Resolutions) {
+func (s *Service) preparePrimaryDataRequests(platform api.Platform, market *chipmunkApi.Market, resolutions *chipmunkApi.Resolutions, indicators []indicatorsPkg.Indicator) {
 	for _, resolution := range resolutions.Elements {
-		s.preparePrimaryDataRequestsByResolution(platform, market, resolution)
+		s.preparePrimaryDataRequestsByResolution(platform, market, resolution, indicators)
 	}
 }
 
-func (s *Service) preparePrimaryDataRequestsByResolution(platform api.Platform, market *chipmunkApi.Market, resolution *chipmunkApi.Resolution) {
-	from, err := s.prepareLocalCandles(market, resolution)
+func (s *Service) preparePrimaryDataRequestsByResolution(platform api.Platform, market *chipmunkApi.Market, resolution *chipmunkApi.Resolution, indicators []indicatorsPkg.Indicator) {
+	from, err := s.prepareLocalCandles(market, resolution, indicators)
 	if err != nil {
 		return
 	}
@@ -45,7 +44,7 @@ func (s *Service) preparePrimaryDataRequestsByResolution(platform api.Platform, 
 	s.makePrimaryDataRequests(platform, market, resolution, from)
 }
 
-func (s *Service) prepareLocalCandles(market *chipmunkApi.Market, resolution *chipmunkApi.Resolution) (time.Time, error) {
+func (s *Service) prepareLocalCandles(market *chipmunkApi.Market, resolution *chipmunkApi.Resolution, indicators []indicatorsPkg.Indicator) (time.Time, error) {
 	marketID, err := uuid.Parse(market.ID)
 	if err != nil {
 		s.logger.WithError(err).Errorf("invalid market id %v", market)
@@ -67,15 +66,15 @@ func (s *Service) prepareLocalCandles(market *chipmunkApi.Market, resolution *ch
 		}
 	}
 
-	//for _, candle := range candles {
-	//	candle.IndicatorValues = entity.NewIndicatorValues()
-	//}
+	for _, candle := range candles {
+		candle.IndicatorValues = entity.NewIndicatorValues()
+	}
 
 	if len(candles) > 0 {
-		//if err = s.calculateIndicators(candles, strategyID); err != nil {
-		//	s.logger.WithError(err).Errorf("failed to calculate indicators for market %v in resolution %v", marketID, resolutionID)
-		//	return time.Unix(0, 0), err
-		//}
+		if err = s.calculateIndicators(candles, indicators); err != nil {
+			s.logger.WithError(err).Errorf("failed to calculate indicators for market %v in resolution %v", marketID, resolutionID)
+			return time.Unix(0, 0), err
+		}
 		from = candles[len(candles)-1].Time.Add(time.Duration(resolution.Duration))
 
 		for _, candle := range candles {
@@ -105,17 +104,8 @@ func (s *Service) loadLocalCandles(marketID, resolutionID uuid.UUID) ([]*entity.
 	return candles, nil
 }
 
-func (s *Service) calculateIndicators(candles []*entity.Candle, strategyID uuid.UUID) error {
-	strategyIndicators, err := s.strategyService.Indicators(context.Background(), &eagleApi.StrategyIndicatorReq{StrategyID: strategyID.String()})
-	if err != nil {
-		return err
-	}
-	loadedIndicators, err := s.loadIndicators(strategyIndicators)
-	if err != nil {
-		return err
-	}
-
-	for _, indicator := range loadedIndicators {
+func (s *Service) calculateIndicators(candles []*entity.Candle, indicators []indicatorsPkg.Indicator) error {
+	for _, indicator := range indicators {
 		err := indicator.Calculate(candles)
 		if err != nil {
 			return err
@@ -137,16 +127,17 @@ func (s *Service) makePrimaryDataRequests(platform api.Platform, market *chipmun
 	}
 }
 
-func (s *Service) loadIndicators(strategyIndicators *eagleApi.StrategyIndicators) (map[uuid.UUID]indicatorsPkg.Indicator, error) {
-	response := make(map[uuid.UUID]indicatorsPkg.Indicator)
-	for _, strategyIndicator := range strategyIndicators.Elements {
-		indicatorResp, err := s.indicatorService.Return(context.Background(), &chipmunkApi.IndicatorReturnReq{ID: strategyIndicator.IndicatorID})
+func (s *Service) loadIndicators(indicators []*chipmunkApi.Indicator) ([]indicatorsPkg.Indicator, error) {
+	response := make([]indicatorsPkg.Indicator, 0)
+	for _, i := range indicators {
+		var indicatorCalculator indicatorsPkg.Indicator
+		var err error
 		indicator := new(entity.Indicator)
-		mapper.Struct(indicatorResp, indicator)
+		mapper.Struct(i, indicator)
+		indicator.ID, err = uuid.Parse(i.ID)
 		if err != nil {
 			return nil, err
 		}
-		var indicatorCalculator indicatorsPkg.Indicator
 		switch indicator.Type {
 		case chipmunkApi.Indicator_RSI:
 			indicatorCalculator, err = indicatorsPkg.NewRSI(indicator.ID, indicator.Configs.RSI)
@@ -160,7 +151,7 @@ func (s *Service) loadIndicators(strategyIndicators *eagleApi.StrategyIndicators
 		if err != nil {
 			return nil, err
 		}
-		response[indicator.ID] = indicatorCalculator
+		response = append(response, indicatorCalculator)
 	}
 	return response, nil
 }

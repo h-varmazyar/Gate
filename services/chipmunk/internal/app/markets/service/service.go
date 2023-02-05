@@ -34,9 +34,9 @@ type Service struct {
 	assetsService      *assets.Service
 	indicatorsService  *indicators.Service
 	//worker             *workers.PrimaryDataWorker
-	statisticsWorker *workers.StatisticsWorker
-	logger           *log.Logger
-	db               repository.MarketRepository
+	//statisticsWorker *workers.StatisticsWorker
+	logger *log.Logger
+	db     repository.MarketRepository
 }
 
 var (
@@ -64,7 +64,7 @@ func NewService(_ context.Context, logger *log.Logger, configs *Configs, db repo
 		GrpcService.indicatorsService = dependencies.IndicatorsService
 		GrpcService.resolutionsService = dependencies.ResolutionsService
 		//GrpcService.worker = dependencies.PrimaryDataWorker
-		GrpcService.statisticsWorker = dependencies.StatisticsWorker
+		//GrpcService.statisticsWorker = dependencies.StatisticsWorker
 		GrpcService.db = db
 		GrpcService.logger = logger
 	}
@@ -176,7 +176,8 @@ func (s *Service) StartWorker(ctx context.Context, req *chipmunkApi.WorkerStartR
 	//	s.workers.AddMarket(settings)
 	//	log.Infof("new market added: %v", market.Name)
 	//}
-	s.statisticsWorker.Start(req.Platform)
+
+	//s.statisticsWorker.Start(req.Platform)
 	return new(api.Void), nil
 }
 
@@ -193,7 +194,7 @@ func (s *Service) StopWorker(_ context.Context, req *chipmunkApi.WorkerStopReq) 
 	//	}
 	//}
 
-	s.statisticsWorker.Stop(req.Platform)
+	//s.statisticsWorker.Stop(req.Platform)
 	return new(api.Void), nil
 }
 

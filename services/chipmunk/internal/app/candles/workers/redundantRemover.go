@@ -3,7 +3,6 @@ package workers
 import (
 	"context"
 	"github.com/google/uuid"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/repository"
 	log "github.com/sirupsen/logrus"
 	"time"
@@ -27,11 +26,11 @@ func NewRedundantRemover(_ context.Context, db repository.CandleRepository, conf
 	}
 }
 
-func (w *RedundantRemover) Start(markets []*chipmunkApi.Market, resolutions []*chipmunkApi.Resolution) {
+func (w *RedundantRemover) Start(runners []*Runner) {
 	if !w.Started {
 		w.logger.Infof("starting redundant candles")
 		w.ctx, w.cancelFunc = context.WithCancel(context.Background())
-		go w.run(markets, resolutions)
+		go w.run(runners)
 		w.Started = true
 	}
 }
@@ -42,7 +41,7 @@ func (w *RedundantRemover) Stop() {
 	}
 }
 
-func (w *RedundantRemover) run(markets []*chipmunkApi.Market, resolutions []*chipmunkApi.Resolution) {
+func (w *RedundantRemover) run(runners []*Runner) {
 	ticker := time.NewTicker(w.configs.RedundantRemoverInterval)
 	for {
 		select {
@@ -52,40 +51,43 @@ func (w *RedundantRemover) run(markets []*chipmunkApi.Market, resolutions []*chi
 		case <-ticker.C:
 			w.removedCount = 0
 			w.logger.Infof("prepare removed candles")
-			if err := w.prepareMarkets(markets, resolutions); err != nil {
-				log.WithError(err).Error("failed to prepare missed candles")
+			for _, runner := range runners {
+				if err := w.removeRedundantCandles(runner); err != nil {
+					w.logger.WithError(err).Error("failed to prepare remove redundant candles")
+				}
 			}
 			w.logger.Infof("removed candles: %v", w.removedCount)
+
 		}
 	}
 }
 
-func (w *RedundantRemover) prepareMarkets(markets []*chipmunkApi.Market, resolutions []*chipmunkApi.Resolution) error {
-	for _, market := range markets {
-		err := w.prepareResolutions(market, resolutions)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
+//func (w *RedundantRemover) prepareMarkets(markets []*chipmunkApi.Market, resolutions []*chipmunkApi.Resolution) error {
+//	for _, market := range markets {
+//		err := w.prepareResolutions(market, resolutions)
+//		if err != nil {
+//			return err
+//		}
+//	}
+//	return nil
+//}
+//
+//func (w *RedundantRemover) prepareResolutions(market *chipmunkApi.Market, resolutions []*chipmunkApi.Resolution) error {
+//	for _, resolution := range resolutions {
+//		err := w.removeRedundantCandles(market, resolution)
+//		if err != nil {
+//			return err
+//		}
+//	}
+//	return nil
+//}
 
-func (w *RedundantRemover) prepareResolutions(market *chipmunkApi.Market, resolutions []*chipmunkApi.Resolution) error {
-	for _, resolution := range resolutions {
-		err := w.removeRedundantCandles(market, resolution)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (w *RedundantRemover) removeRedundantCandles(market *chipmunkApi.Market, resolution *chipmunkApi.Resolution) error {
-	resolutionID, err := uuid.Parse(resolution.ID)
+func (w *RedundantRemover) removeRedundantCandles(runner *Runner) error {
+	resolutionID, err := uuid.Parse(runner.Resolution.ID)
 	if err != nil {
 		return err
 	}
-	marketID, err := uuid.Parse(market.ID)
+	marketID, err := uuid.Parse(runner.Market.ID)
 	if err != nil {
 		return err
 	}
@@ -98,9 +100,6 @@ func (w *RedundantRemover) removeRedundantCandles(market *chipmunkApi.Market, re
 
 	for i := 1; i < len(candles); i++ {
 		if candles[i-1].Time.Equal(candles[i].Time) {
-			//if err := w.db.HardDelete(candles[i-1]); err != nil {
-			//	w.logger.WithError(err).Errorf("failed to delete candle %v", candles[i-1].ID)
-			//}
 			ids = append(ids, candles[i-1].ID)
 			w.removedCount++
 		}
