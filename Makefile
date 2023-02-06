@@ -40,3 +40,7 @@ lint:
 service:
 	./scripts/service.sh $(filter-out $@,$(MAKECMDGOALS))
 
+.PHONY: deploy
+deploy:
+	./scripts/deploy.sh $(filter-out $@,$(MAKECMDGOALS))
+
