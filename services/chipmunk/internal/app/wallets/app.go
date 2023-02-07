@@ -17,7 +17,7 @@ type AppDependencies struct {
 	MarketService *marketsService.Service
 }
 
-func NewApp(ctx context.Context, logger *log.Logger, configs *Configs, dependencies *AppDependencies) (*App, error) {
+func NewApp(ctx context.Context, logger *log.Logger, configs Configs, dependencies *AppDependencies) (*App, error) {
 	walletBuffer := buffer.NewWalletInstance(configs.BufferConfigs)
 
 	walletCheckWorker := workers.InitializeWorker(ctx, configs.WorkerConfigs, dependencies.MarketService)

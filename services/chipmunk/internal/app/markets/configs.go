@@ -6,6 +6,6 @@ import (
 )
 
 type Configs struct {
-	ServiceConfigs *service.Configs `yaml:"service_configs"`
-	WorkerConfigs  *workers.Configs `yaml:"worker_configs"`
+	ServiceConfigs *service.Configs `mapstructure:"service_configs"`
+	WorkerConfigs  *workers.Configs `mapstructure:"worker_configs"`
 }

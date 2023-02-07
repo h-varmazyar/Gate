@@ -12,12 +12,13 @@ type App struct {
 	Service *service.Service
 }
 
-func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs *Configs) (*App, error) {
+func NewApp(ctx context.Context, logger *log.Logger, db *db.DB) (*App, error) {
 	repositoryInstance, err := repository.NewRepository(ctx, logger, db)
 	if err != nil {
 		return nil, err
 	}
+
 	return &App{
-		Service: service.NewService(ctx, logger, configs.ServiceConfigs, repositoryInstance),
+		Service: service.NewService(ctx, logger, repositoryInstance),
 	}, nil
 }

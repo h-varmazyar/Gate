@@ -33,7 +33,7 @@ type workerHolder struct {
 	redundantRemoverWorker *workers.RedundantRemover
 }
 
-func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs *Configs, appDependencies *AppDependencies) (*App, error) {
+func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs Configs, appDependencies *AppDependencies) (*App, error) {
 	repositoryInstance, err := repository.NewRepository(ctx, logger, db)
 	if err != nil {
 		return nil, err

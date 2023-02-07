@@ -20,7 +20,7 @@ var (
 	GrpcService *Service
 )
 
-func NewService(_ context.Context, logger *log.Logger, _ *Configs, db repository.AssetRepository) *Service {
+func NewService(_ context.Context, logger *log.Logger, db repository.AssetRepository) *Service {
 	if GrpcService == nil {
 		GrpcService = new(Service)
 		GrpcService.logger = logger

@@ -2,7 +2,6 @@ package markets
 
 import (
 	"context"
-	candles "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/repository"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/db"
@@ -14,11 +13,10 @@ type App struct {
 }
 
 type AppDependencies struct {
-	CandlesService      *candles.Service
 	ServiceDependencies *service.Dependencies
 }
 
-func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs *Configs, dependencies *AppDependencies) (*App, error) {
+func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs Configs, dependencies *AppDependencies) (*App, error) {
 	repositoryInstance, err := repository.NewRepository(ctx, logger, db)
 	if err != nil {
 		return nil, err

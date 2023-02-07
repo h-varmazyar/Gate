@@ -2,16 +2,16 @@ package db
 
 import (
 	"context"
-	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/gormext"
-	"google.golang.org/grpc/codes"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
-func newPostgres(ctx context.Context, dsn string) (*gorm.DB, error) {
-	db, err := gormext.Open(gormext.PostgreSQL, dsn)
+func newPostgres(_ context.Context, configs gormext.Configs) (*gorm.DB, error) {
+	db, err := gormext.Open(configs)
 	if err != nil {
-		return nil, errors.New(ctx, codes.Internal).AddDetailF("can not load repository configs")
+		log.WithError(err).Error("failed to open database")
+		return nil, err
 	}
 
 	if err = db.Transaction(func(tx *gorm.DB) error {
@@ -22,7 +22,8 @@ func newPostgres(ctx context.Context, dsn string) (*gorm.DB, error) {
 		}
 		return nil
 	}); err != nil {
-		return nil, errors.New(ctx, codes.Internal).AddDetails("failed to migrate database")
+		log.WithError(err).Error("failed to add extensions to database")
+		return nil, err
 	}
 
 	return db, nil

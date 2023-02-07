@@ -12,7 +12,7 @@ import (
 
 type Service struct {
 	logger  *log.Logger
-	configs *Configs
+	configs Configs
 	db      repository.IndicatorRepository
 }
 
@@ -20,7 +20,7 @@ var (
 	GrpcService *Service
 )
 
-func NewService(_ context.Context, logger *log.Logger, configs *Configs, db repository.IndicatorRepository) *Service {
+func NewService(_ context.Context, logger *log.Logger, configs Configs, db repository.IndicatorRepository) *Service {
 	if GrpcService == nil {
 		GrpcService = new(Service)
 		GrpcService.logger = logger
@@ -57,7 +57,7 @@ func (s *Service) List(ctx context.Context, req *chipmunkApi.IndicatorListReq) (
 	}
 
 	resp := new(chipmunkApi.Indicators)
-	mapper.Slice(indicators, resp.Elements)
+	mapper.Slice(indicators, &resp.Elements)
 
 	return resp, nil
 }

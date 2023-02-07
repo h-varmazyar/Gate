@@ -1,5 +1,5 @@
 package buffer
 
 type Configs struct {
-	CandleBufferLength int `yaml:"candle_buffer_length"`
+	CandleBufferLength int `mapstructure:"candle_buffer_length"`
 }

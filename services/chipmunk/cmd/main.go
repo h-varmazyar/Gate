@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/h-varmazyar/Gate/pkg/amqpext"
+	"github.com/h-varmazyar/Gate/pkg/gormext"
 	"github.com/h-varmazyar/Gate/pkg/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/assets"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles"
@@ -26,6 +27,7 @@ func main() {
 	if err != nil {
 		log.Panic("failed to read configs")
 	}
+
 	dbInstance, err := loadDB(ctx, conf.DB)
 	if err != nil {
 		logger.Panicf("failed to initiate databases with error %v", err)
@@ -41,15 +43,15 @@ func main() {
 func loadConfigs() (*Configs, error) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("./configs")
+	viper.AddConfigPath("../configs")
 	viper.AddConfigPath("/app/configs")
-	viper.AddConfigPath("/configs")
-	//if err := viper.ReadInConfig(); err != nil {
-	//localErr := viper.ReadConfig(bytes.NewBuffer(configs.DefaultConfig))
-	//if localErr != nil {
-	//	return nil, localErr
-	//}
-	//}
+	if err := viper.ReadInConfig(); err != nil {
+		return nil, err
+		//localErr := viper.ReadConfig(bytes.NewBuffer(configs.DefaultConfig))
+		//if localErr != nil {
+		//	return nil, localErr
+		//}
+	}
 
 	conf := new(Configs)
 	if err := viper.Unmarshal(conf); err != nil {
@@ -59,14 +61,14 @@ func loadConfigs() (*Configs, error) {
 	return conf, nil
 }
 
-func loadDB(ctx context.Context, configs *db.Configs) (*db.DB, error) {
+func loadDB(ctx context.Context, configs gormext.Configs) (*db.DB, error) {
 	return db.NewDatabase(ctx, configs)
 }
 
 func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstance *db.DB, configs *Configs) {
 	var err error
 	var assetsApp *assets.App
-	assetsApp, err = assets.NewApp(ctx, logger, dbInstance, configs.AssetsApp)
+	assetsApp, err = assets.NewApp(ctx, logger, dbInstance)
 	if err != nil {
 		logger.WithError(err).Panicf("failed to initiate assets app")
 	}
@@ -83,20 +85,7 @@ func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstan
 		logger.WithError(err).Panicf("failed to initiate markets app")
 	}
 
-	candlesDependencies := &candles.AppDependencies{
-		ServiceDependencies: &candlesService.Dependencies{
-			ResolutionService: resolutionsApp.Service,
-			IndicatorService:  indicatorsApp.Service,
-		},
-	}
-	var candlesApp *candles.App
-	candlesApp, err = candles.NewApp(ctx, logger, dbInstance, configs.CandlesApp, candlesDependencies)
-	if err != nil {
-		logger.WithError(err).Panicf("failed to initiate markets app")
-	}
-
 	marketDependencies := &markets.AppDependencies{
-		CandlesService: candlesApp.Service,
 		ServiceDependencies: &marketsService.Dependencies{
 			AssetsService:      assetsApp.Service,
 			IndicatorsService:  indicatorsApp.Service,
@@ -106,6 +95,21 @@ func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstan
 
 	var marketsApp *markets.App
 	marketsApp, err = markets.NewApp(ctx, logger, dbInstance, configs.MarketsApp, marketDependencies)
+	if err != nil {
+		logger.WithError(err).Panicf("failed to initiate markets app")
+	}
+
+	candlesDependencies := &candles.AppDependencies{
+		ServiceDependencies: &candlesService.Dependencies{
+			ResolutionService: resolutionsApp.Service,
+			IndicatorService:  indicatorsApp.Service,
+		},
+		IndicatorService:  indicatorsApp.Service,
+		ResolutionService: resolutionsApp.Service,
+		MarketService:     marketsApp.Service,
+	}
+	var candlesApp *candles.App
+	candlesApp, err = candles.NewApp(ctx, logger, dbInstance, configs.CandlesApp, candlesDependencies)
 	if err != nil {
 		logger.WithError(err).Panicf("failed to initiate markets app")
 	}

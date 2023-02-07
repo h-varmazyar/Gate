@@ -7,7 +7,7 @@ import (
 )
 
 type Configs struct {
-	ServiceConfigs *service.Configs `yaml:"service_configs"`
-	BufferConfigs  *buffer.Configs  `yaml:"buffer_configs"`
-	WorkerConfigs  *workers.Configs `yaml:"worker_configs"`
+	ServiceConfigs *service.Configs `mapstructure:"service_configs"`
+	BufferConfigs  *buffer.Configs  `mapstructure:"buffer_configs"`
+	WorkerConfigs  *workers.Configs `mapstructure:"worker_configs"`
 }
