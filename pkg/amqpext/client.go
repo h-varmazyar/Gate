@@ -10,7 +10,7 @@ import (
 )
 
 type Configs struct {
-	Connection string `yaml:"connection"`
+	Connection string `mapstructure:"connection"`
 }
 
 type client struct {
