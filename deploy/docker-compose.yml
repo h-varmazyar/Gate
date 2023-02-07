@@ -1,0 +1,73 @@
+version: '3.7'
+
+networks:
+  gate:
+    external: true
+
+services:
+  postgres:
+    container_name: postgres
+    image: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - gate
+    ports:
+      - 5432:5432
+    restart: always
+
+  redis:
+    container_name: redis
+    image: bitnami/redis:latest
+    command: redis-server --requirepass redis
+    environment:
+      - ALLOW_EMPTY_PASSWORD=no
+    volumes:
+      - redis_data:/var/lib/redis
+    networks:
+      - gate
+    ports:
+      - 6379:6379
+    restart: always
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.8-management
+    environment:
+      - RABBITMQ_ERLANG_COOKIE=SWQOKODSQALRPCLNMEQG
+      - RABBITMQ_DEFAULT_USER=rabbitmq
+      - RABBITMQ_DEFAULT_PASS=rabbitmq
+      - RABBITMQ_DEFAULT_VHOST=/
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - gate
+    ports:
+      - 15672:15672
+      - 5672:5672
+    restart: always
+
+  chipmunk:
+    container_name: chipmunk
+    build:
+      context: ..
+      dockerfile: services/chipmunk/deploy/Dockerfile
+      args:
+        VERSION: v1.0.0
+    volumes:
+      - /srv/configs/chipmunk:/app/configs
+    networks:
+      - gate
+    depends_on:
+      - postgres
+    restart: always
+
+volumes:
+  #  setup:
+  #  elasticsearch:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:

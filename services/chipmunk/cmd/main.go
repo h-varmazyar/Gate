@@ -14,16 +14,18 @@ import (
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/wallets"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/db"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"google.golang.org/grpc"
-	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"net"
 )
 
 func main() {
 	ctx := context.Background()
-	conf := loadConfigs()
 	logger := log.New()
+	conf, err := loadConfigs()
+	if err != nil {
+		log.Panic("failed to read configs")
+	}
 	dbInstance, err := loadDB(ctx, conf.DB)
 	if err != nil {
 		logger.Panicf("failed to initiate databases with error %v", err)
@@ -36,16 +38,25 @@ func main() {
 	initializeAndRegisterApps(ctx, logger, dbInstance, conf)
 }
 
-func loadConfigs() *Configs {
-	configs := new(Configs)
-	confBytes, err := ioutil.ReadFile("../configs/local.yaml")
-	if err != nil {
-		log.WithError(err).Fatal("can not load yaml file")
+func loadConfigs() (*Configs, error) {
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath("./configs")
+	viper.AddConfigPath("/app/configs")
+	viper.AddConfigPath("/configs")
+	//if err := viper.ReadInConfig(); err != nil {
+	//localErr := viper.ReadConfig(bytes.NewBuffer(configs.DefaultConfig))
+	//if localErr != nil {
+	//	return nil, localErr
+	//}
+	//}
+
+	conf := new(Configs)
+	if err := viper.Unmarshal(conf); err != nil {
+		return nil, err
 	}
-	if err = yaml.Unmarshal(confBytes, configs); err != nil {
-		log.WithError(err).Fatal("can not unmarshal yaml file")
-	}
-	return configs
+
+	return conf, nil
 }
 
 func loadDB(ctx context.Context, configs *db.Configs) (*db.DB, error) {
