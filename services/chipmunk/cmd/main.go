@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"github.com/h-varmazyar/Gate/pkg/amqpext"
 	"github.com/h-varmazyar/Gate/pkg/gormext"
 	"github.com/h-varmazyar/Gate/pkg/service"
+	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/assets"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles"
 	candlesService "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/service"
@@ -43,14 +45,13 @@ func main() {
 func loadConfigs() (*Configs, error) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("../configs")
-	viper.AddConfigPath("/app/configs")
+	viper.AddConfigPath("./configs")  //path for docker compose configs
+	viper.AddConfigPath("../configs") //path for local configs
 	if err := viper.ReadInConfig(); err != nil {
-		return nil, err
-		//localErr := viper.ReadConfig(bytes.NewBuffer(configs.DefaultConfig))
-		//if localErr != nil {
-		//	return nil, localErr
-		//}
+		localErr := viper.ReadConfig(bytes.NewBuffer(configs.DefaultConfig))
+		if localErr != nil {
+			return nil, localErr
+		}
 	}
 
 	conf := new(Configs)

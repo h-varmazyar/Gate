@@ -52,13 +52,14 @@ services:
 
   chipmunk:
     container_name: chipmunk
+    image: chipmunk:v1.0.18
     build:
       context: ..
       dockerfile: services/chipmunk/deploy/Dockerfile
       args:
-        VERSION: v1.0.0
+        VERSION: v1.0.18
     volumes:
-      - /srv/configs/chipmunk:/app/configs
+      - /srv/configs/chipmunk/config.yaml:/app/configs/config.yaml
     networks:
       - gate
     depends_on:
