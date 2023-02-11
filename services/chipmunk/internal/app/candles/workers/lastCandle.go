@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/repository"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	indicatorsPkg "github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
@@ -21,17 +21,15 @@ type LastCandles struct {
 	ctx              context.Context
 	cancelFunc       context.CancelFunc
 	logger           *log.Logger
-	buffer           *buffer.CandleBuffer
 	Started          bool
 }
 
-func NewLastCandles(_ context.Context, db repository.CandleRepository, configs *Configs, logger *log.Logger, buffer *buffer.CandleBuffer) *LastCandles {
+func NewLastCandles(_ context.Context, db repository.CandleRepository, configs *Configs, logger *log.Logger) *LastCandles {
 	coreConn := grpcext.NewConnection(configs.CoreAddress)
 	return &LastCandles{
 		db:               db,
 		logger:           logger,
 		configs:          configs,
-		buffer:           buffer,
 		functionsService: coreApi.NewFunctionsServiceClient(coreConn),
 	}
 }
@@ -98,7 +96,7 @@ func (w *LastCandles) prepareLocalCandles(runner *Runner, indicators []indicator
 		from = candles[len(candles)-1].Time.Add(time.Duration(runner.Resolution.Duration))
 
 		for _, candle := range candles {
-			w.buffer.Push(candle)
+			buffer.CandleBuffer.Push(candle)
 		}
 	} else {
 		from = time.Unix(runner.Market.IssueDate, 0)
@@ -178,14 +176,14 @@ func (w *LastCandles) run(runners []*Runner) {
 //}
 
 func (w *LastCandles) checkForLastCandle(runner *Runner) {
-	last := w.buffer.ReturnCandles(runner.Market.ID, runner.Resolution.ID, 1)
-	if len(last) == 0 {
+	last := buffer.CandleBuffer.Last(runner.Market.ID, runner.Resolution.ID)
+	if last == nil {
 		return
 	}
 	_, err := w.functionsService.AsyncOHLC(context.Background(), &coreApi.OHLCReq{
 		Resolution: runner.Resolution,
 		Market:     runner.Market,
-		From:       last[0].Time.Unix(),
+		From:       last.Time.Unix(),
 		To:         time.Now().Unix(),
 		Platform:   runner.Market.Platform,
 		Timeout:    int64(time.Second),

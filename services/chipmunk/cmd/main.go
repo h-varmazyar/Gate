@@ -9,12 +9,12 @@ import (
 	"github.com/h-varmazyar/Gate/services/chipmunk/configs"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/assets"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles"
-	candlesService "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/indicators"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets"
 	marketsService "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/resolutions"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/wallets"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/db"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -38,6 +38,8 @@ func main() {
 	if err = amqpext.InitializeAMQP(conf.AMQPConfigs); err != nil {
 		logger.Panicf("failed to initialize amqp: %v", err)
 	}
+
+	buffer.InitializeCandleBuffer(conf.BufferConfigs)
 
 	initializeAndRegisterApps(ctx, logger, dbInstance, conf)
 }
@@ -101,10 +103,6 @@ func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstan
 	}
 
 	candlesDependencies := &candles.AppDependencies{
-		ServiceDependencies: &candlesService.Dependencies{
-			ResolutionService: resolutionsApp.Service,
-			IndicatorService:  indicatorsApp.Service,
-		},
 		IndicatorService:  indicatorsApp.Service,
 		ResolutionService: resolutionsApp.Service,
 		MarketService:     marketsApp.Service,

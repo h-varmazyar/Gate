@@ -6,8 +6,8 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/amqpext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/repository"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	indicatorsPkg "github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
 	log "github.com/sirupsen/logrus"
@@ -16,13 +16,12 @@ import (
 
 type CandleReader struct {
 	db         repository.CandleRepository
-	buffer     *buffer.CandleBuffer
 	configs    *Configs
 	queue      *amqpext.Queue
 	indicators []indicatorsPkg.Indicator
 }
 
-func NewCandleReaderWorker(_ context.Context, db repository.CandleRepository, configs *Configs, buffer *buffer.CandleBuffer) (*CandleReader, error) {
+func NewCandleReaderWorker(_ context.Context, db repository.CandleRepository, configs *Configs) (*CandleReader, error) {
 	ohlcQueue, err := amqpext.Client.QueueDeclare(configs.PrimaryDataQueue)
 	if err != nil {
 		return nil, err
@@ -31,7 +30,6 @@ func NewCandleReaderWorker(_ context.Context, db repository.CandleRepository, co
 		db:      db,
 		configs: configs,
 		queue:   ohlcQueue,
-		buffer:  buffer,
 	}, nil
 }
 
@@ -74,7 +72,7 @@ func (w *CandleReader) handle(delivery amqp.Delivery) {
 		log.WithError(err).Errorf("failed to save candles")
 	}
 	for _, candle := range localCandles {
-		w.buffer.Push(candle)
+		buffer.CandleBuffer.Push(candle)
 	}
 	_ = delivery.Ack(false)
 }

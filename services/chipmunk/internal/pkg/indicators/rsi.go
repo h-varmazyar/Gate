@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 )
 
@@ -13,9 +14,6 @@ type rsi struct {
 }
 
 func NewRSI(id uuid.UUID, configs *entity.RsiConfigs) (*rsi, error) {
-	if err := validateRsiConfigs(configs); err != nil {
-		return nil, err
-	}
 	return &rsi{
 		id:         id,
 		RsiConfigs: *configs,
@@ -57,50 +55,27 @@ func (conf *rsi) Calculate(candles []*entity.Candle) error {
 	}
 
 	for i := conf.Length + 1; i < len(candles); i++ {
-		gain := float64(0)
-		loss := float64(0)
-		if change := candles[i].Close - candles[i-1].Close; change > 0 {
-			gain = change
-		} else {
-			loss = change * -1
-		}
-		avgGain := (candles[i-1].RSIs[conf.id].Gain*float64(conf.Length-1) + gain) / float64(conf.Length)
-		avgLoss := (candles[i-1].RSIs[conf.id].Loss*float64(conf.Length-1) + loss) / float64(conf.Length)
-		rs := avgGain / avgLoss
-		rsiValue := 100 - (100 / (1 + rs))
-
-		candles[i].RSIs[conf.id] = &entity.RSIValue{
-			Gain: avgGain,
-			Loss: avgLoss,
-			RSI:  rsiValue,
-		}
+		conf.calculateRSIValue(candles[i-1], candles[i])
 	}
 	return nil
 }
 
-func (conf *rsi) Update(candles []*entity.Candle) *entity.IndicatorValue {
-	gain, loss := float64(0), float64(0)
-	last := len(candles) - 1
-	if last < 1 {
-		return nil
-	}
-	if change := candles[last].Close - candles[last-1].Close; change > 0 {
-		gain = change
-	} else {
-		loss = change
+func (conf *rsi) Update(candles []*entity.Candle) {
+	if len(candles) == 0 {
+		return
 	}
 
-	avgGain := (candles[last-1].RSIs[conf.id].Gain*float64(conf.Length-1) + gain) / float64(conf.Length)
-	avgLoss := (candles[last-1].RSIs[conf.id].Loss*float64(conf.Length-1) - loss) / float64(conf.Length)
-	rs := avgGain / avgLoss
-	rsiValue := 100 - (100 / (1 + rs))
+	start := buffer.CandleBuffer.Before(candles[0].MarketID.String(), candles[0].ResolutionID.String(), candles[0].Time, 1)
 
-	return &entity.IndicatorValue{
-		RSI: &entity.RSIValue{
-			Gain: avgGain,
-			Loss: avgLoss,
-			RSI:  rsiValue,
-		}}
+	if len(start) == 0 {
+		return
+	}
+
+	internalCandles := append(start, candles...)
+
+	for i := 1; i < len(internalCandles); i++ {
+		conf.calculateRSIValue(internalCandles[i-1], internalCandles[i])
+	}
 }
 
 func (conf *rsi) validateRSI(length int) error {
@@ -110,6 +85,21 @@ func (conf *rsi) validateRSI(length int) error {
 	return nil
 }
 
-func validateRsiConfigs(indicator *entity.RsiConfigs) error {
-	return nil
+func (conf *rsi) calculateRSIValue(candle1, candle2 *entity.Candle) {
+	gain, loss := float64(0), float64(0)
+	if change := candle2.Close - candle1.Close; change > 0 {
+		gain = change
+	} else {
+		loss = change
+	}
+	avgGain := (candle1.RSIs[conf.id].Gain*float64(conf.Length-1) + gain) / float64(conf.Length)
+	avgLoss := (candle1.RSIs[conf.id].Loss*float64(conf.Length-1) - loss) / float64(conf.Length)
+	rs := avgGain / avgLoss
+	rsiValue := 100 - (100 / (1 + rs))
+
+	candle2.RSIs[conf.id] = &entity.RSIValue{
+		Gain: avgGain,
+		Loss: avgLoss,
+		RSI:  rsiValue,
+	}
 }

@@ -7,7 +7,6 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/repository"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/workers"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
@@ -15,16 +14,16 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func (app *App) initializeWorkers(ctx context.Context, configs *workers.Configs, candleBuffer *buffer.CandleBuffer, repositoryInstance repository.CandleRepository) (*workerHolder, error) {
+func (app *App) initializeWorkers(ctx context.Context, configs *workers.Configs, repositoryInstance repository.CandleRepository) (*workerHolder, error) {
 	var err error
 	holder := new(workerHolder)
-	holder.candleReaderWorker, err = workers.NewCandleReaderWorker(ctx, repositoryInstance, configs, candleBuffer)
+	holder.candleReaderWorker, err = workers.NewCandleReaderWorker(ctx, repositoryInstance, configs)
 	if err != nil {
 		app.logger.WithError(err).Error("failed to initialize primary data worker")
 		return nil, err
 	}
 
-	holder.lastCandleWorker = workers.NewLastCandles(ctx, repositoryInstance, configs, app.logger, candleBuffer)
+	holder.lastCandleWorker = workers.NewLastCandles(ctx, repositoryInstance, configs, app.logger)
 
 	holder.missedCandlesWorker = workers.NewMissedCandles(ctx, repositoryInstance, configs, app.logger)
 

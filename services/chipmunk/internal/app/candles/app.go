@@ -3,7 +3,6 @@ package candles
 import (
 	"context"
 	api "github.com/h-varmazyar/Gate/api/proto"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/repository"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/workers"
@@ -20,10 +19,9 @@ type App struct {
 }
 
 type AppDependencies struct {
-	ServiceDependencies *service.Dependencies
-	IndicatorService    *indicatorService.Service
-	ResolutionService   *resolutionService.Service
-	MarketService       *marketService.Service
+	IndicatorService  *indicatorService.Service
+	ResolutionService *resolutionService.Service
+	MarketService     *marketService.Service
 }
 
 type workerHolder struct {
@@ -43,9 +41,7 @@ func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs Configs,
 		logger: logger,
 	}
 
-	candleBuffer := buffer.NewCandleBufferInstance(configs.BufferConfigs)
-
-	holder, err := app.initializeWorkers(ctx, configs.WorkerConfigs, candleBuffer, repositoryInstance)
+	holder, err := app.initializeWorkers(ctx, configs.WorkerConfigs, repositoryInstance)
 	if err != nil {
 		return nil, err
 	}
@@ -54,8 +50,7 @@ func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs Configs,
 
 	err = app.startWorkers(ctx, holder, appDependencies, platforms)
 
-	appDependencies.ServiceDependencies.Buffer = candleBuffer
-	app.Service = service.NewService(ctx, logger, configs.ServiceConfigs, repositoryInstance, appDependencies.ServiceDependencies)
+	app.Service = service.NewService(ctx, logger, configs.ServiceConfigs, repositoryInstance)
 
 	return app, nil
 }

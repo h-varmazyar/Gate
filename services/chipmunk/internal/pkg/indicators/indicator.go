@@ -7,7 +7,7 @@ import (
 
 type Indicator interface {
 	Calculate([]*entity.Candle) error
-	Update([]*entity.Candle) *entity.IndicatorValue
+	Update([]*entity.Candle)
 	GetType() chipmunkApi.IndicatorType
 	GetLength() int
 }

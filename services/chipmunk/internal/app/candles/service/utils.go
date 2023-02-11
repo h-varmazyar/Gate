@@ -7,6 +7,7 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	indicatorsPkg "github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
@@ -78,7 +79,7 @@ func (s *Service) prepareLocalCandles(market *chipmunkApi.Market, resolution *ch
 		from = candles[len(candles)-1].Time.Add(time.Duration(resolution.Duration))
 
 		for _, candle := range candles {
-			s.buffer.Push(candle)
+			buffer.CandleBuffer.Push(candle)
 		}
 	} else {
 		from = time.Unix(market.IssueDate, 0)

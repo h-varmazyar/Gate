@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	"math"
 )
@@ -53,6 +54,22 @@ func (conf *stochastic) Calculate(candles []*entity.Candle) error {
 			candle.Stochastics[conf.id] = new(entity.StochasticValue)
 		}
 	}
+
+	conf.calculateStochastic(candles)
+
+	return nil
+}
+
+func (conf *stochastic) Update(candles []*entity.Candle) {
+	first := candles[0]
+	start := buffer.CandleBuffer.Before(first.MarketID.String(), first.ResolutionID.String(), first.Time, conf.Length)
+
+	internalCandles := append(start, candles...)
+
+	conf.calculateStochastic(internalCandles)
+}
+
+func (conf *stochastic) calculateStochastic(candles []*entity.Candle) {
 	for i := conf.Length - 1; i < len(candles); i++ {
 		lowest := math.MaxFloat64
 		highest := float64(0)
@@ -76,36 +93,35 @@ func (conf *stochastic) Calculate(candles []*entity.Candle) error {
 
 		candles[i].Stochastics[conf.id] = stochasticValue
 	}
-	return nil
 }
 
-func (conf *stochastic) Update(candles []*entity.Candle) *entity.IndicatorValue {
-	lowest := math.MaxFloat64
-	highest := float64(0)
-	lastIndex := len(candles) - 1
-	for i := len(candles) - conf.Length; i < len(candles); i++ {
-		if candles[i].Low < lowest {
-			lowest = candles[i].Low
-		}
-		if candles[i].High > highest {
-			highest = candles[i].High
-		}
-	}
-	fastK := 100 * ((candles[lastIndex].Close - lowest) / (highest - lowest))
-
-	sum := fastK
-	for j := len(candles) - conf.SmoothK; j < len(candles)-1; j++ {
-		sum += candles[j].Stochastics[conf.id].FastK
-	}
-
-	return &entity.IndicatorValue{
-		Stochastic: &entity.StochasticValue{
-			IndexK: sum / float64(conf.SmoothK),
-			IndexD: calculateIndexD(conf.id, candles[lastIndex-conf.SmoothD+1:]),
-			FastK:  fastK,
-		},
-	}
-}
+//func (conf *stochastic) Update(candles []*entity.Candle) {
+//	lowest := math.MaxFloat64
+//	highest := float64(0)
+//	lastIndex := len(candles) - 1
+//	for i := len(candles) - conf.Length; i < len(candles); i++ {
+//		if candles[i].Low < lowest {
+//			lowest = candles[i].Low
+//		}
+//		if candles[i].High > highest {
+//			highest = candles[i].High
+//		}
+//	}
+//	fastK := 100 * ((candles[lastIndex].Close - lowest) / (highest - lowest))
+//
+//	sum := fastK
+//	for j := len(candles) - conf.SmoothK; j < len(candles)-1; j++ {
+//		sum += candles[j].Stochastics[conf.id].FastK
+//	}
+//
+//	return &entity.IndicatorValue{
+//		Stochastic: &entity.StochasticValue{
+//			IndexK: sum / float64(conf.SmoothK),
+//			IndexD: calculateIndexD(conf.id, candles[lastIndex-conf.SmoothD+1:]),
+//			FastK:  fastK,
+//		},
+//	}
+//}
 
 func calculateIndexD(id uuid.UUID, candles []*entity.Candle) float64 {
 	sum := float64(0)

@@ -7,6 +7,8 @@ version: "v2.0.0"
 grpc_port: 11000
 amqp_configs:
   connection: "amqp://rabbitmq:rabbitmq@localhost"
+buffer_configs:
+  candle_buffer_length: 400
 markets_app:
   service_configs:
     network_address: ":13000"
@@ -19,8 +21,6 @@ candles_app:
   service_configs:
     core_address: ":10100"
     eagle_address: ":12000"
-  buffer_configs:
-    candle_buffer_length: 400
   worker_configs:
     core_address: ":10100"
     primary_data_queue: "chipmunk_ohlc"

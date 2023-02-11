@@ -7,10 +7,8 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/repository"
-	indicatorService "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/indicators/service"
-	resolutionService "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/resolutions/service"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api/proto"
 	log "github.com/sirupsen/logrus"
@@ -20,46 +18,26 @@ import (
 
 type Service struct {
 	db               repository.CandleRepository
-	buffer           *buffer.CandleBuffer
 	logger           *log.Logger
 	configs          *Configs
 	functionsService coreApi.FunctionsServiceClient
 	strategyService  eagleApi.StrategyServiceClient
-	//resolutionService *resolutionService.Service
-	//indicatorService  *indicatorService.Service
-	//candleReaderWorker     *workers.CandleReader
-	//lastCandleWorker       *workers.LastCandles
-	//missedCandlesWorker    *workers.MissedCandles
-	//redundantRemoverWorker *workers.RedundantRemover
-}
-
-type Dependencies struct {
-	Buffer            *buffer.CandleBuffer
-	ResolutionService *resolutionService.Service
-	IndicatorService  *indicatorService.Service
 }
 
 var (
 	GrpcService *Service
 )
 
-func NewService(_ context.Context, logger *log.Logger, configs *Configs, db repository.CandleRepository, dependencies *Dependencies) *Service {
+func NewService(_ context.Context, logger *log.Logger, configs *Configs, db repository.CandleRepository) *Service {
 	if GrpcService == nil {
 		coreConn := grpcext.NewConnection(configs.CoreAddress)
 		eagleConn := grpcext.NewConnection(configs.EagleAddress)
 		GrpcService = &Service{
 			db:               db,
-			buffer:           dependencies.Buffer,
 			logger:           logger,
 			configs:          configs,
 			functionsService: coreApi.NewFunctionsServiceClient(coreConn),
 			strategyService:  eagleApi.NewStrategyServiceClient(eagleConn),
-			//resolutionService:      dependencies.ResolutionService,
-			//indicatorService:       dependencies.IndicatorService,
-			//candleReaderWorker:     dependencies.PrimaryDataWorker,
-			//lastCandleWorker:       dependencies.LastCandleWorker,
-			//missedCandlesWorker:    dependencies.MissedCandlesWorker,
-			//redundantRemoverWorker: dependencies.RedundantRemoverWorker,
 		}
 	}
 	return GrpcService
@@ -78,7 +56,7 @@ func (s *Service) List(_ context.Context, req *chipmunkApi.CandleListReq) (*chip
 	if err != nil {
 		return nil, err
 	}
-	candles := s.buffer.ReturnCandles(req.MarketID, req.ResolutionID, int(req.Count))
+	candles := buffer.CandleBuffer.ReturnCandles(req.MarketID, req.ResolutionID, int(req.Count))
 	response := new(chipmunkApi.Candles)
 
 	for _, candle := range candles {
