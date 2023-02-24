@@ -7,11 +7,7 @@
 package proto
 
 import (
-	context "context"
-	proto "github.com/h-varmazyar/Gate/api/proto"
 	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -23,7 +19,6 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PlatformServiceClient interface {
-	CollectMarketData(ctx context.Context, in *PlatformCollectDataReq, opts ...grpc.CallOption) (*proto.Void, error)
 }
 
 type platformServiceClient struct {
@@ -34,28 +29,14 @@ func NewPlatformServiceClient(cc grpc.ClientConnInterface) PlatformServiceClient
 	return &platformServiceClient{cc}
 }
 
-func (c *platformServiceClient) CollectMarketData(ctx context.Context, in *PlatformCollectDataReq, opts ...grpc.CallOption) (*proto.Void, error) {
-	out := new(proto.Void)
-	err := c.cc.Invoke(ctx, "/coreApi.PlatformService/CollectMarketData", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // PlatformServiceServer is the server API for PlatformService service.
 // All implementations should embed UnimplementedPlatformServiceServer
 // for forward compatibility
 type PlatformServiceServer interface {
-	CollectMarketData(context.Context, *PlatformCollectDataReq) (*proto.Void, error)
 }
 
 // UnimplementedPlatformServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedPlatformServiceServer struct {
-}
-
-func (UnimplementedPlatformServiceServer) CollectMarketData(context.Context, *PlatformCollectDataReq) (*proto.Void, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CollectMarketData not implemented")
 }
 
 // UnsafePlatformServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -69,36 +50,13 @@ func RegisterPlatformServiceServer(s grpc.ServiceRegistrar, srv PlatformServiceS
 	s.RegisterService(&PlatformService_ServiceDesc, srv)
 }
 
-func _PlatformService_CollectMarketData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PlatformCollectDataReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PlatformServiceServer).CollectMarketData(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/coreApi.PlatformService/CollectMarketData",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PlatformServiceServer).CollectMarketData(ctx, req.(*PlatformCollectDataReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // PlatformService_ServiceDesc is the grpc.ServiceDesc for PlatformService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var PlatformService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "coreApi.PlatformService",
 	HandlerType: (*PlatformServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "CollectMarketData",
-			Handler:    _PlatformService_CollectMarketData_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "services/core/api/proto/src/platform.proto",
+	Methods:     []grpc.MethodDesc{},
+	Streams:     []grpc.StreamDesc{},
+	Metadata:    "services/core/api/proto/src/platform.proto",
 }

@@ -1,8 +1,8 @@
 package coinex
 
 type Configs struct {
-	CoinexCallbackQueue        string `yaml:"coinex_callback_queue"`
-	ChipmunkOHLCQueue          string `yaml:"chipmunk_ohlc_queue"`
-	CoinexPublicRateLimiterID  string `yaml:"coinex_public_rate_limiter_id"`
-	CoinexSpotApiRateLimiterID string `yaml:"coinex_spot_api_rate_limiter_id"`
+	CoinexCallbackQueue        string `mapstructure:"coinex_callback_queue"`
+	ChipmunkOHLCQueue          string `mapstructure:"chipmunk_ohlc_queue"`
+	CoinexPublicRateLimiterID  string `mapstructure:"coinex_public_rate_limiter_id"`
+	CoinexSpotApiRateLimiterID string `mapstructure:"coinex_spot_api_rate_limiter_id"`
 }

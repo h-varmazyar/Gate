@@ -57,7 +57,7 @@ func (buffer *candleBuffer) Push(candle *entity.Candle) {
 }
 
 func (buffer *candleBuffer) Last(marketID, resolutionID string) *entity.Candle {
-	return buffer.returnCandles(marketID, resolutionID, 1)[0]
+	return buffer.ReturnCandles(marketID, resolutionID, 1)[0]
 }
 
 func (buffer *candleBuffer) Before(marketID, resolutionID string, t time.Time, count int) []*entity.Candle {
@@ -89,7 +89,7 @@ func (buffer *candleBuffer) Before(marketID, resolutionID string, t time.Time, c
 	}
 }
 
-func (buffer *candleBuffer) returnCandles(marketID, resolutionID string, n int) []*entity.Candle {
+func (buffer *candleBuffer) ReturnCandles(marketID, resolutionID string, n int) []*entity.Candle {
 	buffer.lock.Lock()
 	defer buffer.lock.Unlock()
 	if candles, ok := buffer.data[marketID][resolutionID]; !ok || candles == nil {

@@ -66,91 +66,6 @@ func (s *Service) Create(ctx context.Context, req *brokerageApi.BrokerageCreateR
 	return response, nil
 }
 
-func (s *Service) Start(ctx context.Context, req *brokerageApi.BrokerageStartReq) (*brokerageApi.Brokerage, error) {
-	brokerageID, err := uuid.Parse(req.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	brokerage, err := s.db.ReturnByID(brokerageID)
-	if err != nil {
-		return nil, err
-	}
-
-	if brokerage.Status == api.Status_Enable {
-		err := errors.New(ctx, codes.FailedPrecondition).AddDetailF("brokerage %v started before", req.ID)
-		s.logger.WithError(err)
-		return nil, err
-	}
-	if req.WithTrading {
-		tradingMarkets, err := s.marketService.List(ctx, &chipmunkApi.MarketListReq{
-			Platform: brokerage.Platform,
-		})
-		if err != nil {
-			log.WithError(err).WithField("brokerage", brokerage.ID).Error("failed to get markets")
-			return nil, err
-		}
-
-		if _, err = s.walletService.StartWorker(ctx, &chipmunkApi.StartWorkerRequest{
-			BrokerageID: req.ID,
-		}); err != nil {
-			log.WithError(err).WithField("brokerage", brokerage.ID).Error("failed to start wallet workers")
-			return nil, err
-		}
-
-		if _, err = s.strategyService.StartSignalChecker(ctx, &eagleApi.StrategySignalCheckStartReq{
-			Platform:    brokerage.Platform,
-			BrokerageID: brokerage.ID.String(),
-			StrategyID:  brokerage.StrategyID.String(),
-			WithTrading: req.WithTrading,
-			Markets:     tradingMarkets,
-		}); err != nil {
-			if _, walletErr := s.walletService.StopWorker(ctx, new(api.Void)); walletErr != nil {
-				log.WithError(walletErr).Errorf("failed to stop wallet workers for core %v", brokerageID)
-			}
-			return nil, err
-		}
-	}
-	brokerage.Status = api.Status_Enable
-	if err := s.db.ChangeStatus(brokerage.ID); err != nil {
-		return nil, err
-	}
-	response := new(brokerageApi.Brokerage)
-	mapper.Struct(brokerage, response)
-	return response, nil
-}
-
-func (s *Service) Stop(ctx context.Context, req *brokerageApi.BrokerageStopReq) (*brokerageApi.Brokerage, error) {
-	brokerageID, err := uuid.Parse(req.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	brokerage, err := s.db.ReturnByID(brokerageID)
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err = s.walletService.StopWorker(ctx, &api.Void{}); err != nil {
-		log.WithError(err).WithField("core", brokerage.ID).Error("failed to stop wallet workers")
-		return nil, err
-	}
-	if _, err = s.strategyService.StopSignalChecker(ctx, &eagleApi.StrategySignalCheckStopReq{
-		BrokerageID: req.ID,
-	}); err != nil {
-		log.WithError(err).WithField("core", brokerage.ID).Error("failed to stop signal workers")
-		return nil, err
-	}
-
-	brokerage.Status = api.Status_Disable
-	if err := s.db.ChangeStatus(brokerage.ID); err != nil {
-		return nil, err
-	}
-	response := new(brokerageApi.Brokerage)
-	mapper.Struct(brokerage, response)
-	return response, nil
-}
-
 func (s *Service) Return(_ context.Context, req *brokerageApi.BrokerageReturnReq) (*brokerageApi.Brokerage, error) {
 	brokerageID, err := uuid.Parse(req.ID)
 	if err != nil {
@@ -170,9 +85,7 @@ func (s *Service) Delete(ctx context.Context, req *brokerageApi.BrokerageDeleteR
 	if err != nil {
 		return nil, err
 	}
-	if _, err = s.Stop(ctx, &brokerageApi.BrokerageStopReq{ID: req.ID}); err != nil {
-		return nil, err
-	}
+
 	if err := s.db.Delete(brokerageID); err != nil {
 		return nil, err
 	}

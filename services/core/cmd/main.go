@@ -1,25 +1,32 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"github.com/h-varmazyar/Gate/pkg/amqpext"
+	"github.com/h-varmazyar/Gate/pkg/gormext"
 	"github.com/h-varmazyar/Gate/pkg/service"
+	"github.com/h-varmazyar/Gate/services/core/configs"
 	"github.com/h-varmazyar/Gate/services/core/internal/app/brokerages"
 	"github.com/h-varmazyar/Gate/services/core/internal/app/functions"
 	"github.com/h-varmazyar/Gate/services/core/internal/app/platforms"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages/coinex"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/db"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"google.golang.org/grpc"
-	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"net"
 )
 
 func main() {
 	ctx := context.Background()
-	conf := loadConfigs()
 	logger := log.New()
+
+	conf, err := loadConfigs()
+	if err != nil {
+		log.Panic("failed to read configs")
+	}
+
 	dbInstance, err := loadDB(ctx, conf.DB)
 	if err != nil {
 		logger.Panicf("failed to initiate databases with error %v", err)
@@ -36,19 +43,27 @@ func main() {
 	initializeAndRegisterApps(ctx, logger, dbInstance, conf)
 }
 
-func loadConfigs() *Configs {
-	configs := new(Configs)
-	confBytes, err := ioutil.ReadFile("../configs/local.yaml")
-	if err != nil {
-		log.WithError(err).Fatal("can not load yaml file")
+func loadConfigs() (*Configs, error) {
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath("./configs")  //path for docker compose configs
+	viper.AddConfigPath("../configs") //path for local configs
+	if err := viper.ReadInConfig(); err != nil {
+		localErr := viper.ReadConfig(bytes.NewBuffer(configs.DefaultConfig))
+		if localErr != nil {
+			return nil, localErr
+		}
 	}
-	if err = yaml.Unmarshal(confBytes, configs); err != nil {
-		log.WithError(err).Fatal("can not unmarshal yaml file")
+
+	conf := new(Configs)
+	if err := viper.Unmarshal(conf); err != nil {
+		return nil, err
 	}
-	return configs
+
+	return conf, nil
 }
 
-func loadDB(ctx context.Context, configs *db.Configs) (*db.DB, error) {
+func loadDB(ctx context.Context, configs gormext.Configs) (*db.DB, error) {
 	return db.NewDatabase(ctx, configs)
 }
 

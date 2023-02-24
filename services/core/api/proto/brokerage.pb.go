@@ -292,72 +292,6 @@ func (x *BrokerageCreateReq) GetStrategyID() string {
 	return ""
 }
 
-type StatusChangeRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// @inject_tag: json:"id"
-	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
-	// @inject_tag: json:"trading"
-	Trading bool `protobuf:"varint,2,opt,name=Trading,proto3" json:"trading"`
-	// @inject_tag: json:"ohlc"
-	OHLC bool `protobuf:"varint,3,opt,name=OHLC,proto3" json:"ohlc"`
-}
-
-func (x *StatusChangeRequest) Reset() {
-	*x = StatusChangeRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_services_core_api_proto_src_brokerage_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *StatusChangeRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*StatusChangeRequest) ProtoMessage() {}
-
-func (x *StatusChangeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_services_core_api_proto_src_brokerage_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use StatusChangeRequest.ProtoReflect.Descriptor instead.
-func (*StatusChangeRequest) Descriptor() ([]byte, []int) {
-	return file_services_core_api_proto_src_brokerage_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *StatusChangeRequest) GetID() string {
-	if x != nil {
-		return x.ID
-	}
-	return ""
-}
-
-func (x *StatusChangeRequest) GetTrading() bool {
-	if x != nil {
-		return x.Trading
-	}
-	return false
-}
-
-func (x *StatusChangeRequest) GetOHLC() bool {
-	if x != nil {
-		return x.OHLC
-	}
-	return false
-}
-
 type BrokerageReturnReq struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -372,7 +306,7 @@ type BrokerageReturnReq struct {
 func (x *BrokerageReturnReq) Reset() {
 	*x = BrokerageReturnReq{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_services_core_api_proto_src_brokerage_proto_msgTypes[4]
+		mi := &file_services_core_api_proto_src_brokerage_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -385,7 +319,7 @@ func (x *BrokerageReturnReq) String() string {
 func (*BrokerageReturnReq) ProtoMessage() {}
 
 func (x *BrokerageReturnReq) ProtoReflect() protoreflect.Message {
-	mi := &file_services_core_api_proto_src_brokerage_proto_msgTypes[4]
+	mi := &file_services_core_api_proto_src_brokerage_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -398,7 +332,7 @@ func (x *BrokerageReturnReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BrokerageReturnReq.ProtoReflect.Descriptor instead.
 func (*BrokerageReturnReq) Descriptor() ([]byte, []int) {
-	return file_services_core_api_proto_src_brokerage_proto_rawDescGZIP(), []int{4}
+	return file_services_core_api_proto_src_brokerage_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *BrokerageReturnReq) GetID() string {
@@ -427,7 +361,7 @@ type BrokerageDeleteReq struct {
 func (x *BrokerageDeleteReq) Reset() {
 	*x = BrokerageDeleteReq{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_services_core_api_proto_src_brokerage_proto_msgTypes[5]
+		mi := &file_services_core_api_proto_src_brokerage_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -440,7 +374,7 @@ func (x *BrokerageDeleteReq) String() string {
 func (*BrokerageDeleteReq) ProtoMessage() {}
 
 func (x *BrokerageDeleteReq) ProtoReflect() protoreflect.Message {
-	mi := &file_services_core_api_proto_src_brokerage_proto_msgTypes[5]
+	mi := &file_services_core_api_proto_src_brokerage_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -453,115 +387,10 @@ func (x *BrokerageDeleteReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BrokerageDeleteReq.ProtoReflect.Descriptor instead.
 func (*BrokerageDeleteReq) Descriptor() ([]byte, []int) {
-	return file_services_core_api_proto_src_brokerage_proto_rawDescGZIP(), []int{5}
+	return file_services_core_api_proto_src_brokerage_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *BrokerageDeleteReq) GetID() string {
-	if x != nil {
-		return x.ID
-	}
-	return ""
-}
-
-type BrokerageStartReq struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// @inject_tag: json:"id"
-	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
-	// @inject_tag: json:"with_trading"
-	WithTrading bool `protobuf:"varint,2,opt,name=WithTrading,proto3" json:"with_trading"`
-}
-
-func (x *BrokerageStartReq) Reset() {
-	*x = BrokerageStartReq{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_services_core_api_proto_src_brokerage_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *BrokerageStartReq) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*BrokerageStartReq) ProtoMessage() {}
-
-func (x *BrokerageStartReq) ProtoReflect() protoreflect.Message {
-	mi := &file_services_core_api_proto_src_brokerage_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use BrokerageStartReq.ProtoReflect.Descriptor instead.
-func (*BrokerageStartReq) Descriptor() ([]byte, []int) {
-	return file_services_core_api_proto_src_brokerage_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *BrokerageStartReq) GetID() string {
-	if x != nil {
-		return x.ID
-	}
-	return ""
-}
-
-func (x *BrokerageStartReq) GetWithTrading() bool {
-	if x != nil {
-		return x.WithTrading
-	}
-	return false
-}
-
-type BrokerageStopReq struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// @inject_tag: json:"id"
-	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
-}
-
-func (x *BrokerageStopReq) Reset() {
-	*x = BrokerageStopReq{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_services_core_api_proto_src_brokerage_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *BrokerageStopReq) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*BrokerageStopReq) ProtoMessage() {}
-
-func (x *BrokerageStopReq) ProtoReflect() protoreflect.Message {
-	mi := &file_services_core_api_proto_src_brokerage_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use BrokerageStopReq.ProtoReflect.Descriptor instead.
-func (*BrokerageStopReq) Descriptor() ([]byte, []int) {
-	return file_services_core_api_proto_src_brokerage_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *BrokerageStopReq) GetID() string {
 	if x != nil {
 		return x.ID
 	}
@@ -623,36 +452,17 @@ var file_services_core_api_proto_src_brokerage_proto_rawDesc = []byte{
 	0x70, 0x6d, 0x75, 0x6e, 0x6b, 0x41, 0x70, 0x69, 0x2e, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x73,
 	0x52, 0x07, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x73, 0x12, 0x1e, 0x0a, 0x0a, 0x53, 0x74, 0x72,
 	0x61, 0x74, 0x65, 0x67, 0x79, 0x49, 0x44, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x53,
-	0x74, 0x72, 0x61, 0x74, 0x65, 0x67, 0x79, 0x49, 0x44, 0x22, 0x53, 0x0a, 0x13, 0x53, 0x74, 0x61,
-	0x74, 0x75, 0x73, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x12, 0x0e, 0x0a, 0x02, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x49, 0x44,
-	0x12, 0x18, 0x0a, 0x07, 0x54, 0x72, 0x61, 0x64, 0x69, 0x6e, 0x67, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x08, 0x52, 0x07, 0x54, 0x72, 0x61, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x12, 0x0a, 0x04, 0x4f, 0x48,
-	0x4c, 0x43, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x04, 0x4f, 0x48, 0x4c, 0x43, 0x22, 0x46,
-	0x0a, 0x12, 0x42, 0x72, 0x6f, 0x6b, 0x65, 0x72, 0x61, 0x67, 0x65, 0x52, 0x65, 0x74, 0x75, 0x72,
-	0x6e, 0x52, 0x65, 0x71, 0x12, 0x0e, 0x0a, 0x02, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x02, 0x49, 0x44, 0x12, 0x20, 0x0a, 0x0b, 0x57, 0x69, 0x74, 0x68, 0x4d, 0x61, 0x72, 0x6b,
-	0x65, 0x74, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0b, 0x57, 0x69, 0x74, 0x68, 0x4d,
-	0x61, 0x72, 0x6b, 0x65, 0x74, 0x73, 0x22, 0x24, 0x0a, 0x12, 0x42, 0x72, 0x6f, 0x6b, 0x65, 0x72,
-	0x61, 0x67, 0x65, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x52, 0x65, 0x71, 0x12, 0x0e, 0x0a, 0x02,
-	0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x49, 0x44, 0x22, 0x45, 0x0a, 0x11,
-	0x42, 0x72, 0x6f, 0x6b, 0x65, 0x72, 0x61, 0x67, 0x65, 0x53, 0x74, 0x61, 0x72, 0x74, 0x52, 0x65,
-	0x71, 0x12, 0x0e, 0x0a, 0x02, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x49,
-	0x44, 0x12, 0x20, 0x0a, 0x0b, 0x57, 0x69, 0x74, 0x68, 0x54, 0x72, 0x61, 0x64, 0x69, 0x6e, 0x67,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0b, 0x57, 0x69, 0x74, 0x68, 0x54, 0x72, 0x61, 0x64,
-	0x69, 0x6e, 0x67, 0x22, 0x22, 0x0a, 0x10, 0x42, 0x72, 0x6f, 0x6b, 0x65, 0x72, 0x61, 0x67, 0x65,
-	0x53, 0x74, 0x6f, 0x70, 0x52, 0x65, 0x71, 0x12, 0x0e, 0x0a, 0x02, 0x49, 0x44, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x02, 0x49, 0x44, 0x32, 0xd2, 0x02, 0x0a, 0x10, 0x42, 0x72, 0x6f, 0x6b,
+	0x74, 0x72, 0x61, 0x74, 0x65, 0x67, 0x79, 0x49, 0x44, 0x22, 0x46, 0x0a, 0x12, 0x42, 0x72, 0x6f,
+	0x6b, 0x65, 0x72, 0x61, 0x67, 0x65, 0x52, 0x65, 0x74, 0x75, 0x72, 0x6e, 0x52, 0x65, 0x71, 0x12,
+	0x0e, 0x0a, 0x02, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x49, 0x44, 0x12,
+	0x20, 0x0a, 0x0b, 0x57, 0x69, 0x74, 0x68, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x73, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x08, 0x52, 0x0b, 0x57, 0x69, 0x74, 0x68, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74,
+	0x73, 0x22, 0x24, 0x0a, 0x12, 0x42, 0x72, 0x6f, 0x6b, 0x65, 0x72, 0x61, 0x67, 0x65, 0x44, 0x65,
+	0x6c, 0x65, 0x74, 0x65, 0x52, 0x65, 0x71, 0x12, 0x0e, 0x0a, 0x02, 0x49, 0x44, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x02, 0x49, 0x44, 0x32, 0xe2, 0x01, 0x0a, 0x10, 0x42, 0x72, 0x6f, 0x6b,
 	0x65, 0x72, 0x61, 0x67, 0x65, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x39, 0x0a, 0x06,
 	0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x12, 0x1b, 0x2e, 0x63, 0x6f, 0x72, 0x65, 0x41, 0x70, 0x69,
 	0x2e, 0x42, 0x72, 0x6f, 0x6b, 0x65, 0x72, 0x61, 0x67, 0x65, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65,
-	0x52, 0x65, 0x71, 0x1a, 0x12, 0x2e, 0x63, 0x6f, 0x72, 0x65, 0x41, 0x70, 0x69, 0x2e, 0x42, 0x72,
-	0x6f, 0x6b, 0x65, 0x72, 0x61, 0x67, 0x65, 0x12, 0x37, 0x0a, 0x05, 0x53, 0x74, 0x61, 0x72, 0x74,
-	0x12, 0x1a, 0x2e, 0x63, 0x6f, 0x72, 0x65, 0x41, 0x70, 0x69, 0x2e, 0x42, 0x72, 0x6f, 0x6b, 0x65,
-	0x72, 0x61, 0x67, 0x65, 0x53, 0x74, 0x61, 0x72, 0x74, 0x52, 0x65, 0x71, 0x1a, 0x12, 0x2e, 0x63,
-	0x6f, 0x72, 0x65, 0x41, 0x70, 0x69, 0x2e, 0x42, 0x72, 0x6f, 0x6b, 0x65, 0x72, 0x61, 0x67, 0x65,
-	0x12, 0x35, 0x0a, 0x04, 0x53, 0x74, 0x6f, 0x70, 0x12, 0x19, 0x2e, 0x63, 0x6f, 0x72, 0x65, 0x41,
-	0x70, 0x69, 0x2e, 0x42, 0x72, 0x6f, 0x6b, 0x65, 0x72, 0x61, 0x67, 0x65, 0x53, 0x74, 0x6f, 0x70,
 	0x52, 0x65, 0x71, 0x1a, 0x12, 0x2e, 0x63, 0x6f, 0x72, 0x65, 0x41, 0x70, 0x69, 0x2e, 0x42, 0x72,
 	0x6f, 0x6b, 0x65, 0x72, 0x61, 0x67, 0x65, 0x12, 0x39, 0x0a, 0x06, 0x52, 0x65, 0x74, 0x75, 0x72,
 	0x6e, 0x12, 0x1b, 0x2e, 0x63, 0x6f, 0x72, 0x65, 0x41, 0x70, 0x69, 0x2e, 0x42, 0x72, 0x6f, 0x6b,
@@ -682,47 +492,40 @@ func file_services_core_api_proto_src_brokerage_proto_rawDescGZIP() []byte {
 	return file_services_core_api_proto_src_brokerage_proto_rawDescData
 }
 
-var file_services_core_api_proto_src_brokerage_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_services_core_api_proto_src_brokerage_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_services_core_api_proto_src_brokerage_proto_goTypes = []interface{}{
-	(*Brokerage)(nil),           // 0: coreApi.Brokerage
-	(*Brokerages)(nil),          // 1: coreApi.Brokerages
-	(*BrokerageCreateReq)(nil),  // 2: coreApi.BrokerageCreateReq
-	(*StatusChangeRequest)(nil), // 3: coreApi.StatusChangeRequest
-	(*BrokerageReturnReq)(nil),  // 4: coreApi.BrokerageReturnReq
-	(*BrokerageDeleteReq)(nil),  // 5: coreApi.BrokerageDeleteReq
-	(*BrokerageStartReq)(nil),   // 6: coreApi.BrokerageStartReq
-	(*BrokerageStopReq)(nil),    // 7: coreApi.BrokerageStopReq
-	(*proto.Auth)(nil),          // 8: api.Auth
-	(proto.Platform)(0),         // 9: api.Platform
-	(*proto1.Markets)(nil),      // 10: chipmunkApi.Markets
-	(*proto1.Resolution)(nil),   // 11: chipmunkApi.Resolution
-	(proto.Status)(0),           // 12: api.Status
-	(*proto.Void)(nil),          // 13: api.Void
+	(*Brokerage)(nil),          // 0: coreApi.Brokerage
+	(*Brokerages)(nil),         // 1: coreApi.Brokerages
+	(*BrokerageCreateReq)(nil), // 2: coreApi.BrokerageCreateReq
+	(*BrokerageReturnReq)(nil), // 3: coreApi.BrokerageReturnReq
+	(*BrokerageDeleteReq)(nil), // 4: coreApi.BrokerageDeleteReq
+	(*proto.Auth)(nil),         // 5: api.Auth
+	(proto.Platform)(0),        // 6: api.Platform
+	(*proto1.Markets)(nil),     // 7: chipmunkApi.Markets
+	(*proto1.Resolution)(nil),  // 8: chipmunkApi.Resolution
+	(proto.Status)(0),          // 9: api.Status
+	(*proto.Void)(nil),         // 10: api.Void
 }
 var file_services_core_api_proto_src_brokerage_proto_depIdxs = []int32{
-	8,  // 0: coreApi.Brokerage.Auth:type_name -> api.Auth
-	9,  // 1: coreApi.Brokerage.Platform:type_name -> api.Platform
-	10, // 2: coreApi.Brokerage.Markets:type_name -> chipmunkApi.Markets
-	11, // 3: coreApi.Brokerage.Resolution:type_name -> chipmunkApi.Resolution
-	12, // 4: coreApi.Brokerage.Status:type_name -> api.Status
+	5,  // 0: coreApi.Brokerage.Auth:type_name -> api.Auth
+	6,  // 1: coreApi.Brokerage.Platform:type_name -> api.Platform
+	7,  // 2: coreApi.Brokerage.Markets:type_name -> chipmunkApi.Markets
+	8,  // 3: coreApi.Brokerage.Resolution:type_name -> chipmunkApi.Resolution
+	9,  // 4: coreApi.Brokerage.Status:type_name -> api.Status
 	0,  // 5: coreApi.Brokerages.Elements:type_name -> coreApi.Brokerage
-	8,  // 6: coreApi.BrokerageCreateReq.Auth:type_name -> api.Auth
-	9,  // 7: coreApi.BrokerageCreateReq.Platform:type_name -> api.Platform
-	10, // 8: coreApi.BrokerageCreateReq.Markets:type_name -> chipmunkApi.Markets
+	5,  // 6: coreApi.BrokerageCreateReq.Auth:type_name -> api.Auth
+	6,  // 7: coreApi.BrokerageCreateReq.Platform:type_name -> api.Platform
+	7,  // 8: coreApi.BrokerageCreateReq.Markets:type_name -> chipmunkApi.Markets
 	2,  // 9: coreApi.BrokerageService.Create:input_type -> coreApi.BrokerageCreateReq
-	6,  // 10: coreApi.BrokerageService.Start:input_type -> coreApi.BrokerageStartReq
-	7,  // 11: coreApi.BrokerageService.Stop:input_type -> coreApi.BrokerageStopReq
-	4,  // 12: coreApi.BrokerageService.Return:input_type -> coreApi.BrokerageReturnReq
-	5,  // 13: coreApi.BrokerageService.Delete:input_type -> coreApi.BrokerageDeleteReq
-	13, // 14: coreApi.BrokerageService.List:input_type -> api.Void
-	0,  // 15: coreApi.BrokerageService.Create:output_type -> coreApi.Brokerage
-	0,  // 16: coreApi.BrokerageService.Start:output_type -> coreApi.Brokerage
-	0,  // 17: coreApi.BrokerageService.Stop:output_type -> coreApi.Brokerage
-	0,  // 18: coreApi.BrokerageService.Return:output_type -> coreApi.Brokerage
-	13, // 19: coreApi.BrokerageService.Delete:output_type -> api.Void
-	1,  // 20: coreApi.BrokerageService.List:output_type -> coreApi.Brokerages
-	15, // [15:21] is the sub-list for method output_type
-	9,  // [9:15] is the sub-list for method input_type
+	3,  // 10: coreApi.BrokerageService.Return:input_type -> coreApi.BrokerageReturnReq
+	4,  // 11: coreApi.BrokerageService.Delete:input_type -> coreApi.BrokerageDeleteReq
+	10, // 12: coreApi.BrokerageService.List:input_type -> api.Void
+	0,  // 13: coreApi.BrokerageService.Create:output_type -> coreApi.Brokerage
+	0,  // 14: coreApi.BrokerageService.Return:output_type -> coreApi.Brokerage
+	10, // 15: coreApi.BrokerageService.Delete:output_type -> api.Void
+	1,  // 16: coreApi.BrokerageService.List:output_type -> coreApi.Brokerages
+	13, // [13:17] is the sub-list for method output_type
+	9,  // [9:13] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
 	9,  // [9:9] is the sub-list for extension extendee
 	0,  // [0:9] is the sub-list for field type_name
@@ -771,18 +574,6 @@ func file_services_core_api_proto_src_brokerage_proto_init() {
 			}
 		}
 		file_services_core_api_proto_src_brokerage_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StatusChangeRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_services_core_api_proto_src_brokerage_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BrokerageReturnReq); i {
 			case 0:
 				return &v.state
@@ -794,32 +585,8 @@ func file_services_core_api_proto_src_brokerage_proto_init() {
 				return nil
 			}
 		}
-		file_services_core_api_proto_src_brokerage_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+		file_services_core_api_proto_src_brokerage_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BrokerageDeleteReq); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_services_core_api_proto_src_brokerage_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BrokerageStartReq); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_services_core_api_proto_src_brokerage_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BrokerageStopReq); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -837,7 +604,7 @@ func file_services_core_api_proto_src_brokerage_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_services_core_api_proto_src_brokerage_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

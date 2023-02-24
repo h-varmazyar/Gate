@@ -7,8 +7,6 @@ import "services/chipmunk/api/proto/src/resolution.proto";
 
 service BrokerageService {
   rpc Create(BrokerageCreateReq) returns (Brokerage);
-  rpc Start(BrokerageStartReq) returns (Brokerage);
-  rpc Stop(BrokerageStopReq) returns (Brokerage);
   rpc Return(BrokerageReturnReq) returns (Brokerage);
   rpc Delete(BrokerageDeleteReq) returns (api.Void);
   rpc List(api.Void) returns (Brokerages);
@@ -57,15 +55,6 @@ message BrokerageCreateReq {
   string StrategyID = 7;
 }
 
-message StatusChangeRequest {
-  // @inject_tag: json:"id"
-  string ID = 1;
-  // @inject_tag: json:"trading"
-  bool Trading = 2;
-  // @inject_tag: json:"ohlc"
-  bool OHLC = 3;
-}
-
 message BrokerageReturnReq {
   // @inject_tag: json:"id"
   string ID = 1;
@@ -74,18 +63,6 @@ message BrokerageReturnReq {
 }
 
 message BrokerageDeleteReq {
-  // @inject_tag: json:"id"
-  string ID = 1;
-}
-
-message BrokerageStartReq{
-  // @inject_tag: json:"id"
-  string ID = 1;
-  // @inject_tag: json:"with_trading"
-  bool WithTrading = 2;
-}
-
-message BrokerageStopReq{
   // @inject_tag: json:"id"
   string ID = 1;
 }

@@ -1,15 +1,5 @@
 syntax = "proto3";
 package coreApi;
 option go_package = "github.com/h-varmazyar/Gate/services/core/api/proto";
-import "api/proto/src/misc.proto";
 
-service PlatformService {
-  rpc CollectMarketData(PlatformCollectDataReq) returns (api.Void);
-}
-
-message PlatformCollectDataReq{
-  // @inject_tag: json:"platform"
-  api.Platform Platform = 1;
-  // @inject_tag: json:"strategy_id"
-  string StrategyID = 2;
-}
+service PlatformService {}

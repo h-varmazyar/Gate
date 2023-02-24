@@ -24,8 +24,6 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BrokerageServiceClient interface {
 	Create(ctx context.Context, in *BrokerageCreateReq, opts ...grpc.CallOption) (*Brokerage, error)
-	Start(ctx context.Context, in *BrokerageStartReq, opts ...grpc.CallOption) (*Brokerage, error)
-	Stop(ctx context.Context, in *BrokerageStopReq, opts ...grpc.CallOption) (*Brokerage, error)
 	Return(ctx context.Context, in *BrokerageReturnReq, opts ...grpc.CallOption) (*Brokerage, error)
 	Delete(ctx context.Context, in *BrokerageDeleteReq, opts ...grpc.CallOption) (*proto.Void, error)
 	List(ctx context.Context, in *proto.Void, opts ...grpc.CallOption) (*Brokerages, error)
@@ -42,24 +40,6 @@ func NewBrokerageServiceClient(cc grpc.ClientConnInterface) BrokerageServiceClie
 func (c *brokerageServiceClient) Create(ctx context.Context, in *BrokerageCreateReq, opts ...grpc.CallOption) (*Brokerage, error) {
 	out := new(Brokerage)
 	err := c.cc.Invoke(ctx, "/coreApi.BrokerageService/Create", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *brokerageServiceClient) Start(ctx context.Context, in *BrokerageStartReq, opts ...grpc.CallOption) (*Brokerage, error) {
-	out := new(Brokerage)
-	err := c.cc.Invoke(ctx, "/coreApi.BrokerageService/Start", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *brokerageServiceClient) Stop(ctx context.Context, in *BrokerageStopReq, opts ...grpc.CallOption) (*Brokerage, error) {
-	out := new(Brokerage)
-	err := c.cc.Invoke(ctx, "/coreApi.BrokerageService/Stop", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -98,8 +78,6 @@ func (c *brokerageServiceClient) List(ctx context.Context, in *proto.Void, opts 
 // for forward compatibility
 type BrokerageServiceServer interface {
 	Create(context.Context, *BrokerageCreateReq) (*Brokerage, error)
-	Start(context.Context, *BrokerageStartReq) (*Brokerage, error)
-	Stop(context.Context, *BrokerageStopReq) (*Brokerage, error)
 	Return(context.Context, *BrokerageReturnReq) (*Brokerage, error)
 	Delete(context.Context, *BrokerageDeleteReq) (*proto.Void, error)
 	List(context.Context, *proto.Void) (*Brokerages, error)
@@ -111,12 +89,6 @@ type UnimplementedBrokerageServiceServer struct {
 
 func (UnimplementedBrokerageServiceServer) Create(context.Context, *BrokerageCreateReq) (*Brokerage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
-}
-func (UnimplementedBrokerageServiceServer) Start(context.Context, *BrokerageStartReq) (*Brokerage, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Start not implemented")
-}
-func (UnimplementedBrokerageServiceServer) Stop(context.Context, *BrokerageStopReq) (*Brokerage, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Stop not implemented")
 }
 func (UnimplementedBrokerageServiceServer) Return(context.Context, *BrokerageReturnReq) (*Brokerage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Return not implemented")
@@ -153,42 +125,6 @@ func _BrokerageService_Create_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BrokerageServiceServer).Create(ctx, req.(*BrokerageCreateReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _BrokerageService_Start_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BrokerageStartReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(BrokerageServiceServer).Start(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/coreApi.BrokerageService/Start",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BrokerageServiceServer).Start(ctx, req.(*BrokerageStartReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _BrokerageService_Stop_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BrokerageStopReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(BrokerageServiceServer).Stop(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/coreApi.BrokerageService/Stop",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BrokerageServiceServer).Stop(ctx, req.(*BrokerageStopReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -257,14 +193,6 @@ var BrokerageService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Create",
 			Handler:    _BrokerageService_Create_Handler,
-		},
-		{
-			MethodName: "Start",
-			Handler:    _BrokerageService_Start_Handler,
-		},
-		{
-			MethodName: "Stop",
-			Handler:    _BrokerageService_Stop_Handler,
 		},
 		{
 			MethodName: "Return",
