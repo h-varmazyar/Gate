@@ -20,3 +20,5 @@ WORKDIR /app
 COPY --from=builder /src/build/ ./
 #COPY ./services/gateway/assets ./assets
 ENTRYPOINT [ "./gateway" ]
+
+EXPOSE 8080
