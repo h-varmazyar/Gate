@@ -14,7 +14,7 @@ type App struct {
 	Service *service.Service
 }
 
-func NewApp(ctx context.Context, logger *log.Logger, configs *Configs, rateLimiterService *rateLimiterService.Service, ipService *ipService.Service) (*App, error) {
+func NewApp(ctx context.Context, logger *log.Logger, rateLimiterService *rateLimiterService.Service, ipService *ipService.Service) (*App, error) {
 	var limiters *networkApi.RateLimiters
 	var err error
 	if limiters, err = rateLimiterService.List(ctx, &networkApi.RateLimiterListReq{Type: networkApi.RateLimiter_All}); err != nil {
@@ -30,6 +30,6 @@ func NewApp(ctx context.Context, logger *log.Logger, configs *Configs, rateLimit
 		return nil, err
 	}
 	return &App{
-		Service: service.NewService(ctx, logger, configs.ServiceConfigs, rateLimiterManager),
+		Service: service.NewService(ctx, logger, rateLimiterManager),
 	}, nil
 }

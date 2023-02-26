@@ -14,7 +14,6 @@ import (
 
 type Service struct {
 	logger             *log.Logger
-	configs            *Configs
 	rateLimiterManager *rateLimiter.Manager
 	ipService          ipService.Service
 }
@@ -23,11 +22,10 @@ var (
 	GrpcService *Service
 )
 
-func NewService(_ context.Context, logger *log.Logger, configs *Configs, rateLimiterManager *rateLimiter.Manager) *Service {
+func NewService(_ context.Context, logger *log.Logger, rateLimiterManager *rateLimiter.Manager) *Service {
 	if GrpcService == nil {
 		GrpcService = new(Service)
 		GrpcService.logger = logger
-		GrpcService.configs = configs
 		GrpcService.rateLimiterManager = rateLimiterManager
 	}
 	return GrpcService

@@ -118,6 +118,40 @@ services:
       - redis
     restart: always
 
+  network:
+    container_name: network
+    image: network:v1.1.1
+    build:
+      context: ..
+      dockerfile: services/network/deploy/Dockerfile
+      args:
+        VERSION: v1.1.1
+    volumes:
+      - /srv/configs/network/config.yaml:/app/configs/config.yaml
+    networks:
+      - gate
+    depends_on:
+      - postgres
+      - redis
+    restart: always
+
+  telegram_bot:
+    container_name: telegramBot
+    image: telegram_bot:v1.1.0
+    build:
+      context: ..
+      dockerfile: services/telegramBot/deploy/Dockerfile
+      args:
+        VERSION: v1.1.0
+    volumes:
+      - /srv/configs/telegramBot/config.yaml:/app/configs/config.yaml
+    networks:
+      - gate
+    depends_on:
+      - postgres
+      - redis
+    restart: always
+
 volumes:
   #  setup:
   #  elasticsearch:

@@ -12,20 +12,18 @@ import (
 )
 
 type Service struct {
-	logger  *log.Logger
-	configs *Configs
-	db      repository.IPRepository
+	logger *log.Logger
+	db     repository.IPRepository
 }
 
 var (
 	GrpcService *Service
 )
 
-func NewService(_ context.Context, logger *log.Logger, configs *Configs, db repository.IPRepository) *Service {
+func NewService(_ context.Context, logger *log.Logger, db repository.IPRepository) *Service {
 	if GrpcService == nil {
 		GrpcService = new(Service)
 		GrpcService.logger = logger
-		GrpcService.configs = configs
 		GrpcService.db = db
 	}
 	return GrpcService

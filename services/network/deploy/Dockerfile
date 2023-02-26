@@ -13,10 +13,10 @@ WORKDIR /src
 COPY . .
 RUN GO111MODULE=on CGO_ENABLED=0 go build -buildvcs=false -a -installsuffix cgo \
     -ldflags "-w -X main.Version=${VERSION}" \
-    -o ./build/telegramBot ./services/telegramBot/cmd
+    -o ./build/network ./services/network/cmd
 
 FROM alpine
 WORKDIR /app
 COPY --from=builder /src/build/ ./
-COPY ./services/telegramBot/assets ./assets
-ENTRYPOINT [ "./telegramBot" ]
+COPY ./services/network/assets ./assets
+ENTRYPOINT [ "./network" ]

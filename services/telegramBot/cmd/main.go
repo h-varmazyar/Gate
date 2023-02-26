@@ -1,40 +1,54 @@
 package main
 
 import (
+	"bytes"
 	"github.com/h-varmazyar/Gate/pkg/service"
+	"github.com/h-varmazyar/Gate/services/telegramBot/configs"
 	"github.com/h-varmazyar/Gate/services/telegramBot/internal/app"
 	"github.com/h-varmazyar/Gate/services/telegramBot/internal/pkg/repository"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"google.golang.org/grpc"
-	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"net"
 )
 
 func main() {
-	//initializing
-	configs := loadConfigs()
+	logger := log.New()
 
-	repository.InitializingDB(configs.DBConfigs)
+	conf, err := loadConfigs()
+	if err != nil {
+		log.Panic("failed to read configs")
+	}
 
-	service.Serve(configs.GrpcPort, func(lst net.Listener) error {
+	logger.Infof("starting %v(%v)", conf.ServiceName, conf.Version)
+
+	repository.InitializingDB(conf.DB)
+
+	service.Serve(conf.GrpcPort, func(lst net.Listener) error {
 		server := grpc.NewServer()
-		app.NewService(configs.ServiceConfigs).RegisterServer(server)
+		app.NewService(conf.ServiceConfigs).RegisterServer(server)
 		return server.Serve(lst)
 	})
 
-	service.Start(configs.ServiceName, configs.Version)
+	service.Start(conf.ServiceName, conf.Version)
 }
 
-func loadConfigs() *Configs {
-	configs := new(Configs)
-	confBytes, err := ioutil.ReadFile("../configs/config.yaml")
-	if err != nil {
-		log.WithError(err).Fatal("can not load yaml file")
-	}
-	if err = yaml.Unmarshal(confBytes, configs); err != nil {
-		log.WithError(err).Fatal("can not unmarshal yaml file")
+func loadConfigs() (*Configs, error) {
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath("./configs")  //path for docker compose configs
+	viper.AddConfigPath("../configs") //path for local configs
+	if err := viper.ReadInConfig(); err != nil {
+		localErr := viper.ReadConfig(bytes.NewBuffer(configs.DefaultConfig))
+		if localErr != nil {
+			return nil, localErr
+		}
 	}
 
-	return configs
+	conf := new(Configs)
+	if err := viper.Unmarshal(conf); err != nil {
+		return nil, err
+	}
+
+	return conf, nil
 }

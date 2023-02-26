@@ -10,8 +10,8 @@ var (
 	Clients *clientRepository
 )
 
-func InitializingDB(configs *Configs) {
-	db, err := gormext.Open(gormext.PostgreSQL, configs.DBConnection)
+func InitializingDB(configs gormext.Configs) {
+	db, err := gormext.Open(configs)
 	if err != nil {
 		log.WithError(err).Fatal("can not load repository configs")
 	}

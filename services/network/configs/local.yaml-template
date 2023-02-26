@@ -1,7 +1,0 @@
-service_name: "network"
-version:
-grpc_port:
-amqp_configs:
-  connection:
-network_app:
-  service_configs:
