@@ -36,17 +36,25 @@ func main() {
 
 func loadConfigs() (*Configs, error) {
 	log.Infof("reding configs...")
-	viper.AddConfigPath("./configs")  //path for docker compose configs
-	viper.AddConfigPath("../configs") //path for local configs
-	//viper.SetConfigName("app")
-	viper.SetConfigType("env")
 	viper.AutomaticEnv()
+
+	//os.Setenv("SERVICE_NAME", "gateway")
+	//os.Setenv("VERSION", "v1.1.1")
+	//os.Setenv("HTTP_PORT", "8089")
+	//os.Setenv("CHIPMUNK_ROUTER.CHIPMUNK_ADDRESS", ":11000")
+	//os.Setenv("CORE_ROUTER.CORE_ADDRESS", ":10100")
+	//os.Setenv("EAGLE_ROUTER.EAGLE_ADDRESS", ":12000")
+	//os.Setenv("TELEGRAM_BOT_ROUTER.TELEGRAM_BOT_ADDRESS", ":14000")
+	//
+	//log.Infof("v is: %v", viper.Get("version"))
 	if err := viper.ReadInConfig(); err != nil {
 		log.Warnf("failed to read from env: %v", err)
-		viper.SetConfigName("app")
+		viper.AddConfigPath("./configs")  //path for docker compose configs
+		viper.AddConfigPath("../configs") //path for local configs
+		viper.SetConfigName("config")
 		viper.SetConfigType("yaml")
-		if err := viper.ReadInConfig(); err != nil {
-			log.Warn("failed to read from yaml")
+		if err = viper.ReadInConfig(); err != nil {
+			log.Warnf("failed to read from yaml: %v", err)
 			localErr := viper.ReadConfig(bytes.NewBuffer(configs.DefaultConfig))
 			if localErr != nil {
 				log.Infof("read from default env")
