@@ -19,7 +19,7 @@ FROM alpine
 WORKDIR /app
 COPY --from=builder /src/build/ ./
 COPY ./services/gateway/configs/config.yaml ./configs/config.yaml
-COPY ./services/gateway/assets ./assets
+#COPY ./services/gateway/assets ./assets
 ENTRYPOINT [ "./gateway" ]
 
 EXPOSE 8080
