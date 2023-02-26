@@ -14,15 +14,15 @@ import (
 )
 
 func init() {
-	envFile := "../configs/.env"
+	envFile := "../configs/app"
 	if _, err := os.Stat(envFile); err != nil {
 		if os.IsNotExist(err) {
 			return
 		}
-		log.WithError(err).Fatal("can not load .env file")
+		log.WithError(err).Fatal("can not load app file")
 	}
 	if err := godotenv.Load(envFile); err != nil {
-		log.WithError(err).Fatal("can not load .env file")
+		log.WithError(err).Fatal("can not load app file")
 	}
 }
 

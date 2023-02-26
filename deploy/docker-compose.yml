@@ -59,7 +59,7 @@ services:
       args:
         VERSION: v2.1.0
     volumes:
-      - /srv/configs/chipmunk/config.yaml:/app/configs/config.yaml
+      - /srv/configs/chipmunk/app.yaml:/app/configs/app.yaml
     networks:
       - gate
     depends_on:
@@ -76,7 +76,7 @@ services:
       args:
         VERSION: v2.1.0
     volumes:
-      - /srv/configs/core/config.yaml:/app/configs/config.yaml
+      - /srv/configs/core/app.yaml:/app/configs/app.yaml
     networks:
       - gate
     depends_on:
@@ -93,7 +93,7 @@ services:
       args:
         VERSION: v1.1.0
     volumes:
-      - /srv/configs/eagle/config.yaml:/app/configs/config.yaml
+      - /srv/configs/eagle/app.yaml:/app/configs/app.yaml
     networks:
       - gate
     depends_on:
@@ -110,7 +110,7 @@ services:
       args:
         VERSION: v1.1.0
     volumes:
-      - /srv/configs/gateway/config.yaml:/app/configs/config.yaml
+      - /srv/configs/gateway/app.yaml:/app/configs/app.yaml
     networks:
       - gate
     depends_on:
@@ -127,7 +127,7 @@ services:
       args:
         VERSION: v1.1.1
     volumes:
-      - /srv/configs/network/config.yaml:/app/configs/config.yaml
+      - /srv/configs/network/app.yaml:/app/configs/app.yaml
     networks:
       - gate
     depends_on:
@@ -144,7 +144,7 @@ services:
       args:
         VERSION: v1.1.0
     volumes:
-      - /srv/configs/telegramBot/config.yaml:/app/configs/config.yaml
+      - /srv/configs/telegramBot/app.yaml:/app/configs/app.yaml
     networks:
       - gate
     depends_on:

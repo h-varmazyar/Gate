@@ -46,7 +46,7 @@ func main() {
 }
 
 func loadConfigs() (*Configs, error) {
-	viper.SetConfigName("config")
+	viper.SetConfigName("app")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath("./configs")  //path for docker compose configs
 	viper.AddConfigPath("../configs") //path for local configs

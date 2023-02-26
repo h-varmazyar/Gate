@@ -24,8 +24,10 @@ func main() {
 
 	conf, err := loadConfigs()
 	if err != nil {
-		log.Panic("failed to read configs")
+		log.Panicf("failed to read configs: %v", err)
 	}
+
+	logger.Infof("conf: %v", conf)
 
 	logger.Infof("running %v(%v)", conf.ServiceName, conf.Version)
 
@@ -33,19 +35,29 @@ func main() {
 }
 
 func loadConfigs() (*Configs, error) {
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
+	log.Infof("reding configs...")
 	viper.AddConfigPath("./configs")  //path for docker compose configs
 	viper.AddConfigPath("../configs") //path for local configs
+	//viper.SetConfigName("app")
+	viper.SetConfigType("env")
+	viper.AutomaticEnv()
 	if err := viper.ReadInConfig(); err != nil {
-		localErr := viper.ReadConfig(bytes.NewBuffer(configs.DefaultConfig))
-		if localErr != nil {
-			return nil, localErr
+		log.Warnf("failed to read from env: %v", err)
+		viper.SetConfigName("app")
+		viper.SetConfigType("yaml")
+		if err := viper.ReadInConfig(); err != nil {
+			log.Warn("failed to read from yaml")
+			localErr := viper.ReadConfig(bytes.NewBuffer(configs.DefaultConfig))
+			if localErr != nil {
+				log.Infof("read from default env")
+				return nil, localErr
+			}
 		}
 	}
 
 	conf := new(Configs)
 	if err := viper.Unmarshal(conf); err != nil {
+		log.Errorf("faeiled unmarshal")
 		return nil, err
 	}
 
