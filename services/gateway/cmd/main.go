@@ -27,8 +27,6 @@ func main() {
 		log.Panic("failed to read configs")
 	}
 
-	logger.Infof("conf:%v", conf)
-
 	logger.Infof("running %v(%v)", conf.ServiceName, conf.Version)
 
 	initializeAndRegisterApps(ctx, logger, conf)
