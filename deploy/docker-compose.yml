@@ -101,6 +101,23 @@ services:
       - redis
     restart: always
 
+  gateway:
+    container_name: gateway
+    image: gateway:v1.1.0
+    build:
+      context: ..
+      dockerfile: services/gateway/deploy/Dockerfile
+      args:
+        VERSION: v1.1.0
+    volumes:
+      - /srv/configs/gateway/config.yaml:/app/configs/config.yaml
+    networks:
+      - gate
+    depends_on:
+      - postgres
+      - redis
+    restart: always
+
 volumes:
   #  setup:
   #  elasticsearch:

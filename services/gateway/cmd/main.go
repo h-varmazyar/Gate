@@ -1,42 +1,59 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"github.com/h-varmazyar/Gate/pkg/httpext"
 	"github.com/h-varmazyar/Gate/pkg/service"
+	"github.com/h-varmazyar/Gate/services/gateway/configs"
 	"github.com/h-varmazyar/Gate/services/gateway/internal/app/chipmunk"
 	"github.com/h-varmazyar/Gate/services/gateway/internal/app/core"
 	"github.com/h-varmazyar/Gate/services/gateway/internal/app/eagle"
 	"github.com/h-varmazyar/Gate/services/gateway/internal/app/telegramBot"
 	"github.com/h-varmazyar/gopack/mux"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
-	"io/ioutil"
+	"github.com/spf13/viper"
 	"net"
 	"net/http"
 )
 
 func main() {
 	ctx := context.Background()
-	conf := loadConfigs()
 	logger := log.New()
+
+	conf, err := loadConfigs()
+	if err != nil {
+		log.Panic("failed to read configs")
+	}
+
+	logger.Infof("conf:%v", conf)
+
+	logger.Infof("running %v(%v)", conf.ServiceName, conf.Version)
 
 	initializeAndRegisterApps(ctx, logger, conf)
 }
 
-func loadConfigs() *Configs {
-	configs := new(Configs)
-	confBytes, err := ioutil.ReadFile("../configs/config.yaml")
-	if err != nil {
-		log.WithError(err).Fatal("can not load yaml file")
+func loadConfigs() (*Configs, error) {
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath("./configs")  //path for docker compose configs
+	viper.AddConfigPath("../configs") //path for local configs
+	if err := viper.ReadInConfig(); err != nil {
+		localErr := viper.ReadConfig(bytes.NewBuffer(configs.DefaultConfig))
+		if localErr != nil {
+			return nil, localErr
+		}
 	}
-	if err = yaml.Unmarshal(confBytes, configs); err != nil {
-		log.WithError(err).Fatal("can not unmarshal yaml file")
+
+	conf := new(Configs)
+	if err := viper.Unmarshal(conf); err != nil {
+		return nil, err
 	}
-	return configs
+
+	return conf, nil
 }
 
-func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, configs *Configs) {
+func initializeAndRegisterApps(_ context.Context, logger *log.Logger, configs *Configs) {
 	service.Serve(configs.HttpPort, func(lst net.Listener) error {
 		router := mux.NewRouter(true)
 

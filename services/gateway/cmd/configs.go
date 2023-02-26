@@ -6,11 +6,11 @@ import "github.com/h-varmazyar/Gate/services/gateway/internal/app/core"
 import "github.com/h-varmazyar/Gate/services/gateway/internal/app/telegramBot"
 
 type Configs struct {
-	ServiceName       string               `yaml:"service_name"`
-	Version           string               `yaml:"version"`
-	HttpPort          uint16               `yaml:"http_port"`
-	ChipmunkRouter    *chipmunk.Configs    `yaml:"chipmunk_router"`
-	CoreRouter        *core.Configs        `yaml:"core_router"`
-	EagleRouter       *eagle.Configs       `yaml:"eagle_router"`
-	TelegramBotRouter *telegramBot.Configs `yaml:"telegram_bot_router"`
+	ServiceName       string               `mapstructure:"service_name"`
+	Version           string               `mapstructure:"version"`
+	HttpPort          uint16               `mapstructure:"http_port"`
+	ChipmunkRouter    *chipmunk.Configs    `mapstructure:"chipmunk_router"`
+	CoreRouter        *core.Configs        `mapstructure:"core_router"`
+	EagleRouter       *eagle.Configs       `mapstructure:"eagle_router"`
+	TelegramBotRouter *telegramBot.Configs `mapstructure:"telegram_bot_router"`
 }
