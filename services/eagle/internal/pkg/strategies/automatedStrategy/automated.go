@@ -11,6 +11,7 @@ import (
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api/proto"
 	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/entity"
+	"github.com/h-varmazyar/Gate/services/eagle/internal/pkg/strategies"
 	telegramBotApi "github.com/h-varmazyar/Gate/services/telegramBot/api"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
@@ -28,7 +29,7 @@ type Automated struct {
 	configs          *Configs
 }
 
-func NewAutomatedStrategy(strategy *entity.Strategy, configs *Configs) (*Automated, error) {
+func NewAutomatedStrategy(strategy *entity.Strategy, configs *Configs) (strategies.Strategy, error) {
 	if strategy == nil {
 		return nil, errors.NewWithSlug(context.Background(), codes.FailedPrecondition, "empty_strategy")
 	}

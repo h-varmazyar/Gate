@@ -31,7 +31,7 @@ db:
   password: "postgres"
   host: "localhost"
   port: 5432
-  name: "chipmunk"
+  name: "core"
   is_ssl_enable: false
 `)
 )

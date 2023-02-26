@@ -11,9 +11,6 @@ service StrategyService {
   rpc Return(ReturnStrategyReq) returns(Strategy);
   rpc List(api.Void) returns (Strategies);
   rpc Indicators(StrategyIndicatorReq) returns (StrategyIndicators);
-//  rpc StartWorker(StrategyStartWorkerReq) returns (api.Void);
-//  rpc StartSignalChecker(StrategySignalCheckStartReq) returns (api.Void);
-//  rpc StopSignalChecker(StrategySignalCheckStopReq) returns (api.Void);
 }
 
 enum StrategyType{
@@ -109,24 +106,3 @@ message ReturnStrategyReq {
   // @inject_tag: json:"id"
   string ID = 1;
 }
-
-//message StrategySignalCheckStartReq{
-//  // @inject_tag: json:"platform"
-//  api.Platform Platform = 1;
-//  // @inject_tag: json:"strategy_id"
-//  string StrategyID = 2;
-//  // @inject_tag: json:"brokerage_id"
-//  string BrokerageID = 3;
-//  // @inject_tag: json:"with_trading"
-//  bool WithTrading = 4;
-//  // @inject_tag: json:"market"
-//  chipmunkApi.Markets Markets = 5;
-//}
-//
-//message StrategyStartWorkerReq{
-//}
-//
-//message StrategySignalCheckStopReq{
-//  // @inject_tag: json:"brokerage_id"
-//  string BrokerageID = 1;
-//}

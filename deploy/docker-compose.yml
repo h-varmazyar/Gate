@@ -52,18 +52,53 @@ services:
 
   chipmunk:
     container_name: chipmunk
-    image: chipmunk:v1.0.18
+    image: chipmunk:v2.1.0
     build:
       context: ..
       dockerfile: services/chipmunk/deploy/Dockerfile
       args:
-        VERSION: v1.0.18
+        VERSION: v2.1.0
     volumes:
       - /srv/configs/chipmunk/config.yaml:/app/configs/config.yaml
     networks:
       - gate
     depends_on:
       - postgres
+      - rabbitmq
+    restart: always
+
+  core:
+    container_name: core
+    image: core:v2.1.0
+    build:
+      context: ..
+      dockerfile: services/core/deploy/Dockerfile
+      args:
+        VERSION: v2.1.0
+    volumes:
+      - /srv/configs/core/config.yaml:/app/configs/config.yaml
+    networks:
+      - gate
+    depends_on:
+      - postgres
+      - rabbitmq
+    restart: always
+
+  eagle:
+    container_name: eagle
+    image: eagle:v1.1.0
+    build:
+      context: ..
+      dockerfile: services/eagle/deploy/Dockerfile
+      args:
+        VERSION: v1.1.0
+    volumes:
+      - /srv/configs/eagle/config.yaml:/app/configs/config.yaml
+    networks:
+      - gate
+    depends_on:
+      - postgres
+      - redis
     restart: always
 
 volumes:

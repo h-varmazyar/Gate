@@ -8,8 +8,8 @@ import (
 	"gorm.io/gorm"
 )
 
-func newPostgres(ctx context.Context, dsn string) (*gorm.DB, error) {
-	db, err := gormext.Open(gormext.PostgreSQL, dsn)
+func newPostgres(ctx context.Context, configs gormext.Configs) (*gorm.DB, error) {
+	db, err := gormext.Open(configs)
 	if err != nil {
 		return nil, errors.New(ctx, codes.Internal).AddDetailF("can not load repository configs")
 	}

@@ -34,7 +34,7 @@ func main() {
 
 func loadConfigs(logger *log.Logger) *Configs {
 	configs := new(Configs)
-	confBytes, err := ioutil.ReadFile("../configs/local.yaml")
+	confBytes, err := ioutil.ReadFile("../configs/config.yaml")
 	if err != nil {
 		logger.WithError(err).Fatal("can not load yaml file")
 	}

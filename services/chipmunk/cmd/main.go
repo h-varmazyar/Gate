@@ -25,10 +25,13 @@ import (
 func main() {
 	ctx := context.Background()
 	logger := log.New()
+
 	conf, err := loadConfigs()
 	if err != nil {
 		log.Panic("failed to read configs")
 	}
+
+	logger.Infof("starting %v(%v)", conf.ServiceName, conf.Version)
 
 	dbInstance, err := loadDB(ctx, conf.DB)
 	if err != nil {
