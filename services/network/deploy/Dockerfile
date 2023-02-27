@@ -18,5 +18,5 @@ RUN GO111MODULE=on CGO_ENABLED=0 go build -buildvcs=false -a -installsuffix cgo 
 FROM alpine
 WORKDIR /app
 COPY --from=builder /src/build/ ./
-COPY ./services/network/assets ./assets
+#COPY ./services/network/assets ./assets
 ENTRYPOINT [ "./network" ]

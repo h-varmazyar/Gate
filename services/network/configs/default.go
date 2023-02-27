@@ -9,12 +9,6 @@ db:
   postgres_dsn: "postgresql://postgres:postgres@localhost/network?sslmode=disable"
 amqp_configs:
   connection: "amqp://rabbitmq:rabbitmq@localhost"
-requests_app:
-  service_configs:
-ips_app:
-  service_configs:
-rate_limiters_app:
-  service_configs:
 db:
   type: "postgreSQL"
   username: "postgres"

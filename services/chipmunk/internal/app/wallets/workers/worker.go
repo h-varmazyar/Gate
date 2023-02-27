@@ -89,6 +89,7 @@ func (w *WalletCheck) calculateReferenceValue(ctx context.Context, brokerage *co
 		for _, market := range list.Elements {
 			statistics, err := w.functionsService.SingleMarketStatistics(ctx, &coreApi.MarketStatisticsReq{
 				MarketName: market.Name,
+				Platform:   brokerage.Platform,
 			})
 			if err != nil {
 				log.WithError(err).Error("failed to fetch markets statistics")

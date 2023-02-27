@@ -27,8 +27,6 @@ func main() {
 		log.Panicf("failed to read configs: %v", err)
 	}
 
-	logger.Infof("conf: %v", conf)
-
 	logger.Infof("running %v(%v)", conf.ServiceName, conf.Version)
 
 	initializeAndRegisterApps(ctx, logger, conf)
@@ -38,15 +36,6 @@ func loadConfigs() (*Configs, error) {
 	log.Infof("reding configs...")
 	viper.AutomaticEnv()
 
-	//os.Setenv("SERVICE_NAME", "gateway")
-	//os.Setenv("VERSION", "v1.1.1")
-	//os.Setenv("HTTP_PORT", "8089")
-	//os.Setenv("CHIPMUNK_ROUTER.CHIPMUNK_ADDRESS", ":11000")
-	//os.Setenv("CORE_ROUTER.CORE_ADDRESS", ":10100")
-	//os.Setenv("EAGLE_ROUTER.EAGLE_ADDRESS", ":12000")
-	//os.Setenv("TELEGRAM_BOT_ROUTER.TELEGRAM_BOT_ADDRESS", ":14000")
-	//
-	//log.Infof("v is: %v", viper.Get("version"))
 	if err := viper.ReadInConfig(); err != nil {
 		log.Warnf("failed to read from env: %v", err)
 		viper.AddConfigPath("./configs")  //path for docker compose configs

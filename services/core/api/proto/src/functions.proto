@@ -57,6 +57,8 @@ message AllMarketStatisticsResp {
 message MarketStatisticsReq {
   // @inject_tag: json:"market_name"
   string MarketName = 1;
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 2;
 }
 
 message MarketStatistics {

@@ -196,7 +196,8 @@ func (s *Service) SingleMarketStatistics(ctx context.Context, req *coreApi.Marke
 	params := &brokerages.MarketStatisticsParams{
 		Market: req.MarketName,
 	}
-	statistics, err := loadRequest(s.configs, nil).MarketStatistics(ctx, params, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
+	brokerage := &coreApi.Brokerage{Platform: req.Platform}
+	statistics, err := loadRequest(s.configs, brokerage).MarketStatistics(ctx, params, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
 		resp, err := s.requestService.Do(ctx, request)
 		return resp, err
 	})

@@ -242,6 +242,7 @@ LOOP:
 		}
 		if last, err = s.functionsService.SingleMarketStatistics(ctx, &coreApi.MarketStatisticsReq{
 			MarketName: pool.Market.Name,
+			Platform:   pool.Market.Platform,
 		}); err != nil {
 			log.WithError(err).Errorf("failed to get last candles of %v", pool.Market.Name)
 			continue
