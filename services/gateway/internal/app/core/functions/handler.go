@@ -23,6 +23,7 @@ type Handler struct {
 func HandlerInstance(logger *log.Logger, coreAddress string) *Handler {
 	if handler == nil {
 		coreConn := grpcext.NewConnection(coreAddress)
+		logger.Infof("core connection is: %v", coreAddress)
 		handler = &Handler{
 			functionsService: coreApi.NewFunctionsServiceClient(coreConn),
 			logger:           logger,
@@ -34,7 +35,7 @@ func HandlerInstance(logger *log.Logger, coreAddress string) *Handler {
 func (h *Handler) RegisterRoutes(router *gorilla.Router) {
 	functions := router.PathPrefix("/functions").Subrouter()
 
-	functions.HandleFunc("/platform/{platform}/market/{market_name}", h.marketStatus).Methods(http.MethodPost)
+	functions.HandleFunc("/platform/{platform}/market/{market_name}", h.marketStatus).Methods(http.MethodGet)
 }
 
 func (h *Handler) marketStatus(res http.ResponseWriter, req *http.Request) {
