@@ -27,6 +27,11 @@ func main() {
 		log.Panicf("failed to read configs: %v", err)
 	}
 
+	logger.Infof("conf is: %v", conf)
+	logger.Infof("core is: %v", conf.CoreRouter)
+	logger.Infof("eagle is: %v", conf.EagleRouter)
+	logger.Infof("chipmunk is: %v", conf.ChipmunkRouter)
+
 	logger.Infof("running %v(%v)", conf.ServiceName, conf.Version)
 
 	initializeAndRegisterApps(ctx, logger, conf)
