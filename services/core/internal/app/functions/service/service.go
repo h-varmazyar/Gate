@@ -193,15 +193,18 @@ func (s *Service) WalletsBalance(ctx context.Context, req *coreApi.WalletsBalanc
 }
 
 func (s *Service) SingleMarketStatistics(ctx context.Context, req *coreApi.MarketStatisticsReq) (*coreApi.MarketStatistics, error) {
+	s.logger.Infof("market statistics called: %v - %v", req.Platform, req.MarketName)
 	params := &brokerages.MarketStatisticsParams{
 		Market: req.MarketName,
 	}
 	brokerage := &coreApi.Brokerage{Platform: req.Platform}
 	statistics, err := loadRequest(s.configs, brokerage).MarketStatistics(ctx, params, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
 		resp, err := s.requestService.Do(ctx, request)
+		s.logger.WithError(err).Error("failed to load market statistics request")
 		return resp, err
 	})
 	if err != nil {
+		s.logger.WithError(err).Error("market statistics network request failed")
 		return nil, err
 	}
 	resp := new(coreApi.MarketStatistics)

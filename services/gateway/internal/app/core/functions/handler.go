@@ -40,14 +40,17 @@ func (h *Handler) RegisterRoutes(router *gorilla.Router) {
 func (h *Handler) marketStatus(res http.ResponseWriter, req *http.Request) {
 	marketName := muxext.PathParam(req, "market_name")
 	platform := muxext.PathParam(req, "platform")
+	h.logger.Infof("market status called for: %v - %v", platform, marketName)
 	marketStat, err := h.functionsService.SingleMarketStatistics(req.Context(), &coreApi.MarketStatisticsReq{
 		MarketName: marketName,
 		Platform:   api.Platform(api.Platform_value[platform]),
 	})
 	if err != nil {
+		h.logger.WithError(err).Errorf("failed to get market status")
 		httpext.SendError(res, req, err)
 		return
 	}
 
+	h.logger.Infof("market status id: %v", marketStat)
 	httpext.SendModel(res, req, http.StatusOK, marketStat)
 }
