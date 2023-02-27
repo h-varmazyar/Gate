@@ -6,7 +6,7 @@ import (
 )
 
 type Configs struct {
-	ServiceConfigs  *service.Configs           `yaml:"service_configs"`
-	AutomatedWorker *automatedStrategy.Configs `yaml:"automated_worker"`
-	ChipmunkAddress string                     `yaml:"chipmunk_address"`
+	ServiceConfigs  *service.Configs           `mapstructure:"service_configs"`
+	AutomatedWorker *automatedStrategy.Configs `mapstructure:"automated_worker"`
+	ChipmunkAddress string                     `mapstructure:"chipmunk_address"`
 }

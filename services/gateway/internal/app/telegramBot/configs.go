@@ -1,5 +1,5 @@
 package telegramBot
 
 type Configs struct {
-	TelegramBotAddress string `yaml:"telegram_bot_address"`
+	TelegramBotAddress string `mapstructure:"telegram_bot_address"`
 }

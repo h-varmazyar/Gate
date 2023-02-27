@@ -1,5 +1,5 @@
 package eagle
 
 type Configs struct {
-	EagleAddress string `yaml:"eagle_address"`
+	EagleAddress string `mapstructure:"eagle_address"`
 }

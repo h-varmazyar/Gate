@@ -6,7 +6,7 @@ import (
 )
 
 type Configs struct {
-	NetworkGrpcAddress string           `yaml:"network_grpc_address"`
-	Coinex             *coinex.Configs  `yaml:"coinex"`
-	Nobitex            *nobitex.Configs `yaml:"nobitex"`
+	NetworkGrpcAddress string           `mapstructure:"network_grpc_address"`
+	Coinex             *coinex.Configs  `mapstructure:"coinex"`
+	Nobitex            *nobitex.Configs `mapstructure:"nobitex"`
 }

@@ -1,6 +1,6 @@
 package service
 
 type Configs struct {
-	ChipmunkGrpcAddress string `yaml:"chipmunk_grpc_address"`
-	EagleGrpcAddress    string `yaml:"eagle_grpc_address"`
+	ChipmunkGrpcAddress string `mapstructure:"chipmunk_grpc_address"`
+	EagleGrpcAddress    string `mapstructure:"eagle_grpc_address"`
 }

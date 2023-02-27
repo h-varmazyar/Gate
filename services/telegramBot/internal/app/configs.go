@@ -6,6 +6,6 @@ import (
 )
 
 type Configs struct {
-	HandlerConfigs *handlers.Configs `yaml:"handler_configs"`
-	BotConfigs     *tgBotApi.Configs `yaml:"bot_configs"`
+	HandlerConfigs *handlers.Configs `mapstructure:"handler_configs"`
+	BotConfigs     *tgBotApi.Configs `mapstructure:"bot_configs"`
 }

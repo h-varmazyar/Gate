@@ -39,6 +39,15 @@ func main() {
 
 func loadConfigs() (*Configs, error) {
 	log.Infof("reding configs...")
+
+	//os.Setenv("SERVICE_NAME", "gateway")
+	//os.Setenv("VERSION", "v1.20.30")
+	//os.Setenv("HTTP_PORT", "8080")
+	//os.Setenv("CHIPMUNK_ROUTER_CHIPMUNK_ADDRESS", ":11000")
+	//os.Setenv("CORE_ROUTER_CORE_ADDRESS", "core.gate.svc:10100")
+	//os.Setenv("EAGLE_ROUTER_EAGLE_ADDRESS", ":12000")
+	//os.Setenv("TELEGRAM_BOT_ROUTER_TELEGRAM_BOT_ADDRESS", ":14000")
+
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {

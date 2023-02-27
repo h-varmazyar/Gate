@@ -1,5 +1,5 @@
 package chipmunk
 
 type Configs struct {
-	ChipmunkAddress string `yaml:"chipmunk_address"`
+	ChipmunkAddress string `mapstructure:"chipmunk_address"`
 }
