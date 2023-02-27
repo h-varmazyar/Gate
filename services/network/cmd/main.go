@@ -23,7 +23,7 @@ func main() {
 
 	conf, err := loadConfigs()
 	if err != nil {
-		log.Panic("failed to read configs")
+		log.Panicf("failed to read configs: %v", err)
 	}
 
 	logger.Infof("starting %v(%v)", conf.ServiceName, conf.Version)
