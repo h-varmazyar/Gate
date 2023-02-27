@@ -10,11 +10,13 @@ import (
 	"github.com/h-varmazyar/Gate/services/network/internal/app/IPs"
 	"github.com/h-varmazyar/Gate/services/network/internal/app/rateLimiters"
 	"github.com/h-varmazyar/Gate/services/network/internal/app/requests"
+	"github.com/h-varmazyar/Gate/services/network/internal/app/test"
 	"github.com/h-varmazyar/Gate/services/network/internal/pkg/db"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"net"
+	"time"
 )
 
 func main() {
@@ -36,6 +38,11 @@ func main() {
 	if err := amqpext.InitializeAMQP(conf.AMQPConfigs); err != nil {
 		logger.WithError(err).Panic("can not initialize AMQP")
 	}
+
+	go func() {
+		time.Sleep(time.Minute)
+		test.TestNetwork("network.gate.svc:13000")
+	}()
 
 	initializeAndRegisterApps(ctx, logger, dbInstance, conf)
 }

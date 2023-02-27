@@ -33,8 +33,6 @@ func NewService(_ context.Context, logger *log.Logger, configs *Configs, brServi
 		grpcService = new(Service)
 		networkConn := grpcext.NewConnection(configs.NetworkGrpcAddress)
 
-		logger.Infof("network connection: %v", networkConn)
-
 		grpcService.requestService = networkAPI.NewRequestServiceClient(networkConn)
 		grpcService.brokerageService = brService
 		grpcService.logger = logger
