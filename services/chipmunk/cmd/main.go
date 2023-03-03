@@ -48,19 +48,28 @@ func main() {
 }
 
 func loadConfigs() (*Configs, error) {
-	viper.SetConfigName("app")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath("./configs")  //path for docker compose configs
-	viper.AddConfigPath("../configs") //path for local configs
+	log.Infof("reding configs...")
+	viper.AutomaticEnv()
+
 	if err := viper.ReadInConfig(); err != nil {
-		localErr := viper.ReadConfig(bytes.NewBuffer(configs.DefaultConfig))
-		if localErr != nil {
-			return nil, localErr
+		log.Warnf("failed to read from env: %v", err)
+		viper.AddConfigPath("./configs")  //path for docker compose configs
+		viper.AddConfigPath("../configs") //path for local configs
+		viper.SetConfigName("config")
+		viper.SetConfigType("yaml")
+		if err = viper.ReadInConfig(); err != nil {
+			log.Warnf("failed to read from yaml: %v", err)
+			localErr := viper.ReadConfig(bytes.NewBuffer(configs.DefaultConfig))
+			if localErr != nil {
+				log.Infof("read from default env")
+				return nil, localErr
+			}
 		}
 	}
 
 	conf := new(Configs)
 	if err := viper.Unmarshal(conf); err != nil {
+		log.Errorf("faeiled unmarshal")
 		return nil, err
 	}
 
