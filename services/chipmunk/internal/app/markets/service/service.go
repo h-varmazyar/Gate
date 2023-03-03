@@ -198,40 +198,35 @@ func (s *Service) StopWorker(_ context.Context, req *chipmunkApi.WorkerStopReq) 
 	return new(api.Void), nil
 }
 
-func (s *Service) Update(ctx context.Context, _ *chipmunkApi.Market) (*chipmunkApi.Market, error) {
-	return nil, errors.New(ctx, codes.Unimplemented)
-	//brokerageID, err := uuid.Parse(req.BrokerageID)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//markets, err := s.functionsService.MarketList(ctx, &coreApi.MarketListReq{BrokerageID: brokerageID.String()})
-	//if err != nil {
-	//	return nil, err
-	//}
-	//for _, market := range markets.Elements {
-	//	source, sourceErr := s.loadOrCreateAsset(ctx, market.Source.Name)
-	//	if sourceErr != nil {
-	//		log.WithError(err).Errorf("failed to load or create source for market %v", market.Name)
-	//		continue
-	//	}
-	//	destination, destinationErr := s.loadOrCreateAsset(ctx, market.Destination.Name)
-	//	if destinationErr != nil {
-	//		log.WithError(err).Errorf("failed to load or create destination for market %v", market.Name)
-	//		continue
-	//	}
-	//	localMarket := new(entity.Market)
-	//	mapper.Struct(market, localMarket)
-	//	localMarket.SourceID = source.ID
-	//	localMarket.DestinationID = destination.ID
-	//	localMarket.BrokerageID = brokerageID
-	//
-	//	err = s.db.SaveOrUpdate(localMarket)
-	//	if err != nil {
-	//		log.WithError(err).Error("failed to update markets")
-	//		continue
-	//	}
-	//}
-	//return markets, nil
+func (s *Service) Update(ctx context.Context, req *chipmunkApi.MarketUpdateReq) (*chipmunkApi.Markets, error) {
+	markets, err := s.functionsService.MarketList(ctx, &coreApi.MarketListReq{Platform: req.Platform})
+	if err != nil {
+		return nil, err
+	}
+	for _, market := range markets.Elements {
+		source, sourceErr := s.loadOrCreateAsset(ctx, market.Source.Name)
+		if sourceErr != nil {
+			log.WithError(err).Errorf("failed to load or create source for market %v", market.Name)
+			continue
+		}
+		destination, destinationErr := s.loadOrCreateAsset(ctx, market.Destination.Name)
+		if destinationErr != nil {
+			log.WithError(err).Errorf("failed to load or create destination for market %v", market.Name)
+			continue
+		}
+		localMarket := new(entity.Market)
+		mapper.Struct(market, localMarket)
+		localMarket.SourceID = source.ID
+		localMarket.DestinationID = destination.ID
+		localMarket.Platform = req.Platform
+
+		err = s.db.SaveOrUpdate(localMarket)
+		if err != nil {
+			log.WithError(err).Error("failed to update markets")
+			continue
+		}
+	}
+	return markets, nil
 }
 
 func (s *Service) UpdateFromPlatform(ctx context.Context, req *chipmunkApi.MarketUpdateFromPlatformReq) (*chipmunkApi.Markets, error) {

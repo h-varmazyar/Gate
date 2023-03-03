@@ -7,7 +7,7 @@ import "services/chipmunk/api/proto/src/asset.proto";
 service MarketService {
   rpc Create(CreateMarketReq) returns (Market);
   rpc Return(MarketReturnReq) returns (Market);
-  rpc Update(Market) returns (Market);
+  rpc Update(MarketUpdateReq) returns (Markets);
   rpc UpdateFromPlatform(MarketUpdateFromPlatformReq) returns (Markets);
   rpc List(MarketListReq) returns (Markets);
   rpc ListBySource(MarketListBySourceReq) returns (Markets);
@@ -95,8 +95,8 @@ message MarketListReq {
 }
 
 message MarketUpdateReq {
-  // @inject_tag: json:"brokerage_id"
-  string BrokerageID = 1;
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 1;
 }
 
 message MarketUpdateFromPlatformReq {
