@@ -10,13 +10,11 @@ import (
 	"github.com/h-varmazyar/Gate/services/network/internal/app/IPs"
 	"github.com/h-varmazyar/Gate/services/network/internal/app/rateLimiters"
 	"github.com/h-varmazyar/Gate/services/network/internal/app/requests"
-	"github.com/h-varmazyar/Gate/services/network/internal/app/test"
 	"github.com/h-varmazyar/Gate/services/network/internal/pkg/db"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"net"
-	"time"
 )
 
 func main() {
@@ -39,11 +37,6 @@ func main() {
 		logger.WithError(err).Panic("can not initialize AMQP")
 	}
 
-	go func() {
-		time.Sleep(time.Minute)
-		test.TestNetwork("network.gate.svc:13000")
-	}()
-
 	initializeAndRegisterApps(ctx, logger, dbInstance, conf)
 }
 
@@ -53,10 +46,10 @@ func loadConfigs() (*Configs, error) {
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Warnf("failed to read from env: %v", err)
-		viper.AddConfigPath("./configs")  //path for docker compose configs
-		viper.AddConfigPath("../configs") //path for local configs
 		viper.SetConfigName("config")
 		viper.SetConfigType("yaml")
+		viper.AddConfigPath("./configs")  //path for docker compose configs
+		viper.AddConfigPath("../configs") //path for local configs
 		if err = viper.ReadInConfig(); err != nil {
 			log.Warnf("failed to read from yaml: %v", err)
 			localErr := viper.ReadConfig(bytes.NewBuffer(configs.DefaultConfig))

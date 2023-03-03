@@ -37,8 +37,8 @@ func (c Controller) RegisterRoutes(router *gorilla.Router) {
 	markets.HandleFunc("/create", c.create).Methods(http.MethodPost)
 	markets.HandleFunc("/list", c.list).Methods(http.MethodGet)
 	markets.HandleFunc("/UpdateFromPlatform", c.updateFromPlatform).Methods(http.MethodPost)
-	markets.HandleFunc("/StartWorker", c.startWorker).Methods(http.MethodPost)
-	markets.HandleFunc("/StopWorker", c.stopWorker).Methods(http.MethodPost)
+	//markets.HandleFunc("/StartWorker", c.startWorker).Methods(http.MethodPost)
+	//markets.HandleFunc("/StopWorker", c.stopWorker).Methods(http.MethodPost)
 	markets.HandleFunc("/{market-id}", c.get).Methods(http.MethodGet)
 	markets.HandleFunc("/{market-id}", c.update).Methods(http.MethodPut)
 	markets.HandleFunc("/{market-id}", c.delete).Methods(http.MethodDelete)
@@ -83,31 +83,31 @@ func (c Controller) updateFromPlatform(res http.ResponseWriter, req *http.Reques
 	}
 }
 
-func (c Controller) startWorker(res http.ResponseWriter, req *http.Request) {
-	worker := new(chipmunkApi.WorkerStartReq)
-	if err := httpext.BindModel(req, worker); err != nil {
-		httpext.SendError(res, req, err)
-		return
-	}
-	if _, err := c.marketsService.StartWorker(req.Context(), worker); err != nil {
-		httpext.SendError(res, req, err)
-	} else {
-		httpext.SendCode(res, req, http.StatusOK)
-	}
-}
-
-func (c Controller) stopWorker(res http.ResponseWriter, req *http.Request) {
-	worker := new(chipmunkApi.WorkerStopReq)
-	if err := httpext.BindModel(req, worker); err != nil {
-		httpext.SendError(res, req, err)
-		return
-	}
-	if _, err := c.marketsService.StopWorker(req.Context(), worker); err != nil {
-		httpext.SendError(res, req, err)
-	} else {
-		httpext.SendCode(res, req, http.StatusOK)
-	}
-}
+//func (c Controller) startWorker(res http.ResponseWriter, req *http.Request) {
+//	worker := new(chipmunkApi.WorkerStartReq)
+//	if err := httpext.BindModel(req, worker); err != nil {
+//		httpext.SendError(res, req, err)
+//		return
+//	}
+//	if _, err := c.marketsService.StartWorker(req.Context(), worker); err != nil {
+//		httpext.SendError(res, req, err)
+//	} else {
+//		httpext.SendCode(res, req, http.StatusOK)
+//	}
+//}
+//
+//func (c Controller) stopWorker(res http.ResponseWriter, req *http.Request) {
+//	worker := new(chipmunkApi.WorkerStopReq)
+//	if err := httpext.BindModel(req, worker); err != nil {
+//		httpext.SendError(res, req, err)
+//		return
+//	}
+//	if _, err := c.marketsService.StopWorker(req.Context(), worker); err != nil {
+//		httpext.SendError(res, req, err)
+//	} else {
+//		httpext.SendCode(res, req, http.StatusOK)
+//	}
+//}
 
 func (c Controller) get(res http.ResponseWriter, req *http.Request) {
 	getRequest := new(chipmunkApi.MarketReturnReq)
