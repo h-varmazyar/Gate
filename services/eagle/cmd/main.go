@@ -23,6 +23,8 @@ func main() {
 		log.Panic("failed to read configs")
 	}
 
+	logger.Infof("running %v(%v)", conf.ServiceName, conf.Version)
+
 	dbInstance, err := loadDB(ctx, conf.DB)
 	if err != nil {
 		logger.Panicf("failed to initiate databases with error %v", err)

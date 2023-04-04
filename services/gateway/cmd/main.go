@@ -27,11 +27,6 @@ func main() {
 		log.Panicf("failed to read configs: %v", err)
 	}
 
-	logger.Infof("conf is: %v", conf)
-	logger.Infof("core is: %v", conf.CoreRouter)
-	logger.Infof("eagle is: %v", conf.EagleRouter)
-	logger.Infof("chipmunk is: %v", conf.ChipmunkRouter)
-
 	logger.Infof("running %v(%v)", conf.ServiceName, conf.Version)
 
 	initializeAndRegisterApps(ctx, logger, conf)
@@ -39,14 +34,6 @@ func main() {
 
 func loadConfigs() (*Configs, error) {
 	log.Infof("reding configs...")
-
-	//os.Setenv("SERVICE_NAME", "gateway")
-	//os.Setenv("VERSION", "v1.20.30")
-	//os.Setenv("HTTP_PORT", "8080")
-	//os.Setenv("CHIPMUNK_ROUTER_CHIPMUNK_ADDRESS", ":11000")
-	//os.Setenv("CORE_ROUTER_CORE_ADDRESS", "core.gate.svc:10100")
-	//os.Setenv("EAGLE_ROUTER_EAGLE_ADDRESS", ":12000")
-	//os.Setenv("TELEGRAM_BOT_ROUTER_TELEGRAM_BOT_ADDRESS", ":14000")
 
 	viper.AutomaticEnv()
 

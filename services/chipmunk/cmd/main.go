@@ -49,6 +49,7 @@ func main() {
 
 func loadConfigs() (*Configs, error) {
 	log.Infof("reding configs...")
+
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {

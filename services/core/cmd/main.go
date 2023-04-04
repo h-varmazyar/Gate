@@ -27,9 +27,6 @@ func main() {
 		log.Panic("failed to read configs")
 	}
 
-	logger.Infof("rabbit address: %v", conf.AMQPConfigs.Connection)
-	logger.Infof("network address: %v", conf.FunctionsApp.ServiceConfigs.NetworkGrpcAddress)
-
 	logger.Infof("running %v(%v)", conf.ServiceName, conf.Version)
 
 	dbInstance, err := loadDB(ctx, conf.DB)
