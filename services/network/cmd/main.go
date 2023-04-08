@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"flag"
 	"github.com/h-varmazyar/Gate/pkg/amqpext"
 	"github.com/h-varmazyar/Gate/pkg/gormext"
 	"github.com/h-varmazyar/Gate/pkg/service"
@@ -21,7 +22,10 @@ func main() {
 	ctx := context.Background()
 	logger := log.New()
 
-	conf, err := loadConfigs()
+	defaultConf := flag.Bool("default-configs", false, "run program with default config")
+	flag.Parse()
+
+	conf, err := loadConfigs(*defaultConf)
 	if err != nil {
 		log.Panicf("failed to read configs: %v", err)
 	}
@@ -40,22 +44,33 @@ func main() {
 	initializeAndRegisterApps(ctx, logger, dbInstance, conf)
 }
 
-func loadConfigs() (*Configs, error) {
+func loadConfigs(defaultConfig bool) (*Configs, error) {
 	log.Infof("reding configs...")
-	viper.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err != nil {
-		log.Warnf("failed to read from env: %v", err)
-		viper.SetConfigName("config")
+	if defaultConfig {
 		viper.SetConfigType("yaml")
-		viper.AddConfigPath("./configs")  //path for docker compose configs
-		viper.AddConfigPath("../configs") //path for local configs
-		if err = viper.ReadInConfig(); err != nil {
-			log.Warnf("failed to read from yaml: %v", err)
-			localErr := viper.ReadConfig(bytes.NewBuffer(configs.DefaultConfig))
-			if localErr != nil {
-				log.Infof("read from default env")
-				return nil, localErr
+		log.Infof("reading deafult configs")
+		err := viper.ReadConfig(bytes.NewBuffer(configs.DefaultConfig))
+		if err != nil {
+			log.WithError(err).Error("read from default configs failed")
+			return nil, err
+		}
+	} else {
+		viper.AutomaticEnv()
+
+		if err := viper.ReadInConfig(); err != nil {
+			log.Warnf("failed to read from env: %v", err)
+			viper.AddConfigPath("./configs")  //path for docker compose configs
+			viper.AddConfigPath("../configs") //path for local configs
+			viper.SetConfigName("config")
+			viper.SetConfigType("yaml")
+			if err = viper.ReadInConfig(); err != nil {
+				log.Warnf("failed to read from yaml: %v", err)
+				localErr := viper.ReadConfig(bytes.NewBuffer(configs.DefaultConfig))
+				if localErr != nil {
+					log.WithError(localErr).Error("read from default configs failed")
+					return nil, localErr
+				}
 			}
 		}
 	}

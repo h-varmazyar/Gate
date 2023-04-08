@@ -3,10 +3,10 @@ package configs
 var (
 	DefaultConfig = []byte(`
 service_name: "chipmunk"
-version: "v2.0.0"
+version: "v1.0.0"
 grpc_port: 11000
 amqp_configs:
-  connection: "amqp://rabbitmq:rabbitmq@localhost"
+  connection: "amqp://guest:guest@localhost"
 buffer_configs:
   candle_buffer_length: 400
 markets_app:
@@ -44,15 +44,16 @@ db:
   username: "postgres"
   password: "postgres"
   host: "localhost"
-  port: 5432
+  port: 5433
   name: "chipmunk"
   is_ssl_enable: false
 `)
+
 	DefaultEnv = []byte(`
 SERVICE_NAME="chipmunk"
 VERSION="v2.0.0"
 GRPC_PORT="11000"
-AMQP_CONFIGS_CONNECTION="amqp://rabbitmq:uBN7LgwWyaBAMruLFme3yYEAgiLLR6p4@rabbit.gate.svc:5672"
+AMQP_CONFIGS_CONNECTION="amqp://rabbitmq:rabbitmq@localhost:5672"
 BUFFER_CONFIGS_CANDLE_BUFFER_LENGTH="400"
 MARKETS_APP_SERVICE_CONFIGS_NETWORK_ADDRESS="network.gate.svc:13000"
 MARKETS_APP_SERVICE_CONFIGS_EAGLE_ADDRESS="eagle.gate.svc:12000"
@@ -73,7 +74,7 @@ WALLETS_APP_WORKER_CONFIGS_WALLET_WORKER_INTERVAL="10s"
 DB.TYPE="postgreSQL"
 DB.USERNAME="postgres"
 DB.PASSWORD="NAc2PdbLVH15nDdC3zXL7HyY1Ozbnzxb"
-DB_HOST="postgres.gate.svc"
+DB_HOST="localhost"
 DB_PORT="5432"
 DB_NAME="chipmunk"
 DB_IS_SSL_ENABLE="false"

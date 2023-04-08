@@ -18,7 +18,7 @@ db:
   username: "postgres"
   password: "postgres"
   host: "localhost"
-  port: 5432
+  port: 5433
   name: "eagle"
   is_ssl_enable: false
 `)

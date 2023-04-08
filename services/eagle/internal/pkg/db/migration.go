@@ -4,7 +4,7 @@ import "github.com/h-varmazyar/Gate/pkg/gormext"
 
 type Migration struct {
 	gormext.UniversalModel
-	Table       string
+	TableName   string
 	Tag         string
 	Description string
 }

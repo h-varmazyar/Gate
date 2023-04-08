@@ -29,11 +29,17 @@ func NewRepository(ctx context.Context, logger *log.Logger, db *db.DB) (Resoluti
 
 func migration(_ context.Context, dbInstance *db.DB) error {
 	var err error
-	migrations := make(map[string]interface{})
-	err = dbInstance.PostgresDB.Table(db.MigrationTable).Where("table = ?", tableName).Select("tag").Find(&migrations).Error
+	migrations := make(map[string]struct{})
+	tags := make([]string, 0)
+	err = dbInstance.PostgresDB.Table(db.MigrationTable).Where("table_name = ?", tableName).Select("tag").Find(&tags).Error
 	if err != nil {
 		return err
 	}
+
+	for _, tag := range tags {
+		migrations[tag] = struct{}{}
+	}
+
 	newMigrations := make([]*db.Migration, 0)
 	err = dbInstance.PostgresDB.Transaction(func(tx *gorm.DB) error {
 		if _, ok := migrations["v1.0.0"]; !ok {
@@ -42,7 +48,7 @@ func migration(_ context.Context, dbInstance *db.DB) error {
 				return err
 			}
 			newMigrations = append(newMigrations, &db.Migration{
-				Table:       tableName,
+				TableName:   tableName,
 				Tag:         "v1.0.0",
 				Description: "create resolutions table",
 			})
@@ -55,7 +61,7 @@ func migration(_ context.Context, dbInstance *db.DB) error {
 			}
 
 			newMigrations = append(newMigrations, &db.Migration{
-				Table:       tableName,
+				TableName:   tableName,
 				Tag:         "v1.0.1",
 				Description: "insert default resolutions",
 			})
