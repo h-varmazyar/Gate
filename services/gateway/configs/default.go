@@ -4,7 +4,8 @@ var (
 	DefaultConfig = []byte(`
 service_name: "gateway"
 version: "v1.1.0"
-http_port: 8080
+http_port: 8585
+host: "localhost"
 chipmunk_router:
   chipmunk_address: ":11000"
 core_router:

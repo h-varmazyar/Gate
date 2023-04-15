@@ -18,6 +18,15 @@ func RegisterRoutes(router *gorilla.Router, logger *log.Logger) {
 	testRouter.HandleFunc("/ping", c.ping).Methods(http.MethodGet)
 }
 
+// testPing godoc
+// @Summary      The ping pong test API
+// @Description  test the service is available or not
+// @Produce      json
+// @Success      200  {object}  Pong
+// @Failure      400  {object}  HTTPError
+// @Failure      404  {object}  HTTPError
+// @Failure      500  {object}  HTTPError
+// @Router       /test/ping [get]
 func (c *Controller) ping(res http.ResponseWriter, req *http.Request) {
 	jsonM := struct {
 		Pong string
@@ -25,4 +34,8 @@ func (c *Controller) ping(res http.ResponseWriter, req *http.Request) {
 		Pong: time.Now().String(),
 	}
 	httpext.SendModel(res, req, http.StatusOK, jsonM)
+}
+
+type Pong struct {
+	Pong string
 }
