@@ -75,24 +75,37 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 	chipmunkApi.RegisterMarketServiceServer(server, s)
 }
 
-func (s *Service) Create(ctx context.Context, req *chipmunkApi.CreateMarketReq) (*chipmunkApi.Market, error) {
+func (s *Service) Create(ctx context.Context, req *chipmunkApi.MarketCreateReq) (*chipmunkApi.Market, error) {
 	market := new(entity.Market)
 	mapper.Struct(req, market)
-	var err error
-	if req.Destination == nil {
-		return nil, errors.New(ctx, codes.FailedPrecondition).AddDetailF("destination not found")
-	}
-	market.DestinationID, err = uuid.Parse(req.Destination.ID)
+	var (
+		err         error
+		destination *chipmunkApi.Asset
+		source      *chipmunkApi.Asset
+	)
+	destination, err = s.assetsService.ReturnBySymbol(ctx, &chipmunkApi.AssetReturnBySymbolReq{Symbol: req.DestinationSymbol})
 	if err != nil {
-		return nil, errors.Cast(ctx, err).AddDetailF("invalid destination id %v", req.Destination.ID)
+		if errors.Code(ctx, err) == codes.NotFound {
+			destination, err = s.assetsService.Create(ctx, &chipmunkApi.AssetCreateReq{
+				Name:   req.DestinationSymbol,
+				Symbol: req.DestinationSymbol,
+			})
+		}
+		return nil, errors.Cast(ctx, err).AddDetailF("invalid destination %v", req.DestinationSymbol)
 	}
-	if req.Source == nil {
-		return nil, errors.New(ctx, codes.FailedPrecondition).AddDetailF("source not found")
-	}
-	market.SourceID, err = uuid.Parse(req.Source.ID)
+
+	source, err = s.assetsService.ReturnBySymbol(ctx, &chipmunkApi.AssetReturnBySymbolReq{Symbol: req.SourceSymbol})
 	if err != nil {
-		return nil, errors.Cast(ctx, err).AddDetailF("invalid source id %v", req.Source.ID)
+		if errors.Code(ctx, err) == codes.NotFound {
+			source, err = s.assetsService.Create(ctx, &chipmunkApi.AssetCreateReq{
+				Name:   req.SourceSymbol,
+				Symbol: req.SourceSymbol,
+			})
+		}
+		return nil, errors.Cast(ctx, err).AddDetailF("invalid source %v", req.DestinationSymbol)
 	}
+	market.DestinationID = uuid.MustParse(destination.ID)
+	market.SourceID = uuid.MustParse(source.ID)
 	market.Status = req.Status
 	if err := s.db.SaveOrUpdate(market); err != nil {
 		return nil, err

@@ -123,9 +123,9 @@ type KV struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"key"
+	//	@inject_tag:	json:"key"
 	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key"`
-	// @inject_tag: json:"value"
+	//	@inject_tag:	json:"value"
 	//
 	// Types that are assignable to Value:
 	//	*KV_String_
@@ -222,27 +222,27 @@ type isKV_Value interface {
 }
 
 type KV_String_ struct {
-	// @inject_tag: json:"string"
+	//	@inject_tag:	json:"string"
 	String_ string `protobuf:"bytes,2,opt,name=String,proto3,oneof" json:"string"`
 }
 
 type KV_Float64 struct {
-	// @inject_tag: json:"float64"
+	//	@inject_tag:	json:"float64"
 	Float64 float64 `protobuf:"fixed64,3,opt,name=Float64,proto3,oneof" json:"float64"`
 }
 
 type KV_Float32 struct {
-	// @inject_tag: json:"float32"
+	//	@inject_tag:	json:"float32"
 	Float32 float32 `protobuf:"fixed32,4,opt,name=Float32,proto3,oneof" json:"float32"`
 }
 
 type KV_Integer struct {
-	// @inject_tag: json:"integer"
+	//	@inject_tag:	json:"integer"
 	Integer int64 `protobuf:"varint,5,opt,name=Integer,proto3,oneof" json:"integer"`
 }
 
 type KV_Bool struct {
-	// @inject_tag: json:"bool"
+	//	@inject_tag:	json:"bool"
 	Bool bool `protobuf:"varint,6,opt,name=Bool,proto3,oneof" json:"bool"`
 }
 
@@ -261,25 +261,25 @@ type Request struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"method"
+	//	@inject_tag:	json:"method"
 	Method RequestMethod `protobuf:"varint,1,opt,name=Method,proto3,enum=networkAPI.RequestMethod" json:"method"`
-	// @inject_tag: json:"endpoint"
+	//	@inject_tag:	json:"endpoint"
 	Endpoint string `protobuf:"bytes,2,opt,name=Endpoint,proto3" json:"endpoint"`
-	// @inject_tag: json:"params"
+	//	@inject_tag:	json:"params"
 	Params []*KV `protobuf:"bytes,3,rep,name=Params,proto3" json:"params"`
-	// @inject_tag: json:"headers"
+	//	@inject_tag:	json:"headers"
 	Headers []*KV `protobuf:"bytes,4,rep,name=Headers,proto3" json:"headers"`
-	// @inject_tag: json:"metadata"
+	//	@inject_tag:	json:"metadata"
 	Metadata string `protobuf:"bytes,5,opt,name=Metadata,proto3" json:"metadata"`
-	// @inject_tag: json:"type"
+	//	@inject_tag:	json:"type"
 	Type RequestType `protobuf:"varint,6,opt,name=Type,proto3,enum=networkAPI.RequestType" json:"type"`
-	// @inject_tag: json:"callback_queue"
+	//	@inject_tag:	json:"callback_queue"
 	CallbackQueue string `protobuf:"bytes,7,opt,name=CallbackQueue,proto3" json:"callback_queue"`
-	// @inject_tag: json:"rate_limiter_id"
+	//	@inject_tag:	json:"rate_limiter_id"
 	RateLimiterID string `protobuf:"bytes,8,opt,name=RateLimiterID,proto3" json:"rate_limiter_id"`
-	// @inject_tag: json:"timeout"
+	//	@inject_tag:	json:"timeout"
 	Timeout int64 `protobuf:"varint,9,opt,name=Timeout,proto3" json:"timeout"`
-	// @inject_tag: json:"issue_time"
+	//	@inject_tag:	json:"issue_time"
 	IssueTime int64 `protobuf:"varint,10,opt,name=IssueTime,proto3" json:"issue_time"`
 }
 
@@ -390,15 +390,15 @@ type Response struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"code"
+	//	@inject_tag:	json:"code"
 	Code int32 `protobuf:"varint,1,opt,name=Code,proto3" json:"code"`
-	// @inject_tag: json:"body"
+	//	@inject_tag:	json:"body"
 	Body string `protobuf:"bytes,2,opt,name=Body,proto3" json:"body"`
-	// @inject_tag: json:"metadata"
+	//	@inject_tag:	json:"metadata"
 	Metadata string `protobuf:"bytes,3,opt,name=Metadata,proto3" json:"metadata"`
-	// @inject_tag: json:"type"
+	//	@inject_tag:	json:"type"
 	Type RequestType `protobuf:"varint,4,opt,name=Type,proto3,enum=networkAPI.RequestType" json:"type"`
-	// @inject_tag: json:"method"
+	//	@inject_tag:	json:"method"
 	Method RequestMethod `protobuf:"varint,5,opt,name=Method,proto3,enum=networkAPI.RequestMethod" json:"method"`
 }
 

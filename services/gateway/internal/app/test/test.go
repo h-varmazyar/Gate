@@ -19,14 +19,14 @@ func RegisterRoutes(router *gorilla.Router, logger *log.Logger) {
 }
 
 // testPing godoc
-// @Summary      The ping pong test API
-// @Description  test the service is available or not
-// @Produce      json
-// @Success      200  {object}  Pong
-// @Failure      400  {object}  HTTPError
-// @Failure      404  {object}  HTTPError
-// @Failure      500  {object}  HTTPError
-// @Router       /test/ping [get]
+//	@Summary		The ping pong test API
+//	@Description	test the service is available or not
+//	@Produce		json
+//	@Success		200	{object}	Pong
+//	@Failure		400	{object}	HTTPError
+//	@Failure		404	{object}	HTTPError
+//	@Failure		500	{object}	HTTPError
+//	@Router			/test/ping [get]
 func (c *Controller) ping(res http.ResponseWriter, req *http.Request) {
 	jsonM := struct {
 		Pong string

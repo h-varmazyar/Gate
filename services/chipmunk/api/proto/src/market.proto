@@ -5,7 +5,7 @@ import "api/proto/src/misc.proto";
 import "services/chipmunk/api/proto/src/asset.proto";
 
 service MarketService {
-  rpc Create(CreateMarketReq) returns (Market);
+  rpc Create(MarketCreateReq) returns (Market);
   rpc Return(MarketReturnReq) returns (Market);
   rpc Update(MarketUpdateReq) returns (Markets);
   rpc UpdateFromPlatform(MarketUpdateFromPlatformReq) returns (Markets);
@@ -48,7 +48,7 @@ message Market {
   api.Platform Platform = 15;
 }
 
-message CreateMarketReq {
+message MarketCreateReq {
   // @inject_tag: json:"pricing_decimal"
   double PricingDecimal = 1;
   // @inject_tag: json:"trading_decimal"
@@ -57,26 +57,22 @@ message CreateMarketReq {
   double TakerFeeRate = 3;
   // @inject_tag: json:"maker_fee_rate"
   double MakerFeeRate = 4;
-  // @inject_tag: json:"destination"
-  Asset Destination = 5;
+  // @inject_tag: json:"destination_symbol"
+  string DestinationSymbol = 5;
   // @inject_tag: json:"issue_date"
   int64 IssueDate = 6;
   // @inject_tag: json:"min_amount"
   double MinAmount = 7;
-  // @inject_tag: json:"created_at"
-  int64 CreatedAt = 8;
-  // @inject_tag: json:"updated_at"
-  int64 UpdatedAt = 9;
-  // @inject_tag: json:"source"
-  Asset Source = 10;
+  // @inject_tag: json:"source_symbol"
+  string SourceSymbol = 8;
   // @inject_tag: json:"is_amm"
-  bool IsAMM = 11;
+  bool IsAMM = 9;
   // @inject_tag: json:"name"
-  string Name = 12;
+  string Name = 10;
   // @inject_tag: json:"status"
-  api.Status Status = 14;
+  api.Status Status = 11;
   // @inject_tag: json:"platform"
-  api.Platform Platform = 15;
+  api.Platform Platform = 12;
 }
 
 message Markets {

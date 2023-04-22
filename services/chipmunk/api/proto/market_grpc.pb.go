@@ -23,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MarketServiceClient interface {
-	Create(ctx context.Context, in *CreateMarketReq, opts ...grpc.CallOption) (*Market, error)
+	Create(ctx context.Context, in *MarketCreateReq, opts ...grpc.CallOption) (*Market, error)
 	Return(ctx context.Context, in *MarketReturnReq, opts ...grpc.CallOption) (*Market, error)
 	Update(ctx context.Context, in *MarketUpdateReq, opts ...grpc.CallOption) (*Markets, error)
 	UpdateFromPlatform(ctx context.Context, in *MarketUpdateFromPlatformReq, opts ...grpc.CallOption) (*Markets, error)
@@ -41,7 +41,7 @@ func NewMarketServiceClient(cc grpc.ClientConnInterface) MarketServiceClient {
 	return &marketServiceClient{cc}
 }
 
-func (c *marketServiceClient) Create(ctx context.Context, in *CreateMarketReq, opts ...grpc.CallOption) (*Market, error) {
+func (c *marketServiceClient) Create(ctx context.Context, in *MarketCreateReq, opts ...grpc.CallOption) (*Market, error) {
 	out := new(Market)
 	err := c.cc.Invoke(ctx, "/chipmunkApi.MarketService/Create", in, out, opts...)
 	if err != nil {
@@ -117,7 +117,7 @@ func (c *marketServiceClient) StopWorker(ctx context.Context, in *WorkerStopReq,
 // All implementations should embed UnimplementedMarketServiceServer
 // for forward compatibility
 type MarketServiceServer interface {
-	Create(context.Context, *CreateMarketReq) (*Market, error)
+	Create(context.Context, *MarketCreateReq) (*Market, error)
 	Return(context.Context, *MarketReturnReq) (*Market, error)
 	Update(context.Context, *MarketUpdateReq) (*Markets, error)
 	UpdateFromPlatform(context.Context, *MarketUpdateFromPlatformReq) (*Markets, error)
@@ -131,7 +131,7 @@ type MarketServiceServer interface {
 type UnimplementedMarketServiceServer struct {
 }
 
-func (UnimplementedMarketServiceServer) Create(context.Context, *CreateMarketReq) (*Market, error) {
+func (UnimplementedMarketServiceServer) Create(context.Context, *MarketCreateReq) (*Market, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
 }
 func (UnimplementedMarketServiceServer) Return(context.Context, *MarketReturnReq) (*Market, error) {
@@ -168,7 +168,7 @@ func RegisterMarketServiceServer(s grpc.ServiceRegistrar, srv MarketServiceServe
 }
 
 func _MarketService_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateMarketReq)
+	in := new(MarketCreateReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func _MarketService_Create_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: "/chipmunkApi.MarketService/Create",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MarketServiceServer).Create(ctx, req.(*CreateMarketReq))
+		return srv.(MarketServiceServer).Create(ctx, req.(*MarketCreateReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }

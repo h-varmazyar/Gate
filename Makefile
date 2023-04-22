@@ -14,6 +14,9 @@ test:
 .PHONY: run
 run:
 	./scripts/fmt.sh $(filter-out $@,$(MAKECMDGOALS))
+ifeq ($(word 2,$(MAKECMDGOALS)),gateway)
+	./scripts/doc.sh $(filter-out $@,$(MAKECMDGOALS))
+endif
 	./scripts/run.sh $(filter-out $@,$(MAKECMDGOALS))
 
 .PHONY: proto

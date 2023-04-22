@@ -35,6 +35,7 @@ func (c Controller) RegisterRoutes(router *gorilla.Router) {
 	markets := router.PathPrefix("/markets").Subrouter()
 
 	markets.HandleFunc("/create", c.create).Methods(http.MethodPost)
+
 	markets.HandleFunc("/list", c.list).Methods(http.MethodGet)
 	markets.HandleFunc("/UpdateDetails", c.updateDetails).Methods(http.MethodPost)
 	markets.HandleFunc("/Update", c.update).Methods(http.MethodPost)
@@ -44,8 +45,19 @@ func (c Controller) RegisterRoutes(router *gorilla.Router) {
 	markets.HandleFunc("/{market-id}", c.delete).Methods(http.MethodDelete)
 }
 
+// marketCreate godoc
+//	@Summary		Create new market manually
+//	@Description	Create new market manually
+//	@Accept			json
+//	@Produce		json
+//	@Param			market	body	MarketCreateReq	true	"New Market"
+//	@Success		201
+//	@Failure		400	{object}	errors.Error
+//	@Failure		404	{object}	errors.Error
+//	@Failure		500	{object}	errors.Error
+//	@Router			/chipmunk/markets/create [post]
 func (c Controller) create(res http.ResponseWriter, req *http.Request) {
-	market := new(chipmunkApi.CreateMarketReq)
+	market := new(chipmunkApi.MarketCreateReq)
 	if err := httpext.BindModel(req, market); err != nil {
 		httpext.SendError(res, req, err)
 		return

@@ -64,6 +64,6 @@ func (r *resolutionPostgresRepository) ReturnByDuration(duration time.Duration, 
 
 func (r *resolutionPostgresRepository) List(platform api.Platform) ([]*entity.Resolution, error) {
 	resolutions := make([]*entity.Resolution, 0)
-	err := r.db.Model(new(entity.Resolution)).Where("Platform = ?", platform).Find(&resolutions).Error
+	err := r.db.Model(new(entity.Resolution)).Where("platform = ?", platform).Find(&resolutions).Error
 	return resolutions, err
 }

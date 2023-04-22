@@ -175,17 +175,17 @@ type Auth struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"type"
+	//	@inject_tag:	json:"type"
 	Type AuthType `protobuf:"varint,1,opt,name=Type,proto3,enum=api.AuthType" json:"type"`
-	// @inject_tag: json:"username"
+	//	@inject_tag:	json:"username"
 	Username string `protobuf:"bytes,2,opt,name=Username,proto3" json:"username"`
-	// @inject_tag: json:"password"
+	//	@inject_tag:	json:"password"
 	Password string `protobuf:"bytes,3,opt,name=Password,proto3" json:"password"`
-	// @inject_tag: json:"access_id"
+	//	@inject_tag:	json:"access_id"
 	AccessID string `protobuf:"bytes,4,opt,name=AccessID,proto3" json:"access_id"`
-	// @inject_tag: json:"secret_key"
+	//	@inject_tag:	json:"secret_key"
 	SecretKey string `protobuf:"bytes,5,opt,name=SecretKey,proto3" json:"secret_key"`
-	// @inject_tag: json:"nobitex_token"
+	//	@inject_tag:	json:"nobitex_token"
 	NobitexToken string `protobuf:"bytes,6,opt,name=NobitexToken,proto3" json:"nobitex_token"`
 }
 

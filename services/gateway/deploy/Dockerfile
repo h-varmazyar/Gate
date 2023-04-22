@@ -12,7 +12,7 @@ LABEL build=$BUILD_ID
 WORKDIR /src
 COPY . .
 
-RUN go install github.com/swaggo/swag/cmd/swag@latest
+RUN go install github.com/swaggo/swag/cmd/swag@v1.8.12
 RUN swag init -g ./services/gateway/cmd/main.go -o ./services/gateway/docs
 
 RUN GO111MODULE=on CGO_ENABLED=0 go build -buildvcs=false -a -installsuffix cgo \
