@@ -2,7 +2,7 @@ package configs
 
 var (
 	DefaultConfig = []byte(`
-service_name: "gateway"
+service_name: "raven"
 version: "v1.1.0"
 http_port: 8585
 host: "localhost"

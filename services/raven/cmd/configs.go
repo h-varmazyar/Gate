@@ -1,9 +1,9 @@
 package main
 
-import "github.com/h-varmazyar/Gate/services/gateway/internal/app/chipmunk"
-import "github.com/h-varmazyar/Gate/services/gateway/internal/app/eagle"
-import "github.com/h-varmazyar/Gate/services/gateway/internal/app/core"
-import "github.com/h-varmazyar/Gate/services/gateway/internal/app/telegramBot"
+import "github.com/h-varmazyar/Gate/services/raven/internal/app/chipmunk"
+import "github.com/h-varmazyar/Gate/services/raven/internal/app/eagle"
+import "github.com/h-varmazyar/Gate/services/raven/internal/app/core"
+import "github.com/h-varmazyar/Gate/services/raven/internal/app/telegramBot"
 
 type Configs struct {
 	ServiceName       string               `mapstructure:"service_name"`

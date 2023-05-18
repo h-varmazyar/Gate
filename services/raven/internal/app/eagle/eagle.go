@@ -2,8 +2,8 @@ package eagle
 
 import (
 	gorilla "github.com/gorilla/mux"
-	"github.com/h-varmazyar/Gate/services/gateway/internal/app/eagle/signals"
-	"github.com/h-varmazyar/Gate/services/gateway/internal/app/eagle/strategies"
+	"github.com/h-varmazyar/Gate/services/raven/internal/app/eagle/signals"
+	"github.com/h-varmazyar/Gate/services/raven/internal/app/eagle/strategies"
 	log "github.com/sirupsen/logrus"
 )
 

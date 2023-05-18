@@ -4,14 +4,12 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/api/proto"
-	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/resolutions/repository"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"time"
 )
 
@@ -49,8 +47,20 @@ func (s *Service) Set(_ context.Context, req *chipmunkApi.Resolution) (*proto.Vo
 	return new(proto.Void), nil
 }
 
-func (s *Service) ReturnByID(ctx context.Context, _ *chipmunkApi.ResolutionReturnByIDReq) (*chipmunkApi.Resolution, error) {
-	return nil, errors.New(ctx, codes.Unimplemented)
+func (s *Service) ReturnByID(_ context.Context, req *chipmunkApi.ResolutionReturnByIDReq) (*chipmunkApi.Resolution, error) {
+	resolutionID, err := uuid.Parse(req.ID)
+	if err != nil {
+		s.logger.WithError(err).Errorf("failed to parse resolution id: %v", req.ID)
+		return nil, err
+	}
+	resolution, err := s.db.Return(resolutionID)
+	if err != nil {
+		s.logger.WithError(err).Errorf("failed to fetch resolution: %v", resolutionID)
+		return nil, err
+	}
+	response := new(chipmunkApi.Resolution)
+	mapper.Struct(resolution, response)
+	return response, nil
 }
 
 func (s *Service) ReturnByDuration(_ context.Context, req *chipmunkApi.ResolutionReturnByDurationReq) (*chipmunkApi.Resolution, error) {

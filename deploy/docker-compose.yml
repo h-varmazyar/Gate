@@ -6,13 +6,13 @@ networks:
 
 services:
   postgres:
-    container_name: postgreSQL
+    container_name: postgres
     image: postgres
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_gate_data:/var/lib/postgresql/data
     networks:
       - gate
     ports:
@@ -26,7 +26,7 @@ services:
     environment:
       - ALLOW_EMPTY_PASSWORD=no
     volumes:
-      - redis_data:/var/lib/redis
+      - redis_gate_data:/var/lib/redis
     networks:
       - gate
     ports:
@@ -42,7 +42,7 @@ services:
       - RABBITMQ_DEFAULT_PASS=rabbitmq
       - RABBITMQ_DEFAULT_VHOST=/
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      - rabbitmq_gate_data:/var/lib/rabbitmq
     networks:
       - gate
     ports:
@@ -101,18 +101,18 @@ services:
       - redis
     restart: always
 
-  gateway:
-    container_name: gateway
+  raven:
+    container_name: raven
     image: gateway:v1.2.3
     build:
       context: ..
-      dockerfile: services/gateway/deploy/Dockerfile
+      dockerfile: services/raven/deploy/Dockerfile
       args:
         VERSION: v1.2.3
     volumes:
-      - /srv/configs/gateway/app.yaml:/app/configs/config.yaml
+      - /srv/configs/raven/app.yaml:/app/configs/config.yaml
     ports:
-      - 8080:8080
+      - 3030:8080
     networks:
       - gate
     depends_on:
@@ -155,8 +155,6 @@ services:
     restart: always
 
 volumes:
-  #  setup:
-  #  elasticsearch:
-  postgres_data:
-  redis_data:
-  rabbitmq_data:
+  postgres_gate_data:
+  redis_gate_data:
+  rabbitmq_gate_data:

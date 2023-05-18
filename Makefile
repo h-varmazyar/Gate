@@ -14,7 +14,7 @@ test:
 .PHONY: run
 run:
 	./scripts/fmt.sh $(filter-out $@,$(MAKECMDGOALS))
-ifeq ($(word 2,$(MAKECMDGOALS)),gateway)
+ifeq ($(word 2,$(MAKECMDGOALS)),raven)
 	./scripts/doc.sh $(filter-out $@,$(MAKECMDGOALS))
 endif
 	./scripts/run.sh $(filter-out $@,$(MAKECMDGOALS))
@@ -46,4 +46,7 @@ service:
 .PHONY: deploy
 deploy:
 	./scripts/deploy.sh $(filter-out $@,$(MAKECMDGOALS))
+.PHONY: doc
+doc:
+	./scripts/doc.sh $(filter-out $@,$(MAKECMDGOALS))
 

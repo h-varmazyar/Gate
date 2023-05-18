@@ -2,9 +2,9 @@ package core
 
 import (
 	gorilla "github.com/gorilla/mux"
-	"github.com/h-varmazyar/Gate/services/gateway/internal/app/core/brokerages"
-	functions "github.com/h-varmazyar/Gate/services/gateway/internal/app/core/functions"
-	"github.com/h-varmazyar/Gate/services/gateway/internal/app/core/platforms"
+	"github.com/h-varmazyar/Gate/services/raven/internal/app/core/brokerages"
+	functions "github.com/h-varmazyar/Gate/services/raven/internal/app/core/functions"
+	"github.com/h-varmazyar/Gate/services/raven/internal/app/core/platforms"
 	log "github.com/sirupsen/logrus"
 )
 

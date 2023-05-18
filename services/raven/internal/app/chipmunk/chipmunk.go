@@ -2,12 +2,12 @@ package chipmunk
 
 import (
 	gorilla "github.com/gorilla/mux"
-	"github.com/h-varmazyar/Gate/services/gateway/internal/app/chipmunk/assets"
-	"github.com/h-varmazyar/Gate/services/gateway/internal/app/chipmunk/candles"
-	"github.com/h-varmazyar/Gate/services/gateway/internal/app/chipmunk/indicators"
-	"github.com/h-varmazyar/Gate/services/gateway/internal/app/chipmunk/markets"
-	"github.com/h-varmazyar/Gate/services/gateway/internal/app/chipmunk/resolutions"
-	"github.com/h-varmazyar/Gate/services/gateway/internal/app/chipmunk/wallets"
+	"github.com/h-varmazyar/Gate/services/raven/internal/app/chipmunk/assets"
+	"github.com/h-varmazyar/Gate/services/raven/internal/app/chipmunk/candles"
+	"github.com/h-varmazyar/Gate/services/raven/internal/app/chipmunk/indicators"
+	"github.com/h-varmazyar/Gate/services/raven/internal/app/chipmunk/markets"
+	"github.com/h-varmazyar/Gate/services/raven/internal/app/chipmunk/resolutions"
+	"github.com/h-varmazyar/Gate/services/raven/internal/app/chipmunk/wallets"
 	log "github.com/sirupsen/logrus"
 )
 

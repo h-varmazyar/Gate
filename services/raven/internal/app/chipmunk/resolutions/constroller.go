@@ -47,7 +47,7 @@ func (c Controller) RegisterRoutes(router *gorilla.Router) {
 //	@Description	Create new resolution manually
 //	@Accept			json
 //	@Produce		json
-//	@Param			resolution	body	proto.Resolution	true	"New Resolution"
+//	@Param			resolution	body	ResolutionSetReq	true	"New Resolution"
 //	@Success		201
 //	@Failure		400	{object}	errors.Error
 //	@Failure		404	{object}	errors.Error
@@ -71,7 +71,7 @@ func (c Controller) create(res http.ResponseWriter, req *http.Request) {
 //	@Description	get resolution list based on platform
 //	@Accept			json
 //	@Produce		json
-//	@Param			platform	query		string	true	"Platform name"
+//	@Param			platform	query		string	true	"Platform name"	Enums:(Coinex,UnknownBrokerage,Nobitex,Mazdax,Binance)
 //	@Success		200			{object}	proto.Resolutions
 //	@Failure		400			{object}	errors.Error
 //	@Failure		404			{object}	errors.Error
@@ -125,7 +125,8 @@ func (c Controller) get(res http.ResponseWriter, req *http.Request) {
 //	@Description	update single resolution based on resolution id
 //	@Accept			json
 //	@Produce		json
-//	@Param			resolution-id	path	string	true	"Resolution id"
+//	@Param			resolution-id	path	string				true	"Resolution id"
+//	@Param			resolution		body	ResolutionSetReq	true	"New Resolution"
 //	@Success		200
 //	@Failure		400	{object}	errors.Error
 //	@Failure		404	{object}	errors.Error
@@ -137,6 +138,7 @@ func (c Controller) update(res http.ResponseWriter, req *http.Request) {
 		httpext.SendError(res, req, err)
 		return
 	}
+	resolution.ID = mux.PathParam(req, "resolution-id")
 	if _, err := c.resolutionsService.Set(req.Context(), resolution); err != nil {
 		httpext.SendError(res, req, err)
 	} else {

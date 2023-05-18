@@ -13,16 +13,16 @@ WORKDIR /src
 COPY . .
 
 RUN go install github.com/swaggo/swag/cmd/swag@v1.8.12
-RUN swag init -g ./services/gateway/cmd/main.go -o ./services/gateway/docs
+RUN swag init -g ./services/raven/cmd/main.go -o ./services/raven/docs
 
 RUN GO111MODULE=on CGO_ENABLED=0 go build -buildvcs=false -a -installsuffix cgo \
     -ldflags "-w -X main.Version=${VERSION}" \
-    -o ./build/gateway ./services/gateway/cmd
+    -o ./build/raven ./services/raven/cmd
 
 FROM alpine
 WORKDIR /app
 COPY --from=builder /src/build/ ./
-COPY ./services/gateway/docs ./docs
-ENTRYPOINT [ "./gateway" ]
+COPY ./services/raven/docs ./docs
+ENTRYPOINT [ "./raven" ]
 
 EXPOSE 8080

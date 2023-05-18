@@ -7,14 +7,13 @@ import (
 	"fmt"
 	"github.com/h-varmazyar/Gate/pkg/httpext"
 	"github.com/h-varmazyar/Gate/pkg/service"
-	"github.com/h-varmazyar/Gate/services/gateway/configs"
-	"github.com/h-varmazyar/Gate/services/gateway/docs"
-	_ "github.com/h-varmazyar/Gate/services/gateway/docs"
-	"github.com/h-varmazyar/Gate/services/gateway/internal/app/chipmunk"
-	"github.com/h-varmazyar/Gate/services/gateway/internal/app/core"
-	"github.com/h-varmazyar/Gate/services/gateway/internal/app/eagle"
-	"github.com/h-varmazyar/Gate/services/gateway/internal/app/telegramBot"
-	"github.com/h-varmazyar/Gate/services/gateway/internal/app/test"
+	"github.com/h-varmazyar/Gate/services/raven/configs"
+	"github.com/h-varmazyar/Gate/services/raven/docs"
+	"github.com/h-varmazyar/Gate/services/raven/internal/app/chipmunk"
+	"github.com/h-varmazyar/Gate/services/raven/internal/app/core"
+	"github.com/h-varmazyar/Gate/services/raven/internal/app/eagle"
+	"github.com/h-varmazyar/Gate/services/raven/internal/app/telegramBot"
+	"github.com/h-varmazyar/Gate/services/raven/internal/app/test"
 	"github.com/h-varmazyar/gopack/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -34,8 +33,6 @@ import (
 
 //	@license.name	Apache 2.0
 //	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
-
-//	@host	localhost:8080
 func main() {
 	ctx := context.Background()
 	logger := log.New()
