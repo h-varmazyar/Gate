@@ -60,8 +60,10 @@ func (s *Service) ReturnByID(_ context.Context, req *chipmunkApi.AssetReturnByID
 }
 
 func (s *Service) ReturnBySymbol(_ context.Context, req *chipmunkApi.AssetReturnBySymbolReq) (*chipmunkApi.Asset, error) {
+	req.Symbol = strings.ToUpper(req.Symbol)
 	asset, err := s.db.ReturnBySymbol(req.Symbol)
 	if err != nil {
+		s.logger.WithError(err).Error("asset return by symbol failed")
 		return nil, err
 	}
 	resp := entity.UnWrapAsset(asset)

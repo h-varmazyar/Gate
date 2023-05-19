@@ -28,7 +28,7 @@ func NewMarketPostgresRepository(ctx context.Context, logger *log.Logger, db *go
 
 func (repository *marketPostgresRepository) List(platform api.Platform) ([]*entity.Market, error) {
 	markets := make([]*entity.Market, 0)
-	return markets, repository.db.Model(new(entity.Market)).Where("Platform = ?", platform).Preload("Source").Preload("Destination").Find(&markets).Error
+	return markets, repository.db.Model(new(entity.Market)).Where("platform = ?", platform).Preload("Source").Preload("Destination").Find(&markets).Error
 }
 
 func (repository *marketPostgresRepository) ListBySource(platform api.Platform, source string) ([]*entity.Market, error) {
@@ -43,7 +43,7 @@ func (repository *marketPostgresRepository) ListBySource(platform api.Platform, 
 func (repository *marketPostgresRepository) ReturnByID(id uuid.UUID) (*entity.Market, error) {
 	market := new(entity.Market)
 	return market, repository.db.Model(new(entity.Market)).
-		Where("id LIKE ?", id).
+		Where("id = ?", id).
 		Find(market).Error
 }
 
@@ -55,17 +55,17 @@ func (repository *marketPostgresRepository) ReturnByName(platform api.Platform, 
 		First(market).Error
 }
 
-func (repository *marketPostgresRepository) SaveOrUpdate(market *entity.Market) error {
+func (repository *marketPostgresRepository) Create(market *entity.Market) error {
 	m := new(entity.Market)
 	err := repository.db.Model(new(entity.Market)).Where("name LIKE ?", market.Name).First(m).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return repository.db.Model(new(entity.Market)).Create(market).Error
-		}
+	if err != nil && err != gorm.ErrRecordNotFound {
 		return err
 	}
-	market.ID = m.ID
-	return repository.db.Updates(market).Error
+	return repository.db.Model(new(entity.Market)).Create(market).Error
+}
+
+func (repository *marketPostgresRepository) Update(market *entity.Market) error {
+	return repository.db.Where("id = ?", market.ID).Save(market).Error
 }
 
 func (repository *marketPostgresRepository) Delete(market *entity.Market) error {

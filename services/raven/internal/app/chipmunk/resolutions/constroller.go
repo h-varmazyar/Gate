@@ -83,12 +83,11 @@ func (c Controller) list(res http.ResponseWriter, req *http.Request) {
 	platforms := mux.QueryParam(req, "platform")
 	if len(platforms) == 0 {
 		httpext.SendError(res, req, errors.New(req.Context(), codes.InvalidArgument).AddDetails("platform needed"))
+		return
 	}
 	if platforms[0] != "" {
 		listReq.Platform = api.Platform(api.Platform_value[platforms[0]])
 	}
-
-	c.logger.Infof("platform is: %v", platforms[0])
 
 	if resolutions, err := c.resolutionsService.List(req.Context(), listReq); err != nil {
 		httpext.SendError(res, req, err)

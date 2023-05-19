@@ -33,10 +33,8 @@ type Service struct {
 	resolutionsService *resolutions.Service
 	assetsService      *assets.Service
 	indicatorsService  *indicators.Service
-	//worker             *workers.PrimaryDataWorker
-	//statisticsWorker *workers.StatisticsWorker
-	logger *log.Logger
-	db     repository.MarketRepository
+	logger             *log.Logger
+	db                 repository.MarketRepository
 }
 
 var (
@@ -63,8 +61,6 @@ func NewService(_ context.Context, logger *log.Logger, configs *Configs, db repo
 		GrpcService.assetsService = dependencies.AssetsService
 		GrpcService.indicatorsService = dependencies.IndicatorsService
 		GrpcService.resolutionsService = dependencies.ResolutionsService
-		//GrpcService.worker = dependencies.PrimaryDataWorker
-		//GrpcService.statisticsWorker = dependencies.StatisticsWorker
 		GrpcService.db = db
 		GrpcService.logger = logger
 	}
@@ -85,29 +81,32 @@ func (s *Service) Create(ctx context.Context, req *chipmunkApi.MarketCreateReq) 
 	)
 	destination, err = s.assetsService.ReturnBySymbol(ctx, &chipmunkApi.AssetReturnBySymbolReq{Symbol: req.DestinationSymbol})
 	if err != nil {
-		if errors.Code(ctx, err) == codes.NotFound {
+
+		if err == gorm.ErrRecordNotFound {
 			destination, err = s.assetsService.Create(ctx, &chipmunkApi.AssetCreateReq{
 				Name:   req.DestinationSymbol,
 				Symbol: req.DestinationSymbol,
 			})
+		} else {
+			return nil, errors.Cast(ctx, err).AddDetailF("invalid destination %v", req.DestinationSymbol)
 		}
-		return nil, errors.Cast(ctx, err).AddDetailF("invalid destination %v", req.DestinationSymbol)
 	}
 
 	source, err = s.assetsService.ReturnBySymbol(ctx, &chipmunkApi.AssetReturnBySymbolReq{Symbol: req.SourceSymbol})
 	if err != nil {
-		if errors.Code(ctx, err) == codes.NotFound {
+		if err == gorm.ErrRecordNotFound {
 			source, err = s.assetsService.Create(ctx, &chipmunkApi.AssetCreateReq{
 				Name:   req.SourceSymbol,
 				Symbol: req.SourceSymbol,
 			})
+		} else {
+			return nil, errors.Cast(ctx, err).AddDetailF("invalid source %v", req.DestinationSymbol)
 		}
-		return nil, errors.Cast(ctx, err).AddDetailF("invalid source %v", req.DestinationSymbol)
 	}
 	market.DestinationID = uuid.MustParse(destination.ID)
 	market.SourceID = uuid.MustParse(source.ID)
 	market.Status = req.Status
-	if err := s.db.SaveOrUpdate(market); err != nil {
+	if err := s.db.Create(market); err != nil {
 		return nil, err
 	}
 	response := new(chipmunkApi.Market)
@@ -151,96 +150,71 @@ func (s *Service) ListBySource(_ context.Context, req *chipmunkApi.MarketListByS
 	}
 }
 
-func (s *Service) StartWorker(ctx context.Context, req *chipmunkApi.WorkerStartReq) (*api.Void, error) {
-	s.logger.Infof("starting market worker for platform %v", req.Platform)
-	//var (
-	//	markets []*entity.Market
-	//resolution         *entity.Resolution
-	//strategyIndicators *eagleApi.StrategyIndicators
-	//loadedIndicators map[uuid.UUID]indicatorsPkg.Indicator
-	//)
-	//
-	//if markets, err = s.db.List(req.Platform); err != nil {
-	//	return nil, err
-	//}
-	//
-	//if resolution, err = s.resolutionsService.GetByID(ctx, &chipmunkApi.GetResolutionByIDRequest{ID: req.ResolutionID}); err != nil {
-	//	return nil, err
-	//}
-	//
-	//log.Infof("loaded resolution: %v", resolution)
-	//
-	//if strategyIndicators, err = s.strategyService.Indicators(ctx, &eagleApi.StrategyIndicatorReq{StrategyID: req.StrategyID}); err != nil {
-	//	return nil, err
-	//}
-	//
-	//log.Infof("loaded strategies count: %v", len(strategyIndicators.Elements))
-	//
-	//if loadedIndicators, err = s.loadIndicators(ctx, strategyIndicators); err != nil {
-	//	return nil, err
-	//}
-	//for _, market := range markets {
-	//	settings := &workers.WorkerSettings{
-	//		Market:      market,
-	//		Resolution:  resolution,
-	//		Indicators:  loadedIndicators,
-	//		BrokerageID: brokerageID,
-	//	}
-	//	s.workers.AddMarket(settings)
-	//	log.Infof("new market added: %v", market.Name)
-	//}
+func (s *Service) Update(ctx context.Context, req *chipmunkApi.MarketUpdateReq) (*chipmunkApi.Market, error) {
+	market := new(entity.Market)
+	mapper.Struct(req, market)
 
-	//s.statisticsWorker.Start(req.Platform)
-	return new(api.Void), nil
-}
-
-func (s *Service) StopWorker(_ context.Context, req *chipmunkApi.WorkerStopReq) (*api.Void, error) {
-	s.logger.Infof("stopping market statistics...")
-	//markets, err := s.db.List(brokerageID)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//for _, market := range markets {
-	//	err := s.workers.DeleteMarket(market.ID)
-	//	if err != nil {
-	//		log.WithError(err).Errorf("failed to delete market %v", market)
-	//	}
-	//}
-
-	//s.statisticsWorker.Stop(req.Platform)
-	return new(api.Void), nil
-}
-
-func (s *Service) Update(ctx context.Context, req *chipmunkApi.MarketUpdateReq) (*chipmunkApi.Markets, error) {
-	markets, err := s.functionsService.MarketList(ctx, &coreApi.MarketListReq{Platform: req.Platform})
+	marketID, err := uuid.Parse(req.ID)
 	if err != nil {
 		return nil, err
 	}
-	for _, market := range markets.Elements {
-		source, sourceErr := s.loadOrCreateAsset(ctx, market.Source.Name)
-		if sourceErr != nil {
-			log.WithError(err).Errorf("failed to load or create source for market %v", market.Name)
-			continue
-		}
-		destination, destinationErr := s.loadOrCreateAsset(ctx, market.Destination.Name)
-		if destinationErr != nil {
-			log.WithError(err).Errorf("failed to load or create destination for market %v", market.Name)
-			continue
-		}
-		localMarket := new(entity.Market)
-		mapper.Struct(market, localMarket)
-		localMarket.SourceID = source.ID
-		localMarket.DestinationID = destination.ID
-		localMarket.Platform = req.Platform
+	market.ID = marketID
 
-		err = s.db.SaveOrUpdate(localMarket)
-		if err != nil {
-			log.WithError(err).Error("failed to update markets")
-			continue
-		}
+	source, err := s.loadOrCreateAsset(ctx, req.SourceSymbol)
+	if err != nil {
+		log.WithError(err).Errorf("failed to load or create source for market %v", req.SourceSymbol)
+		return nil, err
 	}
-	return markets, nil
+	destination, err := s.loadOrCreateAsset(ctx, req.DestinationSymbol)
+	if err != nil {
+		log.WithError(err).Errorf("failed to load or create destination for market %v", req.DestinationSymbol)
+		return nil, err
+	}
+
+	market.SourceID = source.ID
+	market.DestinationID = destination.ID
+
+	err = s.db.Update(market)
+	if err != nil {
+		log.WithError(err).Error("failed to update markets")
+		return nil, err
+	}
+
+	res := new(chipmunkApi.Market)
+	mapper.Struct(market, res)
+	return res, nil
 }
+
+//func (s *Service) Update(ctx context.Context, req *chipmunkApi.MarketUpdateReq) (*chipmunkApi.Markets, error) {
+//	markets, err := s.functionsService.MarketList(ctx, &coreApi.MarketListReq{Platform: req.Platform})
+//	if err != nil {
+//		return nil, err
+//	}
+//	for _, market := range markets.Elements {
+//		source, sourceErr := s.loadOrCreateAsset(ctx, market.Source.Name)
+//		if sourceErr != nil {
+//			log.WithError(err).Errorf("failed to load or create source for market %v", market.Name)
+//			continue
+//		}
+//		destination, destinationErr := s.loadOrCreateAsset(ctx, market.Destination.Name)
+//		if destinationErr != nil {
+//			log.WithError(err).Errorf("failed to load or create destination for market %v", market.Name)
+//			continue
+//		}
+//		localMarket := new(entity.Market)
+//		mapper.Struct(market, localMarket)
+//		localMarket.SourceID = source.ID
+//		localMarket.DestinationID = destination.ID
+//		localMarket.Platform = req.Platform
+//
+//		err = s.db.SaveOrUpdate(localMarket)
+//		if err != nil {
+//			log.WithError(err).Error("failed to update markets")
+//			continue
+//		}
+//	}
+//	return markets, nil
+//}
 
 func (s *Service) UpdateFromPlatform(ctx context.Context, req *chipmunkApi.MarketUpdateFromPlatformReq) (*chipmunkApi.Markets, error) {
 	markets, err := s.functionsService.MarketList(ctx, &coreApi.MarketListReq{Platform: req.Platform})
@@ -275,7 +249,7 @@ func (s *Service) UpdateFromPlatform(ctx context.Context, req *chipmunkApi.Marke
 				} else {
 					return nil, errors.New(ctx, codes.FailedPrecondition).AddDetails("check market issue date")
 				}
-				err = s.db.SaveOrUpdate(localMarket)
+				err = s.db.Update(localMarket)
 				if err != nil {
 					s.logger.WithError(err).Error("failed to update markets")
 					continue

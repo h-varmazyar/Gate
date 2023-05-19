@@ -49,6 +49,9 @@ func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs Configs,
 	platforms := []api.Platform{api.Platform_Coinex}
 
 	err = app.startWorkers(ctx, holder, appDependencies, platforms)
+	if err != nil {
+		return nil, err
+	}
 
 	app.Service = service.NewService(ctx, logger, configs.ServiceConfigs, repositoryInstance)
 

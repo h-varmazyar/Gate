@@ -1,13 +1,16 @@
 package markets
 
 import (
+	"fmt"
 	gorilla "github.com/gorilla/mux"
 	api "github.com/h-varmazyar/Gate/api/proto"
+	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/httpext"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	"github.com/h-varmazyar/gopack/mux"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc/codes"
 	"net/http"
 )
 
@@ -35,14 +38,11 @@ func (c Controller) RegisterRoutes(router *gorilla.Router) {
 	markets := router.PathPrefix("/markets").Subrouter()
 
 	markets.HandleFunc("/create", c.create).Methods(http.MethodPost)
-
 	markets.HandleFunc("/list", c.list).Methods(http.MethodGet)
-	markets.HandleFunc("/UpdateDetails", c.updateDetails).Methods(http.MethodPost)
-	markets.HandleFunc("/Update", c.update).Methods(http.MethodPost)
-	//markets.HandleFunc("/StartWorker", c.startWorker).Methods(http.MethodPost)
-	//markets.HandleFunc("/StopWorker", c.stopWorker).Methods(http.MethodPost)
+	markets.HandleFunc("/{market_id}", c.update).Methods(http.MethodPut)
 	markets.HandleFunc("/{market-id}", c.get).Methods(http.MethodGet)
-	markets.HandleFunc("/{market-id}", c.delete).Methods(http.MethodDelete)
+	markets.HandleFunc("/Update-remotely", c.updateDetails).Methods(http.MethodPost)
+
 }
 
 // marketCreate godoc
@@ -50,7 +50,7 @@ func (c Controller) RegisterRoutes(router *gorilla.Router) {
 //	@Description	Create new market manually
 //	@Accept			json
 //	@Produce		json
-//	@Param			market	body	MarketCreateReq	true	"New Market"
+//	@Param			market	body	MarketReq	true	"New Market"
 //	@Success		201
 //	@Failure		400	{object}	errors.Error
 //	@Failure		404	{object}	errors.Error
@@ -62,6 +62,7 @@ func (c Controller) create(res http.ResponseWriter, req *http.Request) {
 		httpext.SendError(res, req, err)
 		return
 	}
+	c.logger.Infof("filled market is: %v", market)
 	if _, err := c.marketsService.Create(req.Context(), market); err != nil {
 		httpext.SendError(res, req, err)
 	} else {
@@ -69,12 +70,28 @@ func (c Controller) create(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// marketList godoc
+//	@Summary		get market list
+//	@Description	get market list based on platform
+//	@Accept			json
+//	@Produce		json
+//	@Param			platform	query		string	true	"Platform name"	Enums:(Coinex,UnknownBrokerage,Nobitex,Mazdax,Binance)
+//	@Success		200			{object}	proto.Markets
+//	@Failure		400			{object}	errors.Error
+//	@Failure		404			{object}	errors.Error
+//	@Failure		500			{object}	errors.Error
+//	@Router			/chipmunk/markets/list [get]
 func (c Controller) list(res http.ResponseWriter, req *http.Request) {
 	list := new(chipmunkApi.MarketListReq)
-	platforms := mux.QueryParam(req, "Platform")
-	if len(platforms) != 0 {
+	platforms := mux.QueryParam(req, "platform")
+	if len(platforms) == 0 {
+		httpext.SendError(res, req, errors.New(req.Context(), codes.InvalidArgument).AddDetails("platform needed"))
+		return
+	}
+	if platforms[0] != "" {
 		list.Platform = api.Platform(api.Platform_value[platforms[0]])
 	}
+
 	if markets, err := c.marketsService.List(req.Context(), list); err != nil {
 		httpext.SendError(res, req, err)
 	} else {
@@ -82,12 +99,24 @@ func (c Controller) list(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// marketsUpdateRemotely godoc
+//	@Summary		update markets remotely
+//	@Description	update markets remotely
+//	@Accept			json
+//	@Produce		json
+//	@Param			market	body		Platform	true	"update Markets"
+//	@Success		200		{object}	proto.Markets
+//	@Failure		400		{object}	errors.Error
+//	@Failure		404		{object}	errors.Error
+//	@Failure		500		{object}	errors.Error
+//	@Router			/chipmunk/markets/Update-remotely [post]
 func (c Controller) updateDetails(res http.ResponseWriter, req *http.Request) {
 	update := new(chipmunkApi.MarketUpdateFromPlatformReq)
 	if err := httpext.BindModel(req, update); err != nil {
 		httpext.SendError(res, req, err)
 		return
 	}
+	fmt.Println(update)
 	if markets, err := c.marketsService.UpdateFromPlatform(req.Context(), update); err != nil {
 		httpext.SendError(res, req, err)
 	} else {
@@ -95,32 +124,17 @@ func (c Controller) updateDetails(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-//func (c Controller) startWorker(res http.ResponseWriter, req *http.Request) {
-//	worker := new(chipmunkApi.WorkerStartReq)
-//	if err := httpext.BindModel(req, worker); err != nil {
-//		httpext.SendError(res, req, err)
-//		return
-//	}
-//	if _, err := c.marketsService.StartWorker(req.Context(), worker); err != nil {
-//		httpext.SendError(res, req, err)
-//	} else {
-//		httpext.SendCode(res, req, http.StatusOK)
-//	}
-//}
-//
-//func (c Controller) stopWorker(res http.ResponseWriter, req *http.Request) {
-//	worker := new(chipmunkApi.WorkerStopReq)
-//	if err := httpext.BindModel(req, worker); err != nil {
-//		httpext.SendError(res, req, err)
-//		return
-//	}
-//	if _, err := c.marketsService.StopWorker(req.Context(), worker); err != nil {
-//		httpext.SendError(res, req, err)
-//	} else {
-//		httpext.SendCode(res, req, http.StatusOK)
-//	}
-//}
-
+// marketReturn godoc
+//	@Summary		return market
+//	@Description	return market based on id
+//	@Accept			json
+//	@Produce		json
+//	@Param			market_id	path		string	true	"market id"
+//	@Success		200			{object}	proto.Market
+//	@Failure		400			{object}	errors.Error
+//	@Failure		404			{object}	errors.Error
+//	@Failure		500			{object}	errors.Error
+//	@Router			/chipmunk/markets/{market_id} [get]
 func (c Controller) get(res http.ResponseWriter, req *http.Request) {
 	getRequest := new(chipmunkApi.MarketReturnReq)
 	getRequest.ID = mux.PathParam(req, "market-id")
@@ -132,19 +146,28 @@ func (c Controller) get(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// marketUpdate godoc
+//	@Summary		update new market manually
+//	@Description	update new market manually
+//	@Accept			json
+//	@Produce		json
+//	@Param			market_id	path	string		true	"market id"
+//	@Param			market		body	MarketReq	true	"update Market"
+//	@Success		201
+//	@Failure		400	{object}	errors.Error
+//	@Failure		404	{object}	errors.Error
+//	@Failure		500	{object}	errors.Error
+//	@Router			/chipmunk/markets/{market_id} [put]
 func (c Controller) update(res http.ResponseWriter, req *http.Request) {
 	update := new(chipmunkApi.MarketUpdateReq)
 	if err := httpext.BindModel(req, update); err != nil {
 		httpext.SendError(res, req, err)
 		return
 	}
-	if markets, err := c.marketsService.Update(req.Context(), update); err != nil {
+	update.ID = mux.PathParam(req, "market_id")
+	if market, err := c.marketsService.Update(req.Context(), update); err != nil {
 		httpext.SendError(res, req, err)
 	} else {
-		httpext.SendModel(res, req, http.StatusOK, markets.Elements)
+		httpext.SendModel(res, req, http.StatusOK, market)
 	}
-}
-
-func (c Controller) delete(res http.ResponseWriter, req *http.Request) {
-	httpext.SendCode(res, req, http.StatusNotFound)
 }

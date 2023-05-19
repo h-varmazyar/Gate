@@ -2,6 +2,7 @@ package candles
 
 import (
 	"context"
+	"fmt"
 	"github.com/google/uuid"
 	api "github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/errors"
@@ -39,6 +40,8 @@ func (app *App) startWorkers(ctx context.Context, holder *workerHolder, dependen
 		return err
 	}
 
+	fmt.Println("indicators:", len(indicators.Elements))
+
 	loadedIndicators, err := app.loadIndicators(indicators.Elements)
 	if err != nil {
 		return err
@@ -50,8 +53,9 @@ func (app *App) startWorkers(ctx context.Context, holder *workerHolder, dependen
 		return err
 	}
 
+	fmt.Println("runner length is:", len(runners))
 	if len(runners) == 0 {
-		return errors.New(ctx, codes.FailedPrecondition).AddDetails("invlaid runner length")
+		return errors.New(ctx, codes.FailedPrecondition).AddDetails("invalid runner length")
 	}
 
 	//todo: must be pass copy of runner to each worker or not??

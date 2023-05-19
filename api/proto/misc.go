@@ -30,8 +30,8 @@ func (d AuthType) MarshalJSON() ([]byte, error) {
 
 //------------------------------------------------
 func (Status) InRange(v interface{}) bool {
-	i, ok := Status_value[v.(Status).String()]
-	return ok && i > 0
+	_, ok := Status_value[v.(Status).String()]
+	return ok
 }
 func (d *Status) Scan(value interface{}) error {
 	*d = Status(Status_value[value.(string)])

@@ -26,19 +26,19 @@ type Resolution struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"platform"
+	// @inject_tag: json:"platform"
 	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
-	//	@inject_tag:	json:"duration"
+	// @inject_tag: json:"duration"
 	Duration int64 `protobuf:"varint,2,opt,name=Duration,proto3" json:"duration"`
-	//	@inject_tag:	json:"label"
+	// @inject_tag: json:"label"
 	Label string `protobuf:"bytes,3,opt,name=Label,proto3" json:"label"`
-	//	@inject_tag:	json:"value"
+	// @inject_tag: json:"value"
 	Value string `protobuf:"bytes,4,opt,name=Value,proto3" json:"value"`
-	//	@inject_tag:	json:"id"
+	// @inject_tag: json:"id"
 	ID string `protobuf:"bytes,5,opt,name=ID,proto3" json:"id"`
-	//	@inject_tag:	json:"created_at"
+	// @inject_tag: json:"created_at"
 	CreatedAt int64 `protobuf:"varint,6,opt,name=CreatedAt,proto3" json:"created_at"`
-	//	@inject_tag:	json:"updated_at"
+	// @inject_tag: json:"updated_at"
 	UpdatedAt int64 `protobuf:"varint,7,opt,name=UpdatedAt,proto3" json:"updated_at"`
 }
 
@@ -128,7 +128,7 @@ type Resolutions struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"elements"
+	// @inject_tag: json:"elements"
 	Elements []*Resolution `protobuf:"bytes,1,rep,name=Elements,proto3" json:"elements"`
 }
 
@@ -176,7 +176,7 @@ type ResolutionReturnByIDReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"id"
+	// @inject_tag: json:"id"
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
 }
 
@@ -224,9 +224,9 @@ type ResolutionReturnByDurationReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"platform"
+	// @inject_tag: json:"platform"
 	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
-	//	@inject_tag:	json:"duration"
+	// @inject_tag: json:"duration"
 	Duration int64 `protobuf:"varint,2,opt,name=Duration,proto3" json:"duration"`
 }
 
@@ -281,7 +281,7 @@ type ResolutionListReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"platform"
+	// @inject_tag: json:"platform"
 	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
 }
 

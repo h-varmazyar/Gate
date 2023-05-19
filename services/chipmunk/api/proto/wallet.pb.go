@@ -26,13 +26,13 @@ type Wallet struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"blocked_balance"
+	// @inject_tag: json:"blocked_balance"
 	BlockedBalance float64 `protobuf:"fixed64,1,opt,name=BlockedBalance,proto3" json:"blocked_balance"`
-	//	@inject_tag:	json:"active_balance"
+	// @inject_tag: json:"active_balance"
 	ActiveBalance float64 `protobuf:"fixed64,2,opt,name=ActiveBalance,proto3" json:"active_balance"`
-	//	@inject_tag:	json:"total_balance"
+	// @inject_tag: json:"total_balance"
 	TotalBalance float64 `protobuf:"fixed64,3,opt,name=TotalBalance,proto3" json:"total_balance"`
-	//	@inject_tag:	json:"asset_name"
+	// @inject_tag: json:"asset_name"
 	AssetName string `protobuf:"bytes,4,opt,name=AssetName,proto3" json:"asset_name"`
 }
 
@@ -101,13 +101,13 @@ type Reference struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"blocked_balance"
+	// @inject_tag: json:"blocked_balance"
 	BlockedBalance float64 `protobuf:"fixed64,1,opt,name=BlockedBalance,proto3" json:"blocked_balance"`
-	//	@inject_tag:	json:"active_balance"
+	// @inject_tag: json:"active_balance"
 	ActiveBalance float64 `protobuf:"fixed64,2,opt,name=ActiveBalance,proto3" json:"active_balance"`
-	//	@inject_tag:	json:"total_balance"
+	// @inject_tag: json:"total_balance"
 	TotalBalance float64 `protobuf:"fixed64,3,opt,name=TotalBalance,proto3" json:"total_balance"`
-	//	@inject_tag:	json:"asset_name"
+	// @inject_tag: json:"asset_name"
 	AssetName string `protobuf:"bytes,4,opt,name=AssetName,proto3" json:"asset_name"`
 }
 
@@ -176,9 +176,9 @@ type Wallets struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"elements"
+	// @inject_tag: json:"elements"
 	Elements []*Wallet `protobuf:"bytes,1,rep,name=Elements,proto3" json:"elements"`
-	//	@inject_tag:	json:"count"
+	// @inject_tag: json:"count"
 	Count int64 `protobuf:"varint,2,opt,name=Count,proto3" json:"count"`
 }
 
@@ -233,7 +233,7 @@ type ReturnWalletReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"asset_name"
+	// @inject_tag: json:"asset_name"
 	AssetName string `protobuf:"bytes,1,opt,name=AssetName,proto3" json:"asset_name"`
 }
 
@@ -281,7 +281,7 @@ type ReturnReferenceReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"reference_name"
+	// @inject_tag: json:"reference_name"
 	ReferenceName string `protobuf:"bytes,1,opt,name=ReferenceName,proto3" json:"reference_name"`
 }
 
@@ -329,7 +329,7 @@ type StartWorkerRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"brokerage_id"
+	// @inject_tag: json:"brokerage_id"
 	BrokerageID string `protobuf:"bytes,1,opt,name=BrokerageID,proto3" json:"brokerage_id"`
 }
 
