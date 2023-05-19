@@ -1,7 +1,6 @@
 package ips
 
 import (
-	"fmt"
 	gorilla "github.com/gorilla/mux"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/httpext"
@@ -51,14 +50,12 @@ func (c Controller) RegisterRoutes(router *gorilla.Router) {
 //	@Failure		500	{object}	errors.Error
 //	@Router			/network/ips/create [post]
 func (c Controller) create(res http.ResponseWriter, req *http.Request) {
-	fmt.Println("ip creation")
 	ipCreateReq := new(networkApi.IPCreateReq)
 	if err := httpext.BindModel(req, ipCreateReq); err != nil {
 		httpext.SendError(res, req, err)
 		return
 	}
 
-	fmt.Println("create:", ipCreateReq)
 	if ip, err := c.ipsService.Create(req.Context(), ipCreateReq); err != nil {
 		httpext.SendError(res, req, err)
 	} else {
@@ -77,7 +74,6 @@ func (c Controller) create(res http.ResponseWriter, req *http.Request) {
 //	@Failure		500	{object}	errors.Error
 //	@Router			/network/ips/list [get]
 func (c Controller) list(res http.ResponseWriter, req *http.Request) {
-	fmt.Println("ip list req")
 	if ips, err := c.ipsService.List(req.Context(), new(networkApi.IPListReq)); err != nil {
 		httpext.SendError(res, req, err)
 	} else {
@@ -100,8 +96,6 @@ func (c Controller) returnByID(res http.ResponseWriter, req *http.Request) {
 	ipReq := new(networkApi.IPReturnReq)
 
 	ipReq.ID = mux.PathParam(req, "ip_id")
-
-	fmt.Println("ip return:", ipReq.ID)
 
 	if ip, err := c.ipsService.Return(req.Context(), ipReq); err != nil {
 		httpext.SendError(res, req, err)
