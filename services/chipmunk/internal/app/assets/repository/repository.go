@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const tableName = "assets"
+const tableName = "ips"
 
 type AssetRepository interface {
 	ReturnByID(id uuid.UUID) (*entity.Asset, error)
@@ -48,7 +48,7 @@ func migration(_ context.Context, dbInstance *db.DB) error {
 			newMigrations = append(newMigrations, &db.Migration{
 				TableName:   tableName,
 				Tag:         "v1.0.0",
-				Description: "create assets table",
+				Description: "create ips table",
 			})
 		}
 		err = tx.Model(new(db.Migration)).CreateInBatches(&newMigrations, 100).Error

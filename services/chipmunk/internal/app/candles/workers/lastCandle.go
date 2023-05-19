@@ -79,7 +79,7 @@ func (w *LastCandles) prepareLocalCandles(runner *Runner, indicators []indicator
 		if err == gorm.ErrRecordNotFound {
 			from = time.Unix(runner.Market.IssueDate, 0)
 		} else {
-			w.logger.WithError(err).Errorf("failed to load local candles for market %v in resolution %v", marketID, resolutionID)
+			w.logger.WithError(err).Errorf("failed to load local rateLimiters for market %v in resolution %v", marketID, resolutionID)
 			return time.Unix(0, 0), err
 		}
 	}

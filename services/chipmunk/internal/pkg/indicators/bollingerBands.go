@@ -52,34 +52,34 @@ func (conf *bollingerBands) Calculate(candles []*entity.Candle) error {
 	for i := conf.Length - 1; i < len(candles); i++ {
 		conf.calculateBB(candles[1+i-conf.Length : i+1])
 		//variance := float64(0)
-		//ma := candles[i].MovingAverages[conf.id].Simple
+		//ma := rateLimiters[i].MovingAverages[conf.id].Simple
 		//for j := 1 + i - conf.Length; j <= i; j++ {
 		//	sum := float64(0)
 		//	switch conf.Source {
 		//	case chipmunkApi.Source_Open:
-		//		sum = candles[j].Open
+		//		sum = rateLimiters[j].Open
 		//	case chipmunkApi.Source_High:
-		//		sum = candles[j].High
+		//		sum = rateLimiters[j].High
 		//	case chipmunkApi.Source_Low:
-		//		sum = candles[j].Low
+		//		sum = rateLimiters[j].Low
 		//	case chipmunkApi.Source_Close:
-		//		sum = candles[j].Close
+		//		sum = rateLimiters[j].Close
 		//	case chipmunkApi.Source_OHLC4:
-		//		sum = (candles[j].Open + candles[j].High + candles[j].Low + candles[j].Close) / 4
+		//		sum = (rateLimiters[j].Open + rateLimiters[j].High + rateLimiters[j].Low + rateLimiters[j].Close) / 4
 		//	case chipmunkApi.Source_HLC3:
-		//		sum = (candles[j].Low + candles[j].High + candles[j].Close) / 3
+		//		sum = (rateLimiters[j].Low + rateLimiters[j].High + rateLimiters[j].Close) / 3
 		//	case chipmunkApi.Source_HL2:
-		//		sum = (candles[j].Low + candles[j].High) / 2
+		//		sum = (rateLimiters[j].Low + rateLimiters[j].High) / 2
 		//	}
 		//	variance += math.Pow(ma-sum, 2)
 		//}
 		//variance /= float64(conf.Length)
 		//
-		//if candles[i] == nil {
+		//if rateLimiters[i] == nil {
 		//	log.Errorf("nil candle")
 		//}
 		//
-		//candles[i].BollingerBands[conf.id] = &entity.BollingerBandsValue{
+		//rateLimiters[i].BollingerBands[conf.id] = &entity.BollingerBandsValue{
 		//	UpperBand: ma + float64(conf.Deviation)*math.Sqrt(variance),
 		//	LowerBand: ma - float64(conf.Deviation)*math.Sqrt(variance),
 		//	MA:        ma,
@@ -114,25 +114,25 @@ func (conf *bollingerBands) Update(candles []*entity.Candle) {
 		//	sum := float64(0)
 		//	switch conf.Source {
 		//	case chipmunkApi.Source_Open:
-		//		sum = candles[j].Open
+		//		sum = rateLimiters[j].Open
 		//	case chipmunkApi.Source_High:
-		//		sum = candles[j].High
+		//		sum = rateLimiters[j].High
 		//	case chipmunkApi.Source_Low:
-		//		sum = candles[j].Low
+		//		sum = rateLimiters[j].Low
 		//	case chipmunkApi.Source_Close:
-		//		sum = candles[j].Close
+		//		sum = rateLimiters[j].Close
 		//	case chipmunkApi.Source_OHLC4:
-		//		sum = (candles[j].Open + candles[j].High + candles[j].Low + candles[j].Close) / 4
+		//		sum = (rateLimiters[j].Open + rateLimiters[j].High + rateLimiters[j].Low + rateLimiters[j].Close) / 4
 		//	case chipmunkApi.Source_HLC3:
-		//		sum = (candles[j].Low + candles[j].High + candles[j].Close) / 3
+		//		sum = (rateLimiters[j].Low + rateLimiters[j].High + rateLimiters[j].Close) / 3
 		//	case chipmunkApi.Source_HL2:
-		//		sum = (candles[j].Low + candles[j].High) / 2
+		//		sum = (rateLimiters[j].Low + rateLimiters[j].High) / 2
 		//	}
 		//	variance += math.Pow(ma-sum, 2)
 		//}
 		//variance /= float64(conf.Length)
 		//
-		//candles[i].BollingerBands[conf.id] = &entity.BollingerBandsValue{
+		//rateLimiters[i].BollingerBands[conf.id] = &entity.BollingerBandsValue{
 		//	UpperBand: ma + float64(conf.Deviation)*math.Sqrt(variance),
 		//	LowerBand: ma - float64(conf.Deviation)*math.Sqrt(variance),
 		//	MA:        ma,
@@ -175,7 +175,7 @@ func (conf *bollingerBands) calculateBB(candles []*entity.Candle) {
 
 func (conf *bollingerBands) validateBollingerBand(length int) error {
 	if length < conf.Length {
-		return errors.New("length must be bigger than or equal to candles length")
+		return errors.New("length must be bigger than or equal to rateLimiters length")
 	}
 	if conf.Deviation < 1 {
 		return errors.New("deviation value must be positive")

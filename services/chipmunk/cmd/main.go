@@ -100,7 +100,7 @@ func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstan
 	var assetsApp *assets.App
 	assetsApp, err = assets.NewApp(ctx, logger, dbInstance)
 	if err != nil {
-		logger.WithError(err).Panicf("failed to initiate assets app")
+		logger.WithError(err).Panicf("failed to initiate ips app")
 	}
 
 	var indicatorsApp *indicators.App

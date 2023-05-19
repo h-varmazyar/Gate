@@ -105,7 +105,7 @@ func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, db *db.D
 	var requestsApp *requests.App
 	requestsApp, err = requests.NewApp(ctx, logger, rateLimitersApp.Service, ipsApp.Service)
 	if err != nil {
-		logger.WithError(err).Panic("failed to initiate requests service")
+		logger.WithError(err).Panic("failed to initiate rateLimiters service")
 	}
 
 	service.Serve(configs.GRPCPort, func(lst net.Listener) error {

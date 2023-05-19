@@ -34,7 +34,7 @@ func (repository *marketPostgresRepository) List(platform api.Platform) ([]*enti
 func (repository *marketPostgresRepository) ListBySource(platform api.Platform, source string) ([]*entity.Market, error) {
 	markets := make([]*entity.Market, 0)
 	return markets, repository.db.Model(new(entity.Market)).
-		Joins("join assets as source on source.id = markets.source_id").
+		Joins("join ips as source on source.id = markets.source_id").
 		Preload("Destination").
 		Where("Source.name = ?", source).
 		Where("markets.Platform = ?", platform).Find(&markets).Error

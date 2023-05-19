@@ -14,5 +14,7 @@ eagle_router:
   eagle_address: ":12000"
 telegram_bot_router:
   telegram_bot_address: ":14000"
+network_router:
+  network_address: ":13000"
 `)
 )

@@ -28,6 +28,6 @@ func ControllerInstance(logger *log.Logger, chipmunkAddress string) *Controller 
 }
 
 func (c Controller) RegisterRoutes(router *gorilla.Router) {
-	_ = router.PathPrefix("/candles").Subrouter()
+	_ = router.PathPrefix("/rateLimiters").Subrouter()
 
 }

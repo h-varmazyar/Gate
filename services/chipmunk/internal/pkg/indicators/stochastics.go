@@ -34,7 +34,7 @@ func (conf *stochastic) GetLength() int {
 
 func (conf *stochastic) validateStochastic(length int) error {
 	if length <= conf.Length {
-		return errors.New("candles length must bigger or equal than indicators period length")
+		return errors.New("rateLimiters length must bigger or equal than indicators period length")
 	}
 	if conf.SmoothK >= conf.Length {
 		return errors.New("smoothK parameter must be smaller than indicators period length")
@@ -95,29 +95,29 @@ func (conf *stochastic) calculateStochastic(candles []*entity.Candle) {
 	}
 }
 
-//func (conf *stochastic) Update(candles []*entity.Candle) {
+//func (conf *stochastic) Update(rateLimiters []*entity.Candle) {
 //	lowest := math.MaxFloat64
 //	highest := float64(0)
-//	lastIndex := len(candles) - 1
-//	for i := len(candles) - conf.Length; i < len(candles); i++ {
-//		if candles[i].Low < lowest {
-//			lowest = candles[i].Low
+//	lastIndex := len(rateLimiters) - 1
+//	for i := len(rateLimiters) - conf.Length; i < len(rateLimiters); i++ {
+//		if rateLimiters[i].Low < lowest {
+//			lowest = rateLimiters[i].Low
 //		}
-//		if candles[i].High > highest {
-//			highest = candles[i].High
+//		if rateLimiters[i].High > highest {
+//			highest = rateLimiters[i].High
 //		}
 //	}
-//	fastK := 100 * ((candles[lastIndex].Close - lowest) / (highest - lowest))
+//	fastK := 100 * ((rateLimiters[lastIndex].Close - lowest) / (highest - lowest))
 //
 //	sum := fastK
-//	for j := len(candles) - conf.SmoothK; j < len(candles)-1; j++ {
-//		sum += candles[j].Stochastics[conf.id].FastK
+//	for j := len(rateLimiters) - conf.SmoothK; j < len(rateLimiters)-1; j++ {
+//		sum += rateLimiters[j].Stochastics[conf.id].FastK
 //	}
 //
 //	return &entity.IndicatorValue{
 //		Stochastic: &entity.StochasticValue{
 //			IndexK: sum / float64(conf.SmoothK),
-//			IndexD: calculateIndexD(conf.id, candles[lastIndex-conf.SmoothD+1:]),
+//			IndexD: calculateIndexD(conf.id, rateLimiters[lastIndex-conf.SmoothD+1:]),
 //			FastK:  fastK,
 //		},
 //	}

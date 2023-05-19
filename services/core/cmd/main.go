@@ -114,7 +114,7 @@ func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstan
 	var platformsApp *platforms.App
 	platformsApp, err = platforms.NewApp(ctx, logger, configs.PlatformsApp)
 	if err != nil {
-		logger.WithError(err).Panicf("failed to initiate assets app")
+		logger.WithError(err).Panicf("failed to initiate ips app")
 	}
 
 	service.Serve(configs.GRPCPort, func(lst net.Listener) error {

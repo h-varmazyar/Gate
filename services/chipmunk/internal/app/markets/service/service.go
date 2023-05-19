@@ -275,13 +275,13 @@ func (s *Service) loadOrCreateAsset(ctx context.Context, assetName string) (*ent
 			setAsset.Symbol = assetName
 			_, err = s.assetsService.Create(ctx, setAsset)
 			if err != nil {
-				log.WithError(err).WithField("asset_name", assetName).Error("failed to create assets")
+				log.WithError(err).WithField("asset_name", assetName).Error("failed to create ips")
 				return nil, err
 			}
 			mapper.Struct(setAsset, resp)
 			return resp, nil
 		}
-		log.WithError(err).WithField("asset_name", assetName).Error("failed to get assets")
+		log.WithError(err).WithField("asset_name", assetName).Error("failed to get ips")
 		return nil, err
 	}
 	resp = entity.WrapAsset(asset)

@@ -57,7 +57,7 @@ func (w *MissedCandles) run(runners []*Runner) {
 			w.logger.Infof("missed added: %v", time.Now())
 			for _, runner := range runners {
 				if err := w.checkForMissedCandles(runner); err != nil {
-					w.logger.WithError(err).Error("failed to prepare missed candles")
+					w.logger.WithError(err).Error("failed to prepare missed rateLimiters")
 				}
 			}
 		}

@@ -67,15 +67,15 @@ func (conf *movingAverage) sma(candles []*entity.Candle) ([]float64, error) {
 	return response, nil
 }
 
-//func (conf *movingAverage) updateSMA(candles []*entity.Candle) float64 {
+//func (conf *movingAverage) updateSMA(rateLimiters []*entity.Candle) float64 {
 //	smaConf := movingAverage{
 //		id:                   uuid.New(),
 //		MovingAverageConfigs: conf.MovingAverageConfigs,
 //	}
-//	if sma, err := smaConf.sma(candles); err != nil {
+//	if sma, err := smaConf.sma(rateLimiters); err != nil {
 //		return float64(0)
 //	} else {
-//		return sma[len(candles)-1]
+//		return sma[len(rateLimiters)-1]
 //	}
 //}
 
@@ -88,7 +88,7 @@ func (conf *movingAverage) Calculate(candles []*entity.Candle) error {
 			candles[i].MovingAverages[conf.id] = new(entity.MovingAverageValue)
 		}
 	}
-	//if sma, err = conf.sma(candles, conf.id); err != nil {
+	//if sma, err = conf.sma(rateLimiters, conf.id); err != nil {
 	if _, err = conf.sma(candles); err != nil {
 		log.WithError(err).Errorf("failed to calculate sma for moving average %v", conf.id)
 		return err
@@ -104,8 +104,8 @@ func (conf *movingAverage) Calculate(candles []*entity.Candle) error {
 		conf.calculateEMA(candles[i], candles[i-1])
 	}
 
-	//for i := 0; i < len(candles); i++ {
-	//	candles[i].MovingAverages[conf.id] = &entity.MovingAverageValue{
+	//for i := 0; i < len(rateLimiters); i++ {
+	//	rateLimiters[i].MovingAverages[conf.id] = &entity.MovingAverageValue{
 	//		Simple:      values[i].Simple,
 	//		Exponential: values[i].Exponential,
 	//	}
@@ -159,7 +159,7 @@ func (conf *movingAverage) calculateEMA(candle1, candle2 *entity.Candle) {
 
 func (conf *movingAverage) validateMA(length int) error {
 	if length < conf.Length {
-		return errors.New(fmt.Sprintf("candles length must be grater or equal than %d", conf.Length))
+		return errors.New(fmt.Sprintf("rateLimiters length must be grater or equal than %d", conf.Length))
 	}
 	switch conf.Source {
 	case chipmunkApi.Source_Close,

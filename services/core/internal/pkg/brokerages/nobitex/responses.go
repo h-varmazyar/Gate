@@ -79,11 +79,11 @@ func (r *Response) AsyncOHLC(_ context.Context, response *networkAPI.Response, m
 	}
 	if message.Count > 0 {
 		if bytes, err := proto.Marshal(message); err != nil {
-			log.WithError(err).Errorf("faled to marshal candles")
+			log.WithError(err).Errorf("faled to marshal rateLimiters")
 			return
 		} else {
 			if publishErr := r.ohlcQueue.Publish(bytes, grpcext.ProtobufContentType); publishErr != nil {
-				log.WithError(err).Errorf("faled to publish candles")
+				log.WithError(err).Errorf("faled to publish rateLimiters")
 			}
 		}
 	}

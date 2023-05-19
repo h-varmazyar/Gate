@@ -124,7 +124,7 @@ func (r *Requests) OHLC(ctx context.Context, inputs *brokerages.OHLCParams, runn
 	//if err := parseResponse(resp.Body, &data); err != nil {
 	//	return nil, err
 	//}
-	//candles := make([]*chipmunkApi.Candle, 0)
+	//rateLimiters := make([]*chipmunkApi.Candle, 0)
 	//for _, item := range data {
 	//	c := new(chipmunkApi.Candle)
 	//	var err error
@@ -153,9 +153,9 @@ func (r *Requests) OHLC(ctx context.Context, inputs *brokerages.OHLCParams, runn
 	//	if err != nil {
 	//		continue
 	//	}
-	//	candles = append(candles, c)
+	//	rateLimiters = append(rateLimiters, c)
 	//}
-	//return candles, nil
+	//return rateLimiters, nil
 }
 
 func (r *Requests) UpdateMarket(ctx context.Context, runner brokerages.Handler) ([]*chipmunkApi.Market, error) {

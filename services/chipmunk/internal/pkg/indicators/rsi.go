@@ -80,7 +80,7 @@ func (conf *rsi) Update(candles []*entity.Candle) {
 
 func (conf *rsi) validateRSI(length int) error {
 	if length-1 < conf.Length {
-		return errors.New("candles length must bigger than indicators period length")
+		return errors.New("rateLimiters length must bigger than indicators period length")
 	}
 	return nil
 }

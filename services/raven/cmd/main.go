@@ -12,6 +12,7 @@ import (
 	"github.com/h-varmazyar/Gate/services/raven/internal/app/chipmunk"
 	"github.com/h-varmazyar/Gate/services/raven/internal/app/core"
 	"github.com/h-varmazyar/Gate/services/raven/internal/app/eagle"
+	"github.com/h-varmazyar/Gate/services/raven/internal/app/network"
 	"github.com/h-varmazyar/Gate/services/raven/internal/app/telegramBot"
 	"github.com/h-varmazyar/Gate/services/raven/internal/app/test"
 	"github.com/h-varmazyar/gopack/mux"
@@ -111,6 +112,7 @@ func initializeAndRegisterApps(_ context.Context, logger *log.Logger, configs *C
 		chipmunk.RegisterRoutes(router, logger, configs.ChipmunkRouter)
 		eagle.RegisterRoutes(router, logger, configs.EagleRouter)
 		telegramBot.RegisterRoutes(router, logger, configs.TelegramBotRouter)
+		network.RegisterRoutes(router, logger, configs.NetworkRouter)
 
 		return http.Serve(lst, httpext.DefaultCors.Handler(router))
 	})

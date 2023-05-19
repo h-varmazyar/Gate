@@ -93,7 +93,7 @@ func (s *Automated) CheckForSignals(ctx context.Context, market *chipmunkApi.Mar
 				Count:        2,
 			})
 			if err != nil {
-				log.WithError(err).Error("failed to fetch candles")
+				log.WithError(err).Error("failed to fetch rateLimiters")
 				continue
 			}
 
@@ -244,7 +244,7 @@ LOOP:
 			MarketName: pool.Market.Name,
 			Platform:   pool.Market.Platform,
 		}); err != nil {
-			log.WithError(err).Errorf("failed to get last candles of %v", pool.Market.Name)
+			log.WithError(err).Errorf("failed to get last rateLimiters of %v", pool.Market.Name)
 			continue
 		}
 

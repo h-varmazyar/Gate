@@ -1,6 +1,9 @@
 package main
 
-import "github.com/h-varmazyar/Gate/services/raven/internal/app/chipmunk"
+import (
+	"github.com/h-varmazyar/Gate/services/raven/internal/app/chipmunk"
+	"github.com/h-varmazyar/Gate/services/raven/internal/app/network"
+)
 import "github.com/h-varmazyar/Gate/services/raven/internal/app/eagle"
 import "github.com/h-varmazyar/Gate/services/raven/internal/app/core"
 import "github.com/h-varmazyar/Gate/services/raven/internal/app/telegramBot"
@@ -14,4 +17,5 @@ type Configs struct {
 	CoreRouter        *core.Configs        `mapstructure:"core_router"`
 	EagleRouter       *eagle.Configs       `mapstructure:"eagle_router"`
 	TelegramBotRouter *telegramBot.Configs `mapstructure:"telegram_bot_router"`
+	NetworkRouter     *network.Configs     `mapstructure:"network_router"`
 }

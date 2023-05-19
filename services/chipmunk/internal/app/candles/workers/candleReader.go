@@ -69,7 +69,7 @@ func (w *CandleReader) handle(delivery amqp.Delivery) {
 	}
 
 	if err := w.db.BulkInsert(localCandles); err != nil {
-		log.WithError(err).Errorf("failed to save candles")
+		log.WithError(err).Errorf("failed to save rateLimiters")
 	}
 	for _, candle := range localCandles {
 		buffer.CandleBuffer.Push(candle)

@@ -28,7 +28,7 @@ func NewRedundantRemover(_ context.Context, db repository.CandleRepository, conf
 
 func (w *RedundantRemover) Start(runners []*Runner) {
 	if !w.Started {
-		w.logger.Infof("starting redundant candles")
+		w.logger.Infof("starting redundant rateLimiters")
 		w.ctx, w.cancelFunc = context.WithCancel(context.Background())
 		go w.run(runners)
 		w.Started = true
@@ -50,13 +50,13 @@ func (w *RedundantRemover) run(runners []*Runner) {
 			return
 		case <-ticker.C:
 			w.removedCount = 0
-			w.logger.Infof("prepare removed candles")
+			w.logger.Infof("prepare removed rateLimiters")
 			for _, runner := range runners {
 				if err := w.removeRedundantCandles(runner); err != nil {
-					w.logger.WithError(err).Error("failed to prepare remove redundant candles")
+					w.logger.WithError(err).Error("failed to prepare remove redundant rateLimiters")
 				}
 			}
-			w.logger.Infof("removed candles: %v", w.removedCount)
+			w.logger.Infof("removed rateLimiters: %v", w.removedCount)
 
 		}
 	}
@@ -112,7 +112,7 @@ func (w *RedundantRemover) removeRedundantCandles(runner *Runner) error {
 				end = len(ids)
 			}
 			if err := w.db.BulkHardDelete(ids[i:end]); err != nil {
-				w.logger.WithError(err).Errorf("failed to delete candles")
+				w.logger.WithError(err).Errorf("failed to delete rateLimiters")
 			}
 		}
 	}

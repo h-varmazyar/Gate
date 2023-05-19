@@ -19,8 +19,8 @@ package buffer
 //func (m *markets) AddList(marketID uuid.UUID) {
 //	m.lock.Lock()
 //	defer m.lock.Unlock()
-//	candles, ok := m.data[marketID]
-//	if !ok || candles == nil || len(candles) == 0 {
+//	rateLimiters, ok := m.data[marketID]
+//	if !ok || rateLimiters == nil || len(rateLimiters) == 0 {
 //		emptyCandles := make([]*entity.Candle, 0)
 //		for i := 0; i < m.BufferLength; i++ {
 //			emptyCandles = append(emptyCandles, new(entity.Candle))
@@ -38,29 +38,29 @@ package buffer
 //func (m *markets) Push(marketID uuid.UUID, candle *entity.Candle) {
 //	m.lock.Lock()
 //	defer m.lock.Unlock()
-//	candles, ok := m.data[marketID]
-//	if !ok || candles == nil || len(candles) == 0 {
-//		candles = make([]*entity.Candle, m.BufferLength)
+//	rateLimiters, ok := m.data[marketID]
+//	if !ok || rateLimiters == nil || len(rateLimiters) == 0 {
+//		rateLimiters = make([]*entity.Candle, m.BufferLength)
 //	}
 //
-//	if candles[m.BufferLength-1] != nil && candles[m.BufferLength-1].Time.Equal(candle.Time) {
-//		candles[m.BufferLength-1] = candle
+//	if rateLimiters[m.BufferLength-1] != nil && rateLimiters[m.BufferLength-1].Time.Equal(candle.Time) {
+//		rateLimiters[m.BufferLength-1] = candle
 //	} else {
-//		candles = append(candles[1:], candle)
+//		rateLimiters = append(rateLimiters[1:], candle)
 //	}
-//	m.data[marketID] = candles
+//	m.data[marketID] = rateLimiters
 //}
 //
 //func (m *markets) GetLastNCandles(marketID uuid.UUID, n int) []*entity.Candle {
 //	m.lock.Lock()
 //	defer m.lock.Unlock()
-//	if candles, ok := m.data[marketID]; !ok || candles == nil {
+//	if rateLimiters, ok := m.data[marketID]; !ok || rateLimiters == nil {
 //		return nil
 //	} else {
 //		cloned := make([]*entity.Candle, n)
 //		j := m.BufferLength - n
 //		for i := 0; i < n; i++ {
-//			c := *candles[j]
+//			c := *rateLimiters[j]
 //			cloned[i] = &c
 //			j++
 //		}

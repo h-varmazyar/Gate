@@ -8,7 +8,7 @@ package workers
 //	"github.com/h-varmazyar/Gate/pkg/mapper"
 //	"github.com/h-varmazyar/Gate/services/Dolphin/configs"
 //	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
-//	candles "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/service"
+//	rateLimiters "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/rateLimiters/service"
 //	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 //	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 //	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
@@ -22,7 +22,7 @@ package workers
 //	functionsService coreApi.FunctionsServiceClient
 //	Cancellations    map[uuid.UUID]context.CancelFunc
 //	configs          *Configs
-//	candlesService   *candles.Service
+//	candlesService   *rateLimiters.Service
 //}
 //
 //type WorkerSettings struct {
@@ -33,7 +33,7 @@ package workers
 //	BrokerageID uuid.UUID
 //}
 //
-//func InitializeWorker(_ context.Context, configs *Configs, candlesService *candles.Service) *PrimaryDataWorker {
+//func InitializeWorker(_ context.Context, configs *Configs, candlesService *rateLimiters.Service) *PrimaryDataWorker {
 //	worker := new(PrimaryDataWorker)
 //	brokerageConn := grpcext.NewConnection(configs.CoreAddress)
 //	worker.functionsService = coreApi.NewFunctionsServiceClient(brokerageConn)
@@ -95,12 +95,12 @@ package workers
 //			if to.Sub(lastTime) <= time.Second {
 //				continue
 //			}
-//			candles := make([]*entity.Candle, 0)
-//			if candles, err = worker.downloadCandlesInfo(settings, lastTime.Unix(), to.Unix()); err != nil {
-//				log.WithError(err).Error("get candles failed")
+//			rateLimiters := make([]*entity.Candle, 0)
+//			if rateLimiters, err = worker.downloadCandlesInfo(settings, lastTime.Unix(), to.Unix()); err != nil {
+//				log.WithError(err).Error("get rateLimiters failed")
 //			} else {
-//				worker.calculateIndicators(settings, candles)
-//				for _, candle := range candles {
+//				worker.calculateIndicators(settings, rateLimiters)
+//				for _, candle := range rateLimiters {
 //					buffer.Markets.Push(settings.Market.ID, candle)
 //				}
 //				lastTime = to
@@ -118,7 +118,7 @@ package workers
 //	for i := 0; ; i += limit {
 //		list, err := repository.Candles.ReturnList(ws.Market.ID, ws.Resolution.ID, limit, i)
 //		if err != nil && err != gorm.ErrRecordNotFound {
-//			log.WithError(err).Error("load primary candles failed")
+//			log.WithError(err).Error("load primary rateLimiters failed")
 //			return err
 //		}
 //		totalCandles = append(totalCandles, list...)
@@ -139,12 +139,12 @@ package workers
 //			to = time.Now()
 //			end = true
 //		}
-//		if candles, err := worker.downloadCandlesInfo(ws, from.Unix(), to.Unix()); err != nil {
-//			log.WithError(err).Error("get candles failed")
+//		if rateLimiters, err := worker.downloadCandlesInfo(ws, from.Unix(), to.Unix()); err != nil {
+//			log.WithError(err).Error("get rateLimiters failed")
 //			return err
 //		} else {
 //			from = to
-//			totalCandles = append(totalCandles, candles...)
+//			totalCandles = append(totalCandles, rateLimiters...)
 //		}
 //	}
 //	for _, candle := range totalCandles {
@@ -166,8 +166,8 @@ package workers
 //	return nil
 //}
 //
-//func (worker *PrimaryDataWorker) calculateIndicators(ws *WorkerSettings, candles []*entity.Candle) {
-//	for _, candle := range candles {
+//func (worker *PrimaryDataWorker) calculateIndicators(ws *WorkerSettings, rateLimiters []*entity.Candle) {
+//	for _, candle := range rateLimiters {
 //		candle.IndicatorValues = entity.NewIndicatorValues()
 //		for id, indicator := range ws.Indicators {
 //			switch indicator.GetType() {
@@ -194,7 +194,7 @@ package workers
 //
 //	market := new(chipmunkApi.Market)
 //	mapper.Struct(ws.Market, market)
-//	candles, err := worker.functionsService.OHLC(ws.ctx, &coreApi.OHLCReq{
+//	rateLimiters, err := worker.functionsService.OHLC(ws.ctx, &coreApi.OHLCReq{
 //		Resolution:  resolution,
 //		Market:      market,
 //		From:        from,
@@ -202,11 +202,11 @@ package workers
 //		BrokerageID: ws.BrokerageID.String(),
 //	})
 //	if err != nil {
-//		log.WithError(err).Error("failed to get candles")
+//		log.WithError(err).Error("failed to get rateLimiters")
 //		return nil, err
 //	}
 //	localCandles := make([]*entity.Candle, 0)
-//	for _, candle := range candles.Elements {
+//	for _, candle := range rateLimiters.Elements {
 //		tmp := new(entity.Candle)
 //		mapper.Struct(candle, tmp)
 //		tmp.MarketID = ws.Market.ID

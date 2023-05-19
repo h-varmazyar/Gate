@@ -48,12 +48,14 @@ func (s *Service) Create(_ context.Context, req *networkAPI.IPCreateReq) (*netwo
 func (s *Service) Return(_ context.Context, req *networkAPI.IPReturnReq) (*networkAPI.IP, error) {
 	id, err := uuid.Parse(req.ID)
 	if err != nil {
+		s.logger.WithError(err).Error("failed to parse ip ID")
 		return nil, err
 	}
 
 	var ip *entity.IP
 	ip, err = s.db.Return(id)
 	if err != nil {
+		s.logger.WithError(err).Error("failed to fetch ip")
 		return nil, err
 	}
 	response := new(networkAPI.IP)

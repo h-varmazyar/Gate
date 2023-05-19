@@ -19,12 +19,12 @@ import (
 func (s *Service) validateDownloadPrimaryCandlesRequest(ctx context.Context, req *chipmunkApi.CandleWorkerStartReq) error {
 	if req.Resolutions == nil || len(req.Resolutions.Elements) == 0 {
 		err := errors.New(ctx, codes.FailedPrecondition).AddDetailF("invalid resolutions for Platform %v", req.Platform)
-		s.logger.WithError(err).Errorf("failed to start candles candleReaderWorker")
+		s.logger.WithError(err).Errorf("failed to start rateLimiters candleReaderWorker")
 		return err
 	}
 	if req.Markets == nil || len(req.Markets.Elements) == 0 {
 		err := errors.New(ctx, codes.FailedPrecondition).AddDetailF("invalid markets for Platform %v", req.Platform)
-		s.logger.WithError(err).Errorf("failed to start candles candleReaderWorker")
+		s.logger.WithError(err).Errorf("failed to start rateLimiters candleReaderWorker")
 		return err
 	}
 	return nil
@@ -62,7 +62,7 @@ func (s *Service) prepareLocalCandles(market *chipmunkApi.Market, resolution *ch
 		if err == gorm.ErrRecordNotFound {
 			from = time.Unix(market.IssueDate, 0)
 		} else {
-			s.logger.WithError(err).Errorf("failed to load local candles for market %v in resolution %v", marketID, resolutionID)
+			s.logger.WithError(err).Errorf("failed to load local rateLimiters for market %v in resolution %v", marketID, resolutionID)
 			return time.Unix(0, 0), err
 		}
 	}
