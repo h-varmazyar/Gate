@@ -14,13 +14,13 @@ import (
 	"github.com/h-varmazyar/Gate/services/raven/internal/app/eagle"
 	"github.com/h-varmazyar/Gate/services/raven/internal/app/network"
 	"github.com/h-varmazyar/Gate/services/raven/internal/app/telegramBot"
-	"github.com/h-varmazyar/Gate/services/raven/internal/app/test"
 	"github.com/h-varmazyar/gopack/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 	"net"
 	"net/http"
+	"time"
 )
 
 //	@title			Swagger Example API
@@ -106,8 +106,15 @@ func initializeAndRegisterApps(_ context.Context, logger *log.Logger, configs *C
 		router := mux.NewRouter(true)
 
 		router.PathPrefix("/docs/").Handler(httpSwagger.WrapHandler)
+		router.PathPrefix("/ping").HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+			pong := struct {
+				Time string
+			}{
+				Time: time.Now().String(),
+			}
+			httpext.SendModel(res, req, http.StatusOK, pong)
+		}).Methods(http.MethodGet)
 
-		test.RegisterRoutes(router, logger)
 		core.RegisterRoutes(router, logger, configs.CoreRouter)
 		chipmunk.RegisterRoutes(router, logger, configs.ChipmunkRouter)
 		eagle.RegisterRoutes(router, logger, configs.EagleRouter)
