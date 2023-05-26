@@ -2,17 +2,14 @@ package candles
 
 import (
 	"context"
-	"fmt"
 	"github.com/google/uuid"
 	api "github.com/h-varmazyar/Gate/api/proto"
-	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/repository"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/workers"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	indicatorsPkg "github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
-	"google.golang.org/grpc/codes"
 )
 
 func (app *App) initializeWorkers(ctx context.Context, configs *workers.Configs, repositoryInstance repository.CandleRepository) (*workerHolder, error) {
@@ -40,8 +37,6 @@ func (app *App) startWorkers(ctx context.Context, holder *workerHolder, dependen
 		return err
 	}
 
-	fmt.Println("indicators:", len(indicators.Elements))
-
 	loadedIndicators, err := app.loadIndicators(indicators.Elements)
 	if err != nil {
 		return err
@@ -51,11 +46,6 @@ func (app *App) startWorkers(ctx context.Context, holder *workerHolder, dependen
 	if err != nil {
 		app.logger.WithError(err).Error("failed to prepare worker runners")
 		return err
-	}
-
-	fmt.Println("runner length is:", len(runners))
-	if len(runners) == 0 {
-		return errors.New(ctx, codes.FailedPrecondition).AddDetails("invalid runner length")
 	}
 
 	//todo: must be pass copy of runner to each worker or not??

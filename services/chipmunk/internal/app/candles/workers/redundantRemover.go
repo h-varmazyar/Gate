@@ -28,7 +28,7 @@ func NewRedundantRemover(_ context.Context, db repository.CandleRepository, conf
 
 func (w *RedundantRemover) Start(runners []*Runner) {
 	if !w.Started {
-		w.logger.Infof("starting redundant rateLimiters")
+		w.logger.Infof("starting redundant worker")
 		w.ctx, w.cancelFunc = context.WithCancel(context.Background())
 		go w.run(runners)
 		w.Started = true

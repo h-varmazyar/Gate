@@ -106,13 +106,13 @@ func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstan
 	var indicatorsApp *indicators.App
 	indicatorsApp, err = indicators.NewApp(ctx, logger, dbInstance, configs.IndicatorsApp)
 	if err != nil {
-		logger.WithError(err).Panicf("failed to initiate markets app")
+		logger.WithError(err).Panicf("failed to initiate indicator app")
 	}
 
 	var resolutionsApp *resolutions.App
 	resolutionsApp, err = resolutions.NewApp(ctx, logger, dbInstance, configs.ResolutionsApp)
 	if err != nil {
-		logger.WithError(err).Panicf("failed to initiate markets app")
+		logger.WithError(err).Panicf("failed to resolutions markets app")
 	}
 
 	marketDependencies := &markets.AppDependencies{
@@ -137,7 +137,7 @@ func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstan
 	var candlesApp *candles.App
 	candlesApp, err = candles.NewApp(ctx, logger, dbInstance, configs.CandlesApp, candlesDependencies)
 	if err != nil {
-		logger.WithError(err).Panicf("failed to initiate markets app")
+		logger.WithError(err).Panicf("failed to initiate candles app")
 	}
 
 	walletDependencies := &wallets.AppDependencies{
@@ -147,7 +147,7 @@ func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstan
 	var walletsApp *wallets.App
 	walletsApp, err = wallets.NewApp(ctx, logger, configs.WalletsApp, walletDependencies)
 	if err != nil {
-		logger.WithError(err).Panicf("failed to initiate markets app")
+		logger.WithError(err).Panicf("failed to initiate wallets app")
 	}
 
 	service.Serve(configs.GRPCPort, func(lst net.Listener) error {

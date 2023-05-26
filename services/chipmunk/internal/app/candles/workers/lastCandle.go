@@ -36,7 +36,7 @@ func NewLastCandles(_ context.Context, db repository.CandleRepository, configs *
 
 func (w *LastCandles) Start(runners []*Runner, indicators []indicatorsPkg.Indicator) {
 	if !w.Started {
-		w.logger.Infof("starting last candle")
+		w.logger.Infof("starting last candle worker")
 		w.ctx, w.cancelFunc = context.WithCancel(context.Background())
 
 		w.preparePrimaryDataRequests(runners, indicators)
@@ -155,7 +155,6 @@ func (w *LastCandles) run(runners []*Runner) {
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			w.logger.Infof("running last: %v", len(runners))
 			for _, runner := range runners {
 				w.checkForLastCandle(runner)
 			}

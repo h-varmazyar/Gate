@@ -32,7 +32,7 @@ func NewMissedCandles(_ context.Context, db repository.CandleRepository, configs
 
 func (w *MissedCandles) Start(runners []*Runner) {
 	if !w.Started {
-		w.logger.Infof("starting missed candle")
+		w.logger.Infof("starting missed candle worker")
 		w.ctx, w.cancelFunc = context.WithCancel(context.Background())
 		go w.run(runners)
 		w.Started = true
