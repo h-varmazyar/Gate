@@ -18,5 +18,5 @@ RUN GO111MODULE=on CGO_ENABLED=0 go build -buildvcs=false -a -installsuffix cgo 
 FROM alpine
 WORKDIR /app
 COPY --from=builder /src/build/ ./
-COPY ./services/telegramBot/assets ./assets
+#COPY ./services/telegramBot/assets ./assets
 ENTRYPOINT [ "./telegramBot" ]

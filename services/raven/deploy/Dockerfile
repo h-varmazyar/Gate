@@ -22,7 +22,7 @@ RUN GO111MODULE=on CGO_ENABLED=0 go build -buildvcs=false -a -installsuffix cgo 
 FROM alpine
 WORKDIR /app
 COPY --from=builder /src/build/ ./
-COPY ./services/raven/docs ./docs
+#COPY ./services/raven/docs ./docs
 ENTRYPOINT [ "./raven" ]
 
 EXPOSE 8080
