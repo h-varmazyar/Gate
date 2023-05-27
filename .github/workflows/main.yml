@@ -1,18 +1,37 @@
-name: GitHub Actions Demo
-run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
-on: [push]
+name: Deploy Services
+on:
+  push:
+    branches:
+      - main
+
 jobs:
-  Explore-GitHub-Actions:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-      - name: Check out repository code
-        uses: actions/checkout@v3
-      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
-      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
-      - name: List files in the repository
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Docker
+        uses: docker/setup-docker@v1
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and Deploy Services
+        env:
+          DOCKER_COMPOSE_PATH: deploy/docker-compose.yml
         run: |
-          ls ${{ github.workspace }}
-      - run: echo "🍏 This job's status is ${{ job.status }}."
+          services=$(git log -1 --pretty=format:%s | grep -o -P "(?<=\().*?(?=\))")
+          IFS=',' read -ra services_array <<< "$services"
+          for service in "${services_array[@]}"; do
+            echo "Building and deploying $service"
+            cd services/"$service"
+            docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/$service:latest .
+            docker push ${{ secrets.DOCKERHUB_USERNAME }}/$service:latest
+            cd ../..
+            docker-compose -f "$DOCKER_COMPOSE_PATH" up -d "$service"
+          done
