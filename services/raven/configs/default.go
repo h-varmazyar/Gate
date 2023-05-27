@@ -6,6 +6,7 @@ service_name: "raven"
 version: "v1.1.0"
 http_port: 8585
 host: "localhost"
+docs_address: "localhost:3030"
 chipmunk_router:
   chipmunk_address: ":11000"
 core_router:

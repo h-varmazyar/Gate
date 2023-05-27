@@ -13,6 +13,7 @@ type Configs struct {
 	Version           string               `mapstructure:"version"`
 	HttpPort          uint16               `mapstructure:"http_port"`
 	Host              string               `mapstructure:"host"`
+	DocsAddress       string               `mapstructure:"docs_address"`
 	ChipmunkRouter    *chipmunk.Configs    `mapstructure:"chipmunk_router"`
 	CoreRouter        *core.Configs        `mapstructure:"core_router"`
 	EagleRouter       *eagle.Configs       `mapstructure:"eagle_router"`
