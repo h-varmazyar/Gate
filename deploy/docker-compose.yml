@@ -103,12 +103,12 @@ services:
 
   raven:
     container_name: raven
-    image: raven:v1.2.3
-    build:
-      context: ..
-      dockerfile: services/raven/deploy/Dockerfile
-      args:
-        VERSION: v1.2.3
+    image: gatec/raven:latest
+#    build:
+#      context: ..
+#      dockerfile: services/raven/deploy/Dockerfile
+#      args:
+#        VERSION: v1.2.3
     volumes:
       - /srv/configs/raven/app.yaml:/app/configs/config.yaml
     ports:
