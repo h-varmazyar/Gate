@@ -5,7 +5,7 @@ on:
       - main
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,7 +27,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and Deploy Services
+      - name: Build Services
         env:
           DOCKER_COMPOSE_PATH: deploy/docker-compose.yml
         run: |
@@ -39,30 +39,27 @@ jobs:
             docker push ${{ secrets.DOCKERHUB_USERNAME }}/$service:latest
           done
 
-#      - name: Copy Docker Compose file to VPS
-#        uses: appleboy/scp-action@master
-#        with:
-#          host: ${{ secrets.SERVER_ADDRESS }}
-#          username: ${{ secrets.SERVER_USERNAME }}
-#          key: ${{ secrets.SSH_PRIVATE_KEY }}
-#          source: deploy/docker-compose.yml
-#          target: /gate/deploy/docker-compose.yml
-#
-#      - name: SSH into VPS and Deploy
-#        uses: appleboy/ssh-action@master
-#        with:
-#          host: ${{ secrets.SERVER_ADDRESS }}
-#          username: ${{ secrets.SERVER_USERNAME }}
-#          key: ${{ secrets.SSH_PRIVATE_KEY }}
-#          script: |
-#            echo "Deploying services on VPS"
-#            ssh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} 'docker-compose -f /gate/deploy/docker-compose.yml up -d'
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install apt-transport-https ca-certificates curl software-properties-common
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          sudo apt-get update
+          sudo apt-get -y install docker-ce docker-ce-cli containerd.io
 
       - name: SSH into VPS and Deploy
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
           chmod 600 ssh_key
-          ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "mkdir -p /gate/deploy"
+          ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "mkdir -p ./gate/deploy"
           scp -i ssh_key deploy/docker-compose.yml ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }}:./gate/deploy
           ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}${{ secrets.SERVER_ADDRESS }} "docker-compose -f ./gate/deploy/docker-compose.yml up -d"
           rm ssh_key
