@@ -36,7 +36,7 @@ jobs:
           for service in "${services_array[@]}"; do
             echo "Building and deploying $service"
             cd services/"$service"
-            docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/$service:latest ./deploy
+            docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/$service:latest /deploy
             docker push ${{ secrets.DOCKERHUB_USERNAME }}/$service:latest
             cd ../..
             docker-compose -f "$DOCKER_COMPOSE_PATH" up -d "$service"
