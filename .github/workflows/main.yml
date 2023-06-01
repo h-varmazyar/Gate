@@ -35,8 +35,8 @@ jobs:
           IFS=',' read -ra services_array <<< "$services"
           for service in "${services_array[@]}"; do
             echo "Building and deploying $service"
-            docker-compose -f deploy/docker-compose.yml build "$service"
-            docker-compose -f deploy/docker-compose.yml push "$service"
+            docker build -f services/raven/deploy/Dockerfile -t "$service":latest .
+            docker push ${{ secrets.DOCKERHUB_USERNAME }}/$service:latest
 
             docker-compose -f ./deploy/docker-compose.yml up -d "$service"
           done

@@ -103,7 +103,7 @@ services:
 
   raven:
     container_name: raven
-    image: gateway:v1.2.3
+    image: raven:v1.2.3
     build:
       context: ..
       dockerfile: services/raven/deploy/Dockerfile
