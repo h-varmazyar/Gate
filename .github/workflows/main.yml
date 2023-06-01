@@ -38,7 +38,16 @@ jobs:
             docker build -f services/raven/deploy/Dockerfile -t ${{ secrets.DOCKERHUB_USERNAME }}/$service:latest .
             docker push ${{ secrets.DOCKERHUB_USERNAME }}/$service:latest
           done
-          
+
+      - name: Copy Docker Compose file to VPS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_ADDRESS }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: deploy/docker-compose.yml
+          target: /gate/deploy/docker-compose.yml
+
       - name: SSH into VPS and Deploy
         uses: appleboy/ssh-action@master
         with:
@@ -47,4 +56,4 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             echo "Deploying services on VPS"
-            ssh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} 'docker-compose -f /path/to/your/docker-compose.yml up -d'
+            ssh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} 'docker-compose -f /gate/deploy/docker-compose.yml up -d'
