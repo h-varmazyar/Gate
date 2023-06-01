@@ -61,5 +61,5 @@ jobs:
           chmod 600 ssh_key
           ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "mkdir -p ./gate/deploy"
           scp -i ssh_key deploy/docker-compose.yml ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }}:./gate/deploy
-          ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}${{ secrets.SERVER_ADDRESS }} "docker-compose -f ./gate/deploy/docker-compose.yml up -d"
+          ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "docker-compose -f ./gate/deploy/docker-compose.yml up -d"
           rm ssh_key
