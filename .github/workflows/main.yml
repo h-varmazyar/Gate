@@ -37,6 +37,14 @@ jobs:
             echo "Building and deploying $service"
             docker build -f services/raven/deploy/Dockerfile -t ${{ secrets.DOCKERHUB_USERNAME }}/$service:latest .
             docker push ${{ secrets.DOCKERHUB_USERNAME }}/$service:latest
-
-            docker-compose -f ./deploy/docker-compose.yml up -d "$service"
           done
+          
+      - name: SSH into VPS and Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_ADDRESS }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "Deploying services on VPS"
+            ssh ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} 'docker-compose -f /path/to/your/docker-compose.yml up -d'
