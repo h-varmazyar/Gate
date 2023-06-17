@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"flag"
-	"fmt"
 	"github.com/h-varmazyar/Gate/pkg/httpext"
 	"github.com/h-varmazyar/Gate/pkg/service"
 	"github.com/h-varmazyar/Gate/services/raven/configs"
@@ -97,8 +96,8 @@ func initializeDocs(configs *Configs) {
 	docs.SwaggerInfo.Title = "The Gate API document"
 	docs.SwaggerInfo.Description = ""
 	docs.SwaggerInfo.Version = configs.Version
-	docs.SwaggerInfo.Host = fmt.Sprintf("%v:%v", configs.Host, configs.HttpPort)
-	docs.SwaggerInfo.Schemes = []string{"http"}
+	docs.SwaggerInfo.Host = configs.ApiExternalAddress
+	docs.SwaggerInfo.Schemes = []string{"http", "https"}
 }
 
 func initializeAndRegisterApps(_ context.Context, logger *log.Logger, configs *Configs) {
