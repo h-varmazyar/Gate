@@ -48,7 +48,6 @@ jobs:
           version=${{ steps.version.outputs.version }}
           for service in "${services_array[@]}"; do
             echo "Building $service"
-            cd services/"$service"
             docker build -f services/$service/deploy/Dockerfile -t ${{ secrets.DOCKERHUB_USERNAME }}/$service:$version .
             docker push ${{ secrets.DOCKERHUB_USERNAME }}/$service:$version
           done
