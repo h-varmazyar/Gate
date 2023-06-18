@@ -68,7 +68,7 @@ jobs:
           sudo apt-get update
           sudo apt-get -y install docker-ce docker-ce-cli containerd.io
 
-        - name: Determine version number
+      - name: Determine version number
         id: version
         run: |
           version=$(git log -1 --pretty=format:%h)
