@@ -68,6 +68,12 @@ jobs:
           sudo apt-get update
           sudo apt-get -y install docker-ce docker-ce-cli containerd.io
 
+        - name: Determine version number
+        id: version
+        run: |
+          version=$(git log -1 --pretty=format:%h)
+          echo "::set-output name=version::$version"
+
       - name: SSH into VPS and Deploy
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
@@ -76,6 +82,6 @@ jobs:
           scp -i ssh_key deploy/docker-compose.yml ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }}:./gate/deploy
           
           services=$(echo "${{ steps.services.outputs.services }}" | sed 's/,/ /g')
-          version=${{ build.steps.version.outputs.version }}
+          version=${{ steps.version.outputs.version }}
           ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "cd ./gate/deploy && VERSION=${version} docker-compose -f docker-compose.yml up -d" "${services[@]}"
           rm ssh_key
