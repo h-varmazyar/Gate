@@ -103,7 +103,7 @@ services:
 
   raven:
     container_name: raven
-    image: gatec/raven:latest
+    image: gatec/raven:${VERSION}
 #    build:
 #      context: ..
 #      dockerfile: services/raven/deploy/Dockerfile

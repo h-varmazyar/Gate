@@ -27,16 +27,30 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Determine updated services
+        id: services
+        run: |
+          services=$(git log -1 --pretty=format:%s | grep -o -P "(?<=\().*?(?=\))")
+          echo "::set-output name=services::$services"
+
+      - name: Determine version number
+        id: version
+        run: |
+          version=$(git log -1 --pretty=format:%h)
+          echo "::set-output name=version::$version"
+
       - name: Build Services
+        id: build
         env:
           DOCKER_COMPOSE_PATH: deploy/docker-compose.yml
         run: |
-          services=$(git log -1 --pretty=format:%s | grep -o -P "(?<=\().*?(?=\))")
-          IFS=',' read -ra services_array <<< "$services"
+          IFS=',' read -ra services_array <<< "${{ steps.services.outputs.services }}"
+          version=${{ steps.version.outputs.version }}
           for service in "${services_array[@]}"; do
-            echo "Building and deploying $service"
-            docker build -f services/raven/deploy/Dockerfile -t ${{ secrets.DOCKERHUB_USERNAME }}/$service:latest .
-            docker push ${{ secrets.DOCKERHUB_USERNAME }}/$service:latest
+            echo "Building $service"
+            cd services/"$service"
+            docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/$service:$version .
+            docker push ${{ secrets.DOCKERHUB_USERNAME }}/$service:$version
           done
 
   deploy:
@@ -61,5 +75,8 @@ jobs:
           chmod 600 ssh_key
           ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "mkdir -p ./gate/deploy"
           scp -i ssh_key deploy/docker-compose.yml ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }}:./gate/deploy
-          ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "docker-compose -f ./gate/deploy/docker-compose.yml up -d"
+          
+          services=$(echo "${{ steps.services.outputs.services }}" | sed 's/,/ /g')
+          version=${{ steps.version.outputs.version }}
+          ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} 'DOCKER_VERSION=$version docker-compose -f /path/to/your/docker-compose.yml up -d' -- "${services[@]}"
           rm ssh_key
