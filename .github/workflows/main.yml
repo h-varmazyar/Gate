@@ -77,5 +77,5 @@ jobs:
           
           services=$(echo "${{ steps.services.outputs.services }}" | sed 's/,/ /g')
           version=${{ steps.version.outputs.version }}
-          ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} 'DOCKER_VERSION=$version docker-compose -f ./gate/deploy/docker-compose.yml up -d' -- "${services[@]}"
+          ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "cd ./gate/deploy && DOCKER_VERSION=$version docker-compose -f docker-compose.yml up -d" -- "${services[@]}"
           rm ssh_key
