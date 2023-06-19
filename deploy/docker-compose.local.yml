@@ -139,7 +139,7 @@ services:
 
   telegram_bot:
     container_name: telegramBot
-    image: telegramBot:v1.1.2
+    image: telegram_bot:v1.1.2
     build:
       context: ..
       dockerfile: services/telegramBot/deploy/Dockerfile
