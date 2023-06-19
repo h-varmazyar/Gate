@@ -113,8 +113,8 @@ services:
     restart: always
 
   telegram_bot:
-    container_name: telegramBot
-    image: gatec/telegramBot:${VERSION}
+    container_name: telegram_bot
+    image: gatec/telegram_bot:${VERSION}
     volumes:
       - /srv/configs/telegramBot/app.yaml:/app/configs/config.yaml
     networks:
