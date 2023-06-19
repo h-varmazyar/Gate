@@ -77,11 +77,6 @@ services:
   eagle:
     container_name: eagle
     image: gatec/eagle:${VERSION}
-    build:
-      context: ..
-      dockerfile: services/eagle/deploy/Dockerfile
-      args:
-        VERSION: v1.1.3
     volumes:
       - /srv/configs/eagle/app.yaml:/app/configs/config.yaml
     networks:
