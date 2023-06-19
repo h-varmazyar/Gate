@@ -81,5 +81,10 @@ jobs:
           
           services=$(git log -1 --pretty=format:%s | grep -o -P "(?<=\().*?(?=\))")
           version=${{ steps.version.outputs.version }}
-          ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "cd ./gate/deploy && VERSION=${version} docker-compose -f docker-compose.yml up -d" "${services[@]}"
+          
+          for service in "${services_array[@]}"; do
+            echo "Building $service"
+            ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "cd ./gate/deploy && VERSION=${version} docker-compose -f docker-compose.yml up -d" "${service}"
+          done
+          
           rm ssh_key
