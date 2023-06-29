@@ -88,7 +88,7 @@ jobs:
           for service in "${services_array[@]}"; do
           ssh_command+=" && VERSION=${version} docker-compose -f docker-compose.yml up -d ${service}"
           done
-          
-          ssh_command+=" && rm ssh_key"
     
           ssh -o StrictHostKeyChecking=no -i ssh_key ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "${ssh_command}"
+          
+          rm ssh_key
