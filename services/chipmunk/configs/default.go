@@ -6,7 +6,7 @@ service_name: "chipmunk"
 version: "v1.0.0"
 grpc_port: 11000
 amqp_configs:
-  connection: "amqp://guest:guest@localhost"
+  connection: "amqp://rabbitmq:rabbitmq@localhost"
 buffer_configs:
   candle_buffer_length: 400
 markets_app:

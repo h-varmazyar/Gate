@@ -23,7 +23,6 @@ type Handler struct {
 func HandlerInstance(logger *log.Logger, coreAddress string) *Handler {
 	if handler == nil {
 		coreConn := grpcext.NewConnection(coreAddress)
-		logger.Infof("core connection is: %v", coreAddress)
 		handler = &Handler{
 			functionsService: coreApi.NewFunctionsServiceClient(coreConn),
 			logger:           logger,

@@ -6,7 +6,7 @@ service_name: "network"
 version: "v1.1.1"
 grpc_port: 13000
 amqp_configs:
-  connection: "amqp://guest:guest@localhost"
+  connection: "amqp://rabbitmq:rabbitmq@localhost"
 db:
   type: "postgreSQL"
   username: "postgres"

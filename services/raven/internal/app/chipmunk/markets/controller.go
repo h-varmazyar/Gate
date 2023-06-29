@@ -31,6 +31,7 @@ func ControllerInstance(logger *log.Logger, chipmunkAddress string) *Controller 
 			logger:         logger,
 		}
 	}
+	fmt.Println("controller created")
 	return controller
 }
 
@@ -42,6 +43,8 @@ func (c Controller) RegisterRoutes(router *gorilla.Router) {
 	markets.HandleFunc("/{market_id}", c.update).Methods(http.MethodPut)
 	markets.HandleFunc("/{market-id}", c.get).Methods(http.MethodGet)
 	markets.HandleFunc("/Update-remotely", c.updateDetails).Methods(http.MethodPost)
+
+	fmt.Println("route registered")
 
 }
 
@@ -82,6 +85,7 @@ func (c Controller) create(res http.ResponseWriter, req *http.Request) {
 //	@Failure		500			{object}	errors.Error
 //	@Router			/chipmunk/markets/list [get]
 func (c Controller) list(res http.ResponseWriter, req *http.Request) {
+	fmt.Println("market list")
 	list := new(chipmunkApi.MarketListReq)
 	platforms := mux.QueryParam(req, "platform")
 	if len(platforms) == 0 {
@@ -111,6 +115,7 @@ func (c Controller) list(res http.ResponseWriter, req *http.Request) {
 //	@Failure		500		{object}	errors.Error
 //	@Router			/chipmunk/markets/Update-remotely [post]
 func (c Controller) updateDetails(res http.ResponseWriter, req *http.Request) {
+	fmt.Println("update details")
 	update := new(chipmunkApi.MarketUpdateFromPlatformReq)
 	if err := httpext.BindModel(req, update); err != nil {
 		httpext.SendError(res, req, err)
