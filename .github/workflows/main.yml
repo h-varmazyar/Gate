@@ -84,7 +84,7 @@ jobs:
           ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "mkdir -p ./gate/deploy"
           scp -i ssh_key deploy/docker-compose.yml ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }}:./gate/deploy
 
-          ssh_command=""
+          ssh_command="cd ./gate/deploy"
           for service in "${services_array[@]}"; do
           ssh_command+=" && VERSION=${version} docker-compose -f docker-compose.yml up -d ${service}"
           done
