@@ -9,7 +9,6 @@ services:
     container_name: postgres
     image: postgres
     environment:
-      - POSTGRES_USER=${POSTGRES_USERNAME}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - postgres_gate_data:/var/lib/postgresql/data
