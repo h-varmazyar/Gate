@@ -77,15 +77,18 @@ jobs:
         run: |
           IFS=',' read -ra services_array <<< "${{ steps.services.outputs.services }}"
           version=${{ steps.version.outputs.version }}
-          
+    
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
           chmod 600 ssh_key
-          ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "mkdir -p ./gate/deploy"
-          scp -i ssh_key deploy/docker-compose.yml ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }}:./gate/deploy
           
+          ssh_command="mkdir -p ./gate/deploy && \
+          scp -o StrictHostKeyChecking=no -i ssh_key deploy/docker-compose.yml ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }}:./gate/deploy && \
+          cd ./gate/deploy"
+    
           for service in "${services_array[@]}"; do
-            echo "Building $service"
-            ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "cd ./gate/deploy && VERSION=${version} docker-compose -f docker-compose.yml up -d" "${service}"
+          ssh_command+=" && VERSION=${version} docker-compose -f docker-compose.yml up -d ${service}"
           done
           
-          rm ssh_key
+          ssh_command+=" && rm ssh_key"
+    
+          ssh -o StrictHostKeyChecking=no -i ssh_key ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "${ssh_command}"
