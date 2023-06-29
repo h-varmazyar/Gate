@@ -67,9 +67,15 @@ jobs:
           version=$(git log -1 --pretty=format:%h)
           echo "::set-output name=version::$version"
 
-      - name: SSH into VPS and Deploy
+      - name: Determine updated services
+        id: services
         run: |
           services=$(git log -1 --pretty=format:%s | grep -o -P "(?<=\().*?(?=\))")
+          echo "::set-output name=services::$services"
+
+      - name: SSH into VPS and Deploy
+        run: |
+          IFS=',' read -ra services_array <<< "${{ steps.services.outputs.services }}"
           version=${{ steps.version.outputs.version }}
           
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
@@ -77,7 +83,7 @@ jobs:
           ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "mkdir -p ./gate/deploy"
           scp -i ssh_key deploy/docker-compose.yml ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }}:./gate/deploy
           
-          for service in "${services[@]}"; do
+          for service in "${services_array[@]}"; do
             echo "Building $service"
             ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "cd ./gate/deploy && VERSION=${version} docker-compose -f docker-compose.yml up -d" "${service}"
           done
