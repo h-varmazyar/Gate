@@ -61,11 +61,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set up Docker
-        run: |
-          sudo apt-get update
-          sudo apt-get -y install apt-transport-https ca-certificates curl software-properties-common
-
       - name: Determine version number
         id: version
         run: |
@@ -74,15 +69,15 @@ jobs:
 
       - name: SSH into VPS and Deploy
         run: |
+          services=$(git log -1 --pretty=format:%s | grep -o -P "(?<=\().*?(?=\))")
+          version=${{ steps.version.outputs.version }}
+          
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
           chmod 600 ssh_key
           ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "mkdir -p ./gate/deploy"
           scp -i ssh_key deploy/docker-compose.yml ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }}:./gate/deploy
           
-          services=$(git log -1 --pretty=format:%s | grep -o -P "(?<=\().*?(?=\))")
-          version=${{ steps.version.outputs.version }}
-          
-          for service in "${services_array[@]}"; do
+          for service in "${services[@]}"; do
             echo "Building $service"
             ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "cd ./gate/deploy && VERSION=${version} docker-compose -f docker-compose.yml up -d" "${service}"
           done
