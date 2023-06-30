@@ -226,6 +226,7 @@ func (s *Service) UpdateFromPlatform(ctx context.Context, req *chipmunkApi.Marke
 		localMarket, err := s.db.ReturnByName(req.Platform, market.Name)
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
+				mapper.Struct(market, localMarket)
 				source, sourceErr := s.loadOrCreateAsset(ctx, market.Source.Name)
 				if sourceErr != nil {
 					s.logger.WithError(err).Errorf("failed to load or create source for market %v", market.Name)
@@ -239,6 +240,8 @@ func (s *Service) UpdateFromPlatform(ctx context.Context, req *chipmunkApi.Marke
 				localMarket.SourceID = source.ID
 				localMarket.DestinationID = destination.ID
 				localMarket.Platform = req.Platform
+				localMarket.Status = api.Status_Enable
+				//todo: change it to async request
 				if req.Platform == api.Platform_Coinex {
 					marketInfo, err := s.functionsService.GetMarketInfo(ctx, &coreApi.MarketInfoReq{Market: market})
 					if err != nil {
@@ -249,11 +252,13 @@ func (s *Service) UpdateFromPlatform(ctx context.Context, req *chipmunkApi.Marke
 				} else {
 					return nil, errors.New(ctx, codes.FailedPrecondition).AddDetails("check market issue date")
 				}
-				err = s.db.Update(localMarket)
+				err = s.db.Create(localMarket)
 				if err != nil {
 					s.logger.WithError(err).Error("failed to update markets")
 					continue
 				}
+			} else {
+				s.logger.WithError(err).Errorf("failed to fetch market %v", market.Name)
 			}
 		}
 		availableMarkets = append(availableMarkets, localMarket.ID)

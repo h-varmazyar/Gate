@@ -61,11 +61,11 @@ func (repository *marketPostgresRepository) Create(market *entity.Market) error 
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return err
 	}
-	return repository.db.Model(new(entity.Market)).Create(market).Error
+	return repository.db.Save(market).Error
 }
 
 func (repository *marketPostgresRepository) Update(market *entity.Market) error {
-	return repository.db.Where("id = ?", market.ID).Save(market).Error
+	return repository.db.Where("id = ?", market.ID).Updates(market).Error
 }
 
 func (repository *marketPostgresRepository) Delete(market *entity.Market) error {
