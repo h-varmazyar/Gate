@@ -36,7 +36,6 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 }
 
 func (s *Service) Do(ctx context.Context, req *networkAPI.Request) (*networkAPI.Response, error) {
-	s.logger.Infof("new request: %v", req.Endpoint)
 	response := new(networkAPI.Response)
 	var err error
 	if req.Type == networkAPI.Request_Async {

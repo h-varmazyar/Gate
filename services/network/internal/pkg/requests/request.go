@@ -103,7 +103,7 @@ func (req *Request) Do() (*networkAPI.Response, error) {
 		request.URL.RawQuery = req.queryParams
 	}
 
-	log.Infof(req.Endpoint)
+	log.Infof(request.URL.String())
 	response, err := req.httpClient.Do(request)
 	if err != nil {
 		log.WithError(err).Errorf("failed to make request")

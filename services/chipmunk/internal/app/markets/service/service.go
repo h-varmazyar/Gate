@@ -254,7 +254,7 @@ func (s *Service) UpdateFromPlatform(ctx context.Context, req *chipmunkApi.Marke
 				}
 				err = s.db.Create(localMarket)
 				if err != nil {
-					s.logger.WithError(err).Error("failed to update markets")
+					s.logger.WithError(err).Error("failed to create market")
 					continue
 				}
 			} else {
