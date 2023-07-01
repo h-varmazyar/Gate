@@ -75,7 +75,6 @@ func (w *CandleReader) handle(delivery amqp.Delivery) {
 
 		w.insertChan <- tmp
 	}
-	w.logger.Infof("inserteed: %v", len(candles.Elements))
 
 	for _, indicator := range w.indicators {
 		indicator.Update(localCandles)

@@ -10,6 +10,7 @@ import (
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
+	"time"
 )
 
 type Callback struct {
@@ -46,12 +47,14 @@ func (c *Callback) run() {
 			if counter%10 == 0 {
 				log.Infof("new 10 delivery: %v", counter/10)
 			}
-			c.handleDelivery(delivery)
+			ctx, cancelFunc := context.WithTimeout(context.Background(), time.Minute)
+			defer cancelFunc()
+			c.handleDelivery(ctx, delivery)
 		}
 	}()
 }
 
-func (c *Callback) handleDelivery(delivery amqp.Delivery) {
+func (c *Callback) handleDelivery(ctx context.Context, delivery amqp.Delivery) {
 	response := new(networkAPI.Response)
 	if err := proto.Unmarshal(delivery.Body, response); err != nil {
 		_ = delivery.Nack(false, false)
@@ -66,13 +69,13 @@ func (c *Callback) handleDelivery(delivery amqp.Delivery) {
 		return
 	}
 
-	_ = delivery.Ack(false)
-
 	switch metadata.Method {
 	case brokerages.MethodOHLC:
 		if metadata.MarketID == uuid.Nil.String() || metadata.ResolutionID == uuid.Nil.String() {
 			return
 		}
-		c.r.AsyncOHLC(context.Background(), response, metadata)
+		c.r.AsyncOHLC(ctx, response, metadata)
 	}
+
+	_ = delivery.Ack(false)
 }

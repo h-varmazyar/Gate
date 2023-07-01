@@ -9,7 +9,6 @@ import (
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages/coinex"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"time"
 )
@@ -60,7 +59,6 @@ func (s *Service) loadBrokerage(ctx context.Context, id string) (*coreApi.Broker
 func (s *Service) doNetworkRequest(request *networkAPI.Request) (*networkAPI.Response, error) {
 	resp, err := s.requestService.Do(context.Background(), request)
 	if err != nil {
-		log.WithError(err).Errorf("failed to do request: %v", request)
 		return nil, err
 	}
 	return resp, nil

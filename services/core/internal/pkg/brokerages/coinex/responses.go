@@ -66,13 +66,15 @@ func (r *Response) AsyncOHLC(_ context.Context, response *networkAPI.Response, m
 		Count:    int64(len(candles)),
 	}
 	if message.Count > 0 {
-		if bytes, err := proto.Marshal(message); err != nil {
+		bytes, err := proto.Marshal(message)
+		if err != nil {
 			log.WithError(err).Errorf("faled to marshal coinex async ohls message")
 			return
-		} else {
-			if publishErr := r.ohlcQueue.Publish(bytes, grpcext.ProtobufContentType); publishErr != nil {
-				log.WithError(publishErr).Errorf("faled to publish coinex async ohlc")
-			}
+		}
+		err = r.ohlcQueue.Publish(bytes, grpcext.ProtobufContentType)
+		if err != nil {
+			log.WithError(err).Errorf("faled to publish coinex async ohlc")
+			return
 		}
 	}
 }
