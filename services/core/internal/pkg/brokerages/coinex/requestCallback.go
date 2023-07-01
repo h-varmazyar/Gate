@@ -43,8 +43,8 @@ func (c *Callback) run() {
 	go func() {
 		for delivery := range callbackDeliveries {
 			counter++
-			if counter%100 == 0 {
-				log.Infof("new 100 delivery: %v", counter/100)
+			if counter%10 == 0 {
+				log.Infof("new 10 delivery: %v", counter/10)
 			}
 			c.handleDelivery(delivery)
 		}
@@ -59,14 +59,14 @@ func (c *Callback) handleDelivery(delivery amqp.Delivery) {
 		return
 	}
 
-	_ = delivery.Ack(false)
-
 	metadata := new(brokerages.Metadata)
 	if err := json.Unmarshal([]byte(response.Metadata), metadata); err != nil {
 		_ = delivery.Nack(false, false)
 		log.WithError(err).Error("failed to unmarshal coinex callback delivery")
 		return
 	}
+
+	_ = delivery.Ack(false)
 
 	switch metadata.Method {
 	case brokerages.MethodOHLC:
