@@ -55,7 +55,7 @@ func (r *candlePostgresRepository) BulkHardDelete(candleIDs []uuid.UUID) error {
 }
 
 func (r *candlePostgresRepository) BulkInsert(candles []*entity.Candle) error {
-	return r.db.CreateInBatches(candles, len(candles)).Error
+	return r.db.CreateInBatches(candles, 1000).Error
 }
 
 func (r *candlePostgresRepository) ReturnLast(marketID, resolutionID uuid.UUID) (*entity.Candle, error) {
