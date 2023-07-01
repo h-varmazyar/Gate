@@ -15,7 +15,7 @@ import (
 func (app *App) initializeWorkers(ctx context.Context, configs *workers.Configs, repositoryInstance repository.CandleRepository) (*workerHolder, error) {
 	var err error
 	holder := new(workerHolder)
-	holder.candleReaderWorker, err = workers.NewCandleReaderWorker(ctx, repositoryInstance, configs)
+	holder.candleReaderWorker, err = workers.NewCandleReaderWorker(ctx, repositoryInstance, configs, app.logger)
 	if err != nil {
 		app.logger.WithError(err).Error("failed to initialize primary data worker")
 		return nil, err

@@ -18,29 +18,31 @@ import (
 
 type CandleReader struct {
 	db         repository.CandleRepository
+	logger     *log.Logger
 	configs    *Configs
 	queue      *amqpext.Queue
 	indicators []indicatorsPkg.Indicator
 	insertChan chan *entity.Candle
 }
 
-func NewCandleReaderWorker(_ context.Context, db repository.CandleRepository, configs *Configs) (*CandleReader, error) {
+func NewCandleReaderWorker(_ context.Context, db repository.CandleRepository, configs *Configs, logger *log.Logger) (*CandleReader, error) {
 	ohlcQueue, err := amqpext.Client.QueueDeclare(configs.PrimaryDataQueue)
 	if err != nil {
 		return nil, err
 	}
 	reader := &CandleReader{
 		db:         db,
+		logger:     logger,
 		configs:    configs,
 		queue:      ohlcQueue,
 		insertChan: make(chan *entity.Candle, 1000),
 	}
-	go reader.handleInsert()
 
 	return reader, nil
 }
 
 func (w *CandleReader) Start(indicators []indicatorsPkg.Indicator) {
+	w.logger.Infof("starting candle reader worker...")
 	w.indicators = indicators
 	handled := int64(0)
 	deliveries := w.queue.Consume(w.configs.PrimaryDataQueue)
@@ -55,6 +57,7 @@ func (w *CandleReader) Start(indicators []indicatorsPkg.Indicator) {
 			}
 		}()
 	}
+	go w.handleInsert()
 }
 
 func (w *CandleReader) handle(delivery amqp.Delivery) {
@@ -72,6 +75,7 @@ func (w *CandleReader) handle(delivery amqp.Delivery) {
 
 		w.insertChan <- tmp
 	}
+	w.logger.Infof("inserteed: %v", len(candles.Elements))
 
 	for _, indicator := range w.indicators {
 		indicator.Update(localCandles)
