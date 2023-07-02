@@ -93,7 +93,7 @@ func (w *CandleReader) handleInsert() {
 	for candle := range w.insertChan {
 		key = fmt.Sprintf("%v%v%v", candle.MarketID, candle.ResolutionID, candle.Time.Unix())
 		candleMap[key] = candle
-		if time.Now().Sub(lastInsert) > time.Minute {
+		if time.Now().Sub(lastInsert) > time.Second*5 {
 			err := w.insert(candleMap)
 			if err != nil {
 				log.WithError(err).Errorf("failed to insert candles")
