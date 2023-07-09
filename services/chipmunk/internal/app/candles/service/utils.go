@@ -4,31 +4,15 @@ import (
 	"context"
 	"github.com/google/uuid"
 	api "github.com/h-varmazyar/Gate/api/proto"
-	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	indicatorsPkg "github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
-	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
 	"time"
 )
-
-func (s *Service) validateDownloadPrimaryCandlesRequest(ctx context.Context, req *chipmunkApi.CandleWorkerStartReq) error {
-	if req.Resolutions == nil || len(req.Resolutions.Elements) == 0 {
-		err := errors.New(ctx, codes.FailedPrecondition).AddDetailF("invalid resolutions for Platform %v", req.Platform)
-		s.logger.WithError(err).Errorf("failed to start rateLimiters candleReaderWorker")
-		return err
-	}
-	if req.Markets == nil || len(req.Markets.Elements) == 0 {
-		err := errors.New(ctx, codes.FailedPrecondition).AddDetailF("invalid markets for Platform %v", req.Platform)
-		s.logger.WithError(err).Errorf("failed to start rateLimiters candleReaderWorker")
-		return err
-	}
-	return nil
-}
 
 func (s *Service) preparePrimaryDataRequests(platform api.Platform, market *chipmunkApi.Market, resolutions *chipmunkApi.Resolutions, indicators []indicatorsPkg.Indicator) {
 	for _, resolution := range resolutions.Elements {

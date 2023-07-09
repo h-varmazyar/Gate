@@ -23,6 +23,7 @@ type CandleReader struct {
 	queue      *amqpext.Queue
 	indicators []indicatorsPkg.Indicator
 	insertChan chan *entity.Candle
+	runners    map[string]*Runner
 }
 
 func NewCandleReaderWorker(_ context.Context, db repository.CandleRepository, configs *Configs, logger *log.Logger) (*CandleReader, error) {
@@ -41,9 +42,10 @@ func NewCandleReaderWorker(_ context.Context, db repository.CandleRepository, co
 	return reader, nil
 }
 
-func (w *CandleReader) Start(indicators []indicatorsPkg.Indicator) {
+func (w *CandleReader) Start(runners map[string]*Runner, indicators []indicatorsPkg.Indicator) {
 	w.logger.Infof("starting candle reader worker...")
 	w.indicators = indicators
+	w.runners = runners
 	handled := int64(0)
 	deliveries := w.queue.Consume(w.configs.PrimaryDataQueue)
 	for i := 0; i < w.configs.ConsumerCount; i++ {
@@ -60,19 +62,27 @@ func (w *CandleReader) Start(indicators []indicatorsPkg.Indicator) {
 	go w.handleInsert()
 }
 
+//create new response struct candles, market_id, reference_id, error
 func (w *CandleReader) handle(delivery amqp.Delivery) {
-	candles := new(chipmunkApi.Candles)
-	if err := proto.Unmarshal(delivery.Body, candles); err != nil {
+	resp := new(chipmunkApi.CandlesAsyncUpdate)
+	if err := proto.Unmarshal(delivery.Body, resp); err != nil {
 		log.WithError(err).Errorf("failed to unmarshal delivery")
 		_ = delivery.Nack(false, false)
 		return
 	}
+	if resp.ReferenceID == w.runners[resp.MarketID].LastEventID {
+		w.runners[resp.MarketID].IsPrimaryCandlesLoaded = true
+	}
+	if resp.Error != "" {
+		w.logger.Errorf("failed to get async candle update resp for market %v: %v", resp.MarketID, resp.Error)
+		delivery.Nack(false, false)
+		return
+	}
 	localCandles := make([]*entity.Candle, 0)
-	for _, candle := range candles.Elements {
+	for _, candle := range resp.Candles {
 		tmp := new(entity.Candle)
 		mapper.Struct(candle, tmp)
 		localCandles = append(localCandles, tmp)
-
 		w.insertChan <- tmp
 	}
 
@@ -93,7 +103,7 @@ func (w *CandleReader) handleInsert() {
 	for candle := range w.insertChan {
 		key = fmt.Sprintf("%v%v%v", candle.MarketID, candle.ResolutionID, candle.Time.Unix())
 		candleMap[key] = candle
-		if time.Now().Sub(lastInsert) > time.Second*5 {
+		if time.Now().Sub(lastInsert) > time.Second {
 			err := w.insert(candleMap)
 			if err != nil {
 				log.WithError(err).Errorf("failed to insert candles")

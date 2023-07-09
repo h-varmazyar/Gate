@@ -8,6 +8,7 @@ package proto
 
 import (
 	context "context"
+	proto "github.com/h-varmazyar/Gate/api/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -23,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RequestServiceClient interface {
 	Do(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+	DoAsync(ctx context.Context, in *DoAsyncReq, opts ...grpc.CallOption) (*proto.Void, error)
 }
 
 type requestServiceClient struct {
@@ -42,11 +44,21 @@ func (c *requestServiceClient) Do(ctx context.Context, in *Request, opts ...grpc
 	return out, nil
 }
 
+func (c *requestServiceClient) DoAsync(ctx context.Context, in *DoAsyncReq, opts ...grpc.CallOption) (*proto.Void, error) {
+	out := new(proto.Void)
+	err := c.cc.Invoke(ctx, "/networkAPI.RequestService/DoAsync", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RequestServiceServer is the server API for RequestService service.
 // All implementations should embed UnimplementedRequestServiceServer
 // for forward compatibility
 type RequestServiceServer interface {
 	Do(context.Context, *Request) (*Response, error)
+	DoAsync(context.Context, *DoAsyncReq) (*proto.Void, error)
 }
 
 // UnimplementedRequestServiceServer should be embedded to have forward compatible implementations.
@@ -55,6 +67,9 @@ type UnimplementedRequestServiceServer struct {
 
 func (UnimplementedRequestServiceServer) Do(context.Context, *Request) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Do not implemented")
+}
+func (UnimplementedRequestServiceServer) DoAsync(context.Context, *DoAsyncReq) (*proto.Void, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DoAsync not implemented")
 }
 
 // UnsafeRequestServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -86,6 +101,24 @@ func _RequestService_Do_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RequestService_DoAsync_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DoAsyncReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RequestServiceServer).DoAsync(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/networkAPI.RequestService/DoAsync",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RequestServiceServer).DoAsync(ctx, req.(*DoAsyncReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RequestService_ServiceDesc is the grpc.ServiceDesc for RequestService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -96,6 +129,10 @@ var RequestService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Do",
 			Handler:    _RequestService_Do_Handler,
+		},
+		{
+			MethodName: "DoAsync",
+			Handler:    _RequestService_DoAsync_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

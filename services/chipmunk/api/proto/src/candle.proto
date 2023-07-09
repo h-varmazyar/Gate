@@ -2,16 +2,11 @@ syntax = "proto3";
 package chipmunkApi;
 option go_package = "github.com/h-varmazyar/Gate/services/chipmunk/api/proto";
 import "services/chipmunk/api/proto/src/indicator.proto";
-import "services/chipmunk/api/proto/src/market.proto";
-import "services/chipmunk/api/proto/src/resolution.proto";
 import "api/proto/src/misc.proto";
 
 service CandleService {
   rpc List(CandleListReq) returns (Candles);
   rpc Update(CandleUpdateReq) returns (Candle);
-  //  rpc BulkUpdate(CandleBulkUpdateReq) returns (api.Void);
-  //  rpc StartWorkers(CandleWorkerStartReq) returns (api.Void);
-  //  rpc StopWorkers(CandleWorkerStopReq) returns (api.Void);
 }
 
 message Candle {
@@ -50,13 +45,6 @@ message Candles {
   int64 Count = 2;
 }
 
-message AddMarketReq {
-  // @inject_tag: json:"brokerage_id"
-  string BrokerageID = 1;
-  // @inject_tag: json:"market"
-  string MarketID = 2;
-}
-
 message CandleListReq {
   // @inject_tag: json:"resolution_id"
   string ResolutionID = 1;
@@ -85,41 +73,14 @@ message CandleUpdateReq {
   api.Platform Platform = 8;
 }
 
-message CandleBulkUpdateReq {
-  message ticker{
-    // @inject_tag: json:"volume"
-    double Volume = 1;
-    // @inject_tag: json:"close"
-    double Close = 2;
-    // @inject_tag: json:"open"
-    double Open = 3;
-    // @inject_tag: json:"high"
-    double High = 4;
-    // @inject_tag: json:"low"
-    double Low = 5;
-  }
-  // @inject_tag: json:"date"
-  int64 Date = 1;
-  // @inject_tag: json:"tickers"
-  map<string, ticker> tickers = 2;//key is market id
-  // @inject_tag: json:"platform"
-  api.Platform Platform = 3;
+message CandlesAsyncUpdate{
+  // @inject_tag: json:"elements"
+  repeated Candle Candles = 1;
+  // @inject_tag: json:"market_id"
+  string MarketID = 2;
+  // @inject_tag: json:"reference_id"
+  string ReferenceID = 3;
+  // @inject_tag: json:"error"
+  string Error = 4;
 }
 
-message CandleWorkerStartReq {
-  // @inject_tag: json:"platform"
-  api.Platform Platform = 1;
-  // @inject_tag: json:"markets"
-  Markets Markets = 2;
-  // @inject_tag: json:"resolutions"
-  Resolutions Resolutions = 3;
-}
-
-message CandleWorkerStopReq {
-  // @inject_tag: json:"platform"
-  api.Platform Platform = 1;
-  // @inject_tag: json:"markets"
-  Markets Markets = 2;
-  // @inject_tag: json:"resolutions"
-  Resolutions Resolutions = 3;
-}

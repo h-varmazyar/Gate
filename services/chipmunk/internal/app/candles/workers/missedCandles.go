@@ -30,7 +30,7 @@ func NewMissedCandles(_ context.Context, db repository.CandleRepository, configs
 	}
 }
 
-func (w *MissedCandles) Start(runners []*Runner) {
+func (w *MissedCandles) Start(runners map[string]*Runner) {
 	if !w.Started {
 		w.logger.Infof("starting missed candle worker")
 		w.ctx, w.cancelFunc = context.WithCancel(context.Background())
@@ -45,7 +45,7 @@ func (w *MissedCandles) Stop() {
 	}
 }
 
-func (w *MissedCandles) run(runners []*Runner) {
+func (w *MissedCandles) run(runners map[string]*Runner) {
 	ticker := time.NewTicker(w.configs.MissedCandlesInterval)
 	for {
 		select {

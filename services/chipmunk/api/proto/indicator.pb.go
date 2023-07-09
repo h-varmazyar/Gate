@@ -144,11 +144,11 @@ type Indicator struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"id"
+	// @inject_tag: json:"id"
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
-	//	@inject_tag:	json:"name"
+	// @inject_tag: json:"name"
 	Type IndicatorType `protobuf:"varint,2,opt,name=Type,proto3,enum=chipmunkApi.IndicatorType" json:"name"`
-	//	@inject_tag:	json:"configs"
+	// @inject_tag: json:"configs"
 	Configs *IndicatorConfigs `protobuf:"bytes,3,opt,name=Configs,proto3" json:"configs"`
 }
 
@@ -210,13 +210,13 @@ type IndicatorConfigs struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"rsi,omitempty"
+	// @inject_tag: json:"rsi,omitempty"
 	RSI *RsiConfigs `protobuf:"bytes,1,opt,name=RSI,proto3" json:"rsi,omitempty"`
-	//	@inject_tag:	json:"stochastic,omitempty"
+	// @inject_tag: json:"stochastic,omitempty"
 	Stochastic *StochasticConfigs `protobuf:"bytes,2,opt,name=Stochastic,proto3" json:"stochastic,omitempty"`
-	//	@inject_tag:	json:"moving_average,omitempty"
+	// @inject_tag: json:"moving_average,omitempty"
 	MovingAverage *MovingAverageConfigs `protobuf:"bytes,3,opt,name=MovingAverage,proto3" json:"moving_average,omitempty"`
-	//	@inject_tag:	json:"bollinger_bands,omitempty"
+	// @inject_tag: json:"bollinger_bands,omitempty"
 	BollingerBands *BollingerBandsConfigs `protobuf:"bytes,4,opt,name=BollingerBands,proto3" json:"bollinger_bands,omitempty"`
 }
 
@@ -285,9 +285,9 @@ type IndicatorValue struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"type"
+	// @inject_tag: json:"type"
 	Type IndicatorType `protobuf:"varint,1,opt,name=Type,proto3,enum=chipmunkApi.IndicatorType" json:"type"`
-	//	@inject_tag:	json:"value"
+	// @inject_tag: json:"value"
 	//
 	// Types that are assignable to Value:
 	//	*IndicatorValue_BollingerBands
@@ -376,22 +376,22 @@ type isIndicatorValue_Value interface {
 }
 
 type IndicatorValue_BollingerBands struct {
-	//	@inject_tag:	json:"bollinger_band,omitempty"
+	// @inject_tag: json:"bollinger_band,omitempty"
 	BollingerBands *BollingerBands `protobuf:"bytes,2,opt,name=BollingerBands,proto3,oneof" json:"bollinger_band,omitempty"`
 }
 
 type IndicatorValue_MovingAverage struct {
-	//	@inject_tag:	json:"moving_average,omitempty"
+	// @inject_tag: json:"moving_average,omitempty"
 	MovingAverage *MovingAverage `protobuf:"bytes,3,opt,name=MovingAverage,proto3,oneof" json:"moving_average,omitempty"`
 }
 
 type IndicatorValue_Stochastic struct {
-	//	@inject_tag:	json:"stochastic,omitempty"
+	// @inject_tag: json:"stochastic,omitempty"
 	Stochastic *Stochastic `protobuf:"bytes,4,opt,name=Stochastic,proto3,oneof" json:"stochastic,omitempty"`
 }
 
 type IndicatorValue_RSI struct {
-	//	@inject_tag:	json:"rsi,omitempty"
+	// @inject_tag: json:"rsi,omitempty"
 	RSI *RSI `protobuf:"bytes,5,opt,name=RSI,proto3,oneof" json:"rsi,omitempty"`
 }
 
@@ -408,11 +408,11 @@ type BollingerBands struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"upper_band"
+	// @inject_tag: json:"upper_band"
 	UpperBand float64 `protobuf:"fixed64,1,opt,name=UpperBand,proto3" json:"upper_band"`
-	//	@inject_tag:	json:"lower_band"
+	// @inject_tag: json:"lower_band"
 	LowerBand float64 `protobuf:"fixed64,2,opt,name=LowerBand,proto3" json:"lower_band"`
-	//	@inject_tag:	json:"ma"
+	// @inject_tag: json:"ma"
 	MA float64 `protobuf:"fixed64,3,opt,name=MA,proto3" json:"ma"`
 }
 
@@ -474,9 +474,9 @@ type MovingAverage struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"simple"
+	// @inject_tag: json:"simple"
 	Simple float64 `protobuf:"fixed64,1,opt,name=Simple,proto3" json:"simple"`
-	//	@inject_tag:	json:"exponential"
+	// @inject_tag: json:"exponential"
 	Exponential float64 `protobuf:"fixed64,2,opt,name=Exponential,proto3" json:"exponential"`
 }
 
@@ -531,9 +531,9 @@ type Stochastic struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"index_k"
+	// @inject_tag: json:"index_k"
 	IndexK float64 `protobuf:"fixed64,1,opt,name=IndexK,proto3" json:"index_k"`
-	//	@inject_tag:	json:"index_d"
+	// @inject_tag: json:"index_d"
 	IndexD float64 `protobuf:"fixed64,2,opt,name=IndexD,proto3" json:"index_d"`
 }
 
@@ -588,7 +588,7 @@ type RSI struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"rsi"
+	// @inject_tag: json:"rsi"
 	RSI float64 `protobuf:"fixed64,1,opt,name=RSI,proto3" json:"rsi"`
 }
 
@@ -636,7 +636,7 @@ type IndicatorReturnReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"id"
+	// @inject_tag: json:"id"
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
 }
 
@@ -684,7 +684,7 @@ type RsiConfigs struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"length"
+	// @inject_tag: json:"length"
 	Length int32 `protobuf:"varint,1,opt,name=Length,proto3" json:"length"`
 }
 
@@ -732,11 +732,11 @@ type StochasticConfigs struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"length"
+	// @inject_tag: json:"length"
 	Length int32 `protobuf:"varint,1,opt,name=Length,proto3" json:"length"`
-	//	@inject_tag:	json:"smooth_k"
+	// @inject_tag: json:"smooth_k"
 	SmoothK int32 `protobuf:"varint,2,opt,name=SmoothK,proto3" json:"smooth_k"`
-	//	@inject_tag:	json:"smooth_d"
+	// @inject_tag: json:"smooth_d"
 	SmoothD int32 `protobuf:"varint,3,opt,name=SmoothD,proto3" json:"smooth_d"`
 }
 
@@ -798,9 +798,9 @@ type MovingAverageConfigs struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"length"
+	// @inject_tag: json:"length"
 	Length int32 `protobuf:"varint,1,opt,name=Length,proto3" json:"length"`
-	//	@inject_tag:	json:"source"
+	// @inject_tag: json:"source"
 	Source Source `protobuf:"varint,2,opt,name=Source,proto3,enum=chipmunkApi.Source" json:"source"`
 }
 
@@ -855,11 +855,11 @@ type BollingerBandsConfigs struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"length"
+	// @inject_tag: json:"length"
 	Length int32 `protobuf:"varint,1,opt,name=Length,proto3" json:"length"`
-	//	@inject_tag:	json:"deviation"
+	// @inject_tag: json:"deviation"
 	Deviation int32 `protobuf:"varint,2,opt,name=Deviation,proto3" json:"deviation"`
-	//	@inject_tag:	json:"source"
+	// @inject_tag: json:"source"
 	Source Source `protobuf:"varint,3,opt,name=Source,proto3,enum=chipmunkApi.Source" json:"source"`
 }
 
@@ -921,7 +921,7 @@ type IndicatorListReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"type"
+	// @inject_tag: json:"type"
 	Type IndicatorType `protobuf:"varint,1,opt,name=Type,proto3,enum=chipmunkApi.IndicatorType" json:"type"`
 }
 
@@ -969,7 +969,7 @@ type Indicators struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"elements"
+	// @inject_tag: json:"elements"
 	Elements []*Indicator `protobuf:"bytes,1,rep,name=Elements,proto3" json:"elements"`
 }
 

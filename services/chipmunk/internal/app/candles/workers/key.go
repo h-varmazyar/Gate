@@ -6,7 +6,9 @@ import (
 )
 
 type Runner struct {
-	Platform   api.Platform
-	Market     *chipmunkApi.Market
-	Resolution *chipmunkApi.Resolution
+	Platform               api.Platform
+	Market                 *chipmunkApi.Market
+	Resolution             *chipmunkApi.Resolution
+	LastEventID            string
+	IsPrimaryCandlesLoaded bool
 }

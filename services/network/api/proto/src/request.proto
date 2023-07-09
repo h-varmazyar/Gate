@@ -1,9 +1,11 @@
 syntax = "proto3";
 package networkAPI;
 option go_package = "github.com/h-varmazyar/Gate/services/network/api/proto";
+import "api/proto/src/misc.proto";
 
 service RequestService {
   rpc Do(Request) returns (Response);
+  rpc DoAsync(DoAsyncReq) returns (api.Void);
 }
 
 message KV {
@@ -31,10 +33,6 @@ message Request {
     GET = 2;
     DELETE = 3;
   }
-  enum type{
-    Sync = 0;
-    Async = 1;
-  }
   // @inject_tag: json:"method"
   method Method = 1;
   // @inject_tag: json:"endpoint"
@@ -45,16 +43,23 @@ message Request {
   repeated KV Headers = 4;
   // @inject_tag: json:"metadata"
   string Metadata = 5;
-  // @inject_tag: json:"type"
-  type Type = 6;
-  // @inject_tag: json:"callback_queue"
-  string CallbackQueue = 7;
-  // @inject_tag: json:"rate_limiter_id"
-  string RateLimiterID = 8;
   // @inject_tag: json:"timeout"
   int64 Timeout = 9;
   // @inject_tag: json:"issue_time"
   int64 IssueTime = 10;
+  // @inject_tag: json:"reference_id"
+  string ReferenceID = 11;
+}
+
+message DoAsyncReq {
+  // @inject_tag: json:"requests"
+  repeated Request Requests = 1;
+  // @inject_tag: json:"callback_queue"
+  string CallbackQueue = 2;
+  // @inject_tag: json:"rate_limiter_id"
+  string RateLimiterID = 3;
+  // @inject_tag: json:"reference_id"
+  string ReferenceID = 4;
 }
 
 message Response {
@@ -64,8 +69,8 @@ message Response {
   string Body = 2;
   // @inject_tag: json:"metadata"
   string Metadata = 3;
-  // @inject_tag: json:"type"
-  Request.type Type = 4;
   // @inject_tag: json:"method"
-  Request.method Method = 5;
+  Request.method Method = 4;
+  // @inject_tag: json:"reference_id"
+  string ReferenceID = 5;
 }

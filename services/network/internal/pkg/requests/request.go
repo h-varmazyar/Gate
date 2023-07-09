@@ -26,7 +26,6 @@ type Request struct {
 	body        *bytes.Buffer
 	method      networkAPI.RequestMethod
 	metadata    string
-	Type        networkAPI.RequestType
 }
 
 func New(input *networkAPI.Request, proxyURL *url.URL) (*Request, error) {
@@ -45,7 +44,6 @@ func New(input *networkAPI.Request, proxyURL *url.URL) (*Request, error) {
 		method:   input.Method,
 		body:     new(bytes.Buffer),
 		headers:  http.Header{},
-		Type:     input.Type,
 		metadata: input.Metadata,
 	}
 
@@ -110,7 +108,6 @@ func (req *Request) Do() (*networkAPI.Response, error) {
 		return nil, err
 	}
 	defer response.Body.Close()
-	//log.Info(response.Request.URL)
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
@@ -119,7 +116,6 @@ func (req *Request) Do() (*networkAPI.Response, error) {
 		Code:     int32(response.StatusCode),
 		Body:     string(body),
 		Metadata: req.metadata,
-		Type:     req.Type,
 		Method:   req.method,
 	}, nil
 }

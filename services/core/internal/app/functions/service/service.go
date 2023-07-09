@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
@@ -45,47 +44,52 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 	coreApi.RegisterFunctionsServiceServer(server, s)
 }
 
-func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.OHLCReq) (*proto.Void, error) {
-	brokerageRequests := loadRequest(s.configs, &coreApi.Brokerage{Platform: req.Platform})
+func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.AsyncOHLCReq) (*coreApi.AsyncOHLCResp, error) {
+	referenceID := ""
+	requests := make([]*networkAPI.Request, 0)
+	for _, item := range req.Items {
+		brokerageRequests := loadRequest(s.configs, &coreApi.Brokerage{Platform: item.Platform})
 
-	from := time.Unix(req.From, 0)
+		from := time.Unix(item.From, 0)
 
-	for end := false; !end; {
-		to := from.Add(time.Duration(req.Resolution.Duration) * 999)
-		if to.After(time.Now()) {
-			to = time.Now()
-			end = true
+		var (
+			err     error
+			request *networkAPI.Request
+		)
+
+		for end := false; !end; {
+			to := from.Add(time.Duration(item.Resolution.Duration) * 999)
+			if to.After(time.Now()) {
+				to = time.Now()
+				end = true
+			}
+
+			if to.Sub(from) < time.Duration(item.Resolution.Duration) {
+				continue
+			}
+
+			params := &brokerages.OHLCParams{
+				Resolution: item.Resolution,
+				Market:     item.Market,
+				From:       from,
+				To:         to,
+			}
+
+			request, err = brokerageRequests.AsyncOHLC(ctx, params)
+			if err != nil {
+				s.logger.WithError(err).Error("failed to create async OHLC")
+				return nil, err
+			}
+			request.Type = networkAPI.Request_Async
+			request.Timeout = item.Timeout
+			request.IssueTime = item.IssueTime
+			request.ReferenceID = uuid.New().String()
+			from = to.Add(time.Duration(item.Resolution.Duration))
+			requests = append(requests, request)
 		}
-
-		if to.Sub(from) < time.Duration(req.Resolution.Duration) {
-			continue
-		}
-
-		params := &brokerages.OHLCParams{
-			Resolution: req.Resolution,
-			Market:     req.Market,
-			From:       from,
-			To:         to,
-		}
-
-		request, err := brokerageRequests.AsyncOHLC(ctx, params)
-		if err != nil {
-			s.logger.WithError(err).Error("failed to create async OHLC")
-			return nil, err
-		}
-		request.Type = networkAPI.Request_Async
-		request.Timeout = req.Timeout
-		request.IssueTime = req.IssueTime
-		_, err = s.doNetworkRequest(request)
-		if err != nil {
-			s.logger.WithError(err).Error("failed to do async OHLC")
-			return nil, err
-		}
-
-		from = to.Add(time.Duration(req.Resolution.Duration))
 	}
 
-	return new(proto.Void), nil
+	return &coreApi.AsyncOHLCResp{LastRequestID: referenceID}, nil
 }
 
 func (s *Service) AllMarketStatistics(ctx context.Context, req *coreApi.AllMarketStatisticsReq) (*coreApi.AllMarketStatisticsResp, error) {
@@ -151,7 +155,7 @@ func (s *Service) GetMarketInfo(ctx context.Context, req *coreApi.MarketInfoReq)
 }
 
 func (s *Service) OHLC(ctx context.Context, req *coreApi.OHLCReq) (*chipmunkApi.Candles, error) {
-	brokerage := &coreApi.Brokerage{Platform: req.Market.Platform}
+	brokerage := &coreApi.Brokerage{Platform: req.Item.Market.Platform}
 	candles, err := loadRequest(s.configs, brokerage).OHLC(ctx, s.createOHLCParams(req),
 		func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
 			resp, err := s.requestService.Do(ctx, request)

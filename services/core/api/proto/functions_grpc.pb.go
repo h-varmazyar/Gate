@@ -8,9 +8,8 @@ package proto
 
 import (
 	context "context"
-	proto "github.com/h-varmazyar/Gate/api/proto"
-	proto1 "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
-	proto2 "github.com/h-varmazyar/Gate/services/eagle/api/proto"
+	proto "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
+	proto1 "github.com/h-varmazyar/Gate/services/eagle/api/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -26,17 +25,17 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FunctionsServiceClient interface {
 	//without authentication
-	AsyncOHLC(ctx context.Context, in *OHLCReq, opts ...grpc.CallOption) (*proto.Void, error)
-	OHLC(ctx context.Context, in *OHLCReq, opts ...grpc.CallOption) (*proto1.Candles, error)
+	AsyncOHLC(ctx context.Context, in *AsyncOHLCReq, opts ...grpc.CallOption) (*AsyncOHLCResp, error)
+	OHLC(ctx context.Context, in *OHLCReq, opts ...grpc.CallOption) (*proto.Candles, error)
 	AllMarketStatistics(ctx context.Context, in *AllMarketStatisticsReq, opts ...grpc.CallOption) (*AllMarketStatisticsResp, error)
 	SingleMarketStatistics(ctx context.Context, in *MarketStatisticsReq, opts ...grpc.CallOption) (*MarketStatistics, error)
-	MarketList(ctx context.Context, in *MarketListReq, opts ...grpc.CallOption) (*proto1.Markets, error)
+	MarketList(ctx context.Context, in *MarketListReq, opts ...grpc.CallOption) (*proto.Markets, error)
 	GetMarketInfo(ctx context.Context, in *MarketInfoReq, opts ...grpc.CallOption) (*MarketInfo, error)
 	//with authentication
-	WalletsBalance(ctx context.Context, in *WalletsBalanceReq, opts ...grpc.CallOption) (*proto1.Wallets, error)
-	NewOrder(ctx context.Context, in *NewOrderReq, opts ...grpc.CallOption) (*proto2.Order, error)
-	CancelOrder(ctx context.Context, in *CancelOrderReq, opts ...grpc.CallOption) (*proto2.Order, error)
-	OrderStatus(ctx context.Context, in *OrderStatusReq, opts ...grpc.CallOption) (*proto2.Order, error)
+	WalletsBalance(ctx context.Context, in *WalletsBalanceReq, opts ...grpc.CallOption) (*proto.Wallets, error)
+	NewOrder(ctx context.Context, in *NewOrderReq, opts ...grpc.CallOption) (*proto1.Order, error)
+	CancelOrder(ctx context.Context, in *CancelOrderReq, opts ...grpc.CallOption) (*proto1.Order, error)
+	OrderStatus(ctx context.Context, in *OrderStatusReq, opts ...grpc.CallOption) (*proto1.Order, error)
 }
 
 type functionsServiceClient struct {
@@ -47,8 +46,8 @@ func NewFunctionsServiceClient(cc grpc.ClientConnInterface) FunctionsServiceClie
 	return &functionsServiceClient{cc}
 }
 
-func (c *functionsServiceClient) AsyncOHLC(ctx context.Context, in *OHLCReq, opts ...grpc.CallOption) (*proto.Void, error) {
-	out := new(proto.Void)
+func (c *functionsServiceClient) AsyncOHLC(ctx context.Context, in *AsyncOHLCReq, opts ...grpc.CallOption) (*AsyncOHLCResp, error) {
+	out := new(AsyncOHLCResp)
 	err := c.cc.Invoke(ctx, "/coreApi.FunctionsService/AsyncOHLC", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -56,8 +55,8 @@ func (c *functionsServiceClient) AsyncOHLC(ctx context.Context, in *OHLCReq, opt
 	return out, nil
 }
 
-func (c *functionsServiceClient) OHLC(ctx context.Context, in *OHLCReq, opts ...grpc.CallOption) (*proto1.Candles, error) {
-	out := new(proto1.Candles)
+func (c *functionsServiceClient) OHLC(ctx context.Context, in *OHLCReq, opts ...grpc.CallOption) (*proto.Candles, error) {
+	out := new(proto.Candles)
 	err := c.cc.Invoke(ctx, "/coreApi.FunctionsService/OHLC", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -83,8 +82,8 @@ func (c *functionsServiceClient) SingleMarketStatistics(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *functionsServiceClient) MarketList(ctx context.Context, in *MarketListReq, opts ...grpc.CallOption) (*proto1.Markets, error) {
-	out := new(proto1.Markets)
+func (c *functionsServiceClient) MarketList(ctx context.Context, in *MarketListReq, opts ...grpc.CallOption) (*proto.Markets, error) {
+	out := new(proto.Markets)
 	err := c.cc.Invoke(ctx, "/coreApi.FunctionsService/MarketList", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -101,8 +100,8 @@ func (c *functionsServiceClient) GetMarketInfo(ctx context.Context, in *MarketIn
 	return out, nil
 }
 
-func (c *functionsServiceClient) WalletsBalance(ctx context.Context, in *WalletsBalanceReq, opts ...grpc.CallOption) (*proto1.Wallets, error) {
-	out := new(proto1.Wallets)
+func (c *functionsServiceClient) WalletsBalance(ctx context.Context, in *WalletsBalanceReq, opts ...grpc.CallOption) (*proto.Wallets, error) {
+	out := new(proto.Wallets)
 	err := c.cc.Invoke(ctx, "/coreApi.FunctionsService/WalletsBalance", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -110,8 +109,8 @@ func (c *functionsServiceClient) WalletsBalance(ctx context.Context, in *Wallets
 	return out, nil
 }
 
-func (c *functionsServiceClient) NewOrder(ctx context.Context, in *NewOrderReq, opts ...grpc.CallOption) (*proto2.Order, error) {
-	out := new(proto2.Order)
+func (c *functionsServiceClient) NewOrder(ctx context.Context, in *NewOrderReq, opts ...grpc.CallOption) (*proto1.Order, error) {
+	out := new(proto1.Order)
 	err := c.cc.Invoke(ctx, "/coreApi.FunctionsService/NewOrder", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -119,8 +118,8 @@ func (c *functionsServiceClient) NewOrder(ctx context.Context, in *NewOrderReq, 
 	return out, nil
 }
 
-func (c *functionsServiceClient) CancelOrder(ctx context.Context, in *CancelOrderReq, opts ...grpc.CallOption) (*proto2.Order, error) {
-	out := new(proto2.Order)
+func (c *functionsServiceClient) CancelOrder(ctx context.Context, in *CancelOrderReq, opts ...grpc.CallOption) (*proto1.Order, error) {
+	out := new(proto1.Order)
 	err := c.cc.Invoke(ctx, "/coreApi.FunctionsService/CancelOrder", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -128,8 +127,8 @@ func (c *functionsServiceClient) CancelOrder(ctx context.Context, in *CancelOrde
 	return out, nil
 }
 
-func (c *functionsServiceClient) OrderStatus(ctx context.Context, in *OrderStatusReq, opts ...grpc.CallOption) (*proto2.Order, error) {
-	out := new(proto2.Order)
+func (c *functionsServiceClient) OrderStatus(ctx context.Context, in *OrderStatusReq, opts ...grpc.CallOption) (*proto1.Order, error) {
+	out := new(proto1.Order)
 	err := c.cc.Invoke(ctx, "/coreApi.FunctionsService/OrderStatus", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -142,27 +141,27 @@ func (c *functionsServiceClient) OrderStatus(ctx context.Context, in *OrderStatu
 // for forward compatibility
 type FunctionsServiceServer interface {
 	//without authentication
-	AsyncOHLC(context.Context, *OHLCReq) (*proto.Void, error)
-	OHLC(context.Context, *OHLCReq) (*proto1.Candles, error)
+	AsyncOHLC(context.Context, *AsyncOHLCReq) (*AsyncOHLCResp, error)
+	OHLC(context.Context, *OHLCReq) (*proto.Candles, error)
 	AllMarketStatistics(context.Context, *AllMarketStatisticsReq) (*AllMarketStatisticsResp, error)
 	SingleMarketStatistics(context.Context, *MarketStatisticsReq) (*MarketStatistics, error)
-	MarketList(context.Context, *MarketListReq) (*proto1.Markets, error)
+	MarketList(context.Context, *MarketListReq) (*proto.Markets, error)
 	GetMarketInfo(context.Context, *MarketInfoReq) (*MarketInfo, error)
 	//with authentication
-	WalletsBalance(context.Context, *WalletsBalanceReq) (*proto1.Wallets, error)
-	NewOrder(context.Context, *NewOrderReq) (*proto2.Order, error)
-	CancelOrder(context.Context, *CancelOrderReq) (*proto2.Order, error)
-	OrderStatus(context.Context, *OrderStatusReq) (*proto2.Order, error)
+	WalletsBalance(context.Context, *WalletsBalanceReq) (*proto.Wallets, error)
+	NewOrder(context.Context, *NewOrderReq) (*proto1.Order, error)
+	CancelOrder(context.Context, *CancelOrderReq) (*proto1.Order, error)
+	OrderStatus(context.Context, *OrderStatusReq) (*proto1.Order, error)
 }
 
 // UnimplementedFunctionsServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedFunctionsServiceServer struct {
 }
 
-func (UnimplementedFunctionsServiceServer) AsyncOHLC(context.Context, *OHLCReq) (*proto.Void, error) {
+func (UnimplementedFunctionsServiceServer) AsyncOHLC(context.Context, *AsyncOHLCReq) (*AsyncOHLCResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AsyncOHLC not implemented")
 }
-func (UnimplementedFunctionsServiceServer) OHLC(context.Context, *OHLCReq) (*proto1.Candles, error) {
+func (UnimplementedFunctionsServiceServer) OHLC(context.Context, *OHLCReq) (*proto.Candles, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method OHLC not implemented")
 }
 func (UnimplementedFunctionsServiceServer) AllMarketStatistics(context.Context, *AllMarketStatisticsReq) (*AllMarketStatisticsResp, error) {
@@ -171,22 +170,22 @@ func (UnimplementedFunctionsServiceServer) AllMarketStatistics(context.Context, 
 func (UnimplementedFunctionsServiceServer) SingleMarketStatistics(context.Context, *MarketStatisticsReq) (*MarketStatistics, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SingleMarketStatistics not implemented")
 }
-func (UnimplementedFunctionsServiceServer) MarketList(context.Context, *MarketListReq) (*proto1.Markets, error) {
+func (UnimplementedFunctionsServiceServer) MarketList(context.Context, *MarketListReq) (*proto.Markets, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MarketList not implemented")
 }
 func (UnimplementedFunctionsServiceServer) GetMarketInfo(context.Context, *MarketInfoReq) (*MarketInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMarketInfo not implemented")
 }
-func (UnimplementedFunctionsServiceServer) WalletsBalance(context.Context, *WalletsBalanceReq) (*proto1.Wallets, error) {
+func (UnimplementedFunctionsServiceServer) WalletsBalance(context.Context, *WalletsBalanceReq) (*proto.Wallets, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method WalletsBalance not implemented")
 }
-func (UnimplementedFunctionsServiceServer) NewOrder(context.Context, *NewOrderReq) (*proto2.Order, error) {
+func (UnimplementedFunctionsServiceServer) NewOrder(context.Context, *NewOrderReq) (*proto1.Order, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewOrder not implemented")
 }
-func (UnimplementedFunctionsServiceServer) CancelOrder(context.Context, *CancelOrderReq) (*proto2.Order, error) {
+func (UnimplementedFunctionsServiceServer) CancelOrder(context.Context, *CancelOrderReq) (*proto1.Order, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelOrder not implemented")
 }
-func (UnimplementedFunctionsServiceServer) OrderStatus(context.Context, *OrderStatusReq) (*proto2.Order, error) {
+func (UnimplementedFunctionsServiceServer) OrderStatus(context.Context, *OrderStatusReq) (*proto1.Order, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method OrderStatus not implemented")
 }
 
@@ -202,7 +201,7 @@ func RegisterFunctionsServiceServer(s grpc.ServiceRegistrar, srv FunctionsServic
 }
 
 func _FunctionsService_AsyncOHLC_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OHLCReq)
+	in := new(AsyncOHLCReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -214,7 +213,7 @@ func _FunctionsService_AsyncOHLC_Handler(srv interface{}, ctx context.Context, d
 		FullMethod: "/coreApi.FunctionsService/AsyncOHLC",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FunctionsServiceServer).AsyncOHLC(ctx, req.(*OHLCReq))
+		return srv.(FunctionsServiceServer).AsyncOHLC(ctx, req.(*AsyncOHLCReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -10,7 +10,7 @@ import "api/proto/src/misc.proto";
 
 service FunctionsService {
   //without authentication
-  rpc AsyncOHLC(OHLCReq) returns (api.Void);
+  rpc AsyncOHLC(AsyncOHLCReq) returns (AsyncOHLCResp);
   rpc OHLC(OHLCReq) returns (chipmunkApi.Candles);
   rpc AllMarketStatistics(AllMarketStatisticsReq) returns (AllMarketStatisticsResp);
   rpc SingleMarketStatistics(MarketStatisticsReq) returns (MarketStatistics);
@@ -23,7 +23,7 @@ service FunctionsService {
   rpc OrderStatus(OrderStatusReq) returns (eagleApi.Order);
 }
 
-message OHLCReq{
+message OHLCItem {
   // @inject_tag: json:"resolution"
   chipmunkApi.Resolution Resolution = 1;
   // @inject_tag: json:"market"
@@ -38,6 +38,21 @@ message OHLCReq{
   int64 Timeout = 6;
   // @inject_tag: json:"issue_time"
   int64 IssueTime = 7;
+}
+
+message OHLCReq{
+  // @inject_tag: json:"item"
+  OHLCItem Item = 1;
+}
+
+message AsyncOHLCReq{
+  // @inject_tag: json:"items"
+  repeated OHLCItem Items = 1;
+}
+
+message AsyncOHLCResp{
+  // @inject_tag: json:"last_request_id"
+  string LastRequestID = 1;
 }
 
 message AllMarketStatisticsReq {

@@ -37,8 +37,13 @@ func NewResponse(configs *Configs, isAsync bool) (*Response, error) {
 }
 
 func (r *Response) AsyncOHLC(_ context.Context, response *networkAPI.Response, metadata *brokerages.Metadata) {
+	message := &chipmunkApi.CandlesAsyncUpdate{
+		MarketID:    "",
+		ReferenceID: response.ReferenceID,
+	}
 	if response.Code != http.StatusOK {
 		log.Errorf("ohlc request failed with code: %v - %v", response.Code, response.Body)
+		message.Error = response.Body
 		return
 	}
 	data := make([][]interface{}, 0)
@@ -61,10 +66,9 @@ func (r *Response) AsyncOHLC(_ context.Context, response *networkAPI.Response, m
 		c.MarketID = metadata.MarketID
 		candles = append(candles, c)
 	}
-	message := &chipmunkApi.Candles{
-		Elements: candles,
-		Count:    int64(len(candles)),
-	}
+
+	message.Candles = candles
+
 	if message.Count > 0 {
 		bytes, err := proto.Marshal(message)
 		if err != nil {

@@ -3,6 +3,7 @@ package candles
 import (
 	"context"
 	api "github.com/h-varmazyar/Gate/api/proto"
+	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/repository"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/workers"
@@ -10,12 +11,15 @@ import (
 	marketService "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/service"
 	resolutionService "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/resolutions/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/db"
+	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	log "github.com/sirupsen/logrus"
 )
 
 type App struct {
-	Service *service.Service
-	logger  *log.Logger
+	Service          *service.Service
+	logger           *log.Logger
+	db               repository.CandleRepository
+	functionsService coreApi.FunctionsServiceClient
 }
 
 type AppDependencies struct {
@@ -37,8 +41,11 @@ func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs Configs,
 		return nil, err
 	}
 
+	coreConn := grpcext.NewConnection(configs.WorkerConfigs.CoreAddress)
 	app := &App{
-		logger: logger,
+		logger:           logger,
+		db:               repositoryInstance,
+		functionsService: coreApi.NewFunctionsServiceClient(coreConn),
 	}
 
 	holder, err := app.initializeWorkers(ctx, configs.WorkerConfigs, repositoryInstance)

@@ -26,7 +26,7 @@ func NewRedundantRemover(_ context.Context, db repository.CandleRepository, conf
 	}
 }
 
-func (w *RedundantRemover) Start(runners []*Runner) {
+func (w *RedundantRemover) Start(runners map[string]*Runner) {
 	if !w.Started {
 		w.logger.Infof("starting redundant worker")
 		w.ctx, w.cancelFunc = context.WithCancel(context.Background())
@@ -41,7 +41,7 @@ func (w *RedundantRemover) Stop() {
 	}
 }
 
-func (w *RedundantRemover) run(runners []*Runner) {
+func (w *RedundantRemover) run(runners map[string]*Runner) {
 	ticker := time.NewTicker(w.configs.RedundantRemoverInterval)
 	for {
 		select {

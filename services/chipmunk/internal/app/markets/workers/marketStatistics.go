@@ -4,13 +4,10 @@ import (
 	"context"
 	api "github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	candles "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/repository"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
-	log "github.com/sirupsen/logrus"
 	"sync"
-	"time"
 )
 
 type StatisticsWorker struct {
@@ -39,71 +36,71 @@ func NewStatisticsWorker(_ context.Context, configs *Configs, candlesService *ca
 	}
 }
 
-func (w *StatisticsWorker) Start(platform api.Platform) {
-	w.Stop(platform)
-	cancelContext, cancelFunc := context.WithCancel(context.Background())
-	runner := &Runner{
-		ctx:      cancelContext,
-		platform: platform,
-	}
-	w.lock.Lock()
-	w.cancelFunctions[platform] = cancelFunc
-	w.lock.Unlock()
-	go w.run(runner)
-}
-
-func (w *StatisticsWorker) Stop(platform api.Platform) {
-	w.lock.Lock()
-	defer w.lock.Unlock()
-	if fn, ok := w.cancelFunctions[platform]; ok {
-		fn()
-		delete(w.cancelFunctions, platform)
-	}
-}
-
-func (w *StatisticsWorker) run(runner *Runner) {
-	log.Infof("running market statistics worker for: %v", runner.platform)
-	ticker := time.NewTicker(w.configs.MarketStatisticsWorkerInterval)
-
-	for {
-		select {
-		case <-runner.ctx.Done():
-			ticker.Stop()
-			return
-		case <-ticker.C:
-			start := time.Now()
-			statistics, err := w.functionsService.AllMarketStatistics(runner.ctx, &coreApi.AllMarketStatisticsReq{
-				Platform: runner.platform,
-			})
-			if err != nil {
-				log.WithError(err).Info("market statistics failed")
-				continue
-			}
-
-			tickers := make(map[string]*chipmunkApi.CandleBulkUpdateReqTicker)
-			for marketName, data := range statistics.AllStatistics {
-				market, err := w.db.ReturnByName(runner.platform, marketName)
-				if err != nil {
-					continue
-				}
-				tickers[market.ID.String()] = &chipmunkApi.CandleBulkUpdateReqTicker{
-					Volume: data.Volume,
-					Close:  data.Close,
-					Open:   data.Open,
-					High:   data.High,
-					Low:    data.Low,
-				}
-			}
-
-			//bulkUpdateReq := &chipmunkApi.CandleBulkUpdateReq{
-			//	Platform: runner.platform,
-			//	Date:     statistics.Date,
-			//	Tickers:  tickers,
-			//}
-			//go func() {
-			//	_, err = w.candlesService.BulkUpdate(runner.ctx, bulkUpdateReq)
-			//}()
-			log.Infof("time: %v", time.Now().Sub(start))
-		}
-	}
-}
+//func (w *StatisticsWorker) Start(platform api.Platform) {
+//	w.Stop(platform)
+//	cancelContext, cancelFunc := context.WithCancel(context.Background())
+//	runner := &Runner{
+//		ctx:      cancelContext,
+//		platform: platform,
+//	}
+//	w.lock.Lock()
+//	w.cancelFunctions[platform] = cancelFunc
+//	w.lock.Unlock()
+//	go w.run(runner)
+//}
+//
+//func (w *StatisticsWorker) Stop(platform api.Platform) {
+//	w.lock.Lock()
+//	defer w.lock.Unlock()
+//	if fn, ok := w.cancelFunctions[platform]; ok {
+//		fn()
+//		delete(w.cancelFunctions, platform)
+//	}
+//}
+//
+//func (w *StatisticsWorker) run(runner *Runner) {
+//	log.Infof("running market statistics worker for: %v", runner.platform)
+//	ticker := time.NewTicker(w.configs.MarketStatisticsWorkerInterval)
+//
+//	for {
+//		select {
+//		case <-runner.ctx.Done():
+//			ticker.Stop()
+//			return
+//		case <-ticker.C:
+//			start := time.Now()
+//			statistics, err := w.functionsService.AllMarketStatistics(runner.ctx, &coreApi.AllMarketStatisticsReq{
+//				Platform: runner.platform,
+//			})
+//			if err != nil {
+//				log.WithError(err).Info("market statistics failed")
+//				continue
+//			}
+//
+//			tickers := make(map[string]*chipmunkApi.CandleBulkUpdateReqTicker)
+//			for marketName, data := range statistics.AllStatistics {
+//				market, err := w.db.ReturnByName(runner.platform, marketName)
+//				if err != nil {
+//					continue
+//				}
+//				tickers[market.ID.String()] = &chipmunkApi.CandleBulkUpdateReqTicker{
+//					Volume: data.Volume,
+//					Close:  data.Close,
+//					Open:   data.Open,
+//					High:   data.High,
+//					Low:    data.Low,
+//				}
+//			}
+//
+//			//bulkUpdateReq := &chipmunkApi.CandleBulkUpdateReq{
+//			//	Platform: runner.platform,
+//			//	Date:     statistics.Date,
+//			//	Tickers:  tickers,
+//			//}
+//			//go func() {
+//			//	_, err = w.candlesService.BulkUpdate(runner.ctx, bulkUpdateReq)
+//			//}()
+//			log.Infof("time: %v", time.Now().Sub(start))
+//		}
+//	}
+//}

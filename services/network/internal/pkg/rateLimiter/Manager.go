@@ -84,7 +84,7 @@ func NewManager(ctx context.Context, Limiters []*networkAPI.RateLimiter, IPs []*
 			RequestCountLimit: limiter.RequestCountLimit,
 			TimeLimit:         time.Duration(limiter.TimeLimit),
 			Type:              limiter.Type,
-			RequestChannel:    make(chan *networkAPI.Request, 1000000),
+			RequestChannel:    make(chan *Request, 1000000),
 		}
 		manager.assignLimiterToIPs(tmpLimiter)
 		manager.Limiters[limiterID] = tmpLimiter
@@ -103,23 +103,12 @@ func (m *Manager) getDefaultLimiter() *networkAPI.RateLimiter {
 	return defaultLimiter
 }
 
-func (m *Manager) AddNewRequest(ctx context.Context, request *networkAPI.Request) error {
-	var limiterID uuid.UUID
-	if request.RateLimiterID != "" {
-		var err error
-		limiterID, err = uuid.Parse(request.RateLimiterID)
-		if err != nil {
-			log.WithError(err).Errorf("invalid rate limiter id %v", request.RateLimiterID)
-			return err
-		}
-	} else {
-		limiterID = m.defaultLimiterID
+func (m *Manager) AddNewRequest(ctx context.Context, rateLimiterID string, request *Request) error {
+	limiter, err := m.prepareLimiterForNewRequest(ctx, rateLimiterID)
+	if err != nil {
+		return err
 	}
-	_, ok := m.Limiters[limiterID]
-	if !ok {
-		return errors.New(ctx, codes.NotFound).AddDetails("rate limiter with id %v not found", limiterID.String())
-	}
-	m.Limiters[limiterID].RequestChannel <- request
+	limiter.RequestChannel <- request
 	return nil
 }
 
@@ -151,4 +140,23 @@ func (m *Manager) assignLimiterToIPs(limiter *Limiter) {
 			}
 		}(ip)
 	}
+}
+
+func (m *Manager) prepareLimiterForNewRequest(ctx context.Context, rateLimiterID string) (*Limiter, error) {
+	var limiterID uuid.UUID
+	if rateLimiterID != "" {
+		var err error
+		limiterID, err = uuid.Parse(rateLimiterID)
+		if err != nil {
+			log.WithError(err).Errorf("invalid rate limiter id %v", rateLimiterID)
+			return nil, err
+		}
+	} else {
+		limiterID = m.defaultLimiterID
+	}
+	_, ok := m.Limiters[limiterID]
+	if !ok {
+		return nil, errors.New(ctx, codes.NotFound).AddDetails("rate limiter with id %v not found", limiterID.String())
+	}
+	return m.Limiters[limiterID], nil
 }
