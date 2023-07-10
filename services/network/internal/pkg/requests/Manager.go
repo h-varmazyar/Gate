@@ -1,4 +1,4 @@
-package rateLimiter
+package requests
 
 import (
 	"context"
@@ -17,6 +17,8 @@ import (
 type Manager struct {
 	Limiters         map[uuid.UUID]*Limiter
 	IPs              map[uuid.UUID]*IP
+	buckets          map[uuid.UUID]*Bucket
+	responseChan     chan *BucketResponse
 	cancelFunctions  map[uuid.UUID]context.CancelFunc
 	lock             *sync.Mutex
 	defaultLimiterID uuid.UUID
@@ -28,6 +30,8 @@ func NewManager(ctx context.Context, Limiters []*networkAPI.RateLimiter, IPs []*
 	manager.IPs = make(map[uuid.UUID]*IP)
 	manager.cancelFunctions = make(map[uuid.UUID]context.CancelFunc)
 	manager.lock = new(sync.Mutex)
+	manager.buckets = make(map[uuid.UUID]*Bucket)
+	manager.responseChan = make(chan *BucketResponse, 1000000)
 
 	for _, ip := range IPs {
 		proxyAddress := ""
@@ -46,13 +50,14 @@ func NewManager(ctx context.Context, Limiters []*networkAPI.RateLimiter, IPs []*
 		}
 		ipCtx, cancelFunc := context.WithCancel(ctx)
 		manager.IPs[ipID] = &IP{
-			ID:       ipID,
-			Address:  ip.Address,
-			Username: ip.Username,
-			Password: ip.Password,
-			Port:     uint16(ip.Port),
-			ProxyURL: proxyURL,
-			ctx:      ipCtx,
+			ID:           ipID,
+			Address:      ip.Address,
+			Username:     ip.Username,
+			Password:     ip.Password,
+			Port:         uint16(ip.Port),
+			ProxyURL:     proxyURL,
+			ctx:          ipCtx,
+			responseChan: manager.responseChan,
 		}
 		manager.cancelFunctions[ipID] = cancelFunc
 	}
@@ -62,8 +67,9 @@ func NewManager(ctx context.Context, Limiters []*networkAPI.RateLimiter, IPs []*
 		id := uuid.New()
 
 		manager.IPs[id] = &IP{
-			ID:  id,
-			ctx: ipCtx,
+			ID:           id,
+			ctx:          ipCtx,
+			responseChan: manager.responseChan,
 		}
 
 		manager.cancelFunctions[id] = cancelFunc
@@ -84,11 +90,14 @@ func NewManager(ctx context.Context, Limiters []*networkAPI.RateLimiter, IPs []*
 			RequestCountLimit: limiter.RequestCountLimit,
 			TimeLimit:         time.Duration(limiter.TimeLimit),
 			Type:              limiter.Type,
-			RequestChannel:    make(chan *Request, 1000000),
+			RequestChannel:    make(chan *BucketRequest, 1000000),
 		}
 		manager.assignLimiterToIPs(tmpLimiter)
 		manager.Limiters[limiterID] = tmpLimiter
 	}
+
+	go manager.listenToResponses()
+
 	return manager, nil
 }
 func (m *Manager) getDefaultLimiter() *networkAPI.RateLimiter {
@@ -103,12 +112,41 @@ func (m *Manager) getDefaultLimiter() *networkAPI.RateLimiter {
 	return defaultLimiter
 }
 
-func (m *Manager) AddNewRequest(ctx context.Context, rateLimiterID string, request *Request) error {
-	limiter, err := m.prepareLimiterForNewRequest(ctx, rateLimiterID)
-	if err != nil {
-		return err
+//func (m *Manager) AddNewRequest(ctx context.Context, rateLimiterID string, request *Request) error {
+//	limiter, err := m.prepareLimiterForNewRequest(ctx, rateLimiterID)
+//	if err != nil {
+//		return err
+//	}
+//	limiter.RequestChannel <- request
+//	return nil
+//}
+
+func (m *Manager) AddNewBucket(ctx context.Context, callbackQueue, referenceID string, request []*networkAPI.Request) error {
+	bucket := &Bucket{
+		ID:            uuid.New(),
+		CallbackQueue: callbackQueue,
+		ReferenceID:   referenceID,
 	}
-	limiter.RequestChannel <- request
+
+	for _, req := range request {
+		bucket.Requests = append(bucket.Requests, &BucketRequest{
+			Request:  req,
+			BucketID: bucket.ID,
+		})
+	}
+
+	m.lock.Lock()
+	m.buckets[bucket.ID] = bucket
+	m.lock.Unlock()
+
+	for _, req := range bucket.Requests {
+		limiter, err := m.prepareLimiterForNewRequest(ctx, req.Request.RateLimiterID)
+		if err != nil {
+			return err
+		}
+		limiter.RequestChannel <- req
+	}
+
 	return nil
 }
 
@@ -159,4 +197,15 @@ func (m *Manager) prepareLimiterForNewRequest(ctx context.Context, rateLimiterID
 		return nil, errors.New(ctx, codes.NotFound).AddDetails("rate limiter with id %v not found", limiterID.String())
 	}
 	return m.Limiters[limiterID], nil
+}
+
+func (m *Manager) listenToResponses() {
+	for response := range m.responseChan {
+		bucket, ok := m.buckets[response.BucketID]
+		if !ok {
+			log.Errorf("bucket not found")
+			continue
+		}
+		bucket.addResponse(context.Background(), response)
+	}
 }

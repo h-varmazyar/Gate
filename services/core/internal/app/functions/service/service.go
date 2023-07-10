@@ -45,17 +45,17 @@ func (s *Service) RegisterServer(server *grpc.Server) {
 }
 
 func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.AsyncOHLCReq) (*coreApi.AsyncOHLCResp, error) {
-	referenceID := ""
-	requests := make([]*networkAPI.Request, 0)
+	var (
+		err         error
+		request     *networkAPI.Request
+		referenceID = uuid.New()
+		requests    = make([]*networkAPI.Request, 0)
+	)
+
 	for _, item := range req.Items {
 		brokerageRequests := loadRequest(s.configs, &coreApi.Brokerage{Platform: item.Platform})
 
 		from := time.Unix(item.From, 0)
-
-		var (
-			err     error
-			request *networkAPI.Request
-		)
 
 		for end := false; !end; {
 			to := from.Add(time.Duration(item.Resolution.Duration) * 999)
@@ -80,7 +80,6 @@ func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.AsyncOHLCReq) (*co
 				s.logger.WithError(err).Error("failed to create async OHLC")
 				return nil, err
 			}
-			request.Type = networkAPI.Request_Async
 			request.Timeout = item.Timeout
 			request.IssueTime = item.IssueTime
 			request.ReferenceID = uuid.New().String()
@@ -89,7 +88,14 @@ func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.AsyncOHLCReq) (*co
 		}
 	}
 
-	return &coreApi.AsyncOHLCResp{LastRequestID: referenceID}, nil
+	s.requestService.DoAsync(ctx, &networkAPI.DoAsyncReq{
+		Requests:      requests,
+		CallbackQueue: s.configs.CoinexCallbackQueue,
+		RateLimiterID: "",
+		ReferenceID:   referenceID.String(),
+	})
+
+	return &coreApi.AsyncOHLCResp{LastRequestID: referenceID.String()}, nil
 }
 
 func (s *Service) AllMarketStatistics(ctx context.Context, req *coreApi.AllMarketStatisticsReq) (*coreApi.AllMarketStatisticsResp, error) {
@@ -102,8 +108,6 @@ func (s *Service) AllMarketStatistics(ctx context.Context, req *coreApi.AllMarke
 	if err != nil {
 		return nil, err
 	}
-
-	request.Type = networkAPI.Request_Sync
 
 	networkResponse, err := s.doNetworkRequest(request)
 	if err != nil {
@@ -131,8 +135,6 @@ func (s *Service) GetMarketInfo(ctx context.Context, req *coreApi.MarketInfoReq)
 	if err != nil {
 		return nil, err
 	}
-
-	request.Type = networkAPI.Request_Sync
 
 	networkResponse, err := s.doNetworkRequest(request)
 	if err != nil {

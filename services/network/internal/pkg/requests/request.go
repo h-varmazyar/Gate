@@ -28,7 +28,7 @@ type Request struct {
 	metadata    string
 }
 
-func New(input *networkAPI.Request, proxyURL *url.URL) (*Request, error) {
+func NewNetworkRequest(input *networkAPI.Request, proxyURL *url.URL) (*Request, error) {
 	requestTransport := new(http.Transport)
 
 	if proxyURL != nil {

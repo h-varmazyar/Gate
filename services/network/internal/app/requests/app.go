@@ -6,7 +6,7 @@ import (
 	ipService "github.com/h-varmazyar/Gate/services/network/internal/app/IPs/service"
 	rateLimiterService "github.com/h-varmazyar/Gate/services/network/internal/app/rateLimiters/service"
 	"github.com/h-varmazyar/Gate/services/network/internal/app/requests/service"
-	"github.com/h-varmazyar/Gate/services/network/internal/pkg/rateLimiter"
+	"github.com/h-varmazyar/Gate/services/network/internal/pkg/requests"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -25,8 +25,8 @@ func NewApp(ctx context.Context, logger *log.Logger, rateLimiterService *rateLim
 		return nil, err
 	}
 
-	var rateLimiterManager *rateLimiter.Manager
-	if rateLimiterManager, err = rateLimiter.NewManager(ctx, limiters.Elements, ips.Elements); err != nil {
+	var rateLimiterManager *requests.Manager
+	if rateLimiterManager, err = requests.NewManager(ctx, limiters.Elements, ips.Elements); err != nil {
 		return nil, err
 	}
 	return &App{

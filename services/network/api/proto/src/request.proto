@@ -49,6 +49,8 @@ message Request {
   int64 IssueTime = 10;
   // @inject_tag: json:"reference_id"
   string ReferenceID = 11;
+  // @inject_tag: json:"rate_limiter_id"
+  string RateLimiterID = 12;
 }
 
 message DoAsyncReq {
@@ -56,8 +58,6 @@ message DoAsyncReq {
   repeated Request Requests = 1;
   // @inject_tag: json:"callback_queue"
   string CallbackQueue = 2;
-  // @inject_tag: json:"rate_limiter_id"
-  string RateLimiterID = 3;
   // @inject_tag: json:"reference_id"
   string ReferenceID = 4;
 }
@@ -73,4 +73,11 @@ message Response {
   Request.method Method = 4;
   // @inject_tag: json:"reference_id"
   string ReferenceID = 5;
+}
+
+message AsyncResponses {
+  // @inject_tag: json:"responses"
+  repeated Response Responses = 1;
+  // @inject_tag: json:"reference_id"
+  string ReferenceID = 2;
 }
