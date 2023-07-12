@@ -2,11 +2,9 @@ package coinex
 
 import (
 	"context"
-	"github.com/golang/protobuf/proto"
+	"encoding/json"
 	api "github.com/h-varmazyar/Gate/api/proto"
-	"github.com/h-varmazyar/Gate/pkg/amqpext"
 	"github.com/h-varmazyar/Gate/pkg/errors"
-	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
@@ -18,69 +16,64 @@ import (
 )
 
 type Response struct {
-	configs   *Configs
-	ohlcQueue *amqpext.Queue
 }
 
-func NewResponse(configs *Configs, isAsync bool) (*Response, error) {
-	r := &Response{
-		configs: configs,
-	}
-	if isAsync {
-		ohlcQueue, err := amqpext.Client.QueueDeclare(configs.ChipmunkOHLCQueue)
-		if err != nil {
-			return nil, err
-		}
-		r.ohlcQueue = ohlcQueue
-	}
+func NewResponse() (*Response, error) {
+	r := &Response{}
 	return r, nil
 }
 
-func (r *Response) AsyncOHLC(_ context.Context, response *networkAPI.Response, metadata *brokerages.Metadata) {
-	message := &chipmunkApi.CandlesAsyncUpdate{
-		MarketID:    "",
-		ReferenceID: response.ReferenceID,
-	}
-	if response.Code != http.StatusOK {
-		log.Errorf("ohlc request failed with code: %v - %v", response.Code, response.Body)
-		message.Error = response.Body
-		return
-	}
-	data := make([][]interface{}, 0)
-	if err := parseResponse(response.Body, &data); err != nil {
-		log.WithError(err).Errorf("ohlc request parse failed: %v", response.Body)
-		return
+func (r *Response) AsyncOHLC(_ context.Context, responses *networkAPI.AsyncResponses) *coreApi.OHLCResponse {
+	message := &coreApi.OHLCResponse{
+		Items:    make([]*coreApi.OHLCResponseItem, 0),
+		Platform: api.Platform_Coinex,
 	}
 
-	candles := make([]*chipmunkApi.Candle, 0)
-	for _, item := range data {
-		c := new(chipmunkApi.Candle)
-		c.Time = int64(item[0].(float64))
-		c.Open, _ = strconv.ParseFloat(item[1].(string), 64)
-		c.Close, _ = strconv.ParseFloat(item[2].(string), 64)
-		c.High, _ = strconv.ParseFloat(item[3].(string), 64)
-		c.Low, _ = strconv.ParseFloat(item[4].(string), 64)
-		c.Volume, _ = strconv.ParseFloat(item[5].(string), 64)
-		c.Amount, _ = strconv.ParseFloat(item[6].(string), 64)
-		c.ResolutionID = metadata.ResolutionID
-		c.MarketID = metadata.MarketID
-		candles = append(candles, c)
-	}
-
-	message.Candles = candles
-
-	if message.Count > 0 {
-		bytes, err := proto.Marshal(message)
-		if err != nil {
-			log.WithError(err).Errorf("faled to marshal coinex async ohls message")
-			return
+	for _, response := range responses.Responses {
+		metadata := new(brokerages.Metadata)
+		item := new(coreApi.OHLCResponseItem)
+		if err := json.Unmarshal([]byte(response.Metadata), metadata); err != nil {
+			log.WithError(err).Error("failed to unmarshal coinex callback delivery")
+			item.Error = err.Error()
+			message.Items = append(message.Items, item)
+			continue
 		}
-		err = r.ohlcQueue.Publish(bytes, grpcext.ProtobufContentType)
-		if err != nil {
-			log.WithError(err).Errorf("faled to publish coinex async ohlc")
-			return
+		if metadata.Platform != api.Platform_Coinex {
+			item.Error = "invalid platform"
+			message.Items = append(message.Items, item)
+			continue
 		}
+		if response.Code != http.StatusOK {
+			log.Errorf("ohlc request failed with code: %v - %v", response.Code, response.Body)
+			item.Error = response.Body
+			message.Items = append(message.Items, item)
+			continue
+		}
+		data := make([][]interface{}, 0)
+		if err := parseResponse(response.Body, &data); err != nil {
+			log.WithError(err).Errorf("ohlc request parse failed: %v", response.Body)
+			item.Error = err.Error()
+			message.Items = append(message.Items, item)
+			continue
+		}
+		item.Candles = make([]*coreApi.OHLCResponseItem_Candle, 0)
+		for _, candle := range data {
+			c := new(coreApi.OHLCResponseItem_Candle)
+			c.Time = int64(candle[0].(float64))
+			c.Open, _ = strconv.ParseFloat(candle[1].(string), 64)
+			c.Close, _ = strconv.ParseFloat(candle[2].(string), 64)
+			c.High, _ = strconv.ParseFloat(candle[3].(string), 64)
+			c.Low, _ = strconv.ParseFloat(candle[4].(string), 64)
+			c.Volume, _ = strconv.ParseFloat(candle[5].(string), 64)
+			c.Amount, _ = strconv.ParseFloat(candle[6].(string), 64)
+			item.Candles = append(item.Candles, c)
+		}
+		item.ResolutionID = metadata.ResolutionID
+		item.MarketID = metadata.MarketID
+
+		message.Items = append(message.Items, item)
 	}
+	return message
 }
 
 func (r *Response) AllMarkerStatistics(ctx context.Context, response *networkAPI.Response) (*coreApi.AllMarketStatisticsResp, error) {

@@ -32,8 +32,6 @@ message OHLCItem {
   int64 From = 3;
   // @inject_tag: json:"to"
   int64 To = 4;
-  // @inject_tag: json:"platform"
-  api.Platform Platform = 5;
   // @inject_tag: json:"timeout"
   int64 Timeout = 6;
   // @inject_tag: json:"issue_time"
@@ -43,11 +41,49 @@ message OHLCItem {
 message OHLCReq{
   // @inject_tag: json:"item"
   OHLCItem Item = 1;
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 2;
 }
 
 message AsyncOHLCReq{
   // @inject_tag: json:"items"
   repeated OHLCItem Items = 1;
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 2;
+}
+
+message OHLCResponse{
+  // @inject_tag: json:"items"
+  repeated OHLCResponseItem Items = 1;
+  // @inject_tag: json:"platform"
+  api.Platform Platform = 2;
+}
+
+message OHLCResponseItem{
+  message Candle{
+    // @inject_tag: json:"volume"
+    double Volume = 3;
+    // @inject_tag: json:"amount"
+    double Amount = 4;
+    // @inject_tag: json:"close"
+    double Close = 5;
+    // @inject_tag: json:"open"
+    double Open = 6;
+    // @inject_tag: json:"time"
+    int64 Time = 7;
+    // @inject_tag: json:"high"
+    double High = 8;
+    // @inject_tag: json:"low"
+    double Low = 9;
+  }
+  // @inject_tag: json:"candles"
+  repeated Candle Candles = 1;
+  // @inject_tag: json:"market_id"
+  string MarketID = 2;
+  // @inject_tag: json:"resolution_id"
+  string ResolutionID = 3;
+  // @inject_tag: json:"error"
+  string Error = 4;
 }
 
 message AsyncOHLCResp{

@@ -39,7 +39,6 @@ func (r *Requests) AsyncOHLC(_ context.Context, inputs *brokerages.OHLCParams) (
 
 	request := new(networkAPI.Request)
 	request.Method = networkAPI.Request_GET
-	request.CallbackQueue = r.configs.NobitexCallbackQueue
 	resolutionSeconds := inputs.Resolution.Duration
 	count := int64(inputs.To.Sub(inputs.From)) / resolutionSeconds
 	if (int64(inputs.To.Sub(inputs.From)) % resolutionSeconds) > 0 {

@@ -3,12 +3,14 @@ package service
 import (
 	"context"
 	"github.com/google/uuid"
+	api "github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	brokeragesService "github.com/h-varmazyar/Gate/services/core/internal/app/brokerages/service"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages"
+	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages/coinex"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api/proto"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
@@ -53,7 +55,7 @@ func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.AsyncOHLCReq) (*co
 	)
 
 	for _, item := range req.Items {
-		brokerageRequests := loadRequest(s.configs, &coreApi.Brokerage{Platform: item.Platform})
+		brokerageRequests := loadRequest(s.configs, &coreApi.Brokerage{Platform: req.Platform})
 
 		from := time.Unix(item.From, 0)
 
@@ -88,12 +90,20 @@ func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.AsyncOHLCReq) (*co
 		}
 	}
 
-	s.requestService.DoAsync(ctx, &networkAPI.DoAsyncReq{
+	callbackQueue := ""
+	switch req.Platform {
+	case api.Platform_Coinex:
+		callbackQueue = coinex.QueueOHLC
+	}
+
+	_, err = s.requestService.DoAsync(ctx, &networkAPI.DoAsyncReq{
 		Requests:      requests,
-		CallbackQueue: s.configs.CoinexCallbackQueue,
-		RateLimiterID: "",
+		CallbackQueue: callbackQueue,
 		ReferenceID:   referenceID.String(),
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	return &coreApi.AsyncOHLCResp{LastRequestID: referenceID.String()}, nil
 }
