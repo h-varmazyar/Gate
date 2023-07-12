@@ -10,7 +10,6 @@ import (
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages/coinex"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	"google.golang.org/grpc/codes"
-	"time"
 )
 
 func loadRequest(configs *Configs, brokerage *coreApi.Brokerage) brokerages.Requests {
@@ -32,10 +31,10 @@ func loadRequest(configs *Configs, brokerage *coreApi.Brokerage) brokerages.Requ
 	return nil
 }
 
-func loadResponse(configs *Configs, brokerage *coreApi.Brokerage) (brokerages.Responses, error) {
+func loadResponse(_ *Configs, brokerage *coreApi.Brokerage) (brokerages.Responses, error) {
 	switch brokerage.Platform {
 	case api.Platform_Coinex:
-		return coinex.NewResponse(configs.Coinex, false)
+		return coinex.NewResponse()
 		//case api.Platform_Nobitex:
 		//return nil, nobitex.NewResponse(configs.Nobitex, false)
 	}
@@ -66,10 +65,10 @@ func (s *Service) doNetworkRequest(request *networkAPI.Request) (*networkAPI.Res
 
 func (s *Service) createOHLCParams(req *coreApi.OHLCReq) *brokerages.OHLCParams {
 	return &brokerages.OHLCParams{
-		Resolution: req.Resolution,
-		Market:     req.Market,
-		From:       time.Unix(req.From, 0),
-		To:         time.Unix(req.To, 0),
+		//Resolution: req.Resolution,
+		//Market:     req.Market,
+		//From:       time.Unix(req.From, 0),
+		//To:         time.Unix(req.To, 0),
 	}
 }
 

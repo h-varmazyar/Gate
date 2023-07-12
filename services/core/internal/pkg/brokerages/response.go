@@ -8,7 +8,7 @@ import (
 )
 
 type Responses interface {
-	AsyncOHLC(ctx context.Context, response *networkAPI.Response, metadata *Metadata)
+	AsyncOHLC(ctx context.Context, response *networkAPI.AsyncResponses) *coreApi.OHLCResponse
 	AllMarkerStatistics(ctx context.Context, response *networkAPI.Response) (*coreApi.AllMarketStatisticsResp, error)
 	GetMarketInfo(ctx context.Context, response *networkAPI.Response) (*coreApi.MarketInfo, error)
 	WalletsBalance(ctx context.Context, response *networkAPI.Response) (*chipmunkApi.Wallets, error)

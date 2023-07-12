@@ -11,7 +11,6 @@ import (
 	"github.com/h-varmazyar/Gate/services/core/internal/app/brokerages"
 	"github.com/h-varmazyar/Gate/services/core/internal/app/functions"
 	"github.com/h-varmazyar/Gate/services/core/internal/app/platforms"
-	"github.com/h-varmazyar/Gate/services/core/internal/pkg/brokerages/coinex"
 	"github.com/h-varmazyar/Gate/services/core/internal/pkg/db"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -40,10 +39,6 @@ func main() {
 
 	if err = amqpext.InitializeAMQP(conf.AMQPConfigs); err != nil {
 		logger.Panicf("failed to initialize amqp: %v", err)
-	}
-
-	if err = initializeAsyncHandlers(conf); err != nil {
-		logger.WithError(err).Panicf("failed to initialize async handlers")
 	}
 
 	initializeAndRegisterApps(ctx, logger, dbInstance, conf)
@@ -91,14 +86,6 @@ func loadConfigs(defaultConfig bool) (*Configs, error) {
 
 func loadDB(ctx context.Context, configs gormext.Configs) (*db.DB, error) {
 	return db.NewDatabase(ctx, configs)
-}
-
-func initializeAsyncHandlers(configs *Configs) error {
-	if err := coinex.ListenCallbacks(configs.CoinexConfigs); err != nil {
-		log.WithError(err).Error("failed to initialize coinex callback listener")
-		return err
-	}
-	return nil
 }
 
 func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstance *db.DB, configs *Configs) {
