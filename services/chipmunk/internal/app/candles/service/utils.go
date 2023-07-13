@@ -66,6 +66,7 @@ func (s *Service) prepareLocalCandles(market *chipmunkApi.Market, resolution *ch
 	} else {
 		from = time.Unix(market.IssueDate, 0)
 	}
+
 	return from, nil
 }
 
