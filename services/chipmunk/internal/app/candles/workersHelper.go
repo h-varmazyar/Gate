@@ -14,6 +14,7 @@ import (
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	"sync"
 	"time"
+	"unsafe"
 )
 
 func (app *App) initializeWorkers(ctx context.Context, configs *workers.Configs, repositoryInstance repository.CandleRepository) error {
@@ -270,7 +271,7 @@ func (app *App) makePrimaryDataRequests(platformPairs *workers.PlatformPairs, in
 			lock.Lock()
 			defer lock.Unlock()
 			items = append(items, item)
-			if len(items) == 100 {
+			if unsafe.Sizeof(items) > 10*1024*1024 {
 				asyncResp, err := app.functionsService.AsyncOHLC(context.Background(), &coreApi.AsyncOHLCReq{
 					Items:    items,
 					Platform: platformPairs.Platform,
@@ -281,6 +282,7 @@ func (app *App) makePrimaryDataRequests(platformPairs *workers.PlatformPairs, in
 				}
 				app.logger.Infof("create new bulk request with id %v for %v. estimated execution time: %v", asyncResp.LastRequestID, platformPairs.Platform, time.Duration(asyncResp.PredictedIntervalTime))
 				predictedInterval += asyncResp.PredictedIntervalTime
+				items = nil
 				items = make([]*coreApi.OHLCItem, 0)
 			}
 		}(pair)
