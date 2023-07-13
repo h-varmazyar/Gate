@@ -89,6 +89,8 @@ message OHLCResponseItem{
 message AsyncOHLCResp{
   // @inject_tag: json:"last_request_id"
   string LastRequestID = 1;
+  // @inject_tag: json:"predicted_interval_time"
+  int64 predicted_interval_time = 2;
 }
 
 message AllMarketStatisticsReq {

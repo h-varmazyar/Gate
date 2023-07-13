@@ -8,7 +8,6 @@ package proto
 
 import (
 	context "context"
-	proto "github.com/h-varmazyar/Gate/api/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -24,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RequestServiceClient interface {
 	Do(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
-	DoAsync(ctx context.Context, in *DoAsyncReq, opts ...grpc.CallOption) (*proto.Void, error)
+	DoAsync(ctx context.Context, in *DoAsyncReq, opts ...grpc.CallOption) (*DoAsyncResp, error)
 }
 
 type requestServiceClient struct {
@@ -44,8 +43,8 @@ func (c *requestServiceClient) Do(ctx context.Context, in *Request, opts ...grpc
 	return out, nil
 }
 
-func (c *requestServiceClient) DoAsync(ctx context.Context, in *DoAsyncReq, opts ...grpc.CallOption) (*proto.Void, error) {
-	out := new(proto.Void)
+func (c *requestServiceClient) DoAsync(ctx context.Context, in *DoAsyncReq, opts ...grpc.CallOption) (*DoAsyncResp, error) {
+	out := new(DoAsyncResp)
 	err := c.cc.Invoke(ctx, "/networkAPI.RequestService/DoAsync", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -58,7 +57,7 @@ func (c *requestServiceClient) DoAsync(ctx context.Context, in *DoAsyncReq, opts
 // for forward compatibility
 type RequestServiceServer interface {
 	Do(context.Context, *Request) (*Response, error)
-	DoAsync(context.Context, *DoAsyncReq) (*proto.Void, error)
+	DoAsync(context.Context, *DoAsyncReq) (*DoAsyncResp, error)
 }
 
 // UnimplementedRequestServiceServer should be embedded to have forward compatible implementations.
@@ -68,7 +67,7 @@ type UnimplementedRequestServiceServer struct {
 func (UnimplementedRequestServiceServer) Do(context.Context, *Request) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Do not implemented")
 }
-func (UnimplementedRequestServiceServer) DoAsync(context.Context, *DoAsyncReq) (*proto.Void, error) {
+func (UnimplementedRequestServiceServer) DoAsync(context.Context, *DoAsyncReq) (*DoAsyncResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DoAsync not implemented")
 }
 

@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	api "github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	ipService "github.com/h-varmazyar/Gate/services/network/internal/app/IPs/service"
@@ -65,7 +64,7 @@ func (s *Service) Do(ctx context.Context, req *networkAPI.Request) (*networkAPI.
 	return response, nil
 }
 
-func (s *Service) DoAsync(ctx context.Context, req *networkAPI.DoAsyncReq) (*api.Void, error) {
+func (s *Service) DoAsync(ctx context.Context, req *networkAPI.DoAsyncReq) (*networkAPI.DoAsyncResp, error) {
 	if req.CallbackQueue == "" {
 		return nil, errors.New(ctx, codes.FailedPrecondition).AddDetails("callback queue can not be empty")
 	}
@@ -76,11 +75,11 @@ func (s *Service) DoAsync(ctx context.Context, req *networkAPI.DoAsyncReq) (*api
 		return nil, errors.New(ctx, codes.FailedPrecondition).AddDetails("empty requests not acceptable")
 	}
 
-	err := s.rateLimiterManager.AddNewBucket(ctx, req.CallbackQueue, req.ReferenceID, req.Requests)
+	totalPredictedInterval, err := s.rateLimiterManager.AddNewBucket(ctx, req.CallbackQueue, req.ReferenceID, req.Requests)
 	if err != nil {
 		s.logger.WithError(err).Errorf("failed to do async request for %v", req)
 		return nil, err
 	}
 
-	return new(api.Void), nil
+	return &networkAPI.DoAsyncResp{PredictedIntervalTime: totalPredictedInterval}, nil
 }

@@ -17,7 +17,8 @@ type CandleRepository interface {
 	BulkHardDelete(candleIDs []uuid.UUID) error
 	BulkInsert(candles []*entity.Candle) error
 	ReturnLast(marketID, resolutionID uuid.UUID) (*entity.Candle, error)
-	ReturnList(marketID, resolutionID uuid.UUID, limit, offset int) ([]*entity.Candle, error)
+	Count(marketID, resolutionID uuid.UUID) (int64, error)
+	List(marketID, resolutionID uuid.UUID, limit, offset int) ([]*entity.Candle, error)
 }
 
 func NewRepository(ctx context.Context, logger *log.Logger, db *db.DB) (CandleRepository, error) {

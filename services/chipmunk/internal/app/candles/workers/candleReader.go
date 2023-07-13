@@ -23,7 +23,6 @@ type CandleReader struct {
 	queue      *amqpext.Queue
 	indicators []indicatorsPkg.Indicator
 	insertChan chan *entity.Candle
-	runners    map[string]*Runner
 }
 
 func NewCandleReaderWorker(_ context.Context, db repository.CandleRepository, configs *Configs, logger *log.Logger) (*CandleReader, error) {
@@ -42,10 +41,9 @@ func NewCandleReaderWorker(_ context.Context, db repository.CandleRepository, co
 	return reader, nil
 }
 
-func (w *CandleReader) Start(runners map[string]*Runner, indicators []indicatorsPkg.Indicator) {
+func (w *CandleReader) Start(indicators []indicatorsPkg.Indicator) {
 	w.logger.Infof("starting candle reader worker...")
 	w.indicators = indicators
-	w.runners = runners
 	handled := int64(0)
 	deliveries := w.queue.Consume(w.configs.PrimaryDataQueue)
 	for i := 0; i < w.configs.ConsumerCount; i++ {
@@ -69,9 +67,6 @@ func (w *CandleReader) handle(delivery amqp.Delivery) {
 		log.WithError(err).Errorf("failed to unmarshal delivery")
 		_ = delivery.Nack(false, false)
 		return
-	}
-	if resp.ReferenceID == w.runners[resp.MarketID].LastEventID {
-		w.runners[resp.MarketID].IsPrimaryCandlesLoaded = true
 	}
 	if resp.Error != "" {
 		w.logger.Errorf("failed to get async candle update resp for market %v: %v", resp.MarketID, resp.Error)

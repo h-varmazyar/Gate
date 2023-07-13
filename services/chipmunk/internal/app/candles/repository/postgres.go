@@ -66,7 +66,15 @@ func (r *candlePostgresRepository) ReturnLast(marketID, resolutionID uuid.UUID) 
 		Order("time desc").First(item).Error
 }
 
-func (r *candlePostgresRepository) ReturnList(marketID, resolutionID uuid.UUID, limit, offset int) ([]*entity.Candle, error) {
+func (r *candlePostgresRepository) Count(marketID, resolutionID uuid.UUID) (int64, error) {
+	count := int64(0)
+	return count, r.db.Model(new(entity.Candle)).
+		Where("market_id = ?", marketID).
+		Where("resolution_id = ?", resolutionID).
+		Count(&count).Error
+}
+
+func (r *candlePostgresRepository) List(marketID, resolutionID uuid.UUID, limit, offset int) ([]*entity.Candle, error) {
 	items := make([]*entity.Candle, 0)
 	return items, r.db.Model(new(entity.Candle)).
 		Where("market_id = ?", marketID).
