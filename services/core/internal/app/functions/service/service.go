@@ -52,6 +52,7 @@ func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.AsyncOHLCReq) (*co
 		request     *networkAPI.Request
 		referenceID = uuid.New()
 		requests    = make([]*networkAPI.Request, 0)
+		resp        *networkAPI.DoAsyncResp
 	)
 
 	for _, item := range req.Items {
@@ -96,7 +97,7 @@ func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.AsyncOHLCReq) (*co
 		callbackQueue = coinex.QueueOHLC
 	}
 
-	_, err = s.requestService.DoAsync(ctx, &networkAPI.DoAsyncReq{
+	resp, err = s.requestService.DoAsync(ctx, &networkAPI.DoAsyncReq{
 		Requests:      requests,
 		CallbackQueue: callbackQueue,
 		ReferenceID:   referenceID.String(),
@@ -105,7 +106,10 @@ func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.AsyncOHLCReq) (*co
 		return nil, err
 	}
 
-	return &coreApi.AsyncOHLCResp{LastRequestID: referenceID.String()}, nil
+	return &coreApi.AsyncOHLCResp{
+		LastRequestID:         referenceID.String(),
+		PredictedIntervalTime: resp.PredictedIntervalTime,
+	}, nil
 }
 
 func (s *Service) AllMarketStatistics(ctx context.Context, req *coreApi.AllMarketStatisticsReq) (*coreApi.AllMarketStatisticsResp, error) {

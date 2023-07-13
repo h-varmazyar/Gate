@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/repository"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	log "github.com/sirupsen/logrus"
 	"time"
 )
@@ -26,11 +27,11 @@ func NewRedundantRemover(_ context.Context, db repository.CandleRepository, conf
 	}
 }
 
-func (w *RedundantRemover) Start(runners map[string]*Runner) {
+func (w *RedundantRemover) Start(platformsPairs []*PlatformPairs) {
 	if !w.Started {
 		w.logger.Infof("starting redundant worker")
 		w.ctx, w.cancelFunc = context.WithCancel(context.Background())
-		go w.run(runners)
+		go w.run(platformsPairs)
 		w.Started = true
 	}
 }
@@ -41,7 +42,7 @@ func (w *RedundantRemover) Stop() {
 	}
 }
 
-func (w *RedundantRemover) run(runners map[string]*Runner) {
+func (w *RedundantRemover) run(platformsPairs []*PlatformPairs) {
 	ticker := time.NewTicker(w.configs.RedundantRemoverInterval)
 	for {
 		select {
@@ -51,8 +52,8 @@ func (w *RedundantRemover) run(runners map[string]*Runner) {
 		case <-ticker.C:
 			w.removedCount = 0
 			w.logger.Infof("prepare removed rateLimiters")
-			for _, runner := range runners {
-				if err := w.removeRedundantCandles(runner); err != nil {
+			for _, platformPairs := range platformsPairs {
+				if err := w.removeRedundantCandles(platformPairs); err != nil {
 					w.logger.WithError(err).Error("failed to prepare remove redundant rateLimiters")
 				}
 			}
@@ -82,26 +83,26 @@ func (w *RedundantRemover) run(runners map[string]*Runner) {
 //	return nil
 //}
 
-func (w *RedundantRemover) removeRedundantCandles(runner *Runner) error {
-	resolutionID, err := uuid.Parse(runner.Resolution.ID)
-	if err != nil {
-		return err
-	}
-	marketID, err := uuid.Parse(runner.Market.ID)
-	if err != nil {
-		return err
-	}
-	candles, err := w.db.ReturnList(marketID, resolutionID, 1000000, 0)
-	if err != nil {
-		return err
-	}
-
+func (w *RedundantRemover) removeRedundantCandles(platformPairs *PlatformPairs) error {
 	ids := make([]uuid.UUID, 0)
-
-	for i := 1; i < len(candles); i++ {
-		if candles[i-1].Time.Equal(candles[i].Time) {
-			ids = append(ids, candles[i-1].ID)
-			w.removedCount++
+	for _, pair := range platformPairs.Pairs {
+		resolutionID, err := uuid.Parse(pair.Resolution.ID)
+		if err != nil {
+			return err
+		}
+		marketID, err := uuid.Parse(pair.Market.ID)
+		if err != nil {
+			return err
+		}
+		candles, err := w.loadCandles(marketID, resolutionID)
+		if err != nil {
+			return err
+		}
+		for i := 1; i < len(candles); i++ {
+			if candles[i-1].Time.Equal(candles[i].Time) {
+				ids = append(ids, candles[i-1].ID)
+				w.removedCount++
+			}
 		}
 	}
 	if len(ids) > 0 {
@@ -116,5 +117,24 @@ func (w *RedundantRemover) removeRedundantCandles(runner *Runner) error {
 			}
 		}
 	}
+
 	return nil
+}
+
+func (w *RedundantRemover) loadCandles(marketID, resolutionID uuid.UUID) ([]*entity.Candle, error) {
+	end := false
+	limit := 1000000
+	candles := make([]*entity.Candle, 0)
+	for offset := 0; !end; offset += limit {
+		list, err := w.db.List(marketID, resolutionID, limit, offset)
+		if err != nil {
+			w.logger.WithError(err).Errorf("failed to fetch candle list")
+			return nil, err
+		}
+		if len(list) < limit {
+			end = true
+		}
+		candles = append(candles, list...)
+	}
+	return candles, nil
 }

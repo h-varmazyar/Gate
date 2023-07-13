@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"github.com/google/uuid"
 	api "github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
@@ -9,7 +8,6 @@ import (
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	indicatorsPkg "github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
-	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	"gorm.io/gorm"
 	"time"
 )
@@ -76,15 +74,15 @@ func (s *Service) loadLocalCandles(marketID, resolutionID uuid.UUID) ([]*entity.
 	limit := 1000000
 	candles := make([]*entity.Candle, 0)
 	for offset := 0; !end; offset += limit {
-		list, err := s.db.ReturnList(marketID, resolutionID, limit, offset)
-		if err != nil {
-			s.logger.WithError(err).Errorf("failed to fetch candle list")
-			return nil, err
-		}
-		if len(list) < limit {
-			end = true
-		}
-		candles = append(candles, list...)
+		//list, err := s.db.ReturnList(marketID, resolutionID, limit, offset)
+		//if err != nil {
+		//	s.logger.WithError(err).Errorf("failed to fetch candle list")
+		//	return nil, err
+		//}
+		//if len(list) < limit {
+		//	end = true
+		//}
+		//candles = append(candles, list...)
 	}
 	return candles, nil
 }
@@ -100,16 +98,16 @@ func (s *Service) calculateIndicators(candles []*entity.Candle, indicators []ind
 }
 
 func (s *Service) makePrimaryDataRequests(platform api.Platform, market *chipmunkApi.Market, resolution *chipmunkApi.Resolution, from time.Time) {
-	_, err := s.functionsService.AsyncOHLC(context.Background(), &coreApi.OHLCReq{
-		Resolution: resolution,
-		Market:     market,
-		From:       from.Unix(),
-		To:         time.Now().Unix(),
-		Platform:   platform,
-	})
-	if err != nil {
-		s.logger.WithError(err).Errorf("failed to create primary async OHLC request %v in resolution %v and Platform %v", market.Name, resolution.Duration, platform)
-	}
+	//_, err := s.functionsService.AsyncOHLC(context.Background(), &coreApi.OHLCReq{
+	//	Resolution: resolution,
+	//	Market:     market,
+	//	From:       from.Unix(),
+	//	To:         time.Now().Unix(),
+	//	Platform:   platform,
+	//})
+	//if err != nil {
+	//	s.logger.WithError(err).Errorf("failed to create primary async OHLC request %v in resolution %v and Platform %v", market.Name, resolution.Duration, platform)
+	//}
 }
 
 func (s *Service) loadIndicators(indicators []*chipmunkApi.Indicator) ([]indicatorsPkg.Indicator, error) {

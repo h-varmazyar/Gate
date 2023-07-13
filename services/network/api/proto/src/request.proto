@@ -1,11 +1,10 @@
 syntax = "proto3";
 package networkAPI;
 option go_package = "github.com/h-varmazyar/Gate/services/network/api/proto";
-import "api/proto/src/misc.proto";
 
 service RequestService {
   rpc Do(Request) returns (Response);
-  rpc DoAsync(DoAsyncReq) returns (api.Void);
+  rpc DoAsync(DoAsyncReq) returns (DoAsyncResp);
 }
 
 message KV {
@@ -60,6 +59,11 @@ message DoAsyncReq {
   string CallbackQueue = 2;
   // @inject_tag: json:"reference_id"
   string ReferenceID = 4;
+}
+
+message DoAsyncResp {
+  // @inject_tag: json:"predicted_interval_time"
+  int64 predicted_interval_time = 1;
 }
 
 message Response {

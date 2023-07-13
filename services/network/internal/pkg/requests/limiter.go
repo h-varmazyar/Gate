@@ -13,3 +13,13 @@ type Limiter struct {
 	Type              networkAPI.RateLimiterType
 	RequestChannel    chan *BucketRequest
 }
+
+func (l *Limiter) IntervalDuration() time.Duration {
+	switch l.Type {
+	case networkAPI.RateLimiter_Spread:
+		return time.Duration(int64(l.TimeLimit) / l.RequestCountLimit)
+	case networkAPI.RateLimiter_Immediate:
+		return 0
+	}
+	return 0
+}

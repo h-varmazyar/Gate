@@ -30,12 +30,12 @@ func NewLastCandles(_ context.Context, db repository.CandleRepository, configs *
 	}
 }
 
-func (w *LastCandles) Start(runners map[string]*Runner) {
+func (w *LastCandles) Start(platformsPairs []*PlatformPairs) {
 	if !w.Started {
 		w.logger.Infof("starting last candle worker")
 		w.ctx, w.cancelFunc = context.WithCancel(context.Background())
 
-		go w.run(runners)
+		go w.run(platformsPairs)
 		w.Started = true
 	}
 }
@@ -46,7 +46,7 @@ func (w *LastCandles) Stop() {
 	}
 }
 
-func (w *LastCandles) run(runners map[string]*Runner) {
+func (w *LastCandles) run(platformsPairs []*PlatformPairs) {
 	ticker := time.NewTicker(w.configs.LastCandlesInterval)
 	for {
 		select {
@@ -55,43 +55,35 @@ func (w *LastCandles) run(runners map[string]*Runner) {
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			for _, runner := range runners {
-				if runner.IsPrimaryCandlesLoaded {
-					w.checkForLastCandle(runner)
-				}
+			for _, platformPair := range platformsPairs {
+				w.checkForLastCandle(platformPair)
 			}
 		}
 	}
 }
 
-//func (w *LastCandles) prepareMarkets(markets []*chipmunkApi.Market, resolutions []*chipmunkApi.Resolution) {
-//	for _, market := range markets {
-//		w.prepareResolutions(market, resolutions)
-//	}
-//}
-//
-//func (w *LastCandles) prepareResolutions(market *chipmunkApi.Market, resolutions []*chipmunkApi.Resolution) {
-//	for _, resolution := range resolutions {
-//		w.checkForLastCandle(market, resolution)
-//	}
-//}
-
-func (w *LastCandles) checkForLastCandle(runner *Runner) {
-	last := buffer.CandleBuffer.Last(runner.Market.ID, runner.Resolution.ID)
-	if last == nil {
-		return
+func (w *LastCandles) checkForLastCandle(platformPair *PlatformPairs) {
+	items := make([]*coreApi.OHLCItem, 0)
+	for _, pair := range platformPair.Pairs {
+		last := buffer.CandleBuffer.Last(pair.Market.ID, pair.Resolution.ID)
+		if last == nil {
+			return
+		}
+		items = append(items, &coreApi.OHLCItem{
+			Resolution: pair.Resolution,
+			Market:     pair.Market,
+			From:       last.Time.Unix(),
+			To:         time.Now().Unix(),
+			Timeout:    int64(w.configs.LastCandlesInterval),
+			IssueTime:  time.Now().Unix(),
+		})
 	}
-	_, err := w.functionsService.AsyncOHLC(context.Background(), &coreApi.OHLCReq{
-		Resolution: runner.Resolution,
-		Market:     runner.Market,
-		From:       last.Time.Unix(),
-		To:         time.Now().Unix(),
-		Platform:   runner.Market.Platform,
-		Timeout:    int64(time.Second),
-		IssueTime:  time.Now().Unix(),
+
+	_, err := w.functionsService.AsyncOHLC(context.Background(), &coreApi.AsyncOHLCReq{
+		Items:    items,
+		Platform: platformPair.Platform,
 	})
 	if err != nil {
-		w.logger.WithError(err).Errorf("failed to create missed async OHLC request %v in resolution %v and Platform %v",
-			runner.Market.Name, runner.Resolution.Duration, runner.Platform)
+		w.logger.WithError(err).Errorf("failed to create last candle request for %v", platformPair.Platform)
 	}
 }

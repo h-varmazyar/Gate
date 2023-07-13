@@ -6,9 +6,19 @@ import (
 )
 
 type Runner struct {
-	Platform               api.Platform
-	Market                 *chipmunkApi.Market
-	Resolution             *chipmunkApi.Resolution
-	LastEventID            string
-	IsPrimaryCandlesLoaded bool
+	Platform   api.Platform
+	Market     *chipmunkApi.Market
+	Resolution *chipmunkApi.Resolution
+	//LastEventID            string
+	//IsPrimaryCandlesLoaded bool
+}
+
+type PlatformPairs struct {
+	Platform api.Platform
+	Pairs    []*Pair
+}
+
+type Pair struct {
+	Market     *chipmunkApi.Market
+	Resolution *chipmunkApi.Resolution
 }

@@ -121,7 +121,7 @@ func (m *Manager) getDefaultLimiter() *networkAPI.RateLimiter {
 //	return nil
 //}
 
-func (m *Manager) AddNewBucket(ctx context.Context, callbackQueue, referenceID string, request []*networkAPI.Request) error {
+func (m *Manager) AddNewBucket(ctx context.Context, callbackQueue, referenceID string, request []*networkAPI.Request) (int64, error) {
 	bucket := &Bucket{
 		ID:            uuid.New(),
 		CallbackQueue: callbackQueue,
@@ -139,15 +139,17 @@ func (m *Manager) AddNewBucket(ctx context.Context, callbackQueue, referenceID s
 	m.buckets[bucket.ID] = bucket
 	m.lock.Unlock()
 
+	totalIntervalDuration := int64(0)
 	for _, req := range bucket.Requests {
 		limiter, err := m.prepareLimiterForNewRequest(ctx, req.Request.RateLimiterID)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		limiter.RequestChannel <- req
+		totalIntervalDuration += int64(limiter.IntervalDuration())
 	}
 
-	return nil
+	return totalIntervalDuration, nil
 }
 
 func (m *Manager) GetRandomIP(ctx context.Context) (*IP, error) {
