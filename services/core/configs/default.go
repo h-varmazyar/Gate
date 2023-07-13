@@ -6,7 +6,7 @@ service_name: "core"
 version: "v1.0.0"
 grpc_port: 10100
 amqp_configs:
-  connection: "amqp://rabbitmq:rabbitmq@185.110.191.66"
+  connection: "amqp://rabbitmq:rabbitmq@localhost"
 coinex_configs:
   coinex_callback_queue: "coinex_callback"
   chipmunk_ohlc_queue: "chipmunk_ohlc"

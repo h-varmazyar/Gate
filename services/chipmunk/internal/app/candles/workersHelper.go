@@ -258,6 +258,7 @@ func (app *App) makePrimaryDataRequests(platformPairs *workers.PlatformPairs, in
 	items := make([]*coreApi.OHLCItem, 0)
 	wg := new(sync.WaitGroup)
 	for _, pair := range platformPairs.Pairs {
+		time.Sleep(time.Second)
 		go func(pair *workers.Pair) {
 			wg.Add(1)
 			defer wg.Done()
