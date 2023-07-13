@@ -12,28 +12,28 @@ import (
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	indicatorsPkg "github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
+	"sync"
 	"time"
 )
 
-func (app *App) initializeWorkers(ctx context.Context, configs *workers.Configs, repositoryInstance repository.CandleRepository) (*workerHolder, error) {
+func (app *App) initializeWorkers(ctx context.Context, configs *workers.Configs, repositoryInstance repository.CandleRepository) error {
 	var err error
-	holder := new(workerHolder)
-	holder.candleReaderWorker, err = workers.NewCandleReaderWorker(ctx, repositoryInstance, configs, app.logger)
+	app.candleReaderWorker, err = workers.NewCandleReaderWorker(ctx, repositoryInstance, configs, app.logger)
 	if err != nil {
 		app.logger.WithError(err).Error("failed to initialize primary data worker")
-		return nil, err
+		return err
 	}
 
-	holder.lastCandleWorker = workers.NewLastCandles(ctx, repositoryInstance, configs, app.logger)
+	app.lastCandleWorker = workers.NewLastCandles(ctx, repositoryInstance, configs, app.logger)
 
-	holder.missedCandlesWorker = workers.NewMissedCandles(ctx, repositoryInstance, configs, app.logger)
+	app.missedCandlesWorker = workers.NewMissedCandles(ctx, repositoryInstance, configs, app.logger)
 
-	holder.redundantRemoverWorker = workers.NewRedundantRemover(ctx, repositoryInstance, configs, app.logger)
+	app.redundantRemoverWorker = workers.NewRedundantRemover(ctx, repositoryInstance, configs, app.logger)
 
-	return holder, nil
+	return nil
 }
 
-func (app *App) startWorkers(ctx context.Context, holder *workerHolder, dependencies *AppDependencies, platforms []api.Platform) error {
+func (app *App) startWorkers(ctx context.Context, dependencies *AppDependencies, platforms []api.Platform) error {
 	indicators, err := dependencies.IndicatorService.List(ctx, &chipmunkApi.IndicatorListReq{Type: chipmunkApi.Indicator_All})
 	if err != nil {
 		app.logger.WithError(err).Error("failed to fetch all indicatorService")
@@ -53,17 +53,19 @@ func (app *App) startWorkers(ctx context.Context, holder *workerHolder, dependen
 			app.logger.WithError(err).Error("failed to prepare worker runners")
 			return err
 		}
+		app.logger.Infof("loaded pairs: %v", len(pairs.Pairs))
 		pp = append(pp, pairs)
 	}
 
-	holder.candleReaderWorker.Start(loadedIndicators)
+	app.candleReaderWorker.Start(loadedIndicators)
 
 	go func() {
 		predictedInterval := app.preparePrimaryDataRequests(pp, loadedIndicators)
+		app.logger.Infof("predicted interval: %v", predictedInterval)
 		time.Sleep(time.Duration(predictedInterval))
-		holder.lastCandleWorker.Start(pp)
-		holder.missedCandlesWorker.Start(pp)
-		holder.redundantRemoverWorker.Start(pp)
+		app.lastCandleWorker.Start(pp)
+		app.missedCandlesWorker.Start(pp)
+		app.redundantRemoverWorker.Start(pp)
 	}()
 
 	return nil
@@ -82,11 +84,16 @@ func (app *App) preparePlatformPairs(ctx context.Context, dependencies *AppDepen
 		return nil, err
 	}
 
+	app.logger.Infof("market len: %v", len(markets.Elements))
+
 	resolutions, err = dependencies.ResolutionService.List(ctx, &chipmunkApi.ResolutionListReq{Platform: platform})
 	if err != nil {
 		app.logger.WithError(err).Errorf("failed to load resolutions of platform %v", platform)
 		return nil, err
 	}
+
+	app.logger.Infof("resolutions len: %v", len(resolutions.Elements))
+
 	for _, market := range markets.Elements {
 		for _, resolution := range resolutions.Elements {
 			pairs = append(pairs, &workers.Pair{
@@ -158,6 +165,7 @@ func (app *App) loadIndicators(indicators []*chipmunkApi.Indicator) ([]indicator
 }
 
 func (app *App) preparePrimaryDataRequests(platformsPairs []*workers.PlatformPairs, indicators []indicatorsPkg.Indicator) int64 {
+	app.logger.Infof("preparing primary candles")
 	totalPredictedInterval := int64(0)
 	for _, platformPairs := range platformsPairs {
 		totalPredictedInterval += app.makePrimaryDataRequests(platformPairs, indicators)
@@ -165,22 +173,22 @@ func (app *App) preparePrimaryDataRequests(platformsPairs []*workers.PlatformPai
 	return totalPredictedInterval
 }
 
-func (app *App) prepareLocalCandles(pair *workers.Pair, indicators []indicatorsPkg.Indicator) (time.Time, error) {
+func (app *App) prepareLocalCandlesItem(pair *workers.Pair, indicators []indicatorsPkg.Indicator) (*coreApi.OHLCItem, error) {
 	marketID, err := uuid.Parse(pair.Market.ID)
 	if err != nil {
 		app.logger.WithError(err).Errorf("invalid market id %v", marketID)
-		return time.Unix(0, 0), err
+		return nil, err
 	}
 	resolutionID, err := uuid.Parse(pair.Resolution.ID)
 	if err != nil {
 		app.logger.WithError(err).Errorf("invalid resolution id %v", resolutionID)
-		return time.Unix(0, 0), err
+		return nil, err
 	}
 	var from time.Time
 	candles, err := app.loadLocalCandles(marketID, resolutionID)
 	if err != nil {
-		app.logger.WithError(err).Errorf("failed to load local rateLimiters for market %v in resolution %v", marketID, resolutionID)
-		return time.Unix(0, 0), err
+		app.logger.WithError(err).Errorf("failed to load local candles for market %v in resolution %v", marketID, resolutionID)
+		return nil, err
 	}
 	if len(candles) == 0 {
 		from = time.Unix(pair.Market.IssueDate, 0)
@@ -192,10 +200,12 @@ func (app *App) prepareLocalCandles(pair *workers.Pair, indicators []indicatorsP
 		candle.IndicatorValues = entity.NewIndicatorValues()
 	}
 
+	app.logger.Infof("loaded candles: %v", len(candles))
+
 	if len(candles) > 0 {
 		if err = app.calculateIndicators(candles, indicators); err != nil {
 			app.logger.WithError(err).Errorf("failed to calculate indicators for market %v in resolution %v", marketID, resolutionID)
-			return time.Unix(0, 0), err
+			return nil, err
 		}
 	}
 
@@ -203,7 +213,15 @@ func (app *App) prepareLocalCandles(pair *workers.Pair, indicators []indicatorsP
 		buffer.CandleBuffer.Push(candle)
 	}
 
-	return from, nil
+	item := &coreApi.OHLCItem{
+		Resolution: pair.Resolution,
+		Market:     pair.Market,
+		From:       from.Unix(),
+		To:         time.Now().Unix(),
+		Timeout:    int64(time.Hour * 96),
+		IssueTime:  time.Now().Unix(),
+	}
+	return item, nil
 }
 
 func (app *App) loadLocalCandles(marketID, resolutionID uuid.UUID) ([]*entity.Candle, error) {
@@ -236,21 +254,22 @@ func (app *App) calculateIndicators(candles []*entity.Candle, indicators []indic
 
 func (app *App) makePrimaryDataRequests(platformPairs *workers.PlatformPairs, indicators []indicatorsPkg.Indicator) int64 {
 	items := make([]*coreApi.OHLCItem, 0)
+	wg := new(sync.WaitGroup)
 	for _, pair := range platformPairs.Pairs {
-		from, err := app.prepareLocalCandles(pair, indicators)
-		if err != nil {
-			return 0
-		}
-		item := &coreApi.OHLCItem{
-			Resolution: pair.Resolution,
-			Market:     pair.Market,
-			From:       from.Unix(),
-			To:         time.Now().Unix(),
-			Timeout:    int64(time.Hour * 96),
-			IssueTime:  time.Now().Unix(),
-		}
-		items = append(items, item)
+		go func(pair *workers.Pair) {
+			wg.Add(1)
+			defer wg.Done()
+			item, err := app.prepareLocalCandlesItem(pair, indicators)
+			if err != nil {
+				app.logger.WithError(err).Errorf("failed to prepare local candle item")
+				return
+			}
+			items = append(items, item)
+		}(pair)
 	}
+
+	wg.Wait()
+	app.logger.Infof("async primary len: %v - %v", len(platformPairs.Pairs), len(items))
 
 	asyncResp, err := app.functionsService.AsyncOHLC(context.Background(), &coreApi.AsyncOHLCReq{
 		Items:    items,

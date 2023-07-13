@@ -44,7 +44,7 @@ func (s *Service) prepareLocalCandles(market *chipmunkApi.Market, resolution *ch
 		if err == gorm.ErrRecordNotFound {
 			from = time.Unix(market.IssueDate, 0)
 		} else {
-			s.logger.WithError(err).Errorf("failed to load local rateLimiters for market %v in resolution %v", marketID, resolutionID)
+			s.logger.WithError(err).Errorf("failed to load local candles for market %v in resolution %v", marketID, resolutionID)
 			return time.Unix(0, 0), err
 		}
 	}

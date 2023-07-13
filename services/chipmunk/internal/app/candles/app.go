@@ -16,23 +16,20 @@ import (
 )
 
 type App struct {
-	Service          *service.Service
-	logger           *log.Logger
-	db               repository.CandleRepository
-	functionsService coreApi.FunctionsServiceClient
+	Service                *service.Service
+	logger                 *log.Logger
+	db                     repository.CandleRepository
+	functionsService       coreApi.FunctionsServiceClient
+	candleReaderWorker     *workers.CandleReader
+	lastCandleWorker       *workers.LastCandles
+	missedCandlesWorker    *workers.MissedCandles
+	redundantRemoverWorker *workers.RedundantRemover
 }
 
 type AppDependencies struct {
 	IndicatorService  *indicatorService.Service
 	ResolutionService *resolutionService.Service
 	MarketService     *marketService.Service
-}
-
-type workerHolder struct {
-	candleReaderWorker     *workers.CandleReader
-	lastCandleWorker       *workers.LastCandles
-	missedCandlesWorker    *workers.MissedCandles
-	redundantRemoverWorker *workers.RedundantRemover
 }
 
 func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs Configs, appDependencies *AppDependencies) (*App, error) {
@@ -48,14 +45,14 @@ func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs Configs,
 		functionsService: coreApi.NewFunctionsServiceClient(coreConn),
 	}
 
-	holder, err := app.initializeWorkers(ctx, configs.WorkerConfigs, repositoryInstance)
+	err = app.initializeWorkers(ctx, configs.WorkerConfigs, repositoryInstance)
 	if err != nil {
 		return nil, err
 	}
 
 	platforms := []api.Platform{api.Platform_Coinex}
 
-	err = app.startWorkers(ctx, holder, appDependencies, platforms)
+	err = app.startWorkers(ctx, appDependencies, platforms)
 	if err != nil {
 		return nil, err
 	}

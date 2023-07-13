@@ -65,14 +65,21 @@ func (s *Service) Do(ctx context.Context, req *networkAPI.Request) (*networkAPI.
 }
 
 func (s *Service) DoAsync(ctx context.Context, req *networkAPI.DoAsyncReq) (*networkAPI.DoAsyncResp, error) {
+	s.logger.Infof("new async")
 	if req.CallbackQueue == "" {
-		return nil, errors.New(ctx, codes.FailedPrecondition).AddDetails("callback queue can not be empty")
+		err := errors.New(ctx, codes.FailedPrecondition).AddDetails("callback queue can not be empty")
+		s.logger.WithError(err).Errorf("invalid callback: %v", req.CallbackQueue)
+		return nil, err
 	}
 	if req.ReferenceID == "" {
-		return nil, errors.New(ctx, codes.FailedPrecondition).AddDetails("reference id must be declared")
+		err := errors.New(ctx, codes.FailedPrecondition).AddDetails("reference id must be declared")
+		s.logger.WithError(err).Errorf("invalid reference: %v", req.ReferenceID)
+		return nil, err
 	}
 	if len(req.Requests) == 0 {
-		return nil, errors.New(ctx, codes.FailedPrecondition).AddDetails("empty requests not acceptable")
+		err := errors.New(ctx, codes.FailedPrecondition).AddDetails("empty requests not acceptable")
+		s.logger.WithError(err).Errorf("zero request")
+		return nil, err
 	}
 
 	totalPredictedInterval, err := s.rateLimiterManager.AddNewBucket(ctx, req.CallbackQueue, req.ReferenceID, req.Requests)

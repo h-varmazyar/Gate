@@ -6,7 +6,7 @@ service_name: "chipmunk"
 version: "v1.0.0"
 grpc_port: 11000
 amqp_configs:
-  connection: "amqp://rabbitmq:rabbitmq@localhost"
+  connection: "amqp://rabbitmq:rabbitmq@185.110.191.66"
 buffer_configs:
   candle_buffer_length: 400
 markets_app:
@@ -43,7 +43,7 @@ db:
   type: "postgreSQL"
   username: "postgres"
   password: "postgres"
-  host: "localhost"
+  host: "185.110.191.66"
   port: 5432
   name: "chipmunk"
   is_ssl_enable: false

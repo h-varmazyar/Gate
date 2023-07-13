@@ -55,6 +55,8 @@ func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.AsyncOHLCReq) (*co
 		resp        *networkAPI.DoAsyncResp
 	)
 
+	s.logger.Infof("new async: %v - %v", req.Platform, len(req.Items))
+
 	for _, item := range req.Items {
 		brokerageRequests := loadRequest(s.configs, &coreApi.Brokerage{Platform: req.Platform})
 
@@ -103,6 +105,7 @@ func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.AsyncOHLCReq) (*co
 		ReferenceID:   referenceID.String(),
 	})
 	if err != nil {
+		s.logger.WithError(err).Error("failed to do async ohlc")
 		return nil, err
 	}
 

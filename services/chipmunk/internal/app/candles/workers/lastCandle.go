@@ -51,7 +51,7 @@ func (w *LastCandles) run(platformsPairs []*PlatformPairs) {
 	for {
 		select {
 		case <-w.ctx.Done():
-			w.logger.Infof("missed stopped")
+			w.logger.Infof("last candle stopped")
 			ticker.Stop()
 			return
 		case <-ticker.C:
