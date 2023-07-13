@@ -253,6 +253,8 @@ func (app *App) calculateIndicators(candles []*entity.Candle, indicators []indic
 }
 
 func (app *App) makePrimaryDataRequests(platformPairs *workers.PlatformPairs, indicators []indicatorsPkg.Indicator) int64 {
+	lock := new(sync.Mutex)
+	predictedInterval := int64(0)
 	items := make([]*coreApi.OHLCItem, 0)
 	wg := new(sync.WaitGroup)
 	for _, pair := range platformPairs.Pairs {
@@ -264,22 +266,27 @@ func (app *App) makePrimaryDataRequests(platformPairs *workers.PlatformPairs, in
 				app.logger.WithError(err).Errorf("failed to prepare local candle item")
 				return
 			}
+			lock.Lock()
+			defer lock.Unlock()
 			items = append(items, item)
+			if len(items) == 100 {
+				asyncResp, err := app.functionsService.AsyncOHLC(context.Background(), &coreApi.AsyncOHLCReq{
+					Items:    items,
+					Platform: platformPairs.Platform,
+				})
+				if err != nil {
+					app.logger.WithError(err).Errorf("failed to create primary async OHLC request for Platform %v", platformPairs.Platform)
+					return
+				}
+				app.logger.Infof("create new bulk request with id %v for %v. estimated execution time: %v", asyncResp.LastRequestID, platformPairs.Platform, time.Duration(asyncResp.PredictedIntervalTime))
+				predictedInterval += asyncResp.PredictedIntervalTime
+				items = make([]*coreApi.OHLCItem, 0)
+			}
 		}(pair)
 	}
 
 	wg.Wait()
 	app.logger.Infof("async primary len: %v - %v", len(platformPairs.Pairs), len(items))
 
-	asyncResp, err := app.functionsService.AsyncOHLC(context.Background(), &coreApi.AsyncOHLCReq{
-		Items:    items,
-		Platform: platformPairs.Platform,
-	})
-	if err != nil {
-		app.logger.WithError(err).Errorf("failed to create primary async OHLC request for Platform %v", platformPairs.Platform)
-		return 0
-	}
-
-	app.logger.Infof("create new bulk request with id %v for %v. estimated execution time: %v", asyncResp.LastRequestID, platformPairs.Platform, time.Duration(asyncResp.PredictedIntervalTime))
-	return asyncResp.PredictedIntervalTime
+	return predictedInterval
 }
