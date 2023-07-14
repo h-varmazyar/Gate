@@ -8,7 +8,6 @@ import (
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/repository"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/workers"
-	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	indicatorsPkg "github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
@@ -201,16 +200,16 @@ func (app *App) prepareLocalCandlesItem(pair *workers.Pair, indicators []indicat
 
 	app.logger.Infof("loaded candles: %v", len(candles))
 
-	if len(candles) > 0 {
-		if err = app.calculateIndicators(candles, indicators); err != nil {
-			app.logger.WithError(err).Errorf("failed to calculate indicators for market %v in resolution %v", marketID, resolutionID)
-			return nil, err
-		}
-	}
-
-	for _, candle := range candles {
-		buffer.CandleBuffer.Push(candle)
-	}
+	//if len(candles) > 0 {
+	//	if err = app.calculateIndicators(candles, indicators); err != nil {
+	//		app.logger.WithError(err).Errorf("failed to calculate indicators for market %v in resolution %v", marketID, resolutionID)
+	//		return nil, err
+	//	}
+	//}
+	//
+	//for _, candle := range candles {
+	//	buffer.CandleBuffer.Push(candle)
+	//}
 
 	item := &coreApi.OHLCItem{
 		Resolution: pair.Resolution,
