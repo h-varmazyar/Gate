@@ -14,7 +14,6 @@ import (
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	"sync"
 	"time"
-	"unsafe"
 )
 
 func (app *App) initializeWorkers(ctx context.Context, configs *workers.Configs, repositoryInstance repository.CandleRepository) error {
@@ -254,9 +253,7 @@ func (app *App) calculateIndicators(candles []*entity.Candle, indicators []indic
 }
 
 func (app *App) makePrimaryDataRequests(platformPairs *workers.PlatformPairs, indicators []indicatorsPkg.Indicator) int64 {
-	lock := new(sync.Mutex)
 	predictedInterval := int64(0)
-	items := make([]*coreApi.OHLCItem, 0)
 	wg := new(sync.WaitGroup)
 	for _, pair := range platformPairs.Pairs {
 		time.Sleep(time.Second)
@@ -268,28 +265,21 @@ func (app *App) makePrimaryDataRequests(platformPairs *workers.PlatformPairs, in
 				app.logger.WithError(err).Errorf("failed to prepare local candle item")
 				return
 			}
-			lock.Lock()
-			defer lock.Unlock()
-			items = append(items, item)
-			if unsafe.Sizeof(items) > 10*1024*1024 {
-				asyncResp, err := app.functionsService.AsyncOHLC(context.Background(), &coreApi.AsyncOHLCReq{
-					Items:    items,
-					Platform: platformPairs.Platform,
-				})
-				if err != nil {
-					app.logger.WithError(err).Errorf("failed to create primary async OHLC request for Platform %v", platformPairs.Platform)
-					return
-				}
-				app.logger.Infof("create new bulk request with id %v for %v. estimated execution time: %v", asyncResp.LastRequestID, platformPairs.Platform, time.Duration(asyncResp.PredictedIntervalTime))
-				predictedInterval += asyncResp.PredictedIntervalTime
-				items = nil
-				items = make([]*coreApi.OHLCItem, 0)
+			asyncResp, err := app.functionsService.AsyncOHLC(context.Background(), &coreApi.AsyncOHLCReq{
+				Items:    []*coreApi.OHLCItem{item},
+				Platform: platformPairs.Platform,
+			})
+			if err != nil {
+				app.logger.WithError(err).Errorf("failed to create primary async OHLC request for Platform %v", platformPairs.Platform)
+				return
 			}
+			app.logger.Infof("create new bulk request with id %v for %v. estimated execution time: %v", asyncResp.LastRequestID, platformPairs.Platform, time.Duration(asyncResp.PredictedIntervalTime))
+			predictedInterval += asyncResp.PredictedIntervalTime
+
 		}(pair)
 	}
 
 	wg.Wait()
-	app.logger.Infof("async primary len: %v - %v", len(platformPairs.Pairs), len(items))
 
 	return predictedInterval
 }
