@@ -3,8 +3,10 @@ package requests
 import (
 	"context"
 	"github.com/google/uuid"
+	"github.com/h-varmazyar/Gate/pkg/errors"
 	networkAPI "github.com/h-varmazyar/Gate/services/network/api/proto"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc/codes"
 	"net/http"
 	"net/url"
 	"time"
@@ -23,7 +25,7 @@ type IP struct {
 }
 
 func (ip *IP) spreadAlgorithm(limiter *Limiter) {
-	interval := limiter.TimeLimit / time.Duration(limiter.RequestCountLimit)
+	interval := limiter.IntervalDuration()
 	ticker := time.NewTicker(interval)
 	for {
 		select {
@@ -42,21 +44,23 @@ func (ip *IP) spreadAlgorithm(limiter *Limiter) {
 				bucketRequest := <-limiter.RequestChannel
 				if bucketRequest.Request.IssueTime != 0 && bucketRequest.Request.Timeout != 0 {
 					if bucketRequest.Request.IssueTime+bucketRequest.Request.Timeout < time.Now().Unix() {
-						//todo: must push into rabbit
-						return
+						response.Code = http.StatusRequestTimeout
+						response.Body = errors.New(context.Background(), codes.DeadlineExceeded).Error()
 					}
 				}
-				networkRequest, err := NewNetworkRequest(bucketRequest.Request, ip.ProxyURL)
-				if err != nil {
-					log.WithError(err).Errorf("failed to create async network request")
-					response.Code = http.StatusInternalServerError
-					response.Body = err.Error()
-				} else {
-					response, err = networkRequest.Do()
+				if response.Code == 0 {
+					networkRequest, err := NewNetworkRequest(bucketRequest.Request, ip.ProxyURL)
 					if err != nil {
-						log.WithError(err).Errorf("failed to do network request")
+						log.WithError(err).Errorf("failed to create async network request")
 						response.Code = http.StatusInternalServerError
 						response.Body = err.Error()
+					} else {
+						response, err = networkRequest.Do()
+						if err != nil {
+							log.WithError(err).Errorf("failed to do network request")
+							response.Code = http.StatusInternalServerError
+							response.Body = err.Error()
+						}
 					}
 				}
 				bucketResponse := &BucketResponse{

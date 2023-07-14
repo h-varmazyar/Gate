@@ -44,24 +44,19 @@ func NewCandleReaderWorker(_ context.Context, db repository.CandleRepository, co
 func (w *CandleReader) Start(indicators []indicatorsPkg.Indicator) {
 	w.logger.Infof("starting candle reader worker...")
 	w.indicators = indicators
-	handled := int64(0)
 	deliveries := w.queue.Consume(w.configs.PrimaryDataQueue)
 	for i := 0; i < w.configs.ConsumerCount; i++ {
 		go func() {
 			for delivery := range deliveries {
-				handled++
 				w.handle(delivery)
-				if handled%1000 == 0 {
-					log.Infof("handled: %v", handled)
-				}
 			}
 		}()
 	}
 	go w.handleInsert()
 }
 
-//create new response struct candles, market_id, reference_id, error
 func (w *CandleReader) handle(delivery amqp.Delivery) {
+	w.logger.Infof("handling new delivery")
 	resp := new(chipmunkApi.CandlesAsyncUpdate)
 	if err := proto.Unmarshal(delivery.Body, resp); err != nil {
 		log.WithError(err).Errorf("failed to unmarshal delivery")

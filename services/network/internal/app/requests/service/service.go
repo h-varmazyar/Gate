@@ -65,7 +65,7 @@ func (s *Service) Do(ctx context.Context, req *networkAPI.Request) (*networkAPI.
 }
 
 func (s *Service) DoAsync(ctx context.Context, req *networkAPI.DoAsyncReq) (*networkAPI.DoAsyncResp, error) {
-	s.logger.Infof("new async")
+	s.logger.Infof("new async: %v", len(req.Requests))
 	if req.CallbackQueue == "" {
 		err := errors.New(ctx, codes.FailedPrecondition).AddDetails("callback queue can not be empty")
 		s.logger.WithError(err).Errorf("invalid callback: %v", req.CallbackQueue)

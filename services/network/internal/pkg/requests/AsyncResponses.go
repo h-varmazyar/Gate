@@ -30,17 +30,19 @@ type BucketResponse struct {
 	BucketID uuid.UUID
 }
 
-func (r *Bucket) addResponse(ctx context.Context, response *BucketResponse) error {
+func (r *Bucket) addResponse(ctx context.Context, response *BucketResponse) (isEnded bool, err error) {
 	if response.BucketID != r.ID {
-		return errors.New(ctx, codes.InvalidArgument).AddDetails("invalid bucket id")
+		err = errors.New(ctx, codes.InvalidArgument).AddDetails("invalid bucket id")
+		return
 	}
 
 	r.responses = append(r.responses, response)
 	if len(r.responses) == len(r.Requests) {
-		queue, err := amqpext.Client.QueueDeclare(r.CallbackQueue)
+		queue := new(amqpext.Queue)
+		queue, err = amqpext.Client.QueueDeclare(r.CallbackQueue)
 		if err != nil {
 			log.WithError(err).Errorf("failed to declare amqp queue")
-			return err
+			return
 		}
 		responses := &networkAPI.AsyncResponses{
 			ReferenceID: r.ReferenceID,
@@ -49,17 +51,21 @@ func (r *Bucket) addResponse(ctx context.Context, response *BucketResponse) erro
 			bucketResponse.Response.ReferenceID = r.ReferenceID
 			responses.Responses = append(responses.Responses, bucketResponse.Response)
 		}
-		bytes, err := proto.Marshal(responses)
+		bytes := make([]byte, 0)
+		bytes, err = proto.Marshal(responses)
 		if err != nil {
 			log.WithError(err).Errorf("failed to marshal response")
-			return err
+			return
 		}
 
+		log.Infof("publishing bucket response...")
 		if err = queue.Publish(bytes, grpcext.ProtobufContentType); err != nil {
 			log.WithError(err).Errorf("failed to publish response")
+		} else {
+			isEnded = true
 		}
 	}
-	return nil
+	return
 }
 
 //func (r *Bucket) handleRequest(proxyURL *url.URL, timeLimit time.Duration, remoteRequest *networkAPI.Request) {

@@ -208,6 +208,12 @@ func (m *Manager) listenToResponses() {
 			log.Errorf("bucket not found")
 			continue
 		}
-		bucket.addResponse(context.Background(), response)
+		isEnded, err := bucket.addResponse(context.Background(), response)
+		if err != nil {
+			log.WithError(err).Error("failed to add response")
+		}
+		if isEnded {
+			delete(m.buckets, response.BucketID)
+		}
 	}
 }
