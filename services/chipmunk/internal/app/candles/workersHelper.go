@@ -258,7 +258,7 @@ func (app *App) makePrimaryDataRequests(platformPairs *workers.PlatformPairs, in
 		item, err := app.prepareLocalCandlesItem(pair, indicators)
 		if err != nil {
 			app.logger.WithError(err).Errorf("failed to prepare local candle item")
-			return 0
+			continue
 		}
 		app.logger.Infof("item: %v - %v", time.Unix(item.From, 0), time.Unix(item.To, 0))
 
@@ -268,7 +268,7 @@ func (app *App) makePrimaryDataRequests(platformPairs *workers.PlatformPairs, in
 		})
 		if err != nil {
 			app.logger.WithError(err).Errorf("failed to create primary async OHLC request for Platform %v", platformPairs.Platform)
-			return 0
+			continue
 		}
 		app.logger.Infof("create new bulk request with id %v for %v. estimated execution time: %v", asyncResp.LastRequestID, platformPairs.Platform, time.Duration(asyncResp.PredictedIntervalTime))
 		predictedInterval += asyncResp.PredictedIntervalTime
