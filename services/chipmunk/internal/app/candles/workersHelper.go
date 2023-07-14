@@ -11,6 +11,7 @@ import (
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	indicatorsPkg "github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
+	"strings"
 	"time"
 )
 
@@ -182,24 +183,39 @@ func (app *App) prepareLocalCandlesItem(pair *workers.Pair, indicators []indicat
 		app.logger.WithError(err).Errorf("invalid resolution id %v", resolutionID)
 		return nil, err
 	}
+	app.logger.Infof("loading candles...")
+
 	var from time.Time
-	candles, err := app.loadLocalCandles(marketID, resolutionID)
+	last, err := app.db.ReturnLast(marketID, resolutionID)
 	if err != nil {
-		app.logger.WithError(err).Errorf("failed to load local candles for market %v in resolution %v", marketID, resolutionID)
-		return nil, err
+		if strings.Contains(err.Error(), "not found") {
+			last = nil
+		} else {
+			app.logger.WithError(err).Errorf("failed to return last")
+			return nil, err
+		}
 	}
-	if len(candles) == 0 {
+	if last == nil {
 		from = time.Unix(pair.Market.IssueDate, 0)
 	} else {
-		from = candles[len(candles)-1].Time.Add(time.Duration(pair.Resolution.Duration))
+		from = last.Time
 	}
+	//candles, err := app.loadLocalCandles(marketID, resolutionID)
+	//if err != nil {
+	//	app.logger.WithError(err).Errorf("failed to load local candles for market %v in resolution %v", marketID, resolutionID)
+	//	return nil, err
+	//}
+	//if len(candles) == 0 {
+	//	from = time.Unix(pair.Market.IssueDate, 0)
+	//} else {
+	//	from = candles[len(candles)-1].Time.Add(time.Duration(pair.Resolution.Duration))
+	//}
 
-	for _, candle := range candles {
-		candle.IndicatorValues = entity.NewIndicatorValues()
-	}
+	app.logger.Infof("loaded candles: %v", last)
 
-	app.logger.Infof("loaded candles: %v", len(candles))
-
+	//for _, candle := range candles {
+	//	candle.IndicatorValues = entity.NewIndicatorValues()
+	//}
 	//if len(candles) > 0 {
 	//	if err = app.calculateIndicators(candles, indicators); err != nil {
 	//		app.logger.WithError(err).Errorf("failed to calculate indicators for market %v in resolution %v", marketID, resolutionID)
