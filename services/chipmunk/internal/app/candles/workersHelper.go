@@ -254,11 +254,14 @@ func (app *App) calculateIndicators(candles []*entity.Candle, indicators []indic
 func (app *App) makePrimaryDataRequests(platformPairs *workers.PlatformPairs, indicators []indicatorsPkg.Indicator) int64 {
 	predictedInterval := int64(0)
 	for _, pair := range platformPairs.Pairs {
+		app.logger.Infof("market: %v", pair.Market.Name)
 		item, err := app.prepareLocalCandlesItem(pair, indicators)
 		if err != nil {
 			app.logger.WithError(err).Errorf("failed to prepare local candle item")
 			return 0
 		}
+		app.logger.Infof("item: %v - %v", time.Unix(item.From, 0), time.Unix(item.To, 0))
+
 		asyncResp, err := app.functionsService.AsyncOHLC(context.Background(), &coreApi.AsyncOHLCReq{
 			Items:    []*coreApi.OHLCItem{item},
 			Platform: platformPairs.Platform,
