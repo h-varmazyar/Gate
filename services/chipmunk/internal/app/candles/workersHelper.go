@@ -12,7 +12,6 @@ import (
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	indicatorsPkg "github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
-	"sync"
 	"time"
 )
 
@@ -254,32 +253,23 @@ func (app *App) calculateIndicators(candles []*entity.Candle, indicators []indic
 
 func (app *App) makePrimaryDataRequests(platformPairs *workers.PlatformPairs, indicators []indicatorsPkg.Indicator) int64 {
 	predictedInterval := int64(0)
-	wg := new(sync.WaitGroup)
 	for _, pair := range platformPairs.Pairs {
-		time.Sleep(time.Second)
-		go func(pair *workers.Pair) {
-			wg.Add(1)
-			defer wg.Done()
-			item, err := app.prepareLocalCandlesItem(pair, indicators)
-			if err != nil {
-				app.logger.WithError(err).Errorf("failed to prepare local candle item")
-				return
-			}
-			asyncResp, err := app.functionsService.AsyncOHLC(context.Background(), &coreApi.AsyncOHLCReq{
-				Items:    []*coreApi.OHLCItem{item},
-				Platform: platformPairs.Platform,
-			})
-			if err != nil {
-				app.logger.WithError(err).Errorf("failed to create primary async OHLC request for Platform %v", platformPairs.Platform)
-				return
-			}
-			app.logger.Infof("create new bulk request with id %v for %v. estimated execution time: %v", asyncResp.LastRequestID, platformPairs.Platform, time.Duration(asyncResp.PredictedIntervalTime))
-			predictedInterval += asyncResp.PredictedIntervalTime
-
-		}(pair)
+		item, err := app.prepareLocalCandlesItem(pair, indicators)
+		if err != nil {
+			app.logger.WithError(err).Errorf("failed to prepare local candle item")
+			return 0
+		}
+		asyncResp, err := app.functionsService.AsyncOHLC(context.Background(), &coreApi.AsyncOHLCReq{
+			Items:    []*coreApi.OHLCItem{item},
+			Platform: platformPairs.Platform,
+		})
+		if err != nil {
+			app.logger.WithError(err).Errorf("failed to create primary async OHLC request for Platform %v", platformPairs.Platform)
+			return 0
+		}
+		app.logger.Infof("create new bulk request with id %v for %v. estimated execution time: %v", asyncResp.LastRequestID, platformPairs.Platform, time.Duration(asyncResp.PredictedIntervalTime))
+		predictedInterval += asyncResp.PredictedIntervalTime
 	}
-
-	wg.Wait()
 
 	return predictedInterval
 }
