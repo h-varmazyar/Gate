@@ -2,8 +2,10 @@ package markets
 
 import (
 	"context"
+	api "github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/repository"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/service"
+	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/workers"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/db"
 	log "github.com/sirupsen/logrus"
 )
@@ -21,10 +23,13 @@ func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs Configs,
 	if err != nil {
 		return nil, err
 	}
-	//worker := workers.InitializeWorker(ctx, configs.WorkerConfigs, dependencies.CandlesService)
-	//statisticsWorker := workers.NewStatisticsWorker(ctx, configs.WorkerConfigs, dependencies.CandlesService, repositoryInstance)
-	//dependencies.ServiceDependencies.PrimaryDataWorker = worker
-	//dependencies.ServiceDependencies.StatisticsWorker = statisticsWorker
+
+	updateMarketWorker := workers.NewUpdateMarketWorker(repositoryInstance, logger, dependencies.ServiceDependencies.AssetsService, configs.WorkerConfigs.CoreAddress)
+	_, err = updateMarketWorker.UpdateFromPlatform(ctx, api.Platform_Coinex)
+	if err != nil {
+		return nil, err
+	}
+	
 	return &App{
 		Service: service.NewService(ctx, logger, configs.ServiceConfigs, repositoryInstance, dependencies.ServiceDependencies),
 	}, nil

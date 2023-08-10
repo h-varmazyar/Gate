@@ -37,20 +37,20 @@ fi
 if $is_up ; then
   if [ "$service_name" = "" ]; then
     echo "running all services"
-    docker-compose -f ./deploy/docker-compose.yml up -d
+    docker-compose -f ./deploy/docker-compose.local.yml up -d
   else
     echo "running service $service_name"
-    docker-compose -f ./deploy/docker-compose.yml up -d "$service_name"
+    docker-compose -f ./deploy/docker-compose.local.yml up -d "$service_name"
   fi
 fi
 
 if $is_down ; then
   if [ "$service_name" = "" ]; then
       echo "running all services"
-      docker-compose -f ./deploy/docker-compose.yml down
+      docker-compose -f ./deploy/docker-compose.local.yml down
     else
       echo "running service $service_name"
-      docker-compose -f ./deploy/docker-compose.yml down "$service_name"
+      docker-compose -f ./deploy/docker-compose.local.yml down "$service_name"
   fi
 fi
 

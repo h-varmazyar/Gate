@@ -55,8 +55,6 @@ func (s *Service) AsyncOHLC(ctx context.Context, req *coreApi.AsyncOHLCReq) (*co
 		resp        *networkAPI.DoAsyncResp
 	)
 
-	s.logger.Infof("new async: %v - %v", req.Platform, len(req.Items))
-
 	for _, item := range req.Items {
 		brokerageRequests := loadRequest(s.configs, &coreApi.Brokerage{Platform: req.Platform})
 
@@ -248,8 +246,10 @@ func (s *Service) MarketList(ctx context.Context, req *coreApi.MarketListReq) (*
 		return resp, err
 	})
 	if err != nil {
+		s.logger.WithError(err).Errorf("failed to get market list")
 		return nil, err
 	}
+	s.logger.Infof("market list: %v", len(markets.Elements))
 	return markets, nil
 }
 

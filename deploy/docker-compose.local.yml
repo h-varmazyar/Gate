@@ -2,11 +2,16 @@ version: '3.7'
 
 networks:
   gate:
-    external: true
+    driver: bridge
 
 services:
   postgres:
     container_name: postgres
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: '250m'
     image: postgres
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -15,11 +20,16 @@ services:
     networks:
       - gate
     ports:
-      - 5432:5432
+      - "5432:5432"
     restart: always
 
   redis:
     container_name: redis
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: '100m'
     image: bitnami/redis:latest
     command: redis-server --requirepass ${REDIS_PASSWORD}
     environment:
@@ -29,11 +39,16 @@ services:
     networks:
       - gate
     ports:
-      - 6379:6379
+      - "6379:6379"
     restart: always
 
   rabbitmq:
     container_name: rabbitmq
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: '250m'
     image: rabbitmq:3.8-management
     environment:
       - RABBITMQ_ERLANG_COOKIE=SWQOKODSQALRPCLNMEQG
@@ -45,112 +60,140 @@ services:
     networks:
       - gate
     ports:
-      - 15672:15672
-      - 5672:5672
+      - "15672:15672"
+      - "5672:5672"
     restart: always
 
   chipmunk:
     container_name: chipmunk
-    image: chipmunk:v2.1.3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: '250m'
+    image: chipmunk:${CHIPMUNK_VERSION}
     build:
       context: ..
       dockerfile: services/chipmunk/deploy/Dockerfile
       args:
-        VERSION: v2.1.3
+        VERSION: ${CHIPMUNK_VERSION}
     volumes:
       - /srv/configs/chipmunk/app.yaml:/app/configs/config.yaml
     networks:
       - gate
-    depends_on:
-      - postgres
-      - rabbitmq
+#    depends_on:
+#      - postgres
+    #      - rabbitmq
     restart: always
 
   core:
     container_name: core
-    image: core:v2.1.3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: '250m'
+    image: core:${CORE_VERSION}
     build:
       context: ..
       dockerfile: services/core/deploy/Dockerfile
       args:
-        VERSION: v2.1.3
+        VERSION: ${CORE_VERSION}
     volumes:
       - /srv/configs/core/app.yaml:/app/configs/config.yaml
     networks:
       - gate
-    depends_on:
-      - postgres
-      - rabbitmq
+#    depends_on:
+#      - postgres
+    #      - rabbitmq
     restart: always
 
   eagle:
     container_name: eagle
-    image: eagle:v1.1.3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.06'
+          memory: '50m'
+    image: eagle:${EAGLE_VERSION}
     build:
       context: ..
       dockerfile: services/eagle/deploy/Dockerfile
       args:
-        VERSION: v1.1.3
+        VERSION: ${EAGLE_VERSION}
     volumes:
       - /srv/configs/eagle/app.yaml:/app/configs/config.yaml
     networks:
       - gate
-    depends_on:
-      - postgres
-      - redis
+#    depends_on:
+#      - postgres
+    #      - redis
     restart: always
 
   raven:
     container_name: raven
-    image: gatec/raven:${VERSION}
-#    build:
-#      context: ..
-#      dockerfile: services/raven/deploy/Dockerfile
-#      args:
-#        VERSION: v1.2.3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.02'
+          memory: '50m'
+    image: raven:${RAVEN_VERSION}
+    build:
+      context: ..
+      dockerfile: services/raven/deploy/Dockerfile
+      args:
+        VERSION: ${RAVEN_VERSION}
     volumes:
       - /srv/configs/raven/app.yaml:/app/configs/config.yaml
     ports:
-      - 3030:8080
+      - "8080:8080"
     networks:
       - gate
     depends_on:
       - postgres
-      - redis
     restart: always
 
   network:
     container_name: network
-    image: network:v1.2.5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: '250m'
+    image: network:${NETWORK_VERSION}
     build:
       context: ..
       dockerfile: services/network/deploy/Dockerfile
       args:
-        VERSION: v1.2.5
+        VERSION: ${NETWORK_VERSION}
     volumes:
       - /srv/configs/network/app.yaml:/app/configs/config.yaml
     networks:
       - gate
-    depends_on:
-      - postgres
-      - redis
+#    depends_on:
+#      - postgres
     restart: always
 
   telegram_bot:
     container_name: telegramBot
-    image: telegram_bot:v1.1.2
+    deploy:
+      resources:
+        limits:
+          cpus: '0.02'
+          memory: '50m'
+    image: telegram_bot:${TELEGRAM_BOT_VERSION}
     build:
       context: ..
       dockerfile: services/telegramBot/deploy/Dockerfile
       args:
-        VERSION: v1.1.2
+        VERSION: ${TELEGRAM_BOT_VERSION}
     volumes:
       - /srv/configs/telegramBot/app.yaml:/app/configs/config.yaml
     networks:
       - gate
-    depends_on:
-      - postgres
-      - redis
+#    depends_on:
+#      - postgres
+#      - redis
     restart: always
 
 volumes:

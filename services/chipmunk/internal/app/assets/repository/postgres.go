@@ -36,7 +36,7 @@ func (repository *assetPostgresRepository) ReturnByID(id uuid.UUID) (*entity.Ass
 }
 
 func (repository *assetPostgresRepository) Create(asset *entity.Asset) error {
-	return repository.db.Model(&entity.Asset{}).Create(asset).Error
+	return repository.db.Save(asset).Error
 }
 
 func (repository *assetPostgresRepository) List(page int) ([]*entity.Asset, error) {

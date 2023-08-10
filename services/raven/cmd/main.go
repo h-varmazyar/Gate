@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"flag"
+	"fmt"
 	"github.com/h-varmazyar/Gate/pkg/httpext"
 	"github.com/h-varmazyar/Gate/pkg/service"
 	"github.com/h-varmazyar/Gate/services/raven/configs"
@@ -17,6 +18,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
+	"golang.ngrok.com/ngrok"
+	"golang.ngrok.com/ngrok/config"
 	"net"
 	"net/http"
 	"time"
@@ -44,6 +47,8 @@ func main() {
 	if err != nil {
 		log.Panicf("failed to read configs: %v", err)
 	}
+
+	//registerNgrok()
 
 	initializeDocs(conf)
 
@@ -124,4 +129,19 @@ func initializeAndRegisterApps(_ context.Context, logger *log.Logger, configs *C
 	})
 
 	service.Start(configs.ServiceName, configs.Version)
+}
+
+func registerNgrok() {
+	ctx := context.Background()
+	l, err := ngrok.Listen(ctx,
+		config.HTTPEndpoint(),
+		ngrok.WithAuthtokenFromEnv(),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("ngrok ingress url: ", l.Addr())
+	http.Serve(l, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "Hello from your ngrok-delivered Go app!")
+	}))
 }

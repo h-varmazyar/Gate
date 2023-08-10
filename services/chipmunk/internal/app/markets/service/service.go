@@ -82,7 +82,7 @@ func (s *Service) Create(ctx context.Context, req *chipmunkApi.MarketCreateReq) 
 	destination, err = s.assetsService.ReturnBySymbol(ctx, &chipmunkApi.AssetReturnBySymbolReq{Symbol: req.DestinationSymbol})
 	if err != nil {
 
-		if err == gorm.ErrRecordNotFound {
+		if strings.Contains(err.Error(), gorm.ErrRecordNotFound.Error()) {
 			destination, err = s.assetsService.Create(ctx, &chipmunkApi.AssetCreateReq{
 				Name:   req.DestinationSymbol,
 				Symbol: req.DestinationSymbol,
@@ -94,7 +94,7 @@ func (s *Service) Create(ctx context.Context, req *chipmunkApi.MarketCreateReq) 
 
 	source, err = s.assetsService.ReturnBySymbol(ctx, &chipmunkApi.AssetReturnBySymbolReq{Symbol: req.SourceSymbol})
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if strings.Contains(err.Error(), gorm.ErrRecordNotFound.Error()) {
 			source, err = s.assetsService.Create(ctx, &chipmunkApi.AssetCreateReq{
 				Name:   req.SourceSymbol,
 				Symbol: req.SourceSymbol,
@@ -225,7 +225,7 @@ func (s *Service) UpdateFromPlatform(ctx context.Context, req *chipmunkApi.Marke
 	for _, market := range markets.Elements {
 		localMarket, err := s.db.ReturnByName(req.Platform, market.Name)
 		if err != nil {
-			if err == gorm.ErrRecordNotFound {
+			if strings.Contains(err.Error(), gorm.ErrRecordNotFound.Error()) {
 				mapper.Struct(market, localMarket)
 				source, sourceErr := s.loadOrCreateAsset(ctx, market.Source.Name)
 				if sourceErr != nil {

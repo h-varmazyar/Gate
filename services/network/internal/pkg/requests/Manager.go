@@ -171,14 +171,12 @@ func (m *Manager) GetRandomIP(ctx context.Context) (*IP, error) {
 
 func (m *Manager) assignLimiterToIPs(limiter *Limiter) {
 	for _, ip := range m.IPs {
-		go func(ip *IP) {
-			switch limiter.Type {
-			case networkAPI.RateLimiter_Spread:
-				ip.spreadAlgorithm(limiter)
-			case networkAPI.RateLimiter_Immediate:
-				log.Warnf("limiter type not implementerd")
-			}
-		}(ip)
+		switch limiter.Type {
+		case networkAPI.RateLimiter_Spread:
+			go ip.spreadAlgorithm(limiter)
+		case networkAPI.RateLimiter_Immediate:
+			log.Warnf("limiter type not implementerd")
+		}
 	}
 }
 
@@ -203,6 +201,7 @@ func (m *Manager) prepareLimiterForNewRequest(ctx context.Context, rateLimiterID
 
 func (m *Manager) listenToResponses() {
 	for response := range m.responseChan {
+		m.lock.Lock()
 		bucket, ok := m.buckets[response.BucketID]
 		if !ok {
 			log.Errorf("bucket not found")
@@ -215,5 +214,6 @@ func (m *Manager) listenToResponses() {
 		if isEnded {
 			delete(m.buckets, response.BucketID)
 		}
+		m.lock.Unlock()
 	}
 }
