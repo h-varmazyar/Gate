@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"github.com/golang/protobuf/proto"
+	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/amqpext"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/repository"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
 	indicatorsPkg "github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
+	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 	"time"
@@ -57,31 +58,34 @@ func (w *CandleReader) Start(indicators []indicatorsPkg.Indicator) {
 
 func (w *CandleReader) handle(delivery amqp.Delivery) {
 	w.logger.Infof("handling new delivery")
-	resp := new(chipmunkApi.CandlesAsyncUpdate)
+	resp := new(coreApi.OHLCResponse)
 	if err := proto.Unmarshal(delivery.Body, resp); err != nil {
 		log.WithError(err).Errorf("failed to unmarshal delivery")
 		_ = delivery.Nack(false, false)
 		return
 	}
-	if resp.Error != "" {
-		w.logger.Errorf("failed to get async candle update resp for market %v: %v", resp.MarketID, resp.Error)
-		delivery.Nack(false, false)
-		return
-	}
-	localCandles := make([]*entity.Candle, 0)
-	for _, candle := range resp.Candles {
-		tmp := new(entity.Candle)
-		mapper.Struct(candle, tmp)
-		localCandles = append(localCandles, tmp)
-		w.insertChan <- tmp
-	}
+	for _, item := range resp.Items {
+		if item.Error != "" {
+			w.logger.Errorf("failed to get async candle update resp for market %v: %v", item.MarketID, item.Error)
+			continue
+		}
+		localCandles := make([]*entity.Candle, 0)
+		for _, candle := range item.Candles {
+			tmp := new(entity.Candle)
+			mapper.Struct(candle, tmp)
+			tmp.MarketID = uuid.MustParse(item.MarketID)
+			tmp.ResolutionID = uuid.MustParse(item.ResolutionID)
+			localCandles = append(localCandles, tmp)
+			w.insertChan <- tmp
+		}
 
-	for _, indicator := range w.indicators {
-		indicator.Update(localCandles)
-	}
+		for _, indicator := range w.indicators {
+			indicator.Update(localCandles)
+		}
 
-	for _, candle := range localCandles {
-		buffer.CandleBuffer.Push(candle)
+		for _, candle := range localCandles {
+			buffer.CandleBuffer.Push(candle)
+		}
 	}
 	_ = delivery.Ack(false)
 }

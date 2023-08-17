@@ -32,23 +32,27 @@ func (r *Response) AsyncOHLC(_ context.Context, responses *networkAPI.AsyncRespo
 	for _, response := range responses.Responses {
 		metadata := new(brokerages.Metadata)
 		item := new(coreApi.OHLCResponseItem)
-		if err := json.Unmarshal([]byte(response.Metadata), metadata); err != nil {
-			log.WithError(err).Error("failed to unmarshal coinex callback delivery")
-			item.Error = err.Error()
-			message.Items = append(message.Items, item)
-			continue
-		}
-		if metadata.Platform != api.Platform_Coinex {
-			item.Error = "invalid platform"
-			message.Items = append(message.Items, item)
-			continue
-		}
 		if response.Code != http.StatusOK {
 			log.Errorf("ohlc request failed with code: %v - %v", response.Code, response.Body)
 			item.Error = response.Body
 			message.Items = append(message.Items, item)
 			continue
 		}
+
+		{
+			if err := json.Unmarshal([]byte(response.Metadata), metadata); err != nil {
+				log.WithError(err).Error("failed to unmarshal coinex callback message")
+				item.Error = err.Error()
+				message.Items = append(message.Items, item)
+				continue
+			}
+			if metadata.Platform != api.Platform_Coinex {
+				item.Error = "invalid platform"
+				message.Items = append(message.Items, item)
+				continue
+			}
+		}
+
 		data := make([][]interface{}, 0)
 		if err := parseResponse(response.Body, &data); err != nil {
 			log.WithError(err).Errorf("ohlc request parse failed: %v", response.Body)

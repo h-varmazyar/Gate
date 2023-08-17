@@ -205,6 +205,7 @@ func (m *Manager) listenToResponses() {
 		bucket, ok := m.buckets[response.BucketID]
 		if !ok {
 			log.Errorf("bucket not found")
+			m.lock.Unlock()
 			continue
 		}
 		isEnded, err := bucket.addResponse(context.Background(), response)

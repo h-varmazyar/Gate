@@ -51,13 +51,13 @@ func (w *RedundantRemover) run(platformsPairs []*PlatformPairs) {
 			return
 		case <-ticker.C:
 			w.removedCount = 0
-			w.logger.Infof("prepare removed rateLimiters")
+			w.logger.Infof("prepare removed platform pairs")
 			for _, platformPairs := range platformsPairs {
 				if err := w.removeRedundantCandles(platformPairs); err != nil {
 					w.logger.WithError(err).Error("failed to prepare remove redundant rateLimiters")
 				}
 			}
-			w.logger.Infof("removed rateLimiters: %v", w.removedCount)
+			w.logger.Infof("removed platform pairs: %v", w.removedCount)
 
 		}
 	}

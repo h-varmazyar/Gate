@@ -58,7 +58,7 @@ func (r *Bucket) addResponse(ctx context.Context, response *BucketResponse) (isE
 			return
 		}
 
-		log.Infof("publishing bucket response...")
+		log.Infof("publishing bucket response: %v - %v", len(responses.Responses), len(bytes))
 		if err = queue.Publish(bytes, grpcext.ProtobufContentType); err != nil {
 			log.WithError(err).Errorf("failed to publish response")
 		} else {

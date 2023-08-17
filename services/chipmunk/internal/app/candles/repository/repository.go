@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const tableName = "rateLimiters"
+const tableName = "candles"
 
 type CandleRepository interface {
 	Save(candle *entity.Candle) error
@@ -51,7 +51,7 @@ func migration(_ context.Context, dbInstance *db.DB) error {
 			newMigrations = append(newMigrations, &db.Migration{
 				TableName:   tableName,
 				Tag:         "v1.0.0",
-				Description: "create rateLimiters table",
+				Description: "create candles table",
 			})
 		}
 

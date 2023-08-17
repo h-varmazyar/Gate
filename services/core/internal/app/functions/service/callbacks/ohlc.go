@@ -40,6 +40,7 @@ func ListenOHLCCallbacks() error {
 
 func (c *OHLCCallbackHandler) listenToOHLC() {
 	for ohlcResp := range c.ohlc {
+		log.Infof("ohlc len: %v", len(ohlcResp.Items))
 		bytes, err := proto.Marshal(ohlcResp)
 		if err != nil {
 			log.WithError(err).Errorf("faled to marshal coinex async ohls message")

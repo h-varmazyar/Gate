@@ -59,6 +59,7 @@ func (c *OHLCCallback) handleDelivery(ctx context.Context, delivery amqp.Deliver
 		return
 	}
 
+	log.Infof("responses: %v", len(response.Responses))
 	c.responseChan <- r.AsyncOHLC(ctx, response)
 
 	_ = delivery.Ack(false)
