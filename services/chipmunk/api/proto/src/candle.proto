@@ -1,7 +1,6 @@
 syntax = "proto3";
 package chipmunkApi;
 option go_package = "github.com/h-varmazyar/Gate/services/chipmunk/api/proto";
-import "services/chipmunk/api/proto/src/indicator.proto";
 import "api/proto/src/misc.proto";
 
 service CandleService {
@@ -30,12 +29,10 @@ message Candle {
   double Low = 9;
   // @inject_tag: json:"id"
   uint64 ID = 10;
-  // @inject_tag: json:"indicator_values"
-  map<string, indicatorValue> IndicatorValues = 11; // key is indicator id
   // @inject_tag: json:"market_id"
-  string MarketID = 12;
+  string MarketID = 11;
   // @inject_tag: json:"resolution_id"
-  string ResolutionID = 13;
+  string ResolutionID = 12;
 }
 
 message Candles {

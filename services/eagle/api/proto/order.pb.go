@@ -243,57 +243,57 @@ type Order struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"id"
+	// @inject_tag: json:"id"
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
-	//	@inject_tag:	json:"server_order_id"
+	// @inject_tag: json:"server_order_id"
 	ServerOrderId int64 `protobuf:"varint,2,opt,name=ServerOrderId,proto3" json:"server_order_id"`
-	//	@inject_tag:	json:"amount"
+	// @inject_tag: json:"amount"
 	Amount float64 `protobuf:"fixed64,3,opt,name=Amount,proto3" json:"amount"`
-	//	@inject_tag:	json:"finished_at"
+	// @inject_tag: json:"finished_at"
 	FinishedAt int64 `protobuf:"varint,4,opt,name=FinishedAt,proto3" json:"finished_at"`
-	//	@inject_tag:	json:"executed_amount"
+	// @inject_tag: json:"executed_amount"
 	ExecutedAmount float64 `protobuf:"fixed64,5,opt,name=ExecutedAmount,proto3" json:"executed_amount"`
-	//	@inject_tag:	json:"un_executed_amount"
+	// @inject_tag: json:"un_executed_amount"
 	UnExecutedAmount float64 `protobuf:"fixed64,6,opt,name=UnExecutedAmount,proto3" json:"un_executed_amount"`
-	//	@inject_tag:	json:"status"
+	// @inject_tag: json:"status"
 	Status OrderStatus `protobuf:"varint,7,opt,name=Status,proto3,enum=eagleApi.OrderStatus" json:"status"`
-	//	@inject_tag:	json:"price"
+	// @inject_tag: json:"price"
 	Price float64 `protobuf:"fixed64,8,opt,name=Price,proto3" json:"price"`
-	//	@inject_tag:	json:"market"
+	// @inject_tag: json:"market"
 	Market *proto.Market `protobuf:"bytes,9,opt,name=Market,proto3" json:"market"`
-	//	@inject_tag:	json:"maker_fee_rate"
+	// @inject_tag: json:"maker_fee_rate"
 	MakerFeeRate float64 `protobuf:"fixed64,10,opt,name=MakerFeeRate,proto3" json:"maker_fee_rate"`
-	//	@inject_tag:	json:"taker_fee_rate"
+	// @inject_tag: json:"taker_fee_rate"
 	TakerFeeRate float64 `protobuf:"fixed64,11,opt,name=TakerFeeRate,proto3" json:"taker_fee_rate"`
-	//	@inject_tag:	json:"sell_or_buy"
+	// @inject_tag: json:"sell_or_buy"
 	SellOrBuy OrderType `protobuf:"varint,12,opt,name=SellOrBuy,proto3,enum=eagleApi.OrderType" json:"sell_or_buy"`
-	//	@inject_tag:	json:"order_type"
+	// @inject_tag: json:"order_type"
 	OrderType OrderModel `protobuf:"varint,13,opt,name=OrderType,proto3,enum=eagleApi.OrderModel" json:"order_type"`
-	//	@inject_tag:	json:"average_price"
+	// @inject_tag: json:"average_price"
 	AveragePrice float64 `protobuf:"fixed64,14,opt,name=AveragePrice,proto3" json:"average_price"`
-	//	@inject_tag:	json:"transaction_fee"
+	// @inject_tag: json:"transaction_fee"
 	TransactionFee float64 `protobuf:"fixed64,15,opt,name=TransactionFee,proto3" json:"transaction_fee"`
-	//	@inject_tag:	json:"source_asset"
+	// @inject_tag: json:"source_asset"
 	SourceAsset *proto.Asset `protobuf:"bytes,16,opt,name=SourceAsset,proto3" json:"source_asset"`
-	//	@inject_tag:	json:"destination_asset"
+	// @inject_tag: json:"destination_asset"
 	DestinationAsset *proto.Asset `protobuf:"bytes,17,opt,name=DestinationAsset,proto3" json:"destination_asset"`
-	//	@inject_tag:	json:"fee_asset"
+	// @inject_tag: json:"fee_asset"
 	FeeAsset *proto.Asset `protobuf:"bytes,18,opt,name=FeeAsset,proto3" json:"fee_asset"`
-	//	@inject_tag:	json:"fee_discount"
+	// @inject_tag: json:"fee_discount"
 	FeeDiscount float64 `protobuf:"fixed64,19,opt,name=FeeDiscount,proto3" json:"fee_discount"`
-	//	@inject_tag:	json:"asset_fee"
+	// @inject_tag: json:"asset_fee"
 	AssetFee float64 `protobuf:"fixed64,20,opt,name=AssetFee,proto3" json:"asset_fee"`
-	//	@inject_tag:	json:"money_fee"
+	// @inject_tag: json:"money_fee"
 	MoneyFee float64 `protobuf:"fixed64,21,opt,name=MoneyFee,proto3" json:"money_fee"`
-	//	@inject_tag:	json:"volume"
+	// @inject_tag: json:"volume"
 	Volume float64 `protobuf:"fixed64,22,opt,name=Volume,proto3" json:"volume"`
-	//	@inject_tag:	json:"order_no"
+	// @inject_tag: json:"order_no"
 	OrderNo int64 `protobuf:"varint,23,opt,name=OrderNo,proto3" json:"order_no"`
-	//	@inject_tag:	json:"stock_fee"
+	// @inject_tag: json:"stock_fee"
 	StockFee float64 `protobuf:"fixed64,24,opt,name=StockFee,proto3" json:"stock_fee"`
-	//	@inject_tag:	json:"created_at"
+	// @inject_tag: json:"created_at"
 	CreatedAt int64 `protobuf:"varint,25,opt,name=CreatedAt,proto3" json:"created_at"`
-	//	@inject_tag:	json:"updated_at"
+	// @inject_tag: json:"updated_at"
 	UpdatedAt int64 `protobuf:"varint,26,opt,name=UpdatedAt,proto3" json:"updated_at"`
 }
 
@@ -516,7 +516,7 @@ type Orders struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//	@inject_tag:	json:"elements"
+	// @inject_tag: json:"elements"
 	Elements []*Order `protobuf:"bytes,1,rep,name=Elements,proto3" json:"elements"`
 }
 

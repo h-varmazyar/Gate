@@ -1,0 +1,23 @@
+syntax = "proto3";
+package indicatorApi;
+option go_package = "github.com/h-varmazyar/Gate/services/indicator/api/proto";
+
+enum Source {
+  CUSTOM = 0;
+  OHLC4 = 1;
+  CLOSE = 2;
+  OPEN = 3;
+  HIGH = 4;
+  HLC3 = 5;
+  LOW = 6;
+  HL2 = 7;
+}
+
+enum Type{
+  NOTHING = 0;
+  RSI = 1;
+  STOCHASTIC = 2;
+  SMA = 3;
+  EMA = 4;
+  BOLLINGER_BANDS = 5;
+}

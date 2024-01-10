@@ -4,7 +4,7 @@ option go_package = "github.com/h-varmazyar/Gate/services/eagle/api/proto";
 import "api/proto/src/misc.proto";
 import "services/chipmunk/api/proto/src/resolution.proto";
 import "services/chipmunk/api/proto/src/market.proto";
-import "services/chipmunk/api/proto/src/indicator.proto";
+import "services/eagle/api/proto/src/indicator.proto";
 
 service StrategyService {
   rpc Create(CreateStrategyReq) returns(Strategy);
@@ -94,7 +94,7 @@ message StrategyIndicator {
   // @inject_tag: json:"indicator_id"
   string IndicatorID = 2;
   // @inject_tag: json:"type"
-  chipmunkApi.Indicator.type Type = 3;
+  IndicatorType Type = 3;
 }
 
 message StrategyIndicators {

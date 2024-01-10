@@ -1,0 +1,37 @@
+syntax = "proto3";
+package indicatorApi;
+option go_package = "github.com/h-varmazyar/Gate/services/indicator/api/proto";
+
+message IndicatorValues{
+  repeated IndicatorValue values = 1;
+}
+
+message IndicatorValue{
+  int64 time = 1;
+  oneof Value{
+    BollingerBandsValue BollingerBands = 2;
+    ExponentialMovingAverageValue MovingAverage = 3;
+    StochasticValue Stochastic = 4;
+    RSIValue RSI = 5;
+  }
+}
+
+message BollingerBandsValue {
+  double UpperBand = 1;
+  double LowerBand = 2;
+  double MA = 3;
+}
+
+message ExponentialMovingAverageValue {
+  double simple = 1;
+  double exponential = 2;
+}
+
+message StochasticValue {
+  double index_k = 1;
+  double index_d = 2;
+}
+
+message RSIValue {
+  double rsi = 1;
+}

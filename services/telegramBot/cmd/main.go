@@ -5,7 +5,9 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/service"
 	"github.com/h-varmazyar/Gate/services/telegramBot/configs"
 	"github.com/h-varmazyar/Gate/services/telegramBot/internal/app"
+	"github.com/h-varmazyar/Gate/services/telegramBot/internal/app/handlers"
 	"github.com/h-varmazyar/Gate/services/telegramBot/internal/pkg/repository"
+	"github.com/h-varmazyar/Gate/services/telegramBot/internal/pkg/tgBotApi"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -24,6 +26,13 @@ func main() {
 
 	repository.InitializingDB(conf.DB)
 
+	logger.Infof("conf:%v", conf.ServiceConfigs.BotConfigs.Token)
+
+	handler := handlers.NewInstance(conf.ServiceConfigs.HandlerConfigs)
+	if err := tgBotApi.Run(handler, conf.ServiceConfigs.BotConfigs); err != nil {
+		panic(err)
+	}
+
 	service.Serve(conf.GrpcPort, func(lst net.Listener) error {
 		server := grpc.NewServer()
 		app.NewService(conf.ServiceConfigs).RegisterServer(server)
@@ -34,7 +43,7 @@ func main() {
 }
 
 func loadConfigs() (*Configs, error) {
-	log.Infof("reding configs...")
+	log.Infof("reading configs...")
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {

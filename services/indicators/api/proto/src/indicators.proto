@@ -1,0 +1,117 @@
+syntax = "proto3";
+package indicatorApi;
+option go_package = "github.com/h-varmazyar/Gate/services/indicator/api/proto";
+import "services/indicators/api/proto/src/configs.proto";
+import "services/indicators/api/proto/src/values.proto";
+import "services/indicators/api/proto/src/misc.proto";
+
+service indicatorService{
+  rpc Register(IndicatorRegisterReq) returns (Indicator);
+  rpc Values(IndicatorValuesReq) returns (IndicatorValues);
+}
+
+message IndicatorRegisterReq{
+  Type type = 1;
+  IndicatorConfigs Configs = 2;
+}
+
+message IndicatorValuesReq {
+  string Id = 1;
+  uint32 page = 2;
+  uint32 page_size = 3;
+}
+
+message Indicator {
+  string Id = 1;
+  Type type = 2;
+  IndicatorConfigs Configs = 3;
+}
+
+
+
+//message indicatorValue{
+//  // @inject_tag: json:"value"
+//  oneof Value{
+//    // @inject_tag: json:"bollinger_band,omitempty"
+//    BollingerBands BollingerBands = 2;
+//    // @inject_tag: json:"moving_average,omitempty"
+//    MovingAverage MovingAverage = 3;
+//    // @inject_tag: json:"stochastic,omitempty"
+//    Stochastic Stochastic = 4;
+//    // @inject_tag: json:"rsi,omitempty"
+//    RSI RSI = 5;
+//  }
+//}
+//
+//message BollingerBands {
+//  // @inject_tag: json:"upper_band"
+//  double UpperBand = 1;
+//  // @inject_tag: json:"lower_band"
+//  double LowerBand = 2;
+//  // @inject_tag: json:"ma"
+//  double MA = 3;
+//}
+//
+//message MovingAverage {
+//  // @inject_tag: json:"simple"
+//  double Simple = 1;
+//  // @inject_tag: json:"exponential"
+//  double Exponential = 2;
+//}
+//
+//message Stochastic {
+//  // @inject_tag: json:"index_k"
+//  double IndexK = 1;
+//  // @inject_tag: json:"index_d"
+//  double IndexD = 2;
+//}
+//
+//message RSI {
+//  // @inject_tag: json:"rsi"
+//  double RSI = 1;
+//}
+//
+//message IndicatorReturnReq{
+//  // @inject_tag: json:"id"
+//  string ID = 1;
+//}
+//
+//message RsiConfigs{
+//  // @inject_tag: json:"length"
+//  int32 Length = 1;
+//}
+//
+//message StochasticConfigs{
+//  // @inject_tag: json:"length"
+//  int32 Length = 1;
+//  // @inject_tag: json:"smooth_k"
+//  int32 SmoothK = 2;
+//  // @inject_tag: json:"smooth_d"
+//  int32 SmoothD = 3;
+//}
+//
+//message MovingAverageConfigs{
+//  // @inject_tag: json:"length"
+//  int32 Length = 1;
+//  // @inject_tag: json:"source"
+//  Source Source = 2;
+//}
+//
+//message BollingerBandsConfigs{
+//  // @inject_tag: json:"length"
+//  int32 Length = 1;
+//  // @inject_tag: json:"deviation"
+//  int32 Deviation = 2;
+//  // @inject_tag: json:"source"
+//  Source Source = 3;
+//}
+//
+//message IndicatorListReq{
+//  // @inject_tag: json:"type"
+//  Indicator.type Type = 1;
+//}
+//
+//message Indicators{
+//  // @inject_tag: json:"elements"
+//  repeated Indicator Elements = 1;
+//}

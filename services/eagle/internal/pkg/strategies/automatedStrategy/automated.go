@@ -27,15 +27,17 @@ type Automated struct {
 	botService       telegramBotApi.BotServiceClient
 	signalPool       *redis.Client
 	configs          *Configs
+	log              *log.Logger
 }
 
-func NewAutomatedStrategy(strategy *entity.Strategy, configs *Configs) (strategies.Strategy, error) {
+func NewAutomatedStrategy(strategy *entity.Strategy, configs *Configs, log *log.Logger) (strategies.Strategy, error) {
 	if strategy == nil {
 		return nil, errors.NewWithSlug(context.Background(), codes.FailedPrecondition, "empty_strategy")
 	}
 	automated := new(Automated)
 	automated.Strategy = strategy
 	automated.configs = configs
+	automated.log = log
 
 	automated.signalPool = redis.NewClient(&redis.Options{
 		Addr:     configs.RedisAddress,
@@ -79,11 +81,11 @@ func (s *Automated) CheckForSignals(ctx context.Context, market *chipmunkApi.Mar
 		case <-ctx.Done():
 			checkTicker.Stop()
 		case <-checkTicker.C:
-			reference, err = s.walletsService.ReturnReference(context.Background(), &chipmunkApi.ReturnReferenceReq{ReferenceName: market.Destination.Name})
-			if err != nil {
-				log.WithError(err).Errorf("failed to fetch wallet info for market %v and reference %v", marketID, market.Destination.Name)
-				continue
-			}
+			//reference, err = s.walletsService.ReturnReference(context.Background(), &chipmunkApi.ReturnReferenceReq{ReferenceName: market.Destination.Name})
+			//if err != nil {
+			//	log.WithError(err).Errorf("failed to fetch wallet info for market %v and reference %v", marketID, market.Destination.Name)
+			//	continue
+			//}
 			//if reference.ActiveBalance <= 0 || reference.ActiveBalance < reference.TotalBalance/10 {
 			//	continue
 			//}

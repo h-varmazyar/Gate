@@ -1,0 +1,134 @@
+syntax = "proto3";
+package eagleApi;
+option go_package = "github.com/h-varmazyar/Gate/services/eagle/api/proto";
+
+service indicatorService{
+  rpc Return(IndicatorReturnReq) returns (Indicator);
+  rpc List(IndicatorListReq) returns (Indicators);
+}
+
+enum Source {
+  Custom = 0;
+  OHLC4 = 1;
+  Close = 2;
+  Open = 3;
+  High = 4;
+  HLC3 = 5;
+  Low = 6;
+  HL2 = 7;
+}
+
+enum IndicatorType{
+  Unknown = 0;
+  RSI = 1;
+  Stochastic = 2;
+  MovingAverage = 3;
+  BollingerBands = 4;
+}
+
+message Indicator {
+  // @inject_tag: json:"id"
+  string id = 1;
+  // @inject_tag: json:"type"
+  IndicatorType type = 2;
+  // @inject_tag: json:"configs"
+  oneof configs{
+    // @inject_tag: json:"rsi"
+    RsiConfigs rsi = 3;
+    // @inject_tag: json:"stochastic"
+    StochasticConfigs stochastic = 4;
+    // @inject_tag: json:"moving_average"
+    MovingAverageConfigs moving_average = 5;
+    // @inject_tag: json:"bollinger_bands"
+    BollingerBandsConfigs bollinger_bands = 6;
+  }
+}
+
+message RsiConfigs{
+  // @inject_tag: json:"length"
+  int32 length = 1;
+}
+
+message StochasticConfigs{
+  // @inject_tag: json:"length"
+  int32 length = 1;
+  // @inject_tag: json:"smooth_k"
+  int32 smooth_k = 2;
+  // @inject_tag: json:"smooth_d"
+  int32 smooth_d = 3;
+}
+
+message MovingAverageConfigs{
+  // @inject_tag: json:"length"
+  int32 length = 1;
+  // @inject_tag: json:"source"
+  Source source = 2;
+}
+
+message BollingerBandsConfigs{
+  // @inject_tag: json:"length"
+  int32 length = 1;
+  // @inject_tag: json:"deviation"
+  int32 deviation = 2;
+  // @inject_tag: json:"source"
+  Source source = 3;
+}
+
+message indicatorValue{
+  // @inject_tag: json:"type"
+  IndicatorType type = 1;
+  // @inject_tag: json:"value"
+  oneof value{
+    // @inject_tag: json:"bollinger_band"
+    BollingerBandsValue bollinger_bands = 2;
+    // @inject_tag: json:"moving_average"
+    MovingAverageValue moving_average = 3;
+    // @inject_tag: json:"stochastic"
+    StochasticValue stochastic = 4;
+    // @inject_tag: json:"rsi"
+    RSIValue rsi = 5;
+  }
+}
+
+message BollingerBandsValue {
+  // @inject_tag: json:"upper_band"
+  double upper_band = 1;
+  // @inject_tag: json:"lower_band"
+  double lower_band = 2;
+  // @inject_tag: json:"ma"
+  double ma = 3;
+}
+
+message MovingAverageValue {
+  // @inject_tag: json:"simple"
+  double simple = 1;
+  // @inject_tag: json:"exponential"
+  double exponential = 2;
+}
+
+message StochasticValue {
+  // @inject_tag: json:"index_k"
+  double index_k = 1;
+  // @inject_tag: json:"index_d"
+  double index_d = 2;
+}
+
+message RSIValue {
+  // @inject_tag: json:"rsi"
+  double rsi = 1;
+}
+
+message IndicatorReturnReq{
+  // @inject_tag: json:"id"
+  string id = 1;
+}
+
+message IndicatorListReq{
+  // @inject_tag: json:"type"
+  IndicatorType Type = 1;
+}
+
+message Indicators{
+  // @inject_tag: json:"elements"
+  repeated Indicator Elements = 1;
+}

@@ -33,7 +33,7 @@ func Run(customHandlers Handlers, configs *Configs) error {
 
 	botConfigs = configs
 
-	bot, err = tgbotapi.NewBotAPI(botConfigs.BotToken)
+	bot, err = tgbotapi.NewBotAPI(botConfigs.Token)
 	if err != nil {
 		log.WithError(err).Error("failed to create new bot")
 		return err
@@ -82,6 +82,7 @@ func IsRunning() bool {
 func handleUpdate(update tgbotapi.Update) {
 	ctx, fn := context.WithTimeout(context.Background(), time.Minute)
 	defer func() {
+		fn()
 		if r := recover(); r != nil {
 			log.WithError(errors.New("an error thrown on handle update")).Error(r)
 		}
@@ -117,7 +118,6 @@ func handleUpdate(update tgbotapi.Update) {
 			log.WithError(err).Error("message handling error")
 		}
 	}
-	fn()
 }
 
 //func SendMessage(ctx context.Context, chatId int64, message *Chattable, replyId int, keyboard *Keyboard) (tgbotapi.Message, error) {
