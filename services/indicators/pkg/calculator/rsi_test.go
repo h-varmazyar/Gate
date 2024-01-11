@@ -2,16 +2,21 @@ package calculator
 
 import (
 	"context"
+	"fmt"
 	chipmunkAPI "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	indicatorsAPI "github.com/h-varmazyar/Gate/services/indicators/api/proto"
 	"testing"
 )
 
-func TestCalculate(t *testing.T) {
-	calculate := func(t testing.TB, conf *SMA, candles []*chipmunkAPI.Candle, want []*float64) {
+func TestRSI_Calculate(t *testing.T) {
+	calculate := func(t testing.TB, conf *RSI, candles []*chipmunkAPI.Candle, want []*float64) {
 		t.Helper()
-		values := make([]*SMAValue, len(candles))
-		conf.Calculate(context.Background(), candles, values)
+		values := make([]*RSIValue, len(candles))
+		err := conf.Calculate(context.Background(), candles, values)
+		if err != nil {
+			t.Errorf("failed to calculate rsi: %v", err)
+			return
+		}
 
 		if len(candles) != len(want) {
 			t.Errorf("value and want length mismatch (values(%v) != want(%v))", len(candles), len(want))
@@ -22,8 +27,17 @@ func TestCalculate(t *testing.T) {
 		}
 
 		for i, value := range values {
-			if value.Value != want[i] {
+			if value.Value == nil && want[i] != nil {
+				t.Errorf("want and value mismatch(%v) - want %v but got nil", i, *want[i])
+				return
+			}
+			if value.Value != nil && want[i] == nil {
+				t.Errorf("want and value mismatch(%v) - want %v but got nil", i, *want[i])
+				return
+			}
+			if value.Value != nil && fmt.Sprintf("%.2f", *value.Value) != fmt.Sprintf("%.2f", *want[i]) {
 				t.Errorf("want and value mismatch(%v) - want %v but got %v", i, *want[i], *value.Value)
+				return
 			}
 		}
 	}
@@ -41,7 +55,7 @@ func TestCalculate(t *testing.T) {
 			{Close: 0.101711, Time: 1704910000}, //9
 			{Close: 0.127273, Time: 1704911000}, //10
 			{Close: 0.117460, Time: 1704912000}, //11
-			{Close: 0.113066, Time: 1704913000},
+			{Close: 0.113066, Time: 1704913000}, //12
 			//{Close: 5897, Time: 1704914000},
 			//{Close: 6224, Time: 1704915000},
 			//{Close: 7169, Time: 1704916000},
@@ -50,9 +64,11 @@ func TestCalculate(t *testing.T) {
 			//{Close: 7462, Time: 1704919000},
 		}
 
-		r10 := 0.103016
-		r11 := 0.104461
-		r12 := 0.105321
+		r8 := 59.48
+		r9 := 60.51
+		r10 := 74.49
+		r11 := 64.30
+		r12 := 60.01
 
 		results := []*float64{
 			nil,  //1
@@ -62,14 +78,14 @@ func TestCalculate(t *testing.T) {
 			nil,  //5
 			nil,  //6
 			nil,  //7
-			nil,  //8
-			nil,  //9
+			&r8,  //8
+			&r9,  //9
 			&r10, //10
 			&r11, //11
 			&r12, //12
 		}
 
-		conf, _ := NewSMA(10, indicatorsAPI.Source_CLOSE)
+		conf, _ := NewRSI(7, indicatorsAPI.Source_CLOSE)
 		calculate(t, conf, candles, results)
 	})
 }
