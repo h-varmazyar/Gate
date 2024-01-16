@@ -77,7 +77,7 @@ func (conf *SMA) UpdateLast(_ context.Context, candle *chipmunkAPI.Candle, value
 		changeableCandle = conf.periodCandles[conf.Period-1]
 	} else if conf.lastValue.TimeFrame.Unix() < candle.Time {
 		changeableCandle = cloneCandle(conf.periodCandles[0])
-		conf.periodCandles = conf.periodCandles[1:]
+		conf.periodCandles = conf.periodCandles[1:] //todo: must be check
 	}
 	conf.periodCandles[conf.Period-1] = cloneCandle(candle)
 
