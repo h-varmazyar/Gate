@@ -75,7 +75,8 @@ type IndicatorValue struct {
 	Time int64 `protobuf:"varint,1,opt,name=time,proto3" json:"time,omitempty"`
 	// Types that are assignable to Value:
 	//	*IndicatorValue_BollingerBands
-	//	*IndicatorValue_MovingAverage
+	//	*IndicatorValue_SMA
+	//	*IndicatorValue_EMA
 	//	*IndicatorValue_Stochastic
 	//	*IndicatorValue_RSI
 	Value isIndicatorValue_Value `protobuf_oneof:"Value"`
@@ -134,9 +135,16 @@ func (x *IndicatorValue) GetBollingerBands() *BollingerBandsValue {
 	return nil
 }
 
-func (x *IndicatorValue) GetMovingAverage() *ExponentialMovingAverageValue {
-	if x, ok := x.GetValue().(*IndicatorValue_MovingAverage); ok {
-		return x.MovingAverage
+func (x *IndicatorValue) GetSMA() *SMAValue {
+	if x, ok := x.GetValue().(*IndicatorValue_SMA); ok {
+		return x.SMA
+	}
+	return nil
+}
+
+func (x *IndicatorValue) GetEMA() *EMAValue {
+	if x, ok := x.GetValue().(*IndicatorValue_EMA); ok {
+		return x.EMA
 	}
 	return nil
 }
@@ -163,21 +171,27 @@ type IndicatorValue_BollingerBands struct {
 	BollingerBands *BollingerBandsValue `protobuf:"bytes,2,opt,name=BollingerBands,proto3,oneof"`
 }
 
-type IndicatorValue_MovingAverage struct {
-	MovingAverage *ExponentialMovingAverageValue `protobuf:"bytes,3,opt,name=MovingAverage,proto3,oneof"`
+type IndicatorValue_SMA struct {
+	SMA *SMAValue `protobuf:"bytes,3,opt,name=SMA,proto3,oneof"`
+}
+
+type IndicatorValue_EMA struct {
+	EMA *EMAValue `protobuf:"bytes,4,opt,name=EMA,proto3,oneof"`
 }
 
 type IndicatorValue_Stochastic struct {
-	Stochastic *StochasticValue `protobuf:"bytes,4,opt,name=Stochastic,proto3,oneof"`
+	Stochastic *StochasticValue `protobuf:"bytes,5,opt,name=Stochastic,proto3,oneof"`
 }
 
 type IndicatorValue_RSI struct {
-	RSI *RSIValue `protobuf:"bytes,5,opt,name=RSI,proto3,oneof"`
+	RSI *RSIValue `protobuf:"bytes,6,opt,name=RSI,proto3,oneof"`
 }
 
 func (*IndicatorValue_BollingerBands) isIndicatorValue_Value() {}
 
-func (*IndicatorValue_MovingAverage) isIndicatorValue_Value() {}
+func (*IndicatorValue_SMA) isIndicatorValue_Value() {}
+
+func (*IndicatorValue_EMA) isIndicatorValue_Value() {}
 
 func (*IndicatorValue_Stochastic) isIndicatorValue_Value() {}
 
@@ -246,17 +260,16 @@ func (x *BollingerBandsValue) GetMA() float64 {
 	return 0
 }
 
-type ExponentialMovingAverageValue struct {
+type SMAValue struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Simple      float64 `protobuf:"fixed64,1,opt,name=simple,proto3" json:"simple,omitempty"`
-	Exponential float64 `protobuf:"fixed64,2,opt,name=exponential,proto3" json:"exponential,omitempty"`
+	Value float64 `protobuf:"fixed64,1,opt,name=value,proto3" json:"value,omitempty"`
 }
 
-func (x *ExponentialMovingAverageValue) Reset() {
-	*x = ExponentialMovingAverageValue{}
+func (x *SMAValue) Reset() {
+	*x = SMAValue{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_services_indicators_api_proto_src_values_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -264,13 +277,13 @@ func (x *ExponentialMovingAverageValue) Reset() {
 	}
 }
 
-func (x *ExponentialMovingAverageValue) String() string {
+func (x *SMAValue) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ExponentialMovingAverageValue) ProtoMessage() {}
+func (*SMAValue) ProtoMessage() {}
 
-func (x *ExponentialMovingAverageValue) ProtoReflect() protoreflect.Message {
+func (x *SMAValue) ProtoReflect() protoreflect.Message {
 	mi := &file_services_indicators_api_proto_src_values_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -282,19 +295,67 @@ func (x *ExponentialMovingAverageValue) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ExponentialMovingAverageValue.ProtoReflect.Descriptor instead.
-func (*ExponentialMovingAverageValue) Descriptor() ([]byte, []int) {
+// Deprecated: Use SMAValue.ProtoReflect.Descriptor instead.
+func (*SMAValue) Descriptor() ([]byte, []int) {
 	return file_services_indicators_api_proto_src_values_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ExponentialMovingAverageValue) GetSimple() float64 {
+func (x *SMAValue) GetValue() float64 {
+	if x != nil {
+		return x.Value
+	}
+	return 0
+}
+
+type EMAValue struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Simple      float64 `protobuf:"fixed64,1,opt,name=simple,proto3" json:"simple,omitempty"`
+	Exponential float64 `protobuf:"fixed64,2,opt,name=exponential,proto3" json:"exponential,omitempty"`
+}
+
+func (x *EMAValue) Reset() {
+	*x = EMAValue{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_services_indicators_api_proto_src_values_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *EMAValue) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EMAValue) ProtoMessage() {}
+
+func (x *EMAValue) ProtoReflect() protoreflect.Message {
+	mi := &file_services_indicators_api_proto_src_values_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EMAValue.ProtoReflect.Descriptor instead.
+func (*EMAValue) Descriptor() ([]byte, []int) {
+	return file_services_indicators_api_proto_src_values_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *EMAValue) GetSimple() float64 {
 	if x != nil {
 		return x.Simple
 	}
 	return 0
 }
 
-func (x *ExponentialMovingAverageValue) GetExponential() float64 {
+func (x *EMAValue) GetExponential() float64 {
 	if x != nil {
 		return x.Exponential
 	}
@@ -313,7 +374,7 @@ type StochasticValue struct {
 func (x *StochasticValue) Reset() {
 	*x = StochasticValue{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_services_indicators_api_proto_src_values_proto_msgTypes[4]
+		mi := &file_services_indicators_api_proto_src_values_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -326,7 +387,7 @@ func (x *StochasticValue) String() string {
 func (*StochasticValue) ProtoMessage() {}
 
 func (x *StochasticValue) ProtoReflect() protoreflect.Message {
-	mi := &file_services_indicators_api_proto_src_values_proto_msgTypes[4]
+	mi := &file_services_indicators_api_proto_src_values_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -339,7 +400,7 @@ func (x *StochasticValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StochasticValue.ProtoReflect.Descriptor instead.
 func (*StochasticValue) Descriptor() ([]byte, []int) {
-	return file_services_indicators_api_proto_src_values_proto_rawDescGZIP(), []int{4}
+	return file_services_indicators_api_proto_src_values_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *StochasticValue) GetIndexK() float64 {
@@ -367,7 +428,7 @@ type RSIValue struct {
 func (x *RSIValue) Reset() {
 	*x = RSIValue{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_services_indicators_api_proto_src_values_proto_msgTypes[5]
+		mi := &file_services_indicators_api_proto_src_values_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -380,7 +441,7 @@ func (x *RSIValue) String() string {
 func (*RSIValue) ProtoMessage() {}
 
 func (x *RSIValue) ProtoReflect() protoreflect.Message {
-	mi := &file_services_indicators_api_proto_src_values_proto_msgTypes[5]
+	mi := &file_services_indicators_api_proto_src_values_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -393,7 +454,7 @@ func (x *RSIValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RSIValue.ProtoReflect.Descriptor instead.
 func (*RSIValue) Descriptor() ([]byte, []int) {
-	return file_services_indicators_api_proto_src_values_proto_rawDescGZIP(), []int{5}
+	return file_services_indicators_api_proto_src_values_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *RSIValue) GetRsi() float64 {
@@ -414,35 +475,36 @@ var file_services_indicators_api_proto_src_values_proto_rawDesc = []byte{
 	0x73, 0x12, 0x34, 0x0a, 0x06, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
 	0x0b, 0x32, 0x1c, 0x2e, 0x69, 0x6e, 0x64, 0x69, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x70, 0x69,
 	0x2e, 0x49, 0x6e, 0x64, 0x69, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52,
-	0x06, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x22, 0xbc, 0x02, 0x0a, 0x0e, 0x49, 0x6e, 0x64, 0x69,
+	0x06, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x22, 0xbf, 0x02, 0x0a, 0x0e, 0x49, 0x6e, 0x64, 0x69,
 	0x63, 0x61, 0x74, 0x6f, 0x72, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x69,
 	0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x12, 0x4b,
 	0x0a, 0x0e, 0x42, 0x6f, 0x6c, 0x6c, 0x69, 0x6e, 0x67, 0x65, 0x72, 0x42, 0x61, 0x6e, 0x64, 0x73,
 	0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x69, 0x6e, 0x64, 0x69, 0x63, 0x61, 0x74,
 	0x6f, 0x72, 0x41, 0x70, 0x69, 0x2e, 0x42, 0x6f, 0x6c, 0x6c, 0x69, 0x6e, 0x67, 0x65, 0x72, 0x42,
 	0x61, 0x6e, 0x64, 0x73, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x48, 0x00, 0x52, 0x0e, 0x42, 0x6f, 0x6c,
-	0x6c, 0x69, 0x6e, 0x67, 0x65, 0x72, 0x42, 0x61, 0x6e, 0x64, 0x73, 0x12, 0x53, 0x0a, 0x0d, 0x4d,
-	0x6f, 0x76, 0x69, 0x6e, 0x67, 0x41, 0x76, 0x65, 0x72, 0x61, 0x67, 0x65, 0x18, 0x03, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x2b, 0x2e, 0x69, 0x6e, 0x64, 0x69, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x70,
-	0x69, 0x2e, 0x45, 0x78, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x4d, 0x6f, 0x76,
-	0x69, 0x6e, 0x67, 0x41, 0x76, 0x65, 0x72, 0x61, 0x67, 0x65, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x48,
-	0x00, 0x52, 0x0d, 0x4d, 0x6f, 0x76, 0x69, 0x6e, 0x67, 0x41, 0x76, 0x65, 0x72, 0x61, 0x67, 0x65,
-	0x12, 0x3f, 0x0a, 0x0a, 0x53, 0x74, 0x6f, 0x63, 0x68, 0x61, 0x73, 0x74, 0x69, 0x63, 0x18, 0x04,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x69, 0x6e, 0x64, 0x69, 0x63, 0x61, 0x74, 0x6f, 0x72,
-	0x41, 0x70, 0x69, 0x2e, 0x53, 0x74, 0x6f, 0x63, 0x68, 0x61, 0x73, 0x74, 0x69, 0x63, 0x56, 0x61,
-	0x6c, 0x75, 0x65, 0x48, 0x00, 0x52, 0x0a, 0x53, 0x74, 0x6f, 0x63, 0x68, 0x61, 0x73, 0x74, 0x69,
-	0x63, 0x12, 0x2a, 0x0a, 0x03, 0x52, 0x53, 0x49, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x16,
-	0x2e, 0x69, 0x6e, 0x64, 0x69, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x70, 0x69, 0x2e, 0x52, 0x53,
-	0x49, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x48, 0x00, 0x52, 0x03, 0x52, 0x53, 0x49, 0x42, 0x07, 0x0a,
-	0x05, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x61, 0x0a, 0x13, 0x42, 0x6f, 0x6c, 0x6c, 0x69, 0x6e,
-	0x67, 0x65, 0x72, 0x42, 0x61, 0x6e, 0x64, 0x73, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x12, 0x1c, 0x0a,
-	0x09, 0x55, 0x70, 0x70, 0x65, 0x72, 0x42, 0x61, 0x6e, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x01,
-	0x52, 0x09, 0x55, 0x70, 0x70, 0x65, 0x72, 0x42, 0x61, 0x6e, 0x64, 0x12, 0x1c, 0x0a, 0x09, 0x4c,
-	0x6f, 0x77, 0x65, 0x72, 0x42, 0x61, 0x6e, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x01, 0x52, 0x09,
-	0x4c, 0x6f, 0x77, 0x65, 0x72, 0x42, 0x61, 0x6e, 0x64, 0x12, 0x0e, 0x0a, 0x02, 0x4d, 0x41, 0x18,
-	0x03, 0x20, 0x01, 0x28, 0x01, 0x52, 0x02, 0x4d, 0x41, 0x22, 0x59, 0x0a, 0x1d, 0x45, 0x78, 0x70,
-	0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x4d, 0x6f, 0x76, 0x69, 0x6e, 0x67, 0x41, 0x76,
-	0x65, 0x72, 0x61, 0x67, 0x65, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x69,
+	0x6c, 0x69, 0x6e, 0x67, 0x65, 0x72, 0x42, 0x61, 0x6e, 0x64, 0x73, 0x12, 0x2a, 0x0a, 0x03, 0x53,
+	0x4d, 0x41, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x69, 0x6e, 0x64, 0x69, 0x63,
+	0x61, 0x74, 0x6f, 0x72, 0x41, 0x70, 0x69, 0x2e, 0x53, 0x4d, 0x41, 0x56, 0x61, 0x6c, 0x75, 0x65,
+	0x48, 0x00, 0x52, 0x03, 0x53, 0x4d, 0x41, 0x12, 0x2a, 0x0a, 0x03, 0x45, 0x4d, 0x41, 0x18, 0x04,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x69, 0x6e, 0x64, 0x69, 0x63, 0x61, 0x74, 0x6f, 0x72,
+	0x41, 0x70, 0x69, 0x2e, 0x45, 0x4d, 0x41, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x48, 0x00, 0x52, 0x03,
+	0x45, 0x4d, 0x41, 0x12, 0x3f, 0x0a, 0x0a, 0x53, 0x74, 0x6f, 0x63, 0x68, 0x61, 0x73, 0x74, 0x69,
+	0x63, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x69, 0x6e, 0x64, 0x69, 0x63, 0x61,
+	0x74, 0x6f, 0x72, 0x41, 0x70, 0x69, 0x2e, 0x53, 0x74, 0x6f, 0x63, 0x68, 0x61, 0x73, 0x74, 0x69,
+	0x63, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x48, 0x00, 0x52, 0x0a, 0x53, 0x74, 0x6f, 0x63, 0x68, 0x61,
+	0x73, 0x74, 0x69, 0x63, 0x12, 0x2a, 0x0a, 0x03, 0x52, 0x53, 0x49, 0x18, 0x06, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x16, 0x2e, 0x69, 0x6e, 0x64, 0x69, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x70, 0x69,
+	0x2e, 0x52, 0x53, 0x49, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x48, 0x00, 0x52, 0x03, 0x52, 0x53, 0x49,
+	0x42, 0x07, 0x0a, 0x05, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x61, 0x0a, 0x13, 0x42, 0x6f, 0x6c,
+	0x6c, 0x69, 0x6e, 0x67, 0x65, 0x72, 0x42, 0x61, 0x6e, 0x64, 0x73, 0x56, 0x61, 0x6c, 0x75, 0x65,
+	0x12, 0x1c, 0x0a, 0x09, 0x55, 0x70, 0x70, 0x65, 0x72, 0x42, 0x61, 0x6e, 0x64, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x01, 0x52, 0x09, 0x55, 0x70, 0x70, 0x65, 0x72, 0x42, 0x61, 0x6e, 0x64, 0x12, 0x1c,
+	0x0a, 0x09, 0x4c, 0x6f, 0x77, 0x65, 0x72, 0x42, 0x61, 0x6e, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x01, 0x52, 0x09, 0x4c, 0x6f, 0x77, 0x65, 0x72, 0x42, 0x61, 0x6e, 0x64, 0x12, 0x0e, 0x0a, 0x02,
+	0x4d, 0x41, 0x18, 0x03, 0x20, 0x01, 0x28, 0x01, 0x52, 0x02, 0x4d, 0x41, 0x22, 0x20, 0x0a, 0x08,
+	0x53, 0x4d, 0x41, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75,
+	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x01, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x44,
+	0x0a, 0x08, 0x45, 0x4d, 0x41, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x69,
 	0x6d, 0x70, 0x6c, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x01, 0x52, 0x06, 0x73, 0x69, 0x6d, 0x70,
 	0x6c, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x65, 0x78, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x69, 0x61,
 	0x6c, 0x18, 0x02, 0x20, 0x01, 0x28, 0x01, 0x52, 0x0b, 0x65, 0x78, 0x70, 0x6f, 0x6e, 0x65, 0x6e,
@@ -471,26 +533,28 @@ func file_services_indicators_api_proto_src_values_proto_rawDescGZIP() []byte {
 	return file_services_indicators_api_proto_src_values_proto_rawDescData
 }
 
-var file_services_indicators_api_proto_src_values_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_services_indicators_api_proto_src_values_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_services_indicators_api_proto_src_values_proto_goTypes = []interface{}{
-	(*IndicatorValues)(nil),               // 0: indicatorApi.IndicatorValues
-	(*IndicatorValue)(nil),                // 1: indicatorApi.IndicatorValue
-	(*BollingerBandsValue)(nil),           // 2: indicatorApi.BollingerBandsValue
-	(*ExponentialMovingAverageValue)(nil), // 3: indicatorApi.ExponentialMovingAverageValue
-	(*StochasticValue)(nil),               // 4: indicatorApi.StochasticValue
-	(*RSIValue)(nil),                      // 5: indicatorApi.RSIValue
+	(*IndicatorValues)(nil),     // 0: indicatorApi.IndicatorValues
+	(*IndicatorValue)(nil),      // 1: indicatorApi.IndicatorValue
+	(*BollingerBandsValue)(nil), // 2: indicatorApi.BollingerBandsValue
+	(*SMAValue)(nil),            // 3: indicatorApi.SMAValue
+	(*EMAValue)(nil),            // 4: indicatorApi.EMAValue
+	(*StochasticValue)(nil),     // 5: indicatorApi.StochasticValue
+	(*RSIValue)(nil),            // 6: indicatorApi.RSIValue
 }
 var file_services_indicators_api_proto_src_values_proto_depIdxs = []int32{
 	1, // 0: indicatorApi.IndicatorValues.values:type_name -> indicatorApi.IndicatorValue
 	2, // 1: indicatorApi.IndicatorValue.BollingerBands:type_name -> indicatorApi.BollingerBandsValue
-	3, // 2: indicatorApi.IndicatorValue.MovingAverage:type_name -> indicatorApi.ExponentialMovingAverageValue
-	4, // 3: indicatorApi.IndicatorValue.Stochastic:type_name -> indicatorApi.StochasticValue
-	5, // 4: indicatorApi.IndicatorValue.RSI:type_name -> indicatorApi.RSIValue
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	3, // 2: indicatorApi.IndicatorValue.SMA:type_name -> indicatorApi.SMAValue
+	4, // 3: indicatorApi.IndicatorValue.EMA:type_name -> indicatorApi.EMAValue
+	5, // 4: indicatorApi.IndicatorValue.Stochastic:type_name -> indicatorApi.StochasticValue
+	6, // 5: indicatorApi.IndicatorValue.RSI:type_name -> indicatorApi.RSIValue
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_services_indicators_api_proto_src_values_proto_init() }
@@ -536,7 +600,7 @@ func file_services_indicators_api_proto_src_values_proto_init() {
 			}
 		}
 		file_services_indicators_api_proto_src_values_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExponentialMovingAverageValue); i {
+			switch v := v.(*SMAValue); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -548,7 +612,7 @@ func file_services_indicators_api_proto_src_values_proto_init() {
 			}
 		}
 		file_services_indicators_api_proto_src_values_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StochasticValue); i {
+			switch v := v.(*EMAValue); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -560,6 +624,18 @@ func file_services_indicators_api_proto_src_values_proto_init() {
 			}
 		}
 		file_services_indicators_api_proto_src_values_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*StochasticValue); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_services_indicators_api_proto_src_values_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RSIValue); i {
 			case 0:
 				return &v.state
@@ -574,7 +650,8 @@ func file_services_indicators_api_proto_src_values_proto_init() {
 	}
 	file_services_indicators_api_proto_src_values_proto_msgTypes[1].OneofWrappers = []interface{}{
 		(*IndicatorValue_BollingerBands)(nil),
-		(*IndicatorValue_MovingAverage)(nil),
+		(*IndicatorValue_SMA)(nil),
+		(*IndicatorValue_EMA)(nil),
 		(*IndicatorValue_Stochastic)(nil),
 		(*IndicatorValue_RSI)(nil),
 	}
@@ -584,7 +661,7 @@ func file_services_indicators_api_proto_src_values_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_services_indicators_api_proto_src_values_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

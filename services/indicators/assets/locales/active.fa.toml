@@ -1,0 +1,6 @@
+[invalid_indicator_type]
+other = "لطفا نوع اندیکاتور را مشخص کنید"
+
+
+[indicator_storage_not_found]
+other = "داده ای برای این اندیکاتور موجود نیست"

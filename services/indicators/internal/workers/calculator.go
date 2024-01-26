@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
+	chipmunkAPI "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
+	"github.com/h-varmazyar/Gate/services/indicators/pkg/calculator"
+	"github.com/h-varmazyar/Gate/services/indicators/pkg/storage"
 	log "github.com/sirupsen/logrus"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -14,16 +17,10 @@ var (
 	indicatorMapKeyPattern = "%v*%v"
 )
 
-type Indicator interface {
-	Calculate(ctx context.Context, candles []*chipmunkApi.Candle)
-	CandleCountNeedsForCalculation(ctx context.Context) int32
-	GetMarket(ctx context.Context) *chipmunkApi.Market
-	GetResolution(ctx context.Context) *chipmunkApi.Resolution
-}
-
 type IndicatorCalculator struct {
-	candleService chipmunkApi.CandleServiceClient
-	indicatorsMap map[string][]Indicator //key is the combination of market and resolution id
+	candleService chipmunkAPI.CandleServiceClient
+	indicatorsMap map[string][]calculator.Indicator //key is the combination of market and resolution id
+	lock          *sync.Mutex
 	configs       Configs
 	log           *log.Logger
 }
@@ -31,45 +28,49 @@ type IndicatorCalculator struct {
 func NewIndicatorCalculatorWorker(_ context.Context, log *log.Logger, configs Configs) *IndicatorCalculator {
 	chipmunkConn := grpcext.NewConnection(configs.ChipmunkAddress)
 	return &IndicatorCalculator{
-		candleService: chipmunkApi.NewCandleServiceClient(chipmunkConn),
-		indicatorsMap: make(map[string][]Indicator),
+		candleService: chipmunkAPI.NewCandleServiceClient(chipmunkConn),
+		indicatorsMap: make(map[string][]calculator.Indicator),
+		lock:          new(sync.Mutex),
 		configs:       configs,
 		log:           log,
 	}
 }
 
-func (w IndicatorCalculator) Start(ctx context.Context, indicators []Indicator) {
+func (w IndicatorCalculator) Start(ctx context.Context, indicators []calculator.Indicator) {
 	for _, indicator := range indicators {
 		w.addIndicator(ctx, indicator)
 	}
 
-	for key, indicators := range w.indicatorsMap {
-		ids := strings.Split(key, "*")
-		w.calculateMarketIndicators(indicators, ids[0], ids[1])
+	for key, _ := range w.indicatorsMap {
+		go w.calculateMarketIndicators(key)
 	}
 }
 
-func (w IndicatorCalculator) addIndicator(ctx context.Context, indicator Indicator) {
-	key := fmt.Sprintf(indicatorMapKeyPattern, indicator.GetMarket(ctx).ID, indicator.GetResolution(ctx).ID)
-	if indicators, ok := w.indicatorsMap[key]; ok {
-		indicators = append(indicators, indicator)
-	} else {
-		w.indicatorsMap[key] = make([]Indicator, 0)
+func (w IndicatorCalculator) AddIndicator(ctx context.Context, indicator calculator.Indicator) {
+	w.lock.Lock()
+	if key, isNewKey := w.addIndicator(ctx, indicator); isNewKey {
+		go w.calculateMarketIndicators(key)
 	}
+	w.lock.Unlock()
 }
 
-func (w IndicatorCalculator) calculateMarketIndicators(indicators []Indicator, marketId, resolutionId string) {
-	candleFetchCount := int32(2)
-	candleCountCtx := context.Background()
-	for _, indicator := range indicators {
-		if count := indicator.CandleCountNeedsForCalculation(candleCountCtx); count > candleFetchCount {
-			candleFetchCount = count
-		}
+func (w IndicatorCalculator) addIndicator(_ context.Context, indicator calculator.Indicator) (string, bool) {
+	isNewKey := false
+	key := fmt.Sprintf(indicatorMapKeyPattern, indicator.GetMarket().ID, indicator.GetResolution().ID)
+	if _, ok := w.indicatorsMap[key]; !ok {
+		isNewKey = true
+		w.indicatorsMap[key] = make([]calculator.Indicator, 0)
 	}
-	candleFetchReq := &chipmunkApi.CandleListReq{
-		ResolutionID: resolutionId,
-		MarketID:     marketId,
-		Count:        candleFetchCount,
+	w.indicatorsMap[key] = append(w.indicatorsMap[key], indicator)
+	return key, isNewKey
+}
+
+func (w IndicatorCalculator) calculateMarketIndicators(key string) {
+	ids := strings.Split(key, "*")
+	candleFetchReq := &chipmunkAPI.CandleListReq{
+		ResolutionID: ids[0],
+		MarketID:     ids[1],
+		Count:        1,
 	}
 	ticker := time.NewTicker(w.configs.CalculatorInterval)
 	for {
@@ -83,8 +84,19 @@ func (w IndicatorCalculator) calculateMarketIndicators(indicators []Indicator, m
 				continue
 			}
 
+			w.lock.Lock()
+			indicators, ok := w.indicatorsMap[key]
+			if !ok {
+				continue
+			}
+			w.lock.Unlock()
+
 			for _, indicator := range indicators {
-				indicator.Calculate(ctx, candles.Elements)
+				value := indicator.UpdateLast(ctx, candles.Elements[0])
+				if err = storage.AddValue(ctx, indicator.GetId(), value); err != nil {
+					w.log.WithError(err).Warnf("failed to save indicator value. id: %v", indicator.GetId())
+				}
+
 			}
 
 			if diff := time.Now().Sub(start); diff < w.configs.CalculatorInterval {

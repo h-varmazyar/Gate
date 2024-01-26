@@ -6,5 +6,6 @@ import (
 )
 
 type Repository interface {
-	Create(ctx context.Context) (*entity.Indicator, error)
+	Create(ctx context.Context, indicator *entity.Indicator) error
+	List(ctx context.Context) ([]*entity.Indicator, error)
 }

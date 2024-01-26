@@ -8,7 +8,7 @@ import (
 )
 
 type DB struct {
-	PostgresDB *gorm.DB
+	*gorm.DB
 }
 
 func NewDatabase(ctx context.Context, configs gormext.Configs) (*DB, error) {
@@ -19,7 +19,7 @@ func NewDatabase(ctx context.Context, configs gormext.Configs) (*DB, error) {
 			log.WithError(err).Error("failed to create new postgres")
 			return nil, err
 		}
-		db.PostgresDB = postgres
+		db.DB = postgres
 
 		err = createMigrateTable(ctx, db)
 		if err != nil {

@@ -83,7 +83,7 @@ func loadDB(ctx context.Context, configs gormext.Configs) (*db.DB, error) {
 func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstance *db.DB, configs *Configs) {
 	walletDependencies := &internal.AppDependencies{}
 
-	app, err := internal.NewApp(ctx, logger, configs.AppConfigs, walletDependencies)
+	app, err := internal.NewApp(ctx, logger, configs.AppConfigs, walletDependencies, dbInstance)
 	if err != nil {
 		logger.WithError(err).Panicf("failed to initiate wallets app")
 	}

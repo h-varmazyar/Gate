@@ -2,50 +2,63 @@ package calculator
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	chipmunkAPI "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	indicatorsAPI "github.com/h-varmazyar/Gate/services/indicators/api/proto"
+	"github.com/h-varmazyar/Gate/services/indicators/pkg/entity"
 	"google.golang.org/grpc/codes"
 	"time"
 )
 
-type SMAValue struct {
-	Value     *float64
-	TimeFrame time.Time
-}
-
 type SMA struct {
-	id            uuid.UUID
+	id            uint
 	Period        int
 	Source        indicatorsAPI.Source
-	lastValue     SMAValue
+	Market        *chipmunkAPI.Market
+	Resolution    *chipmunkAPI.Resolution
+	lastValue     indicatorsAPI.SMAValue
+	lastTimeframe int64
 	periodCandles []*chipmunkAPI.Candle
 }
 
-func NewSMA(period int, source indicatorsAPI.Source) (*SMA, error) {
+func NewSMA(id uint, configs *entity.SMAConfigs, market *chipmunkAPI.Market, resolution *chipmunkAPI.Resolution) (*SMA, error) {
 	return &SMA{
-		id:     uuid.New(),
-		Period: period,
-		Source: source,
+		id:         id,
+		Period:     configs.Period,
+		Source:     configs.Source,
+		Market:     market,
+		Resolution: resolution,
 	}, nil
 }
 
-func (conf *SMA) Calculate(ctx context.Context, candles []*chipmunkAPI.Candle, values []*SMAValue) error {
+func (conf *SMA) GetMarket() *chipmunkAPI.Market {
+	return conf.Market
+}
+
+func (conf *SMA) GetResolution() *chipmunkAPI.Resolution {
+	return conf.Resolution
+}
+
+func (conf *SMA) GetId() uint {
+	return conf.id
+}
+
+func (conf *SMA) Calculate(ctx context.Context, candles []*chipmunkAPI.Candle) (*indicatorsAPI.IndicatorValues, error) {
 	if len(candles) < conf.Period {
-		return errors.New(ctx, codes.FailedPrecondition).AddDetails("invalid candle length")
+		return nil, errors.New(ctx, codes.FailedPrecondition).AddDetails("invalid candle length")
 	}
 
-	firstNum := conf.getSmaNumber(candles[0])
-	values[0] = &SMAValue{
-		Value:     &firstNum,
-		TimeFrame: time.Unix(candles[0].Time, 0),
+	values := &indicatorsAPI.IndicatorValues{
+		Values: make([]*indicatorsAPI.IndicatorValue, len(candles)),
 	}
+
+	values.Values[0].Time = time.Now().Unix()
+
+	baseNum := conf.getSmaNumber(candles[0])
+	values.Values[0].Value = &indicatorsAPI.IndicatorValue_SMA{SMA: &indicatorsAPI.SMAValue{Value: baseNum}}
+	values.Values[0].Time = candles[0].Time
 
 	for i := 1; i < len(candles); i++ {
-		values[i] = &SMAValue{
-			TimeFrame: time.Unix(candles[i].Time, 0),
-		}
 
 		newNum := conf.getSmaNumber(candles[i])
 		var changeableNum float64
@@ -53,29 +66,27 @@ func (conf *SMA) Calculate(ctx context.Context, candles []*chipmunkAPI.Candle, v
 			changeableNum = conf.getSmaNumber(candles[i-conf.Period])
 		}
 
-		num := *values[i-1].Value + newNum - changeableNum
-		values[i].Value = &num
+		baseNum = baseNum + newNum - changeableNum
+		values.Values[i].Value = &indicatorsAPI.IndicatorValue_SMA{SMA: &indicatorsAPI.SMAValue{Value: baseNum}}
+		values.Values[i].Time = candles[i].Time
 	}
 	for i := 0; i < conf.Period-1; i++ {
-		values[i].Value = nil
+		values.Values[i].Value = nil
 	}
 
 	conf.periodCandles = cloneCandles(candles[len(candles)-conf.Period:])
-	if values[len(values)-1].Value != nil {
-		num := *values[len(values)-1].Value
-		conf.lastValue = SMAValue{
-			Value:     &num,
-			TimeFrame: values[len(values)-1].TimeFrame,
-		}
+	conf.lastValue = indicatorsAPI.SMAValue{
+		Value: baseNum,
 	}
-	return nil
+	conf.lastTimeframe = candles[len(candles)-1].Time
+	return values, nil
 }
 
-func (conf *SMA) UpdateLast(_ context.Context, candle *chipmunkAPI.Candle, value *SMAValue) {
+func (conf *SMA) UpdateLast(_ context.Context, candle *chipmunkAPI.Candle) *indicatorsAPI.IndicatorValue {
 	var changeableCandle *chipmunkAPI.Candle
-	if conf.lastValue.TimeFrame.Unix() == candle.Time {
+	if conf.lastTimeframe == candle.Time {
 		changeableCandle = conf.periodCandles[conf.Period-1]
-	} else if conf.lastValue.TimeFrame.Unix() < candle.Time {
+	} else if conf.lastTimeframe < candle.Time {
 		changeableCandle = cloneCandle(conf.periodCandles[0])
 		conf.periodCandles = conf.periodCandles[1:] //todo: must be check
 	}
@@ -84,13 +95,12 @@ func (conf *SMA) UpdateLast(_ context.Context, candle *chipmunkAPI.Candle, value
 	newNum := conf.getSmaNumber(candle)
 	changeableNum := conf.getSmaNumber(changeableCandle)
 
-	newValue := *conf.lastValue.Value + newNum - changeableNum
-	conf.lastValue.Value = &newValue
+	v := conf.lastValue.Value + newNum - changeableNum
+	conf.lastValue.Value = v
 
-	resp := newValue
-	value = &SMAValue{
-		Value:     &resp,
-		TimeFrame: time.Unix(candle.Time, 0),
+	return &indicatorsAPI.IndicatorValue{
+		Time:  candle.Time,
+		Value: &indicatorsAPI.IndicatorValue_SMA{SMA: &indicatorsAPI.SMAValue{Value: v}},
 	}
 }
 

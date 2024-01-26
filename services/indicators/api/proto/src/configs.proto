@@ -3,42 +3,33 @@ package indicatorApi;
 option go_package = "github.com/h-varmazyar/Gate/services/indicator/api/proto";
 import "services/indicators/api/proto/src/misc.proto";
 
-message RsiConfigs{
-  // @inject_tag: json:"length"
-  int32 Length = 1;
-}
-
 message IndicatorConfigs {
   oneof configs{
     RsiConfigs rsi = 1;
     StochasticConfigs stochastic = 2;
-    MovingAverageConfigs moving_average = 3;
+    SMAConfigs sma = 3;
     BollingerBandsConfigs bollinger_bands = 4;
   }
 }
 
-message StochasticConfigs{
-  // @inject_tag: json:"length"
-  int32 Length = 1;
-  // @inject_tag: json:"smooth_k"
-  int32 SmoothK = 2;
-  // @inject_tag: json:"smooth_d"
-  int32 SmoothD = 3;
+message RsiConfigs{
+  int32 period = 1;
 }
 
-message MovingAverageConfigs{
-  // @inject_tag: json:"length"
-  int32 Length = 1;
-  // @inject_tag: json:"source"
-  Source Source = 2;
+message StochasticConfigs{
+  int32 period = 1;
+  int32 smooth_k = 2;
+  int32 smooth_d = 3;
+}
+
+message SMAConfigs{
+  int32 period = 1;
+  Source source = 2;
 }
 
 message BollingerBandsConfigs{
-  // @inject_tag: json:"length"
-  int32 Length = 1;
-  // @inject_tag: json:"deviation"
-  int32 Deviation = 2;
-  // @inject_tag: json:"source"
-  Source Source = 3;
+  int32 period = 1;
+  int32 deviation = 2;
+  Source source = 3;
 }
 

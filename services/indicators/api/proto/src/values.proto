@@ -10,9 +10,10 @@ message IndicatorValue{
   int64 time = 1;
   oneof Value{
     BollingerBandsValue BollingerBands = 2;
-    ExponentialMovingAverageValue MovingAverage = 3;
-    StochasticValue Stochastic = 4;
-    RSIValue RSI = 5;
+    SMAValue SMA = 3;
+    EMAValue EMA = 4;
+    StochasticValue Stochastic = 5;
+    RSIValue RSI = 6;
   }
 }
 
@@ -22,7 +23,11 @@ message BollingerBandsValue {
   double MA = 3;
 }
 
-message ExponentialMovingAverageValue {
+message SMAValue {
+  double value = 1;
+}
+
+message EMAValue {
   double simple = 1;
   double exponential = 2;
 }

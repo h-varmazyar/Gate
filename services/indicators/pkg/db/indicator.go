@@ -2,12 +2,16 @@ package db
 
 import (
 	"context"
+	"github.com/h-varmazyar/Gate/services/indicators/internal/repository"
 	"github.com/h-varmazyar/Gate/services/indicators/pkg/entity"
-	"gorm.io/gorm"
 )
 
 type Indicators struct {
-	db *gorm.DB
+	db *DB
+}
+
+func NewIndicators(ctx context.Context, db *DB) repository.Repository {
+
 }
 
 func (r Indicators) Create(ctx context.Context) (*entity.Indicator, error) {

@@ -12,19 +12,21 @@ service indicatorService{
 
 message IndicatorRegisterReq{
   Type type = 1;
-  IndicatorConfigs Configs = 2;
+  string market_id = 2;
+  string resolution_id = 3;
+  IndicatorConfigs configs = 4;
 }
 
 message IndicatorValuesReq {
-  string Id = 1;
+  uint32 id = 1;
   uint32 page = 2;
   uint32 page_size = 3;
 }
 
 message Indicator {
-  string Id = 1;
+  uint32 id = 1;
   Type type = 2;
-  IndicatorConfigs Configs = 3;
+  IndicatorConfigs configs = 3;
 }
 
 
