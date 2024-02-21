@@ -4,19 +4,18 @@ import (
 	"context"
 	chipmunkAPI "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	indicatorsAPI "github.com/h-varmazyar/Gate/services/indicators/api/proto"
-	"github.com/h-varmazyar/Gate/services/indicators/pkg/entity"
+	"github.com/h-varmazyar/Gate/services/indicators/pkg/entities"
 	"math"
 )
 
 type BollingerBands struct {
-	id         uint
-	Period     int
-	Deviation  int
-	Source     indicatorsAPI.Source
-	Market     *chipmunkAPI.Market
-	Resolution *chipmunkAPI.Resolution
-	sma        *SMA
-	//lastSMA       *indicatorsAPI.SMAValue
+	id            uint
+	Period        int
+	Deviation     int
+	Source        indicatorsAPI.Source
+	Market        *chipmunkAPI.Market
+	Resolution    *chipmunkAPI.Resolution
+	sma           *SMA
 	periodCandles []*chipmunkAPI.Candle
 }
 
@@ -32,8 +31,8 @@ func (conf *BollingerBands) GetId() uint {
 	return conf.id
 }
 
-func NewBollingerBands(id uint, configs *entity.BollingerBandsConfigs, market *chipmunkAPI.Market, resolution *chipmunkAPI.Resolution) (*BollingerBands, error) {
-	smaConfigs := &entity.SMAConfigs{
+func NewBollingerBands(id uint, configs *entities.BollingerBandsConfigs, market *chipmunkAPI.Market, resolution *chipmunkAPI.Resolution) (*BollingerBands, error) {
+	smaConfigs := &entities.SMAConfigs{
 		Period: configs.Period,
 		Source: configs.Source,
 	}

@@ -11,7 +11,7 @@ import (
 	"github.com/h-varmazyar/Gate/services/indicators/internal/repository"
 	"github.com/h-varmazyar/Gate/services/indicators/internal/workers"
 	"github.com/h-varmazyar/Gate/services/indicators/pkg/calculator"
-	"github.com/h-varmazyar/Gate/services/indicators/pkg/entity"
+	"github.com/h-varmazyar/Gate/services/indicators/pkg/entities"
 	"github.com/h-varmazyar/Gate/services/indicators/pkg/storage"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -75,7 +75,7 @@ func (s Service) Register(ctx context.Context, req *indicatorsAPI.IndicatorRegis
 		return nil, err
 	}
 
-	indicator := new(entity.Indicator)
+	indicator := new(entities.Indicator)
 	mapper.Struct(req, indicator)
 
 	if err = s.repository.Create(ctx, indicator); err != nil {

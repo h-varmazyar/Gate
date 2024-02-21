@@ -6,7 +6,7 @@ service_name: "core"
 version: "v1.0.0"
 grpc_port: 10100
 amqp_configs:
-  connection: "amqp://rabbitmq:rabbitmq@192.168.100.16"
+  connection: "amqp://rabbitmq:rabbitmq@localhost:5672"
 coinex_configs:
   coinex_callback_queue: "coinex_callback"
   chipmunk_ohlc_queue: "chipmunk_ohlc"
@@ -28,9 +28,9 @@ functions_app:
 db:
   type: "postgreSQL"
   username: "postgres"
-  password: "postgres"
-  host: "192.168.100.16"
-  port: 5432
+  password: "e1M9nEw33FfNs8U"
+  host: "localhost"
+  port: 5433
   name: "core"
   is_ssl_enable: false
 `)

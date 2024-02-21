@@ -4,7 +4,7 @@ import (
 	"context"
 	chipmunkAPI "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	indicatorsAPI "github.com/h-varmazyar/Gate/services/indicators/api/proto"
-	"github.com/h-varmazyar/Gate/services/indicators/pkg/entity"
+	"github.com/h-varmazyar/Gate/services/indicators/pkg/entities"
 )
 
 type RSI struct {
@@ -20,7 +20,7 @@ type RSI struct {
 	lastCandle    *chipmunkAPI.Candle
 }
 
-func NewRSI(id uint, configs *entity.RsiConfigs, market *chipmunkAPI.Market, resolution *chipmunkAPI.Resolution) (*RSI, error) {
+func NewRSI(id uint, configs *entities.RsiConfigs, market *chipmunkAPI.Market, resolution *chipmunkAPI.Resolution) (*RSI, error) {
 	return &RSI{
 		id:         id,
 		Period:     configs.Period,

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	indicatorsAPI "github.com/h-varmazyar/Gate/services/indicators/api/proto"
 	"golang.org/x/net/context"
@@ -27,7 +28,7 @@ func init() {
 func AddValue(ctx context.Context, indicatorId uint, value *indicatorsAPI.IndicatorValue) error {
 	if v, ok := values[indicatorId]; !ok {
 		var indicatorType indicatorsAPI.Type
-		switch _ := value.GetValue().(type) {
+		switch t := value.GetValue().(type) {
 		case *indicatorsAPI.IndicatorValue_BollingerBands:
 			indicatorType = indicatorsAPI.Type_BOLLINGER_BANDS
 		case *indicatorsAPI.IndicatorValue_SMA:
@@ -39,6 +40,7 @@ func AddValue(ctx context.Context, indicatorId uint, value *indicatorsAPI.Indica
 		case *indicatorsAPI.IndicatorValue_RSI:
 			indicatorType = indicatorsAPI.Type_RSI
 		default:
+			fmt.Println("t:", t)
 			return errors.NewWithSlug(ctx, codes.FailedPrecondition, "invalid_indicator_type")
 		}
 		v = &ValueStorage{

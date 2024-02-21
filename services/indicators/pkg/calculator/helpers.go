@@ -4,12 +4,12 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	chipmunkAPI "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	indicatorsAPI "github.com/h-varmazyar/Gate/services/indicators/api/proto"
-	"github.com/h-varmazyar/Gate/services/indicators/pkg/entity"
+	"github.com/h-varmazyar/Gate/services/indicators/pkg/entities"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )
 
-func NewIndicator(ctx context.Context, entityIndicator *entity.Indicator, market *chipmunkAPI.Market, resolution *chipmunkAPI.Resolution) (Indicator, error) {
+func NewIndicator(ctx context.Context, entityIndicator *entities.Indicator, market *chipmunkAPI.Market, resolution *chipmunkAPI.Resolution) (Indicator, error) {
 	var (
 		indicator Indicator
 		err       error

@@ -5,7 +5,7 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	chipmunkAPI "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	indicatorsAPI "github.com/h-varmazyar/Gate/services/indicators/api/proto"
-	"github.com/h-varmazyar/Gate/services/indicators/pkg/entity"
+	"github.com/h-varmazyar/Gate/services/indicators/pkg/entities"
 	"google.golang.org/grpc/codes"
 	"time"
 )
@@ -21,7 +21,7 @@ type SMA struct {
 	periodCandles []*chipmunkAPI.Candle
 }
 
-func NewSMA(id uint, configs *entity.SMAConfigs, market *chipmunkAPI.Market, resolution *chipmunkAPI.Resolution) (*SMA, error) {
+func NewSMA(id uint, configs *entities.SMAConfigs, market *chipmunkAPI.Market, resolution *chipmunkAPI.Resolution) (*SMA, error) {
 	return &SMA{
 		id:         id,
 		Period:     configs.Period,

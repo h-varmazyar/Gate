@@ -15,7 +15,7 @@ type Migration struct {
 const MigrationTable = "migrations"
 
 func createMigrateTable(_ context.Context, db *DB) error {
-	err := db.PostgresDB.AutoMigrate(new(Migration))
+	err := db.AutoMigrate(new(Migration))
 	if err != nil {
 		return err
 	}
