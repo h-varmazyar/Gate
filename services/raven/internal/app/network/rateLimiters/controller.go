@@ -40,16 +40,17 @@ func (c Controller) RegisterRoutes(router *gorilla.Router) {
 }
 
 // rateLimiterCreate godoc
-//	@Summary		Create new rate limiter
-//	@Description	Create new rate limiter
-//	@Accept			json
-//	@Produce		json
-//	@Param			RateLimiter	body		RateLimiter	true	"New rate limiter"
-//	@Success		201			{object}	proto.RateLimiter
-//	@Failure		400			{object}	errors.Error
-//	@Failure		404			{object}	errors.Error
-//	@Failure		500			{object}	errors.Error
-//	@Router			/network/rate-limiters/create [post]
+//
+// @Summary     Create new rate limiter
+// @Description Create new rate limiter
+// @Accept      json
+// @Produce     json
+// @Param       RateLimiter body  RateLimiter true "New rate limiter"
+// @Success     201               {object}    proto.RateLimiter
+// @Failure     400               {object}    errors.Error
+// @Failure     404               {object}    errors.Error
+// @Failure     500               {object}    errors.Error
+// @Router      /network/rate-limiters/create [post]
 func (c Controller) create(res http.ResponseWriter, req *http.Request) {
 	rateLimiterCreateReq := new(networkApi.RateLimiterCreateReq)
 	if err := httpext.BindModel(req, rateLimiterCreateReq); err != nil {
@@ -65,16 +66,17 @@ func (c Controller) create(res http.ResponseWriter, req *http.Request) {
 }
 
 // rateLimiterList godoc
-//	@Summary		return rate limiter list
-//	@Description	return rate limiter list
-//	@Accept			json
-//	@Produce		json
-//	@Param			type	query		string	true	"rate limiter type"	Enums:(Spread,Immediate)
-//	@Success		200		{object}	proto.RateLimiters
-//	@Failure		400		{object}	errors.Error
-//	@Failure		404		{object}	errors.Error
-//	@Failure		500		{object}	errors.Error
-//	@Router			/network/rate-limiters/list [get]
+//
+// @Summary     return rate limiter list
+// @Description return rate limiter list
+// @Accept      json
+// @Produce     json
+// @Param       type query          string true "rate limiter type" Enums:(Spread,Immediate)
+// @Success     200        {object} proto.RateLimiters
+// @Failure     400        {object} errors.Error
+// @Failure     404        {object} errors.Error
+// @Failure     500        {object} errors.Error
+// @Router      /network/rate-limiters/list [get]
 func (c Controller) list(res http.ResponseWriter, req *http.Request) {
 	if rateLimiters, err := c.rateLimitersService.List(req.Context(), new(networkApi.RateLimiterListReq)); err != nil {
 		httpext.SendError(res, req, err)
@@ -84,16 +86,17 @@ func (c Controller) list(res http.ResponseWriter, req *http.Request) {
 }
 
 // rateLimiterReturn godoc
-//	@Summary		return rate limiter with ID
-//	@Description	return rate limiter with ID
-//	@Accept			json
-//	@Produce		json
-//	@Param			rate_limiter_id	path		string	true	"rate limiter ID"
-//	@Success		200				{object}	proto.RateLimiter
-//	@Failure		400				{object}	errors.Error
-//	@Failure		404				{object}	errors.Error
-//	@Failure		500				{object}	errors.Error
-//	@Router			/network/rate-limiters/{rate_limiter_id} [get]
+//
+// @Summary     return rate limiter with ID
+// @Description return rate limiter with ID
+// @Accept      json
+// @Produce     json
+// @Param       rate_limiter_id path  string true     "rate limiter ID"
+// @Success     200                          {object} proto.RateLimiter
+// @Failure     400                          {object} errors.Error
+// @Failure     404                          {object} errors.Error
+// @Failure     500                          {object} errors.Error
+// @Router      /network/rate-limiters/{rate_limiter_id} [get]
 func (c Controller) returnByID(res http.ResponseWriter, req *http.Request) {
 	rateLimiterReturnReq := new(networkApi.RateLimiterReturnReq)
 

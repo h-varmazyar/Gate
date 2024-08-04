@@ -10,7 +10,6 @@ import (
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/repository"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
-	indicatorsPkg "github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
@@ -18,11 +17,11 @@ import (
 )
 
 type CandleReader struct {
-	db         repository.CandleRepository
-	logger     *log.Logger
-	configs    *Configs
-	queue      *amqpext.Queue
-	indicators []indicatorsPkg.Indicator
+	db      repository.CandleRepository
+	logger  *log.Logger
+	configs *Configs
+	queue   *amqpext.Queue
+	//indicators []indicatorsPkg.Indicator
 	insertChan chan *entity.Candle
 }
 
@@ -42,9 +41,9 @@ func NewCandleReaderWorker(_ context.Context, db repository.CandleRepository, co
 	return reader, nil
 }
 
-func (w *CandleReader) Start(indicators []indicatorsPkg.Indicator) {
+func (w *CandleReader) Start() {
 	w.logger.Infof("starting candle reader worker...")
-	w.indicators = indicators
+	//w.indicators = indicators
 	deliveries := w.queue.Consume(w.configs.PrimaryDataQueue)
 	for i := 0; i < w.configs.ConsumerCount; i++ {
 		go func() {
@@ -79,9 +78,9 @@ func (w *CandleReader) handle(delivery amqp.Delivery) {
 			w.insertChan <- tmp
 		}
 
-		for _, indicator := range w.indicators {
-			indicator.Update(localCandles)
-		}
+		//for _, indicator := range w.indicators {
+		//	indicator.Update(localCandles)
+		//}
 
 		for _, candle := range localCandles {
 			buffer.CandleBuffer.Push(candle)

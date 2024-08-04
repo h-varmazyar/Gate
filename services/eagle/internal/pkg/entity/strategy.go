@@ -3,7 +3,6 @@ package entity
 import (
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/Gate/pkg/gormext"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	eagleApi "github.com/h-varmazyar/Gate/services/eagle/api/proto"
 	"github.com/lib/pq"
 )
@@ -26,7 +25,7 @@ type Strategy struct {
 }
 
 type StrategyIndicator struct {
-	StrategyID  uuid.UUID                 `gorm:"primary_key;type:uuid REFERENCES strategies(id)"`
-	IndicatorID uuid.UUID                 `gorm:"primary_key;type:uuid"`
-	Type        chipmunkApi.IndicatorType `gorm:"type:varchar(25);not null"`
+	StrategyID  uuid.UUID `gorm:"primary_key;type:uuid REFERENCES strategies(id)"`
+	IndicatorID uuid.UUID `gorm:"primary_key;type:uuid"`
+	//Type        chipmunkApi.IndicatorType `gorm:"type:varchar(25);not null"`
 }

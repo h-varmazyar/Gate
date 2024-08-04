@@ -1,0 +1,59 @@
+syntax = "proto3";
+package chipmunkApi;
+option go_package = "github.com/h-varmazyar/Gate/services/chipmunk/api/proto";
+import "api/proto/src/misc.proto";
+
+service PostService {
+//  rpc NonPolarityList(PostNonPolarityListReq) returns (Posts);
+  rpc List(PostListReq) returns (Posts);
+//  rpc SubmitPolarity(PostSubmitPolarityReq) returns (api.Void);
+}
+
+enum Provider {
+  TWITTER = 0;
+  SAHAMYAB = 1;
+  COIN_MARKET_CAP = 2;
+}
+
+enum Polarity {
+  NOT_DETECTED = 0;
+  NEUTRAL = 1;
+  POSITIVE = 2;
+  NEGATIVE = 3;
+}
+
+message Post {
+  string id = 1;
+  int64 posted_at = 2;
+  string content = 3;
+  uint32 like_count = 4;
+  string parent_id = 5;
+  string sender_username = 6;
+  Provider provider = 7;
+  repeated string Tags = 8;
+  Polarity polarity = 9;
+}
+
+message Posts {
+  repeated Post elements = 1;
+  int64 count = 2;
+}
+
+message PostListReq {
+  Provider provider = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message PostNonPolarityListReq{
+  int32 MaxTokenCount = 1;
+}
+
+message PostSubmitPolarityReq{
+  message PostPolarity{
+    string post_id = 1;
+    Polarity polarity = 2;
+  }
+  repeated PostPolarity post_polarities = 1;
+}
+

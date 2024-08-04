@@ -12,3 +12,7 @@ type Indicators struct {
 func (r Indicators) Create(ctx context.Context, indicator *entities.Indicator) error {
 	return nil
 }
+
+func (r Indicators) List(ctx context.Context) ([]*entities.Indicator, error) {
+	return nil, nil
+}

@@ -132,19 +132,19 @@ func (s *Automated) CheckForSignals(ctx context.Context, market *chipmunkApi.Mar
 func (s *Automated) calculateSignalStrength(candles []*chipmunkApi.Candle, market *chipmunkApi.Market) float64 {
 	strength := float64(0)
 	rsi, stochastic, bb := float64(0), float64(0), float64(0)
-	for _, strategyIndicator := range s.Indicators {
-		switch strategyIndicator.Type {
-		case chipmunkApi.Indicator_RSI:
-			rsi = s.checkRSI(candles, strategyIndicator.IndicatorID)
-			strength += rsi
-		case chipmunkApi.Indicator_Stochastic:
-			stochastic = s.checkStochastic(candles, strategyIndicator.IndicatorID)
-			strength += stochastic
-		case chipmunkApi.Indicator_BollingerBands:
-			bb = s.checkBollingerBand(candles, strategyIndicator.IndicatorID, market.MakerFeeRate, market.TakerFeeRate)
-			strength += bb
-		}
-	}
+	//for _, strategyIndicator := range s.Indicators {
+	//	switch strategyIndicator.Type {
+	//	case chipmunkApi.Indicator_RSI:
+	//		rsi = s.checkRSI(candles, strategyIndicator.IndicatorID)
+	//		strength += rsi
+	//	case chipmunkApi.Indicator_Stochastic:
+	//		stochastic = s.checkStochastic(candles, strategyIndicator.IndicatorID)
+	//		strength += stochastic
+	//	case chipmunkApi.Indicator_BollingerBands:
+	//		bb = s.checkBollingerBand(candles, strategyIndicator.IndicatorID, market.MakerFeeRate, market.TakerFeeRate)
+	//		strength += bb
+	//	}
+	//}
 	strength = strength / float64(len(s.Indicators))
 	log.Infof("market %v - total: %v - rsi: %v - stochastic: %v - bb: %v", market.Name, strength, rsi, stochastic, bb)
 	return strength
@@ -314,36 +314,36 @@ func (s *Automated) setSignalIntoPool(ctx context.Context, market *chipmunkApi.M
 }
 
 func (s *Automated) checkRSI(candles []*chipmunkApi.Candle, indicatorID uuid.UUID) float64 {
-	if chipmunkApi.GetRSIValue(candles[0].IndicatorValues[indicatorID.String()]).RSI < 30 &&
-		chipmunkApi.GetRSIValue(candles[1].IndicatorValues[indicatorID.String()]).RSI >= 30 {
-		return 1
-	}
+	//if chipmunkApi.GetRSIValue(candles[0].IndicatorValues[indicatorID.String()]).RSI < 30 &&
+	//	chipmunkApi.GetRSIValue(candles[1].IndicatorValues[indicatorID.String()]).RSI >= 30 {
+	//	return 1
+	//}
 	return 0
 }
 
 func (s *Automated) checkStochastic(candles []*chipmunkApi.Candle, indicatorID uuid.UUID) float64 {
-	stochastic0 := chipmunkApi.GetStochasticValue(candles[0].IndicatorValues[indicatorID.String()])
-	stochastic1 := chipmunkApi.GetStochasticValue(candles[1].IndicatorValues[indicatorID.String()])
-	if stochastic1.IndexD > 20 || stochastic0.IndexK > 20 {
-		return 0
-	}
-	if stochastic0.IndexK < stochastic1.IndexK {
-		return 1
-	}
+	//stochastic0 := chipmunkApi.GetStochasticValue(candles[0].IndicatorValues[indicatorID.String()])
+	//stochastic1 := chipmunkApi.GetStochasticValue(candles[1].IndicatorValues[indicatorID.String()])
+	//if stochastic1.IndexD > 20 || stochastic0.IndexK > 20 {
+	//	return 0
+	//}
+	//if stochastic0.IndexK < stochastic1.IndexK {
+	//	return 1
+	//}
 
 	return 0
 }
 
 func (s *Automated) checkBollingerBand(candles []*chipmunkApi.Candle, indicatorID uuid.UUID, makerFeeRate, takerFeeRate float64) float64 {
-	bb0 := chipmunkApi.GetBollingerBandsValue(candles[0].IndicatorValues[indicatorID.String()])
-	bb1 := chipmunkApi.GetBollingerBandsValue(candles[1].IndicatorValues[indicatorID.String()])
-	if candles[0].Low > bb0.LowerBand {
-		return 0
-	}
-
-	price := candles[1].Close * (1 + makerFeeRate/100) * (1 + s.MinProfitPerTradeRate/100) * (1 + takerFeeRate/100)
-	if price < bb1.UpperBand {
-		return 1
-	}
+	//bb0 := chipmunkApi.GetBollingerBandsValue(candles[0].IndicatorValues[indicatorID.String()])
+	//bb1 := chipmunkApi.GetBollingerBandsValue(candles[1].IndicatorValues[indicatorID.String()])
+	//if candles[0].Low > bb0.LowerBand {
+	//	return 0
+	//}
+	//
+	//price := candles[1].Close * (1 + makerFeeRate/100) * (1 + s.MinProfitPerTradeRate/100) * (1 + takerFeeRate/100)
+	//if price < bb1.UpperBand {
+	//	return 1
+	//}
 	return 0
 }

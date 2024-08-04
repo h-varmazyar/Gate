@@ -29,7 +29,7 @@ func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs Configs,
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &App{
 		Service: service.NewService(ctx, logger, configs.ServiceConfigs, repositoryInstance, dependencies.ServiceDependencies),
 	}, nil

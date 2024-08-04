@@ -4,12 +4,10 @@ import (
 	"context"
 	"github.com/google/uuid"
 	api "github.com/h-varmazyar/Gate/api/proto"
-	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/repository"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/workers"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
-	indicatorsPkg "github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	"strings"
 	"time"
@@ -33,21 +31,20 @@ func (app *App) initializeWorkers(ctx context.Context, configs *workers.Configs,
 }
 
 func (app *App) startWorkers(ctx context.Context, dependencies *AppDependencies, platforms []api.Platform) error {
-	indicators, err := dependencies.IndicatorService.List(ctx, &chipmunkApi.IndicatorListReq{Type: chipmunkApi.Indicator_All})
-	if err != nil {
-		app.logger.WithError(err).Error("failed to fetch all indicatorService")
-		return err
-	}
+	//indicators, err := dependencies.IndicatorService.List(ctx, &chipmunkApi.IndicatorListReq{Type: chipmunkApi.Indicator_All})
+	//if err != nil {
+	//	app.logger.WithError(err).Error("failed to fetch all indicatorService")
+	//	return err
+	//}
 
-	loadedIndicators, err := app.loadIndicators(indicators.Elements)
-	if err != nil {
-		return err
-	}
+	//loadedIndicators, err := app.loadIndicators(indicators.Elements)
+	//if err != nil {
+	//	return err
+	//}
 
 	pp := make([]*workers.PlatformPairs, 0)
 	for _, platform := range platforms {
-		pairs := new(workers.PlatformPairs)
-		pairs, err = app.preparePlatformPairs(ctx, dependencies, platform)
+		pairs, err := app.preparePlatformPairs(ctx, dependencies, platform)
 		if err != nil {
 			app.logger.WithError(err).Error("failed to prepare worker runners")
 			return err
@@ -56,10 +53,10 @@ func (app *App) startWorkers(ctx context.Context, dependencies *AppDependencies,
 		pp = append(pp, pairs)
 	}
 
-	app.candleReaderWorker.Start(loadedIndicators)
+	app.candleReaderWorker.Start()
 
 	go func() {
-		predictedInterval := app.preparePrimaryDataRequests(pp, loadedIndicators)
+		predictedInterval := app.preparePrimaryDataRequests(pp)
 		app.logger.Infof("predicted interval: %v", predictedInterval)
 		time.Sleep(time.Duration(predictedInterval))
 		app.lastCandleWorker.Start(pp)
@@ -134,45 +131,45 @@ func (app *App) prepareRunners(ctx context.Context, dependencies *AppDependencie
 	return runners, nil
 }
 
-func (app *App) loadIndicators(indicators []*chipmunkApi.Indicator) ([]indicatorsPkg.Indicator, error) {
-	response := make([]indicatorsPkg.Indicator, 0)
-	for _, i := range indicators {
-		var indicatorCalculator indicatorsPkg.Indicator
-		var err error
-		indicator := new(entity.Indicator)
-		mapper.Struct(i, indicator)
-		indicator.ID, err = uuid.Parse(i.ID)
-		if err != nil {
-			return nil, err
-		}
-		switch indicator.Type {
-		case chipmunkApi.Indicator_RSI:
-			indicatorCalculator, err = indicatorsPkg.NewRSI(indicator.ID, indicator.Configs.RSI)
-		case chipmunkApi.Indicator_Stochastic:
-			indicatorCalculator, err = indicatorsPkg.NewStochastic(indicator.ID, indicator.Configs.Stochastic)
-		case chipmunkApi.Indicator_MovingAverage:
-			indicatorCalculator, err = indicatorsPkg.NewMovingAverage(indicator.ID, indicator.Configs.MovingAverage)
-		case chipmunkApi.Indicator_BollingerBands:
-			indicatorCalculator, err = indicatorsPkg.NewBollingerBands(indicator.ID, indicator.Configs.BollingerBands)
-		}
-		if err != nil {
-			return nil, err
-		}
-		response = append(response, indicatorCalculator)
-	}
-	return response, nil
-}
+//func (app *App) loadIndicators(indicators []*chipmunkApi.Indicator) ([]indicatorsPkg.Indicator, error) {
+//	response := make([]indicatorsPkg.Indicator, 0)
+//	for _, i := range indicators {
+//		var indicatorCalculator indicatorsPkg.Indicator
+//		var err error
+//		indicator := new(entity.Indicator)
+//		mapper.Struct(i, indicator)
+//		indicator.ID, err = uuid.Parse(i.ID)
+//		if err != nil {
+//			return nil, err
+//		}
+//		switch indicator.Type {
+//		case chipmunkApi.Indicator_RSI:
+//			indicatorCalculator, err = indicatorsPkg.NewRSI(indicator.ID, indicator.Configs.RSI)
+//		case chipmunkApi.Indicator_Stochastic:
+//			indicatorCalculator, err = indicatorsPkg.NewStochastic(indicator.ID, indicator.Configs.Stochastic)
+//		case chipmunkApi.Indicator_MovingAverage:
+//			indicatorCalculator, err = indicatorsPkg.NewMovingAverage(indicator.ID, indicator.Configs.MovingAverage)
+//		case chipmunkApi.Indicator_BollingerBands:
+//			indicatorCalculator, err = indicatorsPkg.NewBollingerBands(indicator.ID, indicator.Configs.BollingerBands)
+//		}
+//		if err != nil {
+//			return nil, err
+//		}
+//		response = append(response, indicatorCalculator)
+//	}
+//	return response, nil
+//}
 
-func (app *App) preparePrimaryDataRequests(platformsPairs []*workers.PlatformPairs, indicators []indicatorsPkg.Indicator) int64 {
+func (app *App) preparePrimaryDataRequests(platformsPairs []*workers.PlatformPairs) int64 {
 	app.logger.Infof("preparing primary candles")
 	totalPredictedInterval := int64(0)
 	for _, platformPairs := range platformsPairs {
-		totalPredictedInterval += app.makePrimaryDataRequests(platformPairs, indicators)
+		totalPredictedInterval += app.makePrimaryDataRequests(platformPairs)
 	}
 	return totalPredictedInterval
 }
 
-func (app *App) prepareLocalCandlesItem(pair *workers.Pair, indicators []indicatorsPkg.Indicator) (*coreApi.OHLCItem, error) {
+func (app *App) prepareLocalCandlesItem(pair *workers.Pair) (*coreApi.OHLCItem, error) {
 	marketID, err := uuid.Parse(pair.Market.ID)
 	if err != nil {
 		app.logger.WithError(err).Errorf("invalid market id %v", marketID)
@@ -214,7 +211,7 @@ func (app *App) prepareLocalCandlesItem(pair *workers.Pair, indicators []indicat
 	app.logger.Infof("loaded candles: %v", last)
 
 	//for _, candle := range candles {
-	//	candle.IndicatorValues = entity.NewIndicatorValues()
+	//	candle.IndicatorValues = entities.NewIndicatorValues()
 	//}
 	//if len(candles) > 0 {
 	//	if err = app.calculateIndicators(candles, indicators); err != nil {
@@ -256,21 +253,21 @@ func (app *App) loadLocalCandles(marketID, resolutionID uuid.UUID) ([]*entity.Ca
 	return candles, nil
 }
 
-func (app *App) calculateIndicators(candles []*entity.Candle, indicators []indicatorsPkg.Indicator) error {
-	for _, indicator := range indicators {
-		err := indicator.Calculate(candles)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
+//func (app *App) calculateIndicators(candles []*entity.Candle, indicators []indicatorsPkg.Indicator) error {
+//	for _, indicator := range indicators {
+//		err := indicator.Calculate(candles)
+//		if err != nil {
+//			return err
+//		}
+//	}
+//	return nil
+//}
 
-func (app *App) makePrimaryDataRequests(platformPairs *workers.PlatformPairs, indicators []indicatorsPkg.Indicator) int64 {
+func (app *App) makePrimaryDataRequests(platformPairs *workers.PlatformPairs) int64 {
 	predictedInterval := int64(0)
 	for _, pair := range platformPairs.Pairs {
 		app.logger.Infof("market: %v", pair.Market.Name)
-		item, err := app.prepareLocalCandlesItem(pair, indicators)
+		item, err := app.prepareLocalCandlesItem(pair)
 		if err != nil {
 			app.logger.WithError(err).Errorf("failed to prepare local candle item")
 			continue

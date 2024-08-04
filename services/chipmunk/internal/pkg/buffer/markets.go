@@ -2,7 +2,7 @@ package buffer
 
 //type markets struct {
 //	lock         *sync.RWMutex
-//	data         map[uuid.UUID][]*entity.Candle
+//	data         map[uuid.UUID][]*entities.Candle
 //	BufferLength int
 //}
 //
@@ -11,7 +11,7 @@ package buffer
 //func NewMarketInstance() {
 //	Markets = &markets{
 //		lock:         new(sync.RWMutex),
-//		data:         make(map[uuid.UUID][]*entity.Candle),
+//		data:         make(map[uuid.UUID][]*entities.Candle),
 //		BufferLength: configs.Variables.CandleBufferLength,
 //	}
 //}
@@ -21,9 +21,9 @@ package buffer
 //	defer m.lock.Unlock()
 //	rateLimiters, ok := m.data[marketID]
 //	if !ok || rateLimiters == nil || len(rateLimiters) == 0 {
-//		emptyCandles := make([]*entity.Candle, 0)
+//		emptyCandles := make([]*entities.Candle, 0)
 //		for i := 0; i < m.BufferLength; i++ {
-//			emptyCandles = append(emptyCandles, new(entity.Candle))
+//			emptyCandles = append(emptyCandles, new(entities.Candle))
 //		}
 //		m.data[marketID] = emptyCandles
 //	}
@@ -35,12 +35,12 @@ package buffer
 //	delete(m.data, marketID)
 //}
 //
-//func (m *markets) Push(marketID uuid.UUID, candle *entity.Candle) {
+//func (m *markets) Push(marketID uuid.UUID, candle *entities.Candle) {
 //	m.lock.Lock()
 //	defer m.lock.Unlock()
 //	rateLimiters, ok := m.data[marketID]
 //	if !ok || rateLimiters == nil || len(rateLimiters) == 0 {
-//		rateLimiters = make([]*entity.Candle, m.BufferLength)
+//		rateLimiters = make([]*entities.Candle, m.BufferLength)
 //	}
 //
 //	if rateLimiters[m.BufferLength-1] != nil && rateLimiters[m.BufferLength-1].Time.Equal(candle.Time) {
@@ -51,13 +51,13 @@ package buffer
 //	m.data[marketID] = rateLimiters
 //}
 //
-//func (m *markets) GetLastNCandles(marketID uuid.UUID, n int) []*entity.Candle {
+//func (m *markets) GetLastNCandles(marketID uuid.UUID, n int) []*entities.Candle {
 //	m.lock.Lock()
 //	defer m.lock.Unlock()
 //	if rateLimiters, ok := m.data[marketID]; !ok || rateLimiters == nil {
 //		return nil
 //	} else {
-//		cloned := make([]*entity.Candle, n)
+//		cloned := make([]*entities.Candle, n)
 //		j := m.BufferLength - n
 //		for i := 0; i < n; i++ {
 //			c := *rateLimiters[j]

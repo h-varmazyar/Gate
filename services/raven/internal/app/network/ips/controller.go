@@ -39,16 +39,17 @@ func (c Controller) RegisterRoutes(router *gorilla.Router) {
 }
 
 // ipCreate godoc
-//	@Summary		Create new IP
-//	@Description	Create new IP
-//	@Accept			json
-//	@Produce		json
-//	@Param			IP	body		proto.IPCreateReq	true	"New IP"
-//	@Success		201	{object}	proto.IP
-//	@Failure		400	{object}	errors.Error
-//	@Failure		404	{object}	errors.Error
-//	@Failure		500	{object}	errors.Error
-//	@Router			/network/ips/create [post]
+//
+// @Summary     Create new IP
+// @Description Create new IP
+// @Accept      json
+// @Produce     json
+// @Param       IP  body      proto.IPCreateReq true "New IP"
+// @Success     201 {object} proto.IP
+// @Failure     400 {object} errors.Error
+// @Failure     404 {object} errors.Error
+// @Failure     500 {object} errors.Error
+// @Router      /network/ips/create [post]
 func (c Controller) create(res http.ResponseWriter, req *http.Request) {
 	ipCreateReq := new(networkApi.IPCreateReq)
 	if err := httpext.BindModel(req, ipCreateReq); err != nil {
@@ -64,15 +65,16 @@ func (c Controller) create(res http.ResponseWriter, req *http.Request) {
 }
 
 // ipList godoc
-//	@Summary		return IP list
-//	@Description	return IP list
-//	@Accept			json
-//	@Produce		json
-//	@Success		200	{object}	proto.IPs
-//	@Failure		400	{object}	errors.Error
-//	@Failure		404	{object}	errors.Error
-//	@Failure		500	{object}	errors.Error
-//	@Router			/network/ips/list [get]
+//
+// @Summary     return IP list
+// @Description return IP list
+// @Accept      json
+// @Produce     json
+// @Success     200 {object} proto.IPs
+// @Failure     400 {object} errors.Error
+// @Failure     404 {object} errors.Error
+// @Failure     500 {object} errors.Error
+// @Router      /network/ips/list [get]
 func (c Controller) list(res http.ResponseWriter, req *http.Request) {
 	if ips, err := c.ipsService.List(req.Context(), new(networkApi.IPListReq)); err != nil {
 		httpext.SendError(res, req, err)
@@ -82,16 +84,17 @@ func (c Controller) list(res http.ResponseWriter, req *http.Request) {
 }
 
 // ipReturn godoc
-//	@Summary		return IP with ID
-//	@Description	return IP with ID
-//	@Accept			json
-//	@Produce		json
-//	@Param			ip_id	path		string	true	"IP ID"
-//	@Success		200		{object}	proto.IP
-//	@Failure		400		{object}	errors.Error
-//	@Failure		404		{object}	errors.Error
-//	@Failure		500		{object}	errors.Error
-//	@Router			/network/ips/{ip_id} [get]
+//
+// @Summary     return IP with ID
+// @Description return IP with ID
+// @Accept      json
+// @Produce     json
+// @Param       ip_id path          string true "IP ID"
+// @Success     200        {object} proto.IP
+// @Failure     400        {object} errors.Error
+// @Failure     404        {object} errors.Error
+// @Failure     500        {object} errors.Error
+// @Router      /network/ips/{ip_id} [get]
 func (c Controller) returnByID(res http.ResponseWriter, req *http.Request) {
 	ipReq := new(networkApi.IPReturnReq)
 

@@ -30,7 +30,7 @@ func (c *Connection) conn() (*grpc.ClientConn, error) {
 	if c.clientConn != nil && c.clientConn.GetState() == connectivity.Ready {
 		return c.clientConn, nil
 	}
-	conn, err := grpc.Dial(c.target, grpc.WithInsecure())
+	conn, err := grpc.NewClient(c.target, grpc.WithInsecure())
 	if err != nil {
 		return nil, err
 	}

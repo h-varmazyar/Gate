@@ -9,7 +9,6 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	assets "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/assets/service"
-	indicators "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/indicators/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/repository"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/workers"
 	resolutions "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/resolutions/service"
@@ -32,9 +31,9 @@ type Service struct {
 	brokerageService   coreApi.BrokerageServiceClient
 	resolutionsService *resolutions.Service
 	assetsService      *assets.Service
-	indicatorsService  *indicators.Service
-	logger             *log.Logger
-	db                 repository.MarketRepository
+	//indicatorsService  *indicators.Service
+	logger *log.Logger
+	db     repository.MarketRepository
 }
 
 var (
@@ -42,8 +41,8 @@ var (
 )
 
 type Dependencies struct {
-	AssetsService      *assets.Service
-	IndicatorsService  *indicators.Service
+	AssetsService *assets.Service
+	//IndicatorsService  *indicators.Service
 	ResolutionsService *resolutions.Service
 	//PrimaryDataWorker             *workers.PrimaryDataWorker
 	StatisticsWorker *workers.StatisticsWorker
@@ -59,7 +58,7 @@ func NewService(_ context.Context, logger *log.Logger, configs *Configs, db repo
 		GrpcService.strategyService = eagleApi.NewStrategyServiceClient(eagleConn)
 		GrpcService.functionsService = coreApi.NewFunctionsServiceClient(coreConn)
 		GrpcService.assetsService = dependencies.AssetsService
-		GrpcService.indicatorsService = dependencies.IndicatorsService
+		//GrpcService.indicatorsService = dependencies.IndicatorsService
 		GrpcService.resolutionsService = dependencies.ResolutionsService
 		GrpcService.db = db
 		GrpcService.logger = logger
@@ -201,7 +200,7 @@ func (s *Service) Update(ctx context.Context, req *chipmunkApi.MarketUpdateReq) 
 //			log.WithError(err).Errorf("failed to load or create destination for market %v", market.Name)
 //			continue
 //		}
-//		localMarket := new(entity.Market)
+//		localMarket := new(entities.Market)
 //		mapper.Struct(market, localMarket)
 //		localMarket.SourceID = source.ID
 //		localMarket.DestinationID = destination.ID
@@ -333,7 +332,7 @@ OUTER:
 //	response := make(map[uuid.UUID]indicatorsPkg.Indicator)
 //	for _, strategyIndicator := range strategyIndicators.Elements {
 //		indicatorResp, err := s.indicatorsService.Return(ctx, &chipmunkApi.IndicatorReturnReq{ID: strategyIndicator.IndicatorID})
-//		indicator := new(entity.Indicator)
+//		indicator := new(entities.Indicator)
 //		mapper.Struct(indicatorResp, indicator)
 //		if err != nil {
 //			return nil, err

@@ -18,6 +18,8 @@ const (
 	UserAgent       = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36"
 )
 
+var counter = 0
+
 type Request struct {
 	Endpoint    string
 	httpClient  *http.Client
@@ -26,25 +28,30 @@ type Request struct {
 	body        *bytes.Buffer
 	method      networkAPI.RequestMethod
 	metadata    string
+	proxyURL    string
 }
 
 func NewNetworkRequest(input *networkAPI.Request, proxyURL *url.URL) (*Request, error) {
 	requestTransport := new(http.Transport)
 
-	if proxyURL != nil {
-		requestTransport.Proxy = http.ProxyURL(proxyURL)
-		requestTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	}
-
 	request := &Request{
 		Endpoint: input.Endpoint,
-		httpClient: &http.Client{
-			Transport: requestTransport,
-		},
 		method:   input.Method,
 		body:     new(bytes.Buffer),
 		headers:  http.Header{},
 		metadata: input.Metadata,
+	}
+
+	if proxyURL != nil {
+		requestTransport.Proxy = http.ProxyURL(proxyURL)
+		requestTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		request.proxyURL = proxyURL.String()
+	} else {
+		request.proxyURL = "localhost"
+	}
+
+	request.httpClient = &http.Client{
+		Transport: requestTransport,
 	}
 
 	request.AddHeaders(input.Headers)
@@ -101,7 +108,8 @@ func (req *Request) Do() (*networkAPI.Response, error) {
 		request.URL.RawQuery = req.queryParams
 	}
 
-	log.Infof(request.URL.String())
+	log.Infof("%v: over %v -> (%v)%v", counter, req.proxyURL, req.method, request.URL.String())
+	counter++
 	response, err := req.httpClient.Do(request)
 	if err != nil {
 		log.WithError(err).Errorf("failed to make request")

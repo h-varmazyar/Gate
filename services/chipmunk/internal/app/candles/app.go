@@ -7,7 +7,6 @@ import (
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/repository"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/workers"
-	indicatorService "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/indicators/service"
 	marketService "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/markets/service"
 	resolutionService "github.com/h-varmazyar/Gate/services/chipmunk/internal/app/resolutions/service"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/db"
@@ -27,7 +26,7 @@ type App struct {
 }
 
 type AppDependencies struct {
-	IndicatorService  *indicatorService.Service
+	//IndicatorService  *indicatorService.Service
 	ResolutionService *resolutionService.Service
 	MarketService     *marketService.Service
 }

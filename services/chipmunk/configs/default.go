@@ -6,7 +6,7 @@ service_name: "chipmunk"
 version: "v1.0.0"
 grpc_port: 11000
 amqp_configs:
-  connection: "amqp://rabbitmq:rabbitmq@185.110.191.66"
+  connection: "amqp://rabbitmq:rabbitmq@localhost:5672"
 buffer_configs:
   candle_buffer_length: 400
 markets_app:
@@ -28,8 +28,12 @@ candles_app:
     missed_candles_interval: "10m"
     last_candles_interval: "3s"
     redundant_remover_interval: "15m"
-indicators_app:
-  service_configs:
+posts_app:
+  workers_configs:
+    network_address: "localhost:10101"
+    sahamyab_post_collector_url: "https://www.sahamyab.com/guest/twiter/list?v=0.1"
+    max_sentiment_detector_token_length:
+    sentiment_detector_token:
 resolutions_app:
   service_configs:
 wallets_app:
@@ -43,8 +47,8 @@ db:
   type: "postgreSQL"
   username: "postgres"
   password: "postgres"
-  host: "185.110.191.66"
-  port: 5432
+  host: "localhost"
+  port: 5433
   name: "chipmunk"
   is_ssl_enable: false
 `)

@@ -12,7 +12,7 @@ services:
         limits:
           cpus: '0.2'
           memory: '250m'
-    image: postgres
+    image: postgres:15
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
@@ -174,27 +174,27 @@ services:
 #      - postgres
     restart: always
 
-  telegram_bot:
-    container_name: telegramBot
-    deploy:
-      resources:
-        limits:
-          cpus: '0.02'
-          memory: '50m'
-    image: telegram_bot:${TELEGRAM_BOT_VERSION}
-    build:
-      context: ..
-      dockerfile: services/telegramBot/deploy/Dockerfile
-      args:
-        VERSION: ${TELEGRAM_BOT_VERSION}
-    volumes:
-      - /srv/configs/telegramBot/app.yaml:/app/configs/config.yaml
-    networks:
-      - gate
-#    depends_on:
-#      - postgres
-#      - redis
-    restart: always
+#  telegram_bot:
+#    container_name: telegramBot
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: '0.02'
+#          memory: '50m'
+#    image: telegram_bot:${TELEGRAM_BOT_VERSION}
+#    build:
+#      context: ..
+#      dockerfile: services/telegramBot/deploy/Dockerfile
+#      args:
+#        VERSION: ${TELEGRAM_BOT_VERSION}
+#    volumes:
+#      - /srv/configs/telegramBot/app.yaml:/app/configs/config.yaml
+#    networks:
+#      - gate
+##    depends_on:
+##      - postgres
+##      - redis
+#    restart: always
 
 volumes:
   postgres_gate_data:

@@ -9,4 +9,7 @@ type Migration struct {
 	Description string
 }
 
-const MigrationTable = "migrations"
+const (
+	MigrationTable = "migrations"
+	postsTable     = "posts"
+)

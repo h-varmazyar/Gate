@@ -72,6 +72,9 @@ func (w IndicatorCalculator) calculateMarketIndicators(key string) {
 		MarketID:     ids[1],
 		Count:        1,
 	}
+
+	w.calculatePrimaryIndicatorsValue(key, ids)
+
 	ticker := time.NewTicker(w.configs.CalculatorInterval)
 	for {
 		select {
@@ -104,5 +107,34 @@ func (w IndicatorCalculator) calculateMarketIndicators(key string) {
 			}
 			fn()
 		}
+	}
+}
+
+func (w IndicatorCalculator) calculatePrimaryIndicatorsValue(key string, ids []string) {
+	primaryCandles, err := w.candleService.List(context.Background(), &chipmunkAPI.CandleListReq{
+		ResolutionID: ids[0],
+		MarketID:     ids[1],
+	})
+	if err != nil {
+		w.log.WithError(err).Errorf("failed to get primary candles for %v", ids)
+		return
+	}
+
+	w.lock.Lock()
+	indicators, ok := w.indicatorsMap[key]
+	if !ok {
+		w.log.Errorf("no indicator map found with key %v", key)
+		return
+	}
+	w.lock.Unlock()
+
+	for _, indicator := range indicators {
+		values, err := indicator.Calculate(context.Background(), primaryCandles.Elements)
+		for _, value := range values.Values {
+			if err = storage.AddValue(context.Background(), indicator.GetId(), value); err != nil {
+				w.log.WithError(err).Warnf("failed to save indicator value. id: %v", indicator.GetId())
+			}
+		}
+
 	}
 }

@@ -21,6 +21,7 @@ func NewDatabase(ctx context.Context, configs gormext.Configs) (*DB, error) {
 		}
 		db.PostgresDB = postgres
 
+		log.Infof(configs.Name, configs.Host, configs.Password)
 		err = createMigrateTable(ctx, db)
 		if err != nil {
 			return nil, err
@@ -31,9 +32,13 @@ func NewDatabase(ctx context.Context, configs gormext.Configs) (*DB, error) {
 }
 
 func createMigrateTable(_ context.Context, db *DB) error {
-	err := db.PostgresDB.AutoMigrate(new(Migration))
-	if err != nil {
+	if err := db.PostgresDB.AutoMigrate(new(Migration)); err != nil {
 		return err
 	}
+
+	if err := db.postsMigrations(); err != nil {
+		return err
+	}
+
 	return nil
 }

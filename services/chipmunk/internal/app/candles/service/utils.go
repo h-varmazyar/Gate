@@ -3,23 +3,21 @@ package service
 import (
 	"github.com/google/uuid"
 	api "github.com/h-varmazyar/Gate/api/proto"
-	"github.com/h-varmazyar/Gate/pkg/mapper"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/entity"
-	indicatorsPkg "github.com/h-varmazyar/Gate/services/chipmunk/internal/pkg/indicators"
 	"gorm.io/gorm"
 	"time"
 )
 
-func (s *Service) preparePrimaryDataRequests(platform api.Platform, market *chipmunkApi.Market, resolutions *chipmunkApi.Resolutions, indicators []indicatorsPkg.Indicator) {
+func (s *Service) preparePrimaryDataRequests(platform api.Platform, market *chipmunkApi.Market, resolutions *chipmunkApi.Resolutions) {
 	for _, resolution := range resolutions.Elements {
-		s.preparePrimaryDataRequestsByResolution(platform, market, resolution, indicators)
+		s.preparePrimaryDataRequestsByResolution(platform, market, resolution)
 	}
 }
 
-func (s *Service) preparePrimaryDataRequestsByResolution(platform api.Platform, market *chipmunkApi.Market, resolution *chipmunkApi.Resolution, indicators []indicatorsPkg.Indicator) {
-	from, err := s.prepareLocalCandles(market, resolution, indicators)
+func (s *Service) preparePrimaryDataRequestsByResolution(platform api.Platform, market *chipmunkApi.Market, resolution *chipmunkApi.Resolution) {
+	from, err := s.prepareLocalCandles(market, resolution)
 	if err != nil {
 		return
 	}
@@ -27,7 +25,7 @@ func (s *Service) preparePrimaryDataRequestsByResolution(platform api.Platform, 
 	s.makePrimaryDataRequests(platform, market, resolution, from)
 }
 
-func (s *Service) prepareLocalCandles(market *chipmunkApi.Market, resolution *chipmunkApi.Resolution, indicators []indicatorsPkg.Indicator) (time.Time, error) {
+func (s *Service) prepareLocalCandles(market *chipmunkApi.Market, resolution *chipmunkApi.Resolution) (time.Time, error) {
 	marketID, err := uuid.Parse(market.ID)
 	if err != nil {
 		s.logger.WithError(err).Errorf("invalid market id %v", market)
@@ -54,10 +52,10 @@ func (s *Service) prepareLocalCandles(market *chipmunkApi.Market, resolution *ch
 	}
 
 	if len(candles) > 0 {
-		if err = s.calculateIndicators(candles, indicators); err != nil {
-			s.logger.WithError(err).Errorf("failed to calculate indicators for market %v in resolution %v", marketID, resolutionID)
-			return time.Unix(0, 0), err
-		}
+		//if err = s.calculateIndicators(candles, indicators); err != nil {
+		//	s.logger.WithError(err).Errorf("failed to calculate indicators for market %v in resolution %v", marketID, resolutionID)
+		//	return time.Unix(0, 0), err
+		//}
 		from = candles[len(candles)-1].Time.Add(time.Duration(resolution.Duration))
 
 		for _, candle := range candles {
@@ -88,15 +86,15 @@ func (s *Service) loadLocalCandles(marketID, resolutionID uuid.UUID) ([]*entity.
 	return candles, nil
 }
 
-func (s *Service) calculateIndicators(candles []*entity.Candle, indicators []indicatorsPkg.Indicator) error {
-	for _, indicator := range indicators {
-		err := indicator.Calculate(candles)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
+//func (s *Service) calculateIndicators(candles []*entity.Candle, indicators []indicatorsPkg.Indicator) error {
+//	for _, indicator := range indicators {
+//		err := indicator.Calculate(candles)
+//		if err != nil {
+//			return err
+//		}
+//	}
+//	return nil
+//}
 
 func (s *Service) makePrimaryDataRequests(platform api.Platform, market *chipmunkApi.Market, resolution *chipmunkApi.Resolution, from time.Time) {
 	//_, err := s.functionsService.AsyncOHLC(context.Background(), &coreApi.OHLCReq{
@@ -111,31 +109,31 @@ func (s *Service) makePrimaryDataRequests(platform api.Platform, market *chipmun
 	//}
 }
 
-func (s *Service) loadIndicators(indicators []*chipmunkApi.Indicator) ([]indicatorsPkg.Indicator, error) {
-	response := make([]indicatorsPkg.Indicator, 0)
-	for _, i := range indicators {
-		var indicatorCalculator indicatorsPkg.Indicator
-		var err error
-		indicator := new(entity.Indicator)
-		mapper.Struct(i, indicator)
-		indicator.ID, err = uuid.Parse(i.ID)
-		if err != nil {
-			return nil, err
-		}
-		switch indicator.Type {
-		case chipmunkApi.Indicator_RSI:
-			indicatorCalculator, err = indicatorsPkg.NewRSI(indicator.ID, indicator.Configs.RSI)
-		case chipmunkApi.Indicator_Stochastic:
-			indicatorCalculator, err = indicatorsPkg.NewStochastic(indicator.ID, indicator.Configs.Stochastic)
-		case chipmunkApi.Indicator_MovingAverage:
-			indicatorCalculator, err = indicatorsPkg.NewMovingAverage(indicator.ID, indicator.Configs.MovingAverage)
-		case chipmunkApi.Indicator_BollingerBands:
-			indicatorCalculator, err = indicatorsPkg.NewBollingerBands(indicator.ID, indicator.Configs.BollingerBands)
-		}
-		if err != nil {
-			return nil, err
-		}
-		response = append(response, indicatorCalculator)
-	}
-	return response, nil
-}
+//func (s *Service) loadIndicators(indicators []*chipmunkApi.Indicator) ([]indicatorsPkg.Indicator, error) {
+//	response := make([]indicatorsPkg.Indicator, 0)
+//	for _, i := range indicators {
+//		var indicatorCalculator indicatorsPkg.Indicator
+//		var err error
+//		indicator := new(entity.Indicator)
+//		mapper.Struct(i, indicator)
+//		indicator.ID, err = uuid.Parse(i.ID)
+//		if err != nil {
+//			return nil, err
+//		}
+//		switch indicator.Type {
+//		case chipmunkApi.Indicator_RSI:
+//			indicatorCalculator, err = indicatorsPkg.NewRSI(indicator.ID, indicator.Configs.RSI)
+//		case chipmunkApi.Indicator_Stochastic:
+//			indicatorCalculator, err = indicatorsPkg.NewStochastic(indicator.ID, indicator.Configs.Stochastic)
+//		case chipmunkApi.Indicator_MovingAverage:
+//			indicatorCalculator, err = indicatorsPkg.NewMovingAverage(indicator.ID, indicator.Configs.MovingAverage)
+//		case chipmunkApi.Indicator_BollingerBands:
+//			indicatorCalculator, err = indicatorsPkg.NewBollingerBands(indicator.ID, indicator.Configs.BollingerBands)
+//		}
+//		if err != nil {
+//			return nil, err
+//		}
+//		response = append(response, indicatorCalculator)
+//	}
+//	return response, nil
+//}

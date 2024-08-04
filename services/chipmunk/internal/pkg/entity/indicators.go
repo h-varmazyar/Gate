@@ -2,13 +2,12 @@ package entity
 
 import (
 	"github.com/h-varmazyar/Gate/pkg/gormext"
-	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 )
 
 type Indicator struct {
 	gormext.UniversalModel
-	Type    chipmunkApi.IndicatorType `gorm:"type:varchar(25);not null"`
-	Configs *IndicatorConfigs         `gorm:"embedded;embeddedPrefix:configs_"`
+	//Type    chipmunkApi.IndicatorType `gorm:"type:varchar(25);not null"`
+	Configs *IndicatorConfigs `gorm:"embedded;embeddedPrefix:configs_"`
 }
 
 type IndicatorConfigs struct {
@@ -30,13 +29,13 @@ type StochasticConfigs struct {
 
 type MovingAverageConfigs struct {
 	Length int
-	Source chipmunkApi.Source
+	//Source chipmunkApi.Source
 }
 
 type BollingerBandsConfigs struct {
 	Length    int
 	Deviation int
-	Source    chipmunkApi.Source
+	//Source    chipmunkApi.Source
 }
 
 type BollingerBandsValue struct {

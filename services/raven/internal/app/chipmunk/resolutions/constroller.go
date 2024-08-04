@@ -43,16 +43,17 @@ func (c Controller) RegisterRoutes(router *gorilla.Router) {
 }
 
 // resolutionCreate godoc
-//	@Summary		Create new resolution manually
-//	@Description	Create new resolution manually
-//	@Accept			json
-//	@Produce		json
-//	@Param			resolution	body	ResolutionSetReq	true	"New Resolution"
-//	@Success		201
-//	@Failure		400	{object}	errors.Error
-//	@Failure		404	{object}	errors.Error
-//	@Failure		500	{object}	errors.Error
-//	@Router			/chipmunk/resolutions/create [post]
+//
+// @Summary     Create new resolution manually
+// @Description Create new resolution manually
+// @Accept      json
+// @Produce     json
+// @Param       resolution body ResolutionSetReq true "New Resolution"
+// @Success     201
+// @Failure     400 {object} errors.Error
+// @Failure     404 {object} errors.Error
+// @Failure     500 {object} errors.Error
+// @Router      /chipmunk/resolutions/create [post]
 func (c Controller) create(res http.ResponseWriter, req *http.Request) {
 	resolution := new(chipmunkApi.Resolution)
 	if err := httpext.BindModel(req, resolution); err != nil {
@@ -67,16 +68,17 @@ func (c Controller) create(res http.ResponseWriter, req *http.Request) {
 }
 
 // resolutionList godoc
-//	@Summary		get resolution list
-//	@Description	get resolution list based on platform
-//	@Accept			json
-//	@Produce		json
-//	@Param			platform	query		string	true	"Platform name"	Enums:(Coinex,UnknownBrokerage,Nobitex,Mazdax,Binance)
-//	@Success		200			{object}	proto.Resolutions
-//	@Failure		400			{object}	errors.Error
-//	@Failure		404			{object}	errors.Error
-//	@Failure		500			{object}	errors.Error
-//	@Router			/chipmunk/resolutions/list [get]
+//
+// @Summary     get resolution list
+// @Description get resolution list based on platform
+// @Accept      json
+// @Produce     json
+// @Param       platform query  string   true "Platform name" Enums:(Coinex,UnknownBrokerage,Nobitex,Mazdax,Binance)
+// @Success     200             {object} proto.Resolutions
+// @Failure     400             {object} errors.Error
+// @Failure     404             {object} errors.Error
+// @Failure     500             {object} errors.Error
+// @Router      /chipmunk/resolutions/list [get]
 func (c Controller) list(res http.ResponseWriter, req *http.Request) {
 	listReq := new(chipmunkApi.ResolutionListReq)
 
@@ -97,16 +99,17 @@ func (c Controller) list(res http.ResponseWriter, req *http.Request) {
 }
 
 // resolutionList godoc
-//	@Summary		get single resolution
-//	@Description	get single resolution based on resolution id
-//	@Accept			json
-//	@Produce		json
-//	@Param			resolution-id	path		string	true	"Resolution id"
-//	@Success		200				{object}	proto.Resolution
-//	@Failure		400				{object}	errors.Error
-//	@Failure		404				{object}	errors.Error
-//	@Failure		500				{object}	errors.Error
-//	@Router			/chipmunk/resolutions/{resolution-id} [get]
+//
+// @Summary     get single resolution
+// @Description get single resolution based on resolution id
+// @Accept      json
+// @Produce     json
+// @Param       resolution-id path  string true     "Resolution id"
+// @Success     200                        {object} proto.Resolution
+// @Failure     400                        {object} errors.Error
+// @Failure     404                        {object} errors.Error
+// @Failure     500                        {object} errors.Error
+// @Router      /chipmunk/resolutions/{resolution-id} [get]
 func (c Controller) get(res http.ResponseWriter, req *http.Request) {
 	getReq := new(chipmunkApi.ResolutionReturnByIDReq)
 
@@ -120,17 +123,18 @@ func (c Controller) get(res http.ResponseWriter, req *http.Request) {
 }
 
 // resolutionList godoc
-//	@Summary		update single resolution
-//	@Description	update single resolution based on resolution id
-//	@Accept			json
-//	@Produce		json
-//	@Param			resolution-id	path	string				true	"Resolution id"
-//	@Param			resolution		body	ResolutionSetReq	true	"New Resolution"
-//	@Success		200
-//	@Failure		400	{object}	errors.Error
-//	@Failure		404	{object}	errors.Error
-//	@Failure		500	{object}	errors.Error
-//	@Router			/chipmunk/resolutions/{resolution-id} [put]
+//
+// @Summary     update single resolution
+// @Description update single resolution based on resolution id
+// @Accept      json
+// @Produce     json
+// @Param       resolution-id path string                        true "Resolution id"
+// @Param       resolution         body   ResolutionSetReq true "New Resolution"
+// @Success     200
+// @Failure     400 {object} errors.Error
+// @Failure     404 {object} errors.Error
+// @Failure     500 {object} errors.Error
+// @Router      /chipmunk/resolutions/{resolution-id} [put]
 func (c Controller) update(res http.ResponseWriter, req *http.Request) {
 	resolution := new(chipmunkApi.Resolution)
 	if err := httpext.BindModel(req, resolution); err != nil {

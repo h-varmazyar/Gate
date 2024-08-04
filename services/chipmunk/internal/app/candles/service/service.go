@@ -62,51 +62,51 @@ func (s *Service) List(_ context.Context, req *chipmunkApi.CandleListReq) (*chip
 	for _, candle := range candles {
 		element := new(chipmunkApi.Candle)
 		mapper.Struct(candle, element)
-		element.IndicatorValues = make(map[string]*chipmunkApi.IndicatorValue)
-		for key, value := range candle.RSIs {
-			element.IndicatorValues[key.String()] = &chipmunkApi.IndicatorValue{
-				Type: chipmunkApi.Indicator_RSI,
-				Value: &chipmunkApi.IndicatorValue_RSI{
-					RSI: &chipmunkApi.RSI{
-						RSI: value.RSI,
-					},
-				},
-			}
-		}
-		for key, value := range candle.Stochastics {
-			element.IndicatorValues[key.String()] = &chipmunkApi.IndicatorValue{
-				Type: chipmunkApi.Indicator_Stochastic,
-				Value: &chipmunkApi.IndicatorValue_Stochastic{
-					Stochastic: &chipmunkApi.Stochastic{
-						IndexK: value.IndexK,
-						IndexD: value.IndexD,
-					},
-				},
-			}
-		}
-		for key, value := range candle.BollingerBands {
-			element.IndicatorValues[key.String()] = &chipmunkApi.IndicatorValue{
-				Type: chipmunkApi.Indicator_BollingerBands,
-				Value: &chipmunkApi.IndicatorValue_BollingerBands{
-					BollingerBands: &chipmunkApi.BollingerBands{
-						UpperBand: value.UpperBand,
-						LowerBand: value.LowerBand,
-						MA:        value.MA,
-					},
-				},
-			}
-		}
-		for key, value := range candle.MovingAverages {
-			element.IndicatorValues[key.String()] = &chipmunkApi.IndicatorValue{
-				Type: chipmunkApi.Indicator_MovingAverage,
-				Value: &chipmunkApi.IndicatorValue_MovingAverage{
-					MovingAverage: &chipmunkApi.MovingAverage{
-						Simple:      value.Simple,
-						Exponential: value.Exponential,
-					},
-				},
-			}
-		}
+		//element.IndicatorValues = make(map[string]*chipmunkApi.IndicatorValue)
+		//for key, value := range candle.RSIs {
+		//	element.IndicatorValues[key.String()] = &chipmunkApi.IndicatorValue{
+		//		Type: chipmunkApi.Indicator_RSI,
+		//		Value: &chipmunkApi.IndicatorValue_RSI{
+		//			RSI: &chipmunkApi.RSI{
+		//				RSI: value.RSI,
+		//			},
+		//		},
+		//	}
+		//}
+		//for key, value := range candle.Stochastics {
+		//	element.IndicatorValues[key.String()] = &chipmunkApi.IndicatorValue{
+		//		Type: chipmunkApi.Indicator_Stochastic,
+		//		Value: &chipmunkApi.IndicatorValue_Stochastic{
+		//			Stochastic: &chipmunkApi.Stochastic{
+		//				IndexK: value.IndexK,
+		//				IndexD: value.IndexD,
+		//			},
+		//		},
+		//	}
+		//}
+		//for key, value := range candle.BollingerBands {
+		//	element.IndicatorValues[key.String()] = &chipmunkApi.IndicatorValue{
+		//		Type: chipmunkApi.Indicator_BollingerBands,
+		//		Value: &chipmunkApi.IndicatorValue_BollingerBands{
+		//			BollingerBands: &chipmunkApi.BollingerBands{
+		//				UpperBand: value.UpperBand,
+		//				LowerBand: value.LowerBand,
+		//				MA:        value.MA,
+		//			},
+		//		},
+		//	}
+		//}
+		//for key, value := range candle.MovingAverages {
+		//	element.IndicatorValues[key.String()] = &chipmunkApi.IndicatorValue{
+		//		Type: chipmunkApi.Indicator_MovingAverage,
+		//		Value: &chipmunkApi.IndicatorValue_MovingAverage{
+		//			MovingAverage: &chipmunkApi.MovingAverage{
+		//				Simple:      value.Simple,
+		//				Exponential: value.Exponential,
+		//			},
+		//		},
+		//	}
+		//}
 		response.Elements = append(response.Elements, element)
 	}
 	return response, nil
@@ -157,7 +157,7 @@ func (s *Service) Update(ctx context.Context, _ *chipmunkApi.CandleUpdateReq) (*
 //				lastVol -= last[i].Volume
 //			}
 //
-//			c := &entity.Candle{
+//			c := &entities.Candle{
 //				Time:         last[len(last)-1].Time,
 //				Open:         last[len(last)-1].Open,
 //				High:         last[len(last)-1].High,
