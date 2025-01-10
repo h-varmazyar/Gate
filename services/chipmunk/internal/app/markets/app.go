@@ -24,10 +24,12 @@ func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs Configs,
 		return nil, err
 	}
 
-	updateMarketWorker := workers.NewUpdateMarketWorker(repositoryInstance, logger, dependencies.ServiceDependencies.AssetsService, configs.WorkerConfigs.CoreAddress)
-	_, err = updateMarketWorker.UpdateFromPlatform(ctx, api.Platform_Coinex)
-	if err != nil {
-		return nil, err
+	if configs.WorkerConfigs.UpdateMarketInfo {
+		updateMarketWorker := workers.NewUpdateMarketWorker(repositoryInstance, logger, dependencies.ServiceDependencies.AssetsService, configs.WorkerConfigs.CoreAddress)
+		_, err = updateMarketWorker.UpdateFromPlatform(ctx, api.Platform_Coinex)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &App{

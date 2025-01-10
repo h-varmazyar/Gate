@@ -26,11 +26,11 @@ type Message struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"chat_id"
+	//	@inject_tag:	json:"chat_id"
 	ChatID int64 `protobuf:"varint,1,opt,name=ChatID,proto3" json:"chat_id"`
-	// @inject_tag: json:"reply_to"
+	//	@inject_tag:	json:"reply_to"
 	ReplyTo int32 `protobuf:"varint,2,opt,name=ReplyTo,proto3" json:"reply_to"`
-	// @inject_tag: json:"text"
+	//	@inject_tag:	json:"text"
 	Text string `protobuf:"bytes,3,opt,name=Text,proto3" json:"text"`
 }
 

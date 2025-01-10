@@ -2,7 +2,6 @@ package candles
 
 import (
 	"context"
-	api "github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/repository"
 	"github.com/h-varmazyar/Gate/services/chipmunk/internal/app/candles/service"
@@ -18,7 +17,6 @@ type App struct {
 	Service                *service.Service
 	logger                 *log.Logger
 	db                     repository.CandleRepository
-	functionsService       coreApi.FunctionsServiceClient
 	candleReaderWorker     *workers.CandleReader
 	lastCandleWorker       *workers.LastCandles
 	missedCandlesWorker    *workers.MissedCandles
@@ -26,7 +24,6 @@ type App struct {
 }
 
 type AppDependencies struct {
-	//IndicatorService  *indicatorService.Service
 	ResolutionService *resolutionService.Service
 	MarketService     *marketService.Service
 }
@@ -37,21 +34,12 @@ func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs Configs,
 		return nil, err
 	}
 
-	coreConn := grpcext.NewConnection(configs.WorkerConfigs.CoreAddress)
 	app := &App{
-		logger:           logger,
-		db:               repositoryInstance,
-		functionsService: coreApi.NewFunctionsServiceClient(coreConn),
+		logger: logger,
+		db:     repositoryInstance,
 	}
 
-	err = app.initializeWorkers(ctx, configs.WorkerConfigs, repositoryInstance)
-	if err != nil {
-		return nil, err
-	}
-
-	platforms := []api.Platform{api.Platform_Coinex}
-
-	err = app.startWorkers(ctx, appDependencies, platforms)
+	err = app.startWorkers(ctx, configs.WorkerConfigs, repositoryInstance, appDependencies)
 	if err != nil {
 		return nil, err
 	}
@@ -59,4 +47,34 @@ func NewApp(ctx context.Context, logger *log.Logger, db *db.DB, configs Configs,
 	app.Service = service.NewService(ctx, logger, configs.ServiceConfigs, repositoryInstance)
 
 	return app, nil
+}
+
+func (app *App) startWorkers(ctx context.Context, configs *workers.Configs, db repository.CandleRepository, dependencies *AppDependencies) error {
+	log.Infof("starting candle app workers...")
+	pp := preparePlatformPairs(ctx, dependencies.MarketService, dependencies.ResolutionService)
+	nextRequestTrigger := make(chan bool, 10)
+	candleReaderWorker, err := workers.NewCandleReaderWorker(ctx, db, configs, app.logger, nextRequestTrigger)
+	if err != nil {
+		return err
+	}
+	candleReaderWorker.Start()
+
+	if configs.DataWarmupMood {
+		nextRequestTrigger <- true
+		coreConn := grpcext.NewConnection(configs.CoreAddress)
+		functionsService := coreApi.NewFunctionsServiceClient(coreConn)
+		preparePrimaryDataRequests(nextRequestTrigger, db, pp, functionsService)
+		log.Infof("total warmup requests sent")
+	}
+
+	if configs.DataCorrectionMode {
+		workers.NewMissedCandles(ctx, db, configs, app.logger).Start(pp)
+		workers.NewRedundantRemover(ctx, db, configs, app.logger).Start(pp)
+	}
+
+	if configs.NormalDataGathering {
+		workers.NewLastCandles(ctx, db, configs, app.logger).Start(pp)
+	}
+
+	return nil
 }

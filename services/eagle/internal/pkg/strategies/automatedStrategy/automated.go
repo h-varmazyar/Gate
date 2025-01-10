@@ -131,7 +131,7 @@ func (s *Automated) CheckForSignals(ctx context.Context, market *chipmunkApi.Mar
 
 func (s *Automated) calculateSignalStrength(candles []*chipmunkApi.Candle, market *chipmunkApi.Market) float64 {
 	strength := float64(0)
-	rsi, stochastic, bb := float64(0), float64(0), float64(0)
+	//rsi, stochastic, bb := float64(0), float64(0), float64(0)
 	//for _, strategyIndicator := range s.Indicators {
 	//	switch strategyIndicator.Type {
 	//	case chipmunkApi.Indicator_RSI:
@@ -146,7 +146,6 @@ func (s *Automated) calculateSignalStrength(candles []*chipmunkApi.Candle, marke
 	//	}
 	//}
 	strength = strength / float64(len(s.Indicators))
-	log.Infof("market %v - total: %v - rsi: %v - stochastic: %v - bb: %v", market.Name, strength, rsi, stochastic, bb)
 	return strength
 }
 

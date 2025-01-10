@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"github.com/google/uuid"
 	api "github.com/h-varmazyar/Gate/api/proto"
 	"github.com/h-varmazyar/Gate/pkg/grpcext"
@@ -146,7 +147,10 @@ func (s *Service) AllMarketStatistics(ctx context.Context, req *coreApi.AllMarke
 
 func (s *Service) GetMarketInfo(ctx context.Context, req *coreApi.MarketInfoReq) (*coreApi.MarketInfo, error) {
 	brokerage := &coreApi.Brokerage{Platform: req.Market.Platform}
-	request, err := loadRequest(s.configs, brokerage).GetMarketInfo(ctx, s.createMarketInfoParams(req))
+	fmt.Println(brokerage)
+	params := s.createMarketInfoParams(req)
+	fmt.Println("params:", params)
+	request, err := loadRequest(s.configs, brokerage).GetMarketInfo(ctx, params)
 	if err != nil {
 		return nil, err
 	}
@@ -173,15 +177,40 @@ func (s *Service) GetMarketInfo(ctx context.Context, req *coreApi.MarketInfoReq)
 
 func (s *Service) OHLC(ctx context.Context, req *coreApi.OHLCReq) (*chipmunkApi.Candles, error) {
 	brokerage := &coreApi.Brokerage{Platform: req.Item.Market.Platform}
-	candles, err := loadRequest(s.configs, brokerage).OHLC(ctx, s.createOHLCParams(req),
-		func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
-			resp, err := s.requestService.Do(ctx, request)
-			return resp, err
-		})
-	if err != nil {
-		return nil, err
+	from := time.Unix(req.Item.From, 0)
+
+	allCandles := make([]*chipmunkApi.Candle, 0)
+
+	for end := false; !end; {
+		to := from.Add(time.Duration(req.Item.Resolution.Duration) * 999)
+		if to.After(time.Unix(req.Item.To, 0)) {
+			to = time.Unix(req.Item.To, 0)
+			end = true
+		} else if to.After(time.Now()) {
+			to = time.Now()
+			end = true
+		}
+
+		params := &brokerages.OHLCParams{
+			Resolution: req.Item.Resolution,
+			Market:     req.Item.Market,
+			From:       from,
+			To:         to,
+		}
+		s.logger.Infof("ohlc %v from %v to %v", req.Item.Market.Name, from, to)
+		candles, err := loadRequest(s.configs, brokerage).OHLC(ctx, params,
+			func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
+				resp, err := s.requestService.Do(ctx, request)
+				return resp, err
+			})
+		if err != nil {
+			s.logger.WithError(err).Error("failed to do OHLC")
+			continue
+		}
+		from = to.Add(time.Duration(req.Item.Resolution.Duration))
+		allCandles = append(allCandles, candles...)
 	}
-	return &chipmunkApi.Candles{Elements: candles}, nil
+	return &chipmunkApi.Candles{Elements: allCandles}, nil
 }
 
 func (s *Service) WalletsBalance(ctx context.Context, req *coreApi.WalletsBalanceReq) (*chipmunkApi.Wallets, error) {
@@ -236,12 +265,8 @@ func (s *Service) SingleMarketStatistics(ctx context.Context, req *coreApi.Marke
 
 func (s *Service) MarketList(ctx context.Context, req *coreApi.MarketListReq) (*chipmunkApi.Markets, error) {
 	brokerage := &coreApi.Brokerage{Platform: req.Platform}
-	s.logger.Infof("req is: %v", req.Platform)
-	s.logger.Infof("conf: %v", s.configs)
 	br := loadRequest(s.configs, brokerage)
-	s.logger.Infof("br is: %v", br)
 	markets, err := br.MarketList(ctx, func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
-		s.logger.Infof("before network request")
 		resp, err := s.requestService.Do(ctx, request)
 		return resp, err
 	})
@@ -249,7 +274,6 @@ func (s *Service) MarketList(ctx context.Context, req *coreApi.MarketListReq) (*
 		s.logger.WithError(err).Errorf("failed to get market list")
 		return nil, err
 	}
-	s.logger.Infof("market list: %v", len(markets.Elements))
 	return markets, nil
 }
 

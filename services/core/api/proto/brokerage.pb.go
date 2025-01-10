@@ -27,25 +27,25 @@ type Brokerage struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"id"
+	//	@inject_tag:	json:"id"
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
-	// @inject_tag: json:"title"
+	//	@inject_tag:	json:"title"
 	Title string `protobuf:"bytes,2,opt,name=Title,proto3" json:"title"`
-	// @inject_tag: json:"description"
+	//	@inject_tag:	json:"description"
 	Description string `protobuf:"bytes,3,opt,name=Description,proto3" json:"description"`
-	// @inject_tag: json:"auth"
+	//	@inject_tag:	json:"auth"
 	Auth *proto.Auth `protobuf:"bytes,4,opt,name=Auth,proto3" json:"auth"`
-	// @inject_tag: json:"platform"
+	//	@inject_tag:	json:"platform"
 	Platform proto.Platform `protobuf:"varint,5,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
-	// @inject_tag: json:"markets"
+	//	@inject_tag:	json:"markets"
 	Markets *proto1.Markets `protobuf:"bytes,6,opt,name=Markets,proto3" json:"markets"`
-	// @inject_tag: json:"resolution_id"
+	//	@inject_tag:	json:"resolution_id"
 	ResolutionID string `protobuf:"bytes,7,opt,name=ResolutionID,proto3" json:"resolution_id"`
-	// @inject_tag: json:"resolution"
+	//	@inject_tag:	json:"resolution"
 	Resolution *proto1.Resolution `protobuf:"bytes,8,opt,name=Resolution,proto3" json:"resolution"`
-	// @inject_tag: json:"strategy_id"
+	//	@inject_tag:	json:"strategy_id"
 	StrategyID string `protobuf:"bytes,9,opt,name=StrategyID,proto3" json:"strategy_id"`
-	// @inject_tag: json:"status"
+	//	@inject_tag:	json:"status"
 	Status proto.Status `protobuf:"varint,10,opt,name=Status,proto3,enum=api.Status" json:"status"`
 }
 
@@ -156,7 +156,7 @@ type Brokerages struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"elements"
+	//	@inject_tag:	json:"elements"
 	Elements []*Brokerage `protobuf:"bytes,1,rep,name=Elements,proto3" json:"elements"`
 }
 
@@ -204,17 +204,17 @@ type BrokerageCreateReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"title"
+	//	@inject_tag:	json:"title"
 	Title string `protobuf:"bytes,1,opt,name=Title,proto3" json:"title"`
-	// @inject_tag: json:"description"
+	//	@inject_tag:	json:"description"
 	Description string `protobuf:"bytes,2,opt,name=Description,proto3" json:"description"`
-	// @inject_tag: json:"auth"
+	//	@inject_tag:	json:"auth"
 	Auth *proto.Auth `protobuf:"bytes,3,opt,name=Auth,proto3" json:"auth"`
-	// @inject_tag: json:"platform"
+	//	@inject_tag:	json:"platform"
 	Platform proto.Platform `protobuf:"varint,4,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
-	// @inject_tag: json:"markets"
+	//	@inject_tag:	json:"markets"
 	Markets *proto1.Markets `protobuf:"bytes,5,opt,name=Markets,proto3" json:"markets"`
-	// @inject_tag: json:"strategy_id"
+	//	@inject_tag:	json:"strategy_id"
 	StrategyID string `protobuf:"bytes,7,opt,name=StrategyID,proto3" json:"strategy_id"`
 }
 
@@ -297,9 +297,9 @@ type BrokerageReturnReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"id"
+	//	@inject_tag:	json:"id"
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
-	// @inject_tag: json:"with_markets"
+	//	@inject_tag:	json:"with_markets"
 	WithMarkets bool `protobuf:"varint,2,opt,name=WithMarkets,proto3" json:"with_markets"`
 }
 
@@ -354,7 +354,7 @@ type BrokerageDeleteReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"id"
+	//	@inject_tag:	json:"id"
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
 }
 

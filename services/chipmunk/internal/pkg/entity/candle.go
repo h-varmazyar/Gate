@@ -6,6 +6,11 @@ import (
 	"time"
 )
 
+//DROP INDEX idx_candles_market_id;
+//DROP INDEX idx_candles_resolution_id;
+//
+//CREATE INDEX idx_candles_market_resolution_time ON public.candles (market_id, resolution_id, time DESC);
+
 type Candle struct {
 	gormext.UniversalModel
 	Time            time.Time

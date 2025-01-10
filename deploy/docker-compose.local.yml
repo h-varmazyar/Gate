@@ -39,7 +39,7 @@ services:
     networks:
       - gate
     ports:
-      - "6379:6379"
+      - "6380:6379"
     restart: always
 
   rabbitmq:

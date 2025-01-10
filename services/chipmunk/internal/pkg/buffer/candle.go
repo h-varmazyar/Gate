@@ -21,6 +21,7 @@ func InitializeCandleBuffer(configs *Configs) {
 			data:         make(map[string]map[string][]*entity.Candle),
 			BufferLength: configs.CandleBufferLength,
 		}
+
 	}
 }
 

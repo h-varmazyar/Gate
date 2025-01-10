@@ -63,14 +63,14 @@ func (s *Service) doNetworkRequest(request *networkAPI.Request) (*networkAPI.Res
 	return resp, nil
 }
 
-func (s *Service) createOHLCParams(req *coreApi.OHLCReq) *brokerages.OHLCParams {
-	return &brokerages.OHLCParams{
-		//Resolution: req.Resolution,
-		//Market:     req.Market,
-		//From:       time.Unix(req.From, 0),
-		//To:         time.Unix(req.To, 0),
-	}
-}
+//func (s *Service) createOHLCParams(req *coreApi.OHLCReq) *brokerages.OHLCParams {
+//	return &brokerages.OHLCParams{
+//		Resolution: req.Resolution,
+//		Market:     req.Market,
+//		From:       time.Unix(req.From, 0),
+//		To:         time.Unix(req.To, 0),
+//	}
+//}
 
 func (s *Service) createMarketInfoParams(req *coreApi.MarketInfoReq) *brokerages.MarketInfoParams {
 	return &brokerages.MarketInfoParams{

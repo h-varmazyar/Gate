@@ -8,11 +8,18 @@ grpc_port: 12000
 strategies_app:
   service_configs:
     automated:
-      redis_address: "localhost:6379"
-      core_address: ":10100"
-      chipmunk_address: ":11000"
-      telegram_bot_address: ":14000"
+      redis_address: "localhost:6380"
+      core_address: "localhost:10100"
+      chipmunk_address: "localhost:11000"
+      telegram_bot_address: "localhost:14000"
       broadcast_channel_id: 1001263706636
+  automated_worker:
+    redis_address: "localhost:6380"
+    core_address: "localhost:10100"
+    chipmunk_address: "localhost:11000"
+    telegram_bot_address: "localhost:14000"
+    broadcast_channel_id: -100
+  chipmunk_address: "localhost:11000"
 db:
   type: "postgreSQL"
   username: "postgres"

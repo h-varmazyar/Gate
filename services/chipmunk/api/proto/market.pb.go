@@ -26,35 +26,35 @@ type Market struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"pricing_decimal"
+	//	@inject_tag:	json:"pricing_decimal"
 	PricingDecimal float64 `protobuf:"fixed64,1,opt,name=PricingDecimal,proto3" json:"pricing_decimal"`
-	// @inject_tag: json:"trading_decimal"
+	//	@inject_tag:	json:"trading_decimal"
 	TradingDecimal float64 `protobuf:"fixed64,2,opt,name=TradingDecimal,proto3" json:"trading_decimal"`
-	// @inject_tag: json:"taker_fee_rate"
+	//	@inject_tag:	json:"taker_fee_rate"
 	TakerFeeRate float64 `protobuf:"fixed64,3,opt,name=TakerFeeRate,proto3" json:"taker_fee_rate"`
-	// @inject_tag: json:"maker_fee_rate"
+	//	@inject_tag:	json:"maker_fee_rate"
 	MakerFeeRate float64 `protobuf:"fixed64,4,opt,name=MakerFeeRate,proto3" json:"maker_fee_rate"`
-	// @inject_tag: json:"destination"
+	//	@inject_tag:	json:"destination"
 	Destination *Asset `protobuf:"bytes,5,opt,name=Destination,proto3" json:"destination"`
-	// @inject_tag: json:"issue_date"
+	//	@inject_tag:	json:"issue_date"
 	IssueDate int64 `protobuf:"varint,6,opt,name=IssueDate,proto3" json:"issue_date"`
-	// @inject_tag: json:"min_amount"
+	//	@inject_tag:	json:"min_amount"
 	MinAmount float64 `protobuf:"fixed64,7,opt,name=MinAmount,proto3" json:"min_amount"`
-	// @inject_tag: json:"created_at"
+	//	@inject_tag:	json:"created_at"
 	CreatedAt int64 `protobuf:"varint,8,opt,name=CreatedAt,proto3" json:"created_at"`
-	// @inject_tag: json:"updated_at"
+	//	@inject_tag:	json:"updated_at"
 	UpdatedAt int64 `protobuf:"varint,9,opt,name=UpdatedAt,proto3" json:"updated_at"`
-	// @inject_tag: json:"source"
+	//	@inject_tag:	json:"source"
 	Source *Asset `protobuf:"bytes,10,opt,name=Source,proto3" json:"source"`
-	// @inject_tag: json:"is_amm"
+	//	@inject_tag:	json:"is_amm"
 	IsAMM bool `protobuf:"varint,11,opt,name=IsAMM,proto3" json:"is_amm"`
-	// @inject_tag: json:"name"
+	//	@inject_tag:	json:"name"
 	Name string `protobuf:"bytes,12,opt,name=Name,proto3" json:"name"`
-	// @inject_tag: json:"id"
+	//	@inject_tag:	json:"id"
 	ID string `protobuf:"bytes,13,opt,name=ID,proto3" json:"id"`
-	// @inject_tag: json:"status"
+	//	@inject_tag:	json:"status"
 	Status proto.Status `protobuf:"varint,14,opt,name=Status,proto3,enum=api.Status" json:"status"`
-	// @inject_tag: json:"platform"
+	//	@inject_tag:	json:"platform"
 	Platform proto.Platform `protobuf:"varint,15,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
 }
 
@@ -200,29 +200,29 @@ type MarketCreateReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"pricing_decimal"
+	//	@inject_tag:	json:"pricing_decimal"
 	PricingDecimal float64 `protobuf:"fixed64,1,opt,name=PricingDecimal,proto3" json:"pricing_decimal"`
-	// @inject_tag: json:"trading_decimal"
+	//	@inject_tag:	json:"trading_decimal"
 	TradingDecimal float64 `protobuf:"fixed64,2,opt,name=TradingDecimal,proto3" json:"trading_decimal"`
-	// @inject_tag: json:"taker_fee_rate"
+	//	@inject_tag:	json:"taker_fee_rate"
 	TakerFeeRate float64 `protobuf:"fixed64,3,opt,name=TakerFeeRate,proto3" json:"taker_fee_rate"`
-	// @inject_tag: json:"maker_fee_rate"
+	//	@inject_tag:	json:"maker_fee_rate"
 	MakerFeeRate float64 `protobuf:"fixed64,4,opt,name=MakerFeeRate,proto3" json:"maker_fee_rate"`
-	// @inject_tag: json:"destination_symbol"
+	//	@inject_tag:	json:"destination_symbol"
 	DestinationSymbol string `protobuf:"bytes,5,opt,name=DestinationSymbol,proto3" json:"destination_symbol"`
-	// @inject_tag: json:"issue_date"
+	//	@inject_tag:	json:"issue_date"
 	IssueDate int64 `protobuf:"varint,6,opt,name=IssueDate,proto3" json:"issue_date"`
-	// @inject_tag: json:"min_amount"
+	//	@inject_tag:	json:"min_amount"
 	MinAmount float64 `protobuf:"fixed64,7,opt,name=MinAmount,proto3" json:"min_amount"`
-	// @inject_tag: json:"source_symbol"
+	//	@inject_tag:	json:"source_symbol"
 	SourceSymbol string `protobuf:"bytes,8,opt,name=SourceSymbol,proto3" json:"source_symbol"`
-	// @inject_tag: json:"is_amm"
+	//	@inject_tag:	json:"is_amm"
 	IsAMM bool `protobuf:"varint,9,opt,name=IsAMM,proto3" json:"is_amm"`
-	// @inject_tag: json:"name"
+	//	@inject_tag:	json:"name"
 	Name string `protobuf:"bytes,10,opt,name=Name,proto3" json:"name"`
-	// @inject_tag: json:"status"
+	//	@inject_tag:	json:"status"
 	Status proto.Status `protobuf:"varint,11,opt,name=Status,proto3,enum=api.Status" json:"status"`
-	// @inject_tag: json:"platform"
+	//	@inject_tag:	json:"platform"
 	Platform proto.Platform `protobuf:"varint,12,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
 }
 
@@ -347,7 +347,7 @@ type Markets struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"elements"
+	//	@inject_tag:	json:"elements"
 	Elements []*Market `protobuf:"bytes,1,rep,name=Elements,proto3" json:"elements"`
 }
 
@@ -395,7 +395,7 @@ type MarketReturnReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"id"
+	//	@inject_tag:	json:"id"
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
 }
 
@@ -443,7 +443,7 @@ type MarketListReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"platform"
+	//	@inject_tag:	json:"platform"
 	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
 }
 
@@ -491,31 +491,31 @@ type MarketUpdateReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"id"
+	//	@inject_tag:	json:"id"
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
-	// @inject_tag: json:"pricing_decimal"
+	//	@inject_tag:	json:"pricing_decimal"
 	PricingDecimal float64 `protobuf:"fixed64,2,opt,name=PricingDecimal,proto3" json:"pricing_decimal"`
-	// @inject_tag: json:"trading_decimal"
+	//	@inject_tag:	json:"trading_decimal"
 	TradingDecimal float64 `protobuf:"fixed64,3,opt,name=TradingDecimal,proto3" json:"trading_decimal"`
-	// @inject_tag: json:"taker_fee_rate"
+	//	@inject_tag:	json:"taker_fee_rate"
 	TakerFeeRate float64 `protobuf:"fixed64,4,opt,name=TakerFeeRate,proto3" json:"taker_fee_rate"`
-	// @inject_tag: json:"maker_fee_rate"
+	//	@inject_tag:	json:"maker_fee_rate"
 	MakerFeeRate float64 `protobuf:"fixed64,5,opt,name=MakerFeeRate,proto3" json:"maker_fee_rate"`
-	// @inject_tag: json:"destination_symbol"
+	//	@inject_tag:	json:"destination_symbol"
 	DestinationSymbol string `protobuf:"bytes,6,opt,name=DestinationSymbol,proto3" json:"destination_symbol"`
-	// @inject_tag: json:"issue_date"
+	//	@inject_tag:	json:"issue_date"
 	IssueDate int64 `protobuf:"varint,7,opt,name=IssueDate,proto3" json:"issue_date"`
-	// @inject_tag: json:"min_amount"
+	//	@inject_tag:	json:"min_amount"
 	MinAmount float64 `protobuf:"fixed64,8,opt,name=MinAmount,proto3" json:"min_amount"`
-	// @inject_tag: json:"source_symbol"
+	//	@inject_tag:	json:"source_symbol"
 	SourceSymbol string `protobuf:"bytes,9,opt,name=SourceSymbol,proto3" json:"source_symbol"`
-	// @inject_tag: json:"is_amm"
+	//	@inject_tag:	json:"is_amm"
 	IsAMM bool `protobuf:"varint,10,opt,name=IsAMM,proto3" json:"is_amm"`
-	// @inject_tag: json:"name"
+	//	@inject_tag:	json:"name"
 	Name string `protobuf:"bytes,11,opt,name=Name,proto3" json:"name"`
-	// @inject_tag: json:"status"
+	//	@inject_tag:	json:"status"
 	Status proto.Status `protobuf:"varint,12,opt,name=Status,proto3,enum=api.Status" json:"status"`
-	// @inject_tag: json:"platform"
+	//	@inject_tag:	json:"platform"
 	Platform proto.Platform `protobuf:"varint,13,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
 }
 
@@ -647,7 +647,7 @@ type MarketUpdateFromPlatformReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"platform"
+	//	@inject_tag:	json:"platform"
 	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
 }
 
@@ -695,9 +695,9 @@ type MarketListBySourceReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"platform"
+	//	@inject_tag:	json:"platform"
 	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
-	// @inject_tag: json:"source"
+	//	@inject_tag:	json:"source"
 	Source string `protobuf:"bytes,2,opt,name=Source,proto3" json:"source"`
 }
 
@@ -752,7 +752,7 @@ type WorkerStartReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"platform"
+	//	@inject_tag:	json:"platform"
 	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
 }
 
@@ -800,7 +800,7 @@ type WorkerStopReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"platform"
+	//	@inject_tag:	json:"platform"
 	Platform proto.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
 }
 

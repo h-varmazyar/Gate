@@ -70,37 +70,37 @@ type Strategy struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"id"
+	//	@inject_tag:	json:"id"
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
-	// @inject_tag: json:"created_at,omitempty"
+	//	@inject_tag:	json:"created_at,omitempty"
 	CreatedAt int64 `protobuf:"varint,2,opt,name=CreatedAt,proto3" json:"created_at,omitempty"`
-	// @inject_tag: json:"updated_at,omitempty"
+	//	@inject_tag:	json:"updated_at,omitempty"
 	UpdatedAt int64 `protobuf:"varint,3,opt,name=UpdatedAt,proto3" json:"updated_at,omitempty"`
-	// @inject_tag: json:"name"
+	//	@inject_tag:	json:"name"
 	Name string `protobuf:"bytes,4,opt,name=Name,proto3" json:"name"`
-	// @inject_tag: json:"description"
+	//	@inject_tag:	json:"description"
 	Description string `protobuf:"bytes,5,opt,name=Description,proto3" json:"description"`
-	// @inject_tag: json:"min_daily_profit_rate"
+	//	@inject_tag:	json:"min_daily_profit_rate"
 	MinDailyProfitRate float64 `protobuf:"fixed64,6,opt,name=MinDailyProfitRate,proto3" json:"min_daily_profit_rate"`
-	// @inject_tag: json:"min_profit_per_trade_rate"
+	//	@inject_tag:	json:"min_profit_per_trade_rate"
 	MinProfitPerTradeRate float64 `protobuf:"fixed64,7,opt,name=MinProfitPerTradeRate,proto3" json:"min_profit_per_trade_rate"`
-	// @inject_tag: json:"max_fund_per_trade"
+	//	@inject_tag:	json:"max_fund_per_trade"
 	MaxFundPerTrade float64 `protobuf:"fixed64,8,opt,name=MaxFundPerTrade,proto3" json:"max_fund_per_trade"`
-	// @inject_tag: json:"max_fund_per_trade_rate"
+	//	@inject_tag:	json:"max_fund_per_trade_rate"
 	MaxFundPerTradeRate float64 `protobuf:"fixed64,9,opt,name=MaxFundPerTradeRate,proto3" json:"max_fund_per_trade_rate"`
-	// @inject_tag: json:"working_resolution"
+	//	@inject_tag:	json:"working_resolution"
 	WorkingResolution *proto.Resolution `protobuf:"bytes,10,opt,name=WorkingResolution,proto3" json:"working_resolution"`
-	// @inject_tag: json:"market_ids"
+	//	@inject_tag:	json:"market_ids"
 	MarketIDs []string `protobuf:"bytes,11,rep,name=MarketIDs,proto3" json:"market_ids"`
-	// @inject_tag: json:"indicators"
+	//	@inject_tag:	json:"indicators"
 	Indicators []*StrategyIndicator `protobuf:"bytes,12,rep,name=Indicators,proto3" json:"indicators"`
-	// @inject_tag: json:"is_active"
+	//	@inject_tag:	json:"is_active"
 	IsActive bool `protobuf:"varint,13,opt,name=IsActive,proto3" json:"is_active"`
-	// @inject_tag: json:"type"
+	//	@inject_tag:	json:"type"
 	Type StrategyType `protobuf:"varint,14,opt,name=Type,proto3,enum=eagleApi.StrategyType" json:"type"`
-	// @inject_tag: json:"brokerage_id"
+	//	@inject_tag:	json:"brokerage_id"
 	BrokerageID string `protobuf:"bytes,15,opt,name=BrokerageID,proto3" json:"brokerage_id"`
-	// @inject_tag: json:"with_trading"
+	//	@inject_tag:	json:"with_trading"
 	WithTrading bool `protobuf:"varint,16,opt,name=WithTrading,proto3" json:"with_trading"`
 }
 
@@ -253,7 +253,7 @@ type Strategies struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"elements"
+	//	@inject_tag:	json:"elements"
 	Elements []*Strategy `protobuf:"bytes,1,rep,name=Elements,proto3" json:"elements"`
 }
 
@@ -301,28 +301,28 @@ type CreateStrategyReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"name"
+	//	@inject_tag:	json:"name"
 	Name string `protobuf:"bytes,1,opt,name=Name,proto3" json:"name"`
-	// @inject_tag: json:"description"
+	//	@inject_tag:	json:"description"
 	Description string `protobuf:"bytes,2,opt,name=Description,proto3" json:"description"`
-	// @inject_tag: json:"min_daily_profit_rate"
+	//	@inject_tag:	json:"min_daily_profit_rate"
 	MinDailyProfitRate string `protobuf:"bytes,3,opt,name=MinDailyProfitRate,proto3" json:"min_daily_profit_rate"`
-	// @inject_tag: json:"min_profit_per_trade_rate"
+	//	@inject_tag:	json:"min_profit_per_trade_rate"
 	MinProfitPerTradeRate string `protobuf:"bytes,4,opt,name=MinProfitPerTradeRate,proto3" json:"min_profit_per_trade_rate"`
-	// @inject_tag: json:"max_fund_per_trade"
+	//	@inject_tag:	json:"max_fund_per_trade"
 	MaxFundPerTrade string `protobuf:"bytes,5,opt,name=MaxFundPerTrade,proto3" json:"max_fund_per_trade"`
-	// @inject_tag: json:"indicators"
+	//	@inject_tag:	json:"indicators"
 	Indicators []*StrategyIndicator `protobuf:"bytes,6,rep,name=Indicators,proto3" json:"indicators"`
-	// @inject_tag: json:"working_resolution"
+	//	@inject_tag:	json:"working_resolution"
 	WorkingResolution *proto.Resolution `protobuf:"bytes,7,opt,name=WorkingResolution,proto3" json:"working_resolution"`
-	// @inject_tag: json:"markets"
+	//	@inject_tag:	json:"markets"
 	Markets  []*proto.Market `protobuf:"bytes,8,rep,name=Markets,proto3" json:"markets"`
 	IsActive bool            `protobuf:"varint,9,opt,name=IsActive,proto3" json:"IsActive,omitempty"`
-	// @inject_tag: json:"type"
+	//	@inject_tag:	json:"type"
 	Type StrategyType `protobuf:"varint,10,opt,name=Type,proto3,enum=eagleApi.StrategyType" json:"type"`
-	// @inject_tag: json:"brokerage_id"
+	//	@inject_tag:	json:"brokerage_id"
 	BrokerageID string `protobuf:"bytes,11,opt,name=BrokerageID,proto3" json:"brokerage_id"`
-	// @inject_tag: json:"with_trading"
+	//	@inject_tag:	json:"with_trading"
 	WithTrading bool `protobuf:"varint,12,opt,name=WithTrading,proto3" json:"with_trading"`
 }
 
@@ -447,7 +447,7 @@ type StrategyIndicatorReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"strategy_id"
+	//	@inject_tag:	json:"strategy_id"
 	StrategyID string `protobuf:"bytes,1,opt,name=StrategyID,proto3" json:"strategy_id"`
 }
 
@@ -495,11 +495,11 @@ type StrategyIndicator struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"strategy_id"
+	//	@inject_tag:	json:"strategy_id"
 	StrategyID string `protobuf:"bytes,1,opt,name=StrategyID,proto3" json:"strategy_id"`
-	// @inject_tag: json:"indicator_id"
+	//	@inject_tag:	json:"indicator_id"
 	IndicatorID string `protobuf:"bytes,2,opt,name=IndicatorID,proto3" json:"indicator_id"`
-	// @inject_tag: json:"type"
+	//	@inject_tag:	json:"type"
 	Type IndicatorType `protobuf:"varint,3,opt,name=Type,proto3,enum=eagleApi.IndicatorType" json:"type"`
 }
 
@@ -561,7 +561,7 @@ type StrategyIndicators struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"elements"
+	//	@inject_tag:	json:"elements"
 	Elements []*StrategyIndicator `protobuf:"bytes,1,rep,name=Elements,proto3" json:"elements"`
 }
 
@@ -609,7 +609,7 @@ type ReturnStrategyReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"id"
+	//	@inject_tag:	json:"id"
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
 }
 

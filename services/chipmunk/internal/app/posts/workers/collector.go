@@ -46,6 +46,9 @@ func NewCollector(_ context.Context, log *log.Logger, configs Configs, repositor
 }
 
 func (w *Collector) Start(ctx context.Context) {
+	if !w.configs.Running {
+		return
+	}
 	w.log.Infof("starting collector worker")
 	networkConn := grpcext.NewConnection(w.configs.NetworkAddress)
 	w.log.Infof("network address: %v", w.configs.NetworkAddress)

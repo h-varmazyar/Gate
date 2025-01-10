@@ -247,8 +247,8 @@ func (r *Requests) MarketList(ctx context.Context, runner brokerages.Handler) (*
 			Name:           key,
 			Status:         api.Status_Enable,
 			Platform:       api.Platform_Coinex,
-			Source:         &chipmunkApi.Asset{Name: value.TradingName},
-			Destination:    &chipmunkApi.Asset{Name: value.PricingName},
+			Source:         &chipmunkApi.Asset{Name: value.TradingName, Symbol: value.TradingName},
+			Destination:    &chipmunkApi.Asset{Name: value.PricingName, Symbol: value.PricingName},
 		}
 
 		if market.TakerFeeRate, err = strconv.ParseFloat(value.TakerFeeRate, 64); err != nil {

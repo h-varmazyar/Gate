@@ -25,15 +25,15 @@ type IPCreateReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"address"
+	//	@inject_tag:	json:"address"
 	Address string `protobuf:"bytes,1,opt,name=Address,proto3" json:"address"`
-	// @inject_tag: json:"port"
+	//	@inject_tag:	json:"port"
 	Port uint32 `protobuf:"varint,2,opt,name=Port,proto3" json:"port"`
-	// @inject_tag: json:"username"
+	//	@inject_tag:	json:"username"
 	Username string `protobuf:"bytes,3,opt,name=Username,proto3" json:"username"`
-	// @inject_tag: json:"password"
+	//	@inject_tag:	json:"password"
 	Password string `protobuf:"bytes,4,opt,name=Password,proto3" json:"password"`
-	// @inject_tag: json:"schema"
+	//	@inject_tag:	json:"schema"
 	Schema string `protobuf:"bytes,5,opt,name=Schema,proto3" json:"schema"`
 }
 
@@ -109,7 +109,7 @@ type IPReturnReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"id"
+	//	@inject_tag:	json:"id"
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
 }
 
@@ -195,21 +195,21 @@ type IP struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"id"
+	//	@inject_tag:	json:"id"
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
-	// @inject_tag: json:"updated_at"
+	//	@inject_tag:	json:"updated_at"
 	UpdatedAt int64 `protobuf:"varint,2,opt,name=UpdatedAt,proto3" json:"updated_at"`
-	// @inject_tag: json:"created_at"
+	//	@inject_tag:	json:"created_at"
 	CreatedAt int64 `protobuf:"varint,3,opt,name=CreatedAt,proto3" json:"created_at"`
-	// @inject_tag: json:"address"
+	//	@inject_tag:	json:"address"
 	Address string `protobuf:"bytes,4,opt,name=Address,proto3" json:"address"`
-	// @inject_tag: json:"port"
+	//	@inject_tag:	json:"port"
 	Port uint32 `protobuf:"varint,5,opt,name=Port,proto3" json:"port"`
-	// @inject_tag: json:"username"
+	//	@inject_tag:	json:"username"
 	Username string `protobuf:"bytes,6,opt,name=Username,proto3" json:"username"`
-	// @inject_tag: json:"password"
+	//	@inject_tag:	json:"password"
 	Password string `protobuf:"bytes,7,opt,name=Password,proto3" json:"password"`
-	// @inject_tag: json:"schema"
+	//	@inject_tag:	json:"schema"
 	Schema string `protobuf:"bytes,8,opt,name=Schema,proto3" json:"schema"`
 }
 
@@ -306,7 +306,7 @@ type IPs struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"elements"
+	//	@inject_tag:	json:"elements"
 	Elements []*IP `protobuf:"bytes,1,rep,name=Elements,proto3" json:"elements"`
 }
 

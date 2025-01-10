@@ -74,11 +74,11 @@ type RateLimiterCreateReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"request_count_limit"
+	//	@inject_tag:	json:"request_count_limit"
 	RequestCountLimit int64 `protobuf:"varint,1,opt,name=RequestCountLimit,proto3" json:"request_count_limit"`
-	// @inject_tag: json:"time_limit"
+	//	@inject_tag:	json:"time_limit"
 	TimeLimit int64 `protobuf:"varint,2,opt,name=TimeLimit,proto3" json:"time_limit"`
-	// @inject_tag: json:"type"
+	//	@inject_tag:	json:"type"
 	Type RateLimiterType `protobuf:"varint,3,opt,name=Type,proto3,enum=networkAPI.RateLimiterType" json:"type"`
 }
 
@@ -140,7 +140,7 @@ type RateLimiterReturnReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"id"
+	//	@inject_tag:	json:"id"
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
 }
 
@@ -188,7 +188,7 @@ type RateLimiterListReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"type"
+	//	@inject_tag:	json:"type"
 	Type RateLimiterType `protobuf:"varint,1,opt,name=Type,proto3,enum=networkAPI.RateLimiterType" json:"type"`
 }
 
@@ -236,13 +236,13 @@ type RateLimiter struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"id"
+	//	@inject_tag:	json:"id"
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
-	// @inject_tag: json:"request_count_limit"
+	//	@inject_tag:	json:"request_count_limit"
 	RequestCountLimit int64 `protobuf:"varint,2,opt,name=RequestCountLimit,proto3" json:"request_count_limit"`
-	// @inject_tag: json:"time_limit"
+	//	@inject_tag:	json:"time_limit"
 	TimeLimit int64 `protobuf:"varint,3,opt,name=TimeLimit,proto3" json:"time_limit"`
-	// @inject_tag: json:"type"
+	//	@inject_tag:	json:"type"
 	Type RateLimiterType `protobuf:"varint,4,opt,name=Type,proto3,enum=networkAPI.RateLimiterType" json:"type"`
 }
 
@@ -311,7 +311,7 @@ type RateLimiters struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"elements"
+	//	@inject_tag:	json:"elements"
 	Elements []*RateLimiter `protobuf:"bytes,1,rep,name=Elements,proto3" json:"elements"`
 }
 

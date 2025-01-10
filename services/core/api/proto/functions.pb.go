@@ -28,17 +28,17 @@ type OHLCItem struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"resolution"
+	//	@inject_tag:	json:"resolution"
 	Resolution *proto.Resolution `protobuf:"bytes,1,opt,name=Resolution,proto3" json:"resolution"`
-	// @inject_tag: json:"market"
+	//	@inject_tag:	json:"market"
 	Market *proto.Market `protobuf:"bytes,2,opt,name=Market,proto3" json:"market"`
-	// @inject_tag: json:"from"
+	//	@inject_tag:	json:"from"
 	From int64 `protobuf:"varint,3,opt,name=From,proto3" json:"from"`
-	// @inject_tag: json:"to"
+	//	@inject_tag:	json:"to"
 	To int64 `protobuf:"varint,4,opt,name=To,proto3" json:"to"`
-	// @inject_tag: json:"timeout"
+	//	@inject_tag:	json:"timeout"
 	Timeout int64 `protobuf:"varint,6,opt,name=Timeout,proto3" json:"timeout"`
-	// @inject_tag: json:"issue_time"
+	//	@inject_tag:	json:"issue_time"
 	IssueTime int64 `protobuf:"varint,7,opt,name=IssueTime,proto3" json:"issue_time"`
 }
 
@@ -121,9 +121,9 @@ type OHLCReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"item"
+	//	@inject_tag:	json:"item"
 	Item *OHLCItem `protobuf:"bytes,1,opt,name=Item,proto3" json:"item"`
-	// @inject_tag: json:"platform"
+	//	@inject_tag:	json:"platform"
 	Platform proto1.Platform `protobuf:"varint,2,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
 }
 
@@ -178,9 +178,9 @@ type AsyncOHLCReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"items"
+	//	@inject_tag:	json:"items"
 	Items []*OHLCItem `protobuf:"bytes,1,rep,name=Items,proto3" json:"items"`
-	// @inject_tag: json:"platform"
+	//	@inject_tag:	json:"platform"
 	Platform proto1.Platform `protobuf:"varint,2,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
 }
 
@@ -235,9 +235,9 @@ type OHLCResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"items"
+	//	@inject_tag:	json:"items"
 	Items []*OHLCResponseItem `protobuf:"bytes,1,rep,name=Items,proto3" json:"items"`
-	// @inject_tag: json:"platform"
+	//	@inject_tag:	json:"platform"
 	Platform proto1.Platform `protobuf:"varint,2,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
 }
 
@@ -292,13 +292,13 @@ type OHLCResponseItem struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"candles"
+	//	@inject_tag:	json:"candles"
 	Candles []*OHLCResponseItem_Candle `protobuf:"bytes,1,rep,name=Candles,proto3" json:"candles"`
-	// @inject_tag: json:"market_id"
+	//	@inject_tag:	json:"market_id"
 	MarketID string `protobuf:"bytes,2,opt,name=MarketID,proto3" json:"market_id"`
-	// @inject_tag: json:"resolution_id"
+	//	@inject_tag:	json:"resolution_id"
 	ResolutionID string `protobuf:"bytes,3,opt,name=ResolutionID,proto3" json:"resolution_id"`
-	// @inject_tag: json:"error"
+	//	@inject_tag:	json:"error"
 	Error string `protobuf:"bytes,4,opt,name=Error,proto3" json:"error"`
 }
 
@@ -367,9 +367,9 @@ type AsyncOHLCResp struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"last_request_id"
+	//	@inject_tag:	json:"last_request_id"
 	LastRequestID string `protobuf:"bytes,1,opt,name=LastRequestID,proto3" json:"last_request_id"`
-	// @inject_tag: json:"predicted_interval_time"
+	//	@inject_tag:	json:"predicted_interval_time"
 	PredictedIntervalTime int64 `protobuf:"varint,2,opt,name=predicted_interval_time,json=predictedIntervalTime,proto3" json:"predicted_interval_time"`
 }
 
@@ -424,7 +424,7 @@ type AllMarketStatisticsReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"platform"
+	//	@inject_tag:	json:"platform"
 	Platform proto1.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
 }
 
@@ -472,11 +472,11 @@ type AllMarketStatisticsResp struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"all_statistics"
+	//	@inject_tag:	json:"all_statistics"
 	AllStatistics map[string]*MarketStatistics `protobuf:"bytes,1,rep,name=AllStatistics,proto3" json:"all_statistics" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// @inject_tag: json:"platform"
+	//	@inject_tag:	json:"platform"
 	Platform proto1.Platform `protobuf:"varint,2,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
-	// @inject_tag: json:"date"
+	//	@inject_tag:	json:"date"
 	Date int64 `protobuf:"varint,3,opt,name=date,proto3" json:"date"`
 }
 
@@ -538,9 +538,9 @@ type MarketStatisticsReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"market_name"
+	//	@inject_tag:	json:"market_name"
 	MarketName string `protobuf:"bytes,1,opt,name=MarketName,proto3" json:"market_name"`
-	// @inject_tag: json:"platform"
+	//	@inject_tag:	json:"platform"
 	Platform proto1.Platform `protobuf:"varint,2,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
 }
 
@@ -595,27 +595,27 @@ type MarketStatistics struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"date"
+	//	@inject_tag:	json:"date"
 	Date int64 `protobuf:"varint,1,opt,name=date,proto3" json:"date"`
-	// @inject_tag: json:"last_price"
+	//	@inject_tag:	json:"last_price"
 	LastPrice float64 `protobuf:"fixed64,2,opt,name=LastPrice,proto3" json:"last_price"`
-	// @inject_tag: json:"first_buy_price"
+	//	@inject_tag:	json:"first_buy_price"
 	FirstBuyPrice float64 `protobuf:"fixed64,3,opt,name=FirstBuyPrice,proto3" json:"first_buy_price"`
-	// @inject_tag: json:"first_buy_amount"
+	//	@inject_tag:	json:"first_buy_amount"
 	FirstBuyAmount float64 `protobuf:"fixed64,4,opt,name=FirstBuyAmount,proto3" json:"first_buy_amount"`
-	// @inject_tag: json:"first_sell_price"
+	//	@inject_tag:	json:"first_sell_price"
 	FirstSellPrice float64 `protobuf:"fixed64,5,opt,name=FirstSellPrice,proto3" json:"first_sell_price"`
-	// @inject_tag: json:"first_sell_amount"
+	//	@inject_tag:	json:"first_sell_amount"
 	FirstSellAmount float64 `protobuf:"fixed64,6,opt,name=FirstSellAmount,proto3" json:"first_sell_amount"`
-	// @inject_tag: json:"open"
+	//	@inject_tag:	json:"open"
 	Open float64 `protobuf:"fixed64,7,opt,name=Open,proto3" json:"open"`
-	// @inject_tag: json:"high"
+	//	@inject_tag:	json:"high"
 	High float64 `protobuf:"fixed64,8,opt,name=High,proto3" json:"high"`
-	// @inject_tag: json:"low"
+	//	@inject_tag:	json:"low"
 	Low float64 `protobuf:"fixed64,9,opt,name=Low,proto3" json:"low"`
-	// @inject_tag: json:"close"
+	//	@inject_tag:	json:"close"
 	Close float64 `protobuf:"fixed64,10,opt,name=Close,proto3" json:"close"`
-	// @inject_tag: json:"volume"
+	//	@inject_tag:	json:"volume"
 	Volume float64 `protobuf:"fixed64,11,opt,name=Volume,proto3" json:"volume"`
 }
 
@@ -733,7 +733,7 @@ type MarketListReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"platform"
+	//	@inject_tag:	json:"platform"
 	Platform proto1.Platform `protobuf:"varint,1,opt,name=Platform,proto3,enum=api.Platform" json:"platform"`
 }
 
@@ -781,7 +781,7 @@ type MarketInfoReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"market"
+	//	@inject_tag:	json:"market"
 	Market *proto.Market `protobuf:"bytes,1,opt,name=Market,proto3" json:"market"`
 }
 
@@ -829,19 +829,19 @@ type MarketInfo struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"issue_date"
+	//	@inject_tag:	json:"issue_date"
 	IssueDate int64 `protobuf:"varint,1,opt,name=IssueDate,proto3" json:"issue_date"`
-	// @inject_tag: json:"short_name"
+	//	@inject_tag:	json:"short_name"
 	ShortName string `protobuf:"bytes,2,opt,name=ShortName,proto3" json:"short_name"`
-	// @inject_tag: json:"full_name"
+	//	@inject_tag:	json:"full_name"
 	FullName string `protobuf:"bytes,3,opt,name=FullName,proto3" json:"full_name"`
-	// @inject_tag: json:"logo"
+	//	@inject_tag:	json:"logo"
 	Logo string `protobuf:"bytes,4,opt,name=Logo,proto3" json:"logo"`
-	// @inject_tag: json:"website_url"
+	//	@inject_tag:	json:"website_url"
 	WebsiteURL string `protobuf:"bytes,5,opt,name=WebsiteURL,proto3" json:"website_url"`
-	// @inject_tag: json:"introduction"
+	//	@inject_tag:	json:"introduction"
 	Introduction string `protobuf:"bytes,6,opt,name=Introduction,proto3" json:"introduction"`
-	// @inject_tag: json:"status"
+	//	@inject_tag:	json:"status"
 	Status string `protobuf:"bytes,7,opt,name=Status,proto3" json:"status"`
 }
 
@@ -931,7 +931,7 @@ type WalletsBalanceReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"brokerage_id"
+	//	@inject_tag:	json:"brokerage_id"
 	BrokerageID string `protobuf:"bytes,1,opt,name=BrokerageID,proto3" json:"brokerage_id"`
 }
 
@@ -979,23 +979,23 @@ type NewOrderReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"market"
+	//	@inject_tag:	json:"market"
 	Market *proto.Market `protobuf:"bytes,1,opt,name=Market,proto3" json:"market"`
-	// @inject_tag: json:"type"
+	//	@inject_tag:	json:"type"
 	Type proto2.OrderType `protobuf:"varint,2,opt,name=Type,proto3,enum=eagleApi.OrderType" json:"type"`
-	// @inject_tag: json:"amount"
+	//	@inject_tag:	json:"amount"
 	Amount float64 `protobuf:"fixed64,3,opt,name=Amount,proto3" json:"amount"`
-	// @inject_tag: json:"price"
+	//	@inject_tag:	json:"price"
 	Price float64 `protobuf:"fixed64,4,opt,name=Price,proto3" json:"price"`
-	// @inject_tag: json:"stop_price"
+	//	@inject_tag:	json:"stop_price"
 	StopPrice float64 `protobuf:"fixed64,5,opt,name=StopPrice,proto3" json:"stop_price"`
-	// @inject_tag: json:"is_hidden"
+	//	@inject_tag:	json:"is_hidden"
 	ISHidden bool `protobuf:"varint,6,opt,name=ISHidden,proto3" json:"is_hidden"`
-	// @inject_tag: json:"option"
+	//	@inject_tag:	json:"option"
 	Option proto2.OrderOption `protobuf:"varint,7,opt,name=Option,proto3,enum=eagleApi.OrderOption" json:"option"`
-	// @inject_tag: json:"models"
+	//	@inject_tag:	json:"models"
 	Model proto2.OrderModel `protobuf:"varint,8,opt,name=Model,proto3,enum=eagleApi.OrderModel" json:"models"`
-	// @inject_tag: json:"brokerage_id"
+	//	@inject_tag:	json:"brokerage_id"
 	BrokerageID string `protobuf:"bytes,9,opt,name=BrokerageID,proto3" json:"brokerage_id"`
 }
 
@@ -1099,11 +1099,11 @@ type CancelOrderReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"server_order_id"
+	//	@inject_tag:	json:"server_order_id"
 	ServerOrderID int64 `protobuf:"varint,1,opt,name=ServerOrderID,proto3" json:"server_order_id"`
-	// @inject_tag: json:"market"
+	//	@inject_tag:	json:"market"
 	Market *proto.Market `protobuf:"bytes,2,opt,name=Market,proto3" json:"market"`
-	// @inject_tag: json:"brokerage_id"
+	//	@inject_tag:	json:"brokerage_id"
 	BrokerageID string `protobuf:"bytes,3,opt,name=BrokerageID,proto3" json:"brokerage_id"`
 }
 
@@ -1165,11 +1165,11 @@ type OrderStatusReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"server_order_id"
+	//	@inject_tag:	json:"server_order_id"
 	ServerOrderID int64 `protobuf:"varint,1,opt,name=ServerOrderID,proto3" json:"server_order_id"`
-	// @inject_tag: json:"market"
+	//	@inject_tag:	json:"market"
 	Market *proto.Market `protobuf:"bytes,2,opt,name=Market,proto3" json:"market"`
-	// @inject_tag: json:"brokerage_id"
+	//	@inject_tag:	json:"brokerage_id"
 	BrokerageID string `protobuf:"bytes,3,opt,name=BrokerageID,proto3" json:"brokerage_id"`
 }
 
@@ -1231,19 +1231,19 @@ type OHLCResponseItem_Candle struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"volume"
+	//	@inject_tag:	json:"volume"
 	Volume float64 `protobuf:"fixed64,3,opt,name=Volume,proto3" json:"volume"`
-	// @inject_tag: json:"amount"
+	//	@inject_tag:	json:"amount"
 	Amount float64 `protobuf:"fixed64,4,opt,name=Amount,proto3" json:"amount"`
-	// @inject_tag: json:"close"
+	//	@inject_tag:	json:"close"
 	Close float64 `protobuf:"fixed64,5,opt,name=Close,proto3" json:"close"`
-	// @inject_tag: json:"open"
+	//	@inject_tag:	json:"open"
 	Open float64 `protobuf:"fixed64,6,opt,name=Open,proto3" json:"open"`
-	// @inject_tag: json:"time"
+	//	@inject_tag:	json:"time"
 	Time int64 `protobuf:"varint,7,opt,name=Time,proto3" json:"time"`
-	// @inject_tag: json:"high"
+	//	@inject_tag:	json:"high"
 	High float64 `protobuf:"fixed64,8,opt,name=High,proto3" json:"high"`
-	// @inject_tag: json:"low"
+	//	@inject_tag:	json:"low"
 	Low float64 `protobuf:"fixed64,9,opt,name=Low,proto3" json:"low"`
 }
 

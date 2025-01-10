@@ -4,7 +4,7 @@ var (
 	DefaultConfig = []byte(`
 service_name: "chipmunk"
 version: "v1.0.0"
-grpc_port: 11000
+grpc_port: 11100
 amqp_configs:
   connection: "amqp://rabbitmq:rabbitmq@localhost:5672"
 buffer_configs:
@@ -28,8 +28,12 @@ candles_app:
     missed_candles_interval: "10m"
     last_candles_interval: "3s"
     redundant_remover_interval: "15m"
+    data_warmup_mood: false
+    data_correction_mode: true
+    normal_data_gathering: false
 posts_app:
   workers_configs:
+    running: false
     network_address: "localhost:10101"
     sahamyab_post_collector_url: "https://www.sahamyab.com/guest/twiter/list?v=0.1"
     max_sentiment_detector_token_length:
@@ -48,7 +52,7 @@ db:
   username: "postgres"
   password: "postgres"
   host: "localhost"
-  port: 5433
+  port: 5432
   name: "chipmunk"
   is_ssl_enable: false
 `)

@@ -25,9 +25,9 @@ type AssetCreateReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"name"
+	//	@inject_tag:	json:"name"
 	Name string `protobuf:"bytes,1,opt,name=Name,proto3" json:"name"`
-	// @inject_tag: json:"symbol"
+	//	@inject_tag:	json:"symbol"
 	Symbol string `protobuf:"bytes,2,opt,name=Symbol,proto3" json:"symbol"`
 }
 
@@ -82,15 +82,15 @@ type Asset struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"id"
+	//	@inject_tag:	json:"id"
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
-	// @inject_tag: json:"name"
+	//	@inject_tag:	json:"name"
 	Name string `protobuf:"bytes,2,opt,name=Name,proto3" json:"name"`
-	// @inject_tag: json:"symbol"
+	//	@inject_tag:	json:"symbol"
 	Symbol string `protobuf:"bytes,3,opt,name=Symbol,proto3" json:"symbol"`
-	// @inject_tag: json:"created_at"
+	//	@inject_tag:	json:"created_at"
 	CreatedAt int64 `protobuf:"varint,4,opt,name=CreatedAt,proto3" json:"created_at"`
-	// @inject_tag: json:"updated_at"
+	//	@inject_tag:	json:"updated_at"
 	UpdatedAt int64 `protobuf:"varint,5,opt,name=UpdatedAt,proto3" json:"updated_at"`
 }
 
@@ -166,7 +166,7 @@ type Assets struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"elements"
+	//	@inject_tag:	json:"elements"
 	Elements []*Asset `protobuf:"bytes,1,rep,name=Elements,proto3" json:"elements"`
 }
 
@@ -214,7 +214,7 @@ type AssetReturnByIDReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"id"
+	//	@inject_tag:	json:"id"
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"id"`
 }
 
@@ -262,7 +262,7 @@ type AssetReturnBySymbolReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"symbol"
+	//	@inject_tag:	json:"symbol"
 	Symbol string `protobuf:"bytes,1,opt,name=Symbol,proto3" json:"symbol"`
 }
 
@@ -310,7 +310,7 @@ type GetAssetListRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// @inject_tag: json:"page"
+	//	@inject_tag:	json:"page"
 	Page int32 `protobuf:"varint,1,opt,name=Page,proto3" json:"page"`
 }
 

@@ -43,40 +43,44 @@ func (ip *IP) spreadAlgorithm(limiter *Limiter) {
 }
 
 func (ip *IP) handleBucketRequest(ctx context.Context, limiter *Limiter) {
-	response := new(networkAPI.Response)
 	select {
 	case <-ctx.Done():
 		return
 	case bucketRequest := <-limiter.RequestChannel:
-		if bucketRequest.Request.IssueTime != 0 && bucketRequest.Request.Timeout != 0 {
-			if bucketRequest.Request.IssueTime+bucketRequest.Request.Timeout < time.Now().Unix() {
-				response.Code = http.StatusRequestTimeout
-				response.Body = errors.New(context.Background(), codes.DeadlineExceeded).Error()
-			}
+		go ip.doRequest(bucketRequest)
+	}
+}
+
+func (ip *IP) doRequest(bucketRequest *BucketRequest) {
+	response := new(networkAPI.Response)
+	if bucketRequest.Request.IssueTime != 0 && bucketRequest.Request.Timeout != 0 {
+		if time.Unix(bucketRequest.Request.IssueTime, 0).Add(time.Duration(bucketRequest.Request.Timeout)).Before(time.Now()) {
+			response.Code = http.StatusRequestTimeout
+			response.Body = errors.New(context.Background(), codes.DeadlineExceeded).Error()
 		}
-		if response.Code == 0 {
-			networkRequest, err := NewNetworkRequest(bucketRequest.Request, ip.ProxyURL)
+	}
+	if response.Code == 0 {
+		networkRequest, err := NewNetworkRequest(bucketRequest.Request, ip.ProxyURL)
+		if err != nil {
+			log.WithError(err).Errorf("failed to create async network request")
+			response.Code = http.StatusInternalServerError
+			response.Body = err.Error()
+		} else {
+			var httpResp *networkAPI.Response
+			httpResp, err = networkRequest.Do()
 			if err != nil {
-				log.WithError(err).Errorf("failed to create async network request")
+				log.WithError(err).Errorf("failed to do network request")
 				response.Code = http.StatusInternalServerError
 				response.Body = err.Error()
 			} else {
-				var httpResp *networkAPI.Response
-				httpResp, err = networkRequest.Do()
-				if err != nil {
-					log.WithError(err).Errorf("failed to do network request")
-					response.Code = http.StatusInternalServerError
-					response.Body = err.Error()
-				} else {
-					mapper.Struct(httpResp, response)
-				}
+				mapper.Struct(httpResp, response)
 			}
 		}
-
-		bucketResponse := &BucketResponse{
-			Response: response,
-			BucketID: bucketRequest.BucketID,
-		}
-		ip.responseChan <- bucketResponse
 	}
+
+	bucketResponse := &BucketResponse{
+		Response: response,
+		BucketID: bucketRequest.BucketID,
+	}
+	ip.responseChan <- bucketResponse
 }

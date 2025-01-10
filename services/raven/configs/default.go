@@ -8,14 +8,14 @@ http_port: 8585
 host: "localhost"
 api_external_Address: "localhost:8585"
 chipmunk_router:
-  chipmunk_address: ":11000"
+  chipmunk_address: "localhost:11100"
 core_router:
-  core_address: ":10100"
+  core_address: "localhost:10100"
 eagle_router:
-  eagle_address: ":12000"
+  eagle_address: "localhost:12000"
 telegram_bot_router:
-  telegram_bot_address: ":14000"
+  telegram_bot_address: "localhost:14000"
 network_router:
-  network_address: ":13000"
+  network_address: "localhost:13000"
 `)
 )

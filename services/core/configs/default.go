@@ -28,9 +28,9 @@ functions_app:
 db:
   type: "postgreSQL"
   username: "postgres"
-  password: "e1M9nEw33FfNs8U"
+  password: "postgres"
   host: "localhost"
-  port: 5433
+  port: 5432
   name: "core"
   is_ssl_enable: false
 `)

@@ -67,6 +67,10 @@ func (app *App) initiateSignalCheckerWorker(ctx context.Context, db repository.S
 
 			marketListReq := &chipmunkApi.MarketListReq{Platform: api.Platform_Coinex}
 			markets, err := marketService.List(ctx, marketListReq)
+			if err != nil {
+				app.logger.WithError(err).Errorf("failed to get markets")
+				return nil, err
+			}
 
 			worker.Start(automated, markets.Elements, strategy.BrokerageID)
 		default:

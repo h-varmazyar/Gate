@@ -7,7 +7,7 @@ networks:
 services:
   postgres:
     container_name: postgres
-    image: postgres
+    image: postgres:15
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
@@ -15,7 +15,7 @@ services:
     networks:
       - gate
     ports:
-      - 5432:5432
+      - "5432:5432"
     restart: always
 
   redis:
@@ -29,7 +29,7 @@ services:
     networks:
       - gate
     ports:
-      - 6379:6379
+      - "6379:6379"
     restart: always
 
   rabbitmq:
@@ -45,8 +45,8 @@ services:
     networks:
       - gate
     ports:
-      - 15672:15672
-      - 5672:5672
+      - "15672:15672"
+      - "5672:5672"
     restart: always
 
   chipmunk:

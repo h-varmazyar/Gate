@@ -99,7 +99,6 @@ func (w IndicatorCalculator) calculateMarketIndicators(key string) {
 				if err = storage.AddValue(ctx, indicator.GetId(), value); err != nil {
 					w.log.WithError(err).Warnf("failed to save indicator value. id: %v", indicator.GetId())
 				}
-
 			}
 
 			if diff := time.Now().Sub(start); diff < w.configs.CalculatorInterval {
@@ -130,6 +129,9 @@ func (w IndicatorCalculator) calculatePrimaryIndicatorsValue(key string, ids []s
 
 	for _, indicator := range indicators {
 		values, err := indicator.Calculate(context.Background(), primaryCandles.Elements)
+		if err != nil {
+			return
+		}
 		for _, value := range values.Values {
 			if err = storage.AddValue(context.Background(), indicator.GetId(), value); err != nil {
 				w.log.WithError(err).Warnf("failed to save indicator value. id: %v", indicator.GetId())
