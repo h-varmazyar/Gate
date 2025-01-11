@@ -13,7 +13,7 @@ create table markets
     min_amount      numeric,
     source_id       bigint constraint fk_markets_source references assets,
     is_amm          boolean,
-    name            text,
+    name            text unique,
     status          text
 );
 

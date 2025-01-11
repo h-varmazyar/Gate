@@ -143,7 +143,6 @@ func (w *MarketUpdateWorker) saveNewMarkets(ctx context.Context, localMarkets, r
 
 	for _, market := range newMarkets {
 		time.Sleep(time.Second)
-		w.logger.Infof("saving %v - %v - %v", market.Name, market.Source.Name, market.Destination.Name)
 		var err error
 		market.Source, err = w.createAsset(ctx, market.Source.Name, market.Source.Symbol)
 		if err != nil {
@@ -151,7 +150,6 @@ func (w *MarketUpdateWorker) saveNewMarkets(ctx context.Context, localMarkets, r
 			continue
 		}
 
-		w.logger.Infof("source is: %v", market.Source)
 		market.Destination, err = w.createAsset(ctx, market.Destination.Name, market.Destination.Symbol)
 		if err != nil {
 			w.logger.WithError(err).Errorf("failed to save destination %v", market.Destination.Symbol)
