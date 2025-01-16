@@ -1,4 +1,4 @@
-package workers
+package marketUpdate
 
 import (
 	"encoding/csv"
@@ -49,7 +49,7 @@ type resolutionsRepo interface {
 	ReturnByID(ctx context.Context, id uint) (models.Resolution, error)
 }
 
-type MarketUpdateWorker struct {
+type Worker struct {
 	logger          *log.Logger
 	cfg             configs.WorkerMarketUpdate
 	assetsRepo      assetsRepo
@@ -60,7 +60,7 @@ type MarketUpdateWorker struct {
 	job             gocron.Job
 }
 
-func NewMarketUpdateWorker(
+func NewWorker(
 	logger *log.Logger,
 	cfg configs.WorkerMarketUpdate,
 	assetsRepo assetsRepo,
@@ -68,8 +68,8 @@ func NewMarketUpdateWorker(
 	marketsRepo marketsRepo,
 	resolutionsRepo resolutionsRepo,
 	coreAdapter coreAdapter,
-) *MarketUpdateWorker {
-	return &MarketUpdateWorker{
+) *Worker {
+	return &Worker{
 		logger:          logger,
 		cfg:             cfg,
 		assetsRepo:      assetsRepo,
@@ -80,7 +80,7 @@ func NewMarketUpdateWorker(
 	}
 }
 
-func (w *MarketUpdateWorker) Run(s gocron.Scheduler) error {
+func (w *Worker) Run(s gocron.Scheduler) error {
 	j, err := s.NewJob(
 		gocron.CronJob(w.cfg.RunningTime, false),
 		gocron.NewTask(w.update),
@@ -94,7 +94,7 @@ func (w *MarketUpdateWorker) Run(s gocron.Scheduler) error {
 	return nil
 }
 
-func (w *MarketUpdateWorker) update() {
+func (w *Worker) update() {
 	w.logger.Info("updating markets")
 	ctx := context.Background()
 	localMarkets, err := w.marketsRepo.All(ctx)
@@ -126,7 +126,7 @@ func (w *MarketUpdateWorker) update() {
 // 1: create new asset if not available
 // 2: create market in database
 // 3: attach market to data collector
-func (w *MarketUpdateWorker) saveNewMarkets(ctx context.Context, localMarkets, remoteMarkets []models.Market) {
+func (w *Worker) saveNewMarkets(ctx context.Context, localMarkets, remoteMarkets []models.Market) {
 	dbMarketNames := make(map[string]bool)
 	for _, market := range localMarkets {
 		dbMarketNames[market.Name] = true
@@ -177,7 +177,7 @@ func (w *MarketUpdateWorker) saveNewMarkets(ctx context.Context, localMarkets, r
 	}
 }
 
-func (w *MarketUpdateWorker) createAsset(ctx context.Context, name, symbol string) (*models.Asset, error) {
+func (w *Worker) createAsset(ctx context.Context, name, symbol string) (*models.Asset, error) {
 	asset, err := w.assetsRepo.ReturnBySymbol(ctx, symbol)
 	if err == nil {
 		return asset, nil
@@ -191,7 +191,7 @@ func (w *MarketUpdateWorker) createAsset(ctx context.Context, name, symbol strin
 	return nil, err
 }
 
-func (w *MarketUpdateWorker) attachMarket(_ context.Context, market models.Market) error {
+func (w *Worker) attachMarket(_ context.Context, market models.Market) error {
 	w.logger.Warnf("failed to attach market: %v", market.ID)
 	return nil
 }
@@ -202,7 +202,7 @@ func (w *MarketUpdateWorker) attachMarket(_ context.Context, market models.Marke
 // 3: remove market from database
 // 4: remove market assets if no other market runs on those assets
 // 5: remove all market candles
-func (w *MarketUpdateWorker) deleteRemovableMarkets(ctx context.Context, localMarkets, remoteMarkets []models.Market) {
+func (w *Worker) deleteRemovableMarkets(ctx context.Context, localMarkets, remoteMarkets []models.Market) {
 	serverMarketNames := make(map[string]bool)
 	for _, market := range remoteMarkets {
 		serverMarketNames[market.Name] = true
@@ -241,7 +241,7 @@ func (w *MarketUpdateWorker) deleteRemovableMarkets(ctx context.Context, localMa
 	}
 }
 
-func (w *MarketUpdateWorker) prepareCandlesMap(ctx context.Context, marketID uint) (map[uint][]models.Candle, error) {
+func (w *Worker) prepareCandlesMap(ctx context.Context, marketID uint) (map[uint][]models.Candle, error) {
 	candlesMap := make(map[uint][]models.Candle)
 	offset := 0
 
@@ -271,12 +271,12 @@ func (w *MarketUpdateWorker) prepareCandlesMap(ctx context.Context, marketID uin
 	return candlesMap, nil
 }
 
-func (w *MarketUpdateWorker) detachRemovableMarket(ctx context.Context, marketID uint) error {
+func (w *Worker) detachRemovableMarket(ctx context.Context, marketID uint) error {
 	w.logger.Warnf("(detachRemovableMarket) must be implemented")
 	return nil
 }
 
-func (w *MarketUpdateWorker) removeAssets(ctx context.Context, market models.Market) error {
+func (w *Worker) removeAssets(ctx context.Context, market models.Market) error {
 	//check source asset
 	{
 		count, err := w.marketsRepo.MarketCount(ctx, market.SourceID)
@@ -301,7 +301,7 @@ func (w *MarketUpdateWorker) removeAssets(ctx context.Context, market models.Mar
 	return nil
 }
 
-func (w *MarketUpdateWorker) archiveMarketData(ctx context.Context, market models.Market) error {
+func (w *Worker) archiveMarketData(ctx context.Context, market models.Market) error {
 	candlesMap, err := w.prepareCandlesMap(ctx, market.ID)
 	if err != nil {
 		return err
@@ -331,7 +331,7 @@ func (w *MarketUpdateWorker) archiveMarketData(ctx context.Context, market model
 	return nil
 }
 
-func (w *MarketUpdateWorker) uploadFileToS3(key, filePath string) error {
+func (w *Worker) uploadFileToS3(key, filePath string) error {
 	s3Session, err := session.NewSession(&aws.Config{
 		Credentials: credentials.NewStaticCredentials(
 			w.cfg.S3AccessKey,
@@ -362,7 +362,7 @@ func (w *MarketUpdateWorker) uploadFileToS3(key, filePath string) error {
 	return os.Remove(filePath)
 }
 
-func (w *MarketUpdateWorker) saveCandlesToCSV(fileName string, candles []models.Candle) error {
+func (w *Worker) saveCandlesToCSV(fileName string, candles []models.Candle) error {
 	file, err := os.Create(fileName)
 	if err != nil {
 		return err

@@ -176,7 +176,7 @@ func (s *Service) GetMarketInfo(ctx context.Context, req *coreApi.MarketInfoReq)
 }
 
 func (s *Service) OHLC(ctx context.Context, req *coreApi.OHLCReq) (*chipmunkApi.Candles, error) {
-	brokerage := &coreApi.Brokerage{Platform: req.Item.Market.Platform}
+	brokerage := &coreApi.Brokerage{Platform: req.Platform}
 	from := time.Unix(req.Item.From, 0)
 
 	allCandles := make([]*chipmunkApi.Candle, 0)
@@ -197,7 +197,6 @@ func (s *Service) OHLC(ctx context.Context, req *coreApi.OHLCReq) (*chipmunkApi.
 			From:       from,
 			To:         to,
 		}
-		s.logger.Infof("ohlc %v from %v to %v", req.Item.Market.Name, from, to)
 		candles, err := loadRequest(s.configs, brokerage).OHLC(ctx, params,
 			func(ctx context.Context, request *networkAPI.Request) (*networkAPI.Response, error) {
 				resp, err := s.requestService.Do(ctx, request)

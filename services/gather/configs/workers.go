@@ -1,5 +1,7 @@
 package configs
 
+import "time"
+
 type WorkerMarketUpdate struct {
 	RunningTime string
 	S3Bucket    string
@@ -7,4 +9,7 @@ type WorkerMarketUpdate struct {
 	S3SecretKey string
 	S3Endpoint  string
 	S3Region    string
+}
+type WorkerLastCandle struct {
+	RunningInterval time.Duration
 }

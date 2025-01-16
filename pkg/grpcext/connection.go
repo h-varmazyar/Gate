@@ -30,7 +30,10 @@ func (c *Connection) conn() (*grpc.ClientConn, error) {
 	if c.clientConn != nil && c.clientConn.GetState() == connectivity.Ready {
 		return c.clientConn, nil
 	}
-	conn, err := grpc.NewClient(c.target, grpc.WithInsecure())
+	conn, err := grpc.NewClient(c.target, grpc.WithInsecure(), grpc.WithDefaultCallOptions(
+		grpc.MaxCallRecvMsgSize(10*1024*1024),
+		grpc.MaxCallSendMsgSize(10*1024*1024),
+	))
 	if err != nil {
 		return nil, err
 	}

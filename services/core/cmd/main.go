@@ -105,7 +105,10 @@ func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstan
 	}
 
 	service.Serve(configs.GRPCPort, func(lst net.Listener) error {
-		server := grpc.NewServer()
+		server := grpc.NewServer(
+			grpc.MaxRecvMsgSize(10*1024*1024),
+			grpc.MaxSendMsgSize(10*1024*1024),
+		)
 		brokeragesApp.Service.RegisterServer(server)
 		functionsApp.Service.RegisterServer(server)
 		platformsApp.Service.RegisterServer(server)

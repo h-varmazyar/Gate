@@ -35,3 +35,18 @@ func (r CandleRepository) AllMarketCandles(ctx context.Context, marketID uint, o
 func (r CandleRepository) DeleteMarketCandles(ctx context.Context, marketID uint) error {
 	return r.db.WithContext(ctx).Where("market_id = ?", marketID).Delete(&models.Candle{}).Error
 }
+
+func (r CandleRepository) ReturnLast(ctx context.Context, marketID, resolutionID uint) (models.Candle, error) {
+	var candle models.Candle
+	return candle, r.db.
+		WithContext(ctx).
+		Model(&models.Candle{}).
+		Where("market_id = ?", marketID).
+		Where("resolution_id = ?", resolutionID).
+		Order("time DESC").
+		First(&candle).Error
+}
+
+func (r CandleRepository) BulkInsert(ctx context.Context, candles []models.Candle) error {
+	return r.db.WithContext(ctx).Model(&models.Candle{}).CreateInBatches(&candles, 1000).Error
+}

@@ -25,6 +25,8 @@ type Config struct {
 	HTTP               HTTP
 	Database           gormext.Configs
 	MarketUpdateWorker WorkerMarketUpdate
+	LastCandleWorker   WorkerLastCandle
+	CandleBuffer       CandleBuffer
 	CoreAdapter        CoreAdapter
 }
 

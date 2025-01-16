@@ -52,6 +52,12 @@ func Read() (*Config, error) {
 			S3Endpoint:  loadString("S3_ENDPOINT"),
 			S3Region:    loadString("S3_REGION"),
 		},
+		LastCandleWorker: WorkerLastCandle{
+			RunningInterval: loadDuration("LAST_CANDLE_WORKER_RUNNING_INTERVAL"),
+		},
+		CandleBuffer: CandleBuffer{
+			CandleBufferLength: loadInt("CANDLE_BUFFER_LENGTH"),
+		},
 		CoreAdapter: CoreAdapter{
 			GrpcAddress: loadString("CORE_GRPC_ADDRESS"),
 		},

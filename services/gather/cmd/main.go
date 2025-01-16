@@ -5,8 +5,10 @@ import (
 	"github.com/go-co-op/gocron/v2"
 	"github.com/h-varmazyar/Gate/services/gather/configs"
 	"github.com/h-varmazyar/Gate/services/gather/internal/adapters/core"
+	"github.com/h-varmazyar/Gate/services/gather/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/gather/internal/repositories"
-	"github.com/h-varmazyar/Gate/services/gather/internal/workers"
+	"github.com/h-varmazyar/Gate/services/gather/internal/workers/lastCandle"
+	"github.com/h-varmazyar/Gate/services/gather/internal/workers/marketUpdate"
 	"github.com/h-varmazyar/Gate/services/indicators/pkg/db"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
@@ -42,6 +44,8 @@ func main() {
 		panic(err)
 	}
 
+	buffer.InitializeCandleBuffer(cfg.CandleBuffer)
+
 	assetsRepo := repositories.NewAssetRepository(logger, dbInstance.DB)
 	candlesRepo := repositories.NewCandleRepository(logger, dbInstance.DB)
 	resolutionsRepo := repositories.NewResolutionRepository(logger, dbInstance.DB)
@@ -49,7 +53,10 @@ func main() {
 
 	coreAdapter := core.NewCore(cfg.CoreAdapter)
 
-	if err = workers.NewMarketUpdateWorker(logger, cfg.MarketUpdateWorker, assetsRepo, candlesRepo, marketsRepo, resolutionsRepo, coreAdapter).Run(scheduler); err != nil {
+	if err = marketUpdate.NewWorker(logger, cfg.MarketUpdateWorker, assetsRepo, candlesRepo, marketsRepo, resolutionsRepo, coreAdapter).Run(scheduler); err != nil {
+		panic(err)
+	}
+	if err = lastCandle.NewWorker(logger, cfg.LastCandleWorker, coreAdapter, candlesRepo, marketsRepo, resolutionsRepo).Run(); err != nil {
 		panic(err)
 	}
 	scheduler.Start()
