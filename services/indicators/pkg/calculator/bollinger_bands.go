@@ -12,7 +12,7 @@ type BollingerBands struct {
 	id            uint
 	Period        int
 	Deviation     int
-	Source        indicatorsAPI.Source
+	Source        entities.IndicatorSource
 	Market        *chipmunkAPI.Market
 	Resolution    *chipmunkAPI.Resolution
 	sma           *SMA
@@ -93,19 +93,19 @@ func (conf *BollingerBands) calculateBB(candles []*chipmunkAPI.Candle, smaValue 
 	for j := 0; j < len(candles); j++ {
 		num := float64(0)
 		switch conf.Source {
-		case indicatorsAPI.Source_OPEN:
+		case entities.IndicatorSourceOpen:
 			num = candles[j].Open
-		case indicatorsAPI.Source_HIGH:
+		case entities.IndicatorSourceHigh:
 			num = candles[j].High
-		case indicatorsAPI.Source_LOW:
+		case entities.IndicatorSourceLow:
 			num = candles[j].Low
-		case indicatorsAPI.Source_CLOSE:
+		case entities.IndicatorSourceClose:
 			num = candles[j].Close
-		case indicatorsAPI.Source_OHLC4:
+		case entities.IndicatorSourceOHLC4:
 			num = (candles[j].Open + candles[j].High + candles[j].Low + candles[j].Close) / 4
-		case indicatorsAPI.Source_HLC3:
+		case entities.IndicatorSourceHLC3:
 			num = (candles[j].Low + candles[j].High + candles[j].Close) / 3
-		case indicatorsAPI.Source_HL2:
+		case entities.IndicatorSourceHL2:
 			num = (candles[j].Low + candles[j].High) / 2
 		}
 		variance += math.Pow(smaValue.GetValue()-num, 2)

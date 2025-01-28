@@ -10,6 +10,11 @@ type WorkerMarketUpdate struct {
 	S3Endpoint  string
 	S3Region    string
 }
+
 type WorkerLastCandle struct {
+	RunningInterval time.Duration
+}
+
+type WorkerTicker struct {
 	RunningInterval time.Duration
 }

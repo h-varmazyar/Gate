@@ -1,10 +1,22 @@
-version: '3.7'
+version: '3.9'
 
 networks:
   gate:
     external: true
 
 services:
+  nats:
+    image: nats:latest
+    container_name: nats-server
+    ports:
+      - "4222:4222" # Port for client connections
+      - "8222:8222" # Port for monitoring (optional)
+    environment:
+      - NATS_MAX_PAYLOAD=10MB # Optional: Increase max payload size
+    networks:
+      - gate
+    restart: always
+
   postgres:
     container_name: postgres
     image: postgres:15

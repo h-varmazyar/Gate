@@ -3,7 +3,6 @@ package calculator
 import (
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	chipmunkAPI "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
-	indicatorsAPI "github.com/h-varmazyar/Gate/services/indicators/api/proto"
 	"github.com/h-varmazyar/Gate/services/indicators/pkg/entities"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -16,15 +15,15 @@ func NewIndicator(ctx context.Context, entityIndicator *entities.Indicator, mark
 	)
 
 	switch entityIndicator.Type {
-	case indicatorsAPI.Type_RSI:
+	case entities.IndicatorTypeRSI:
 		indicator, err = NewRSI(entityIndicator.ID, entityIndicator.Configs.RSI, market, resolution)
-	case indicatorsAPI.Type_STOCHASTIC:
+	case entities.IndicatorTypeStochastic:
 		//indicator, err = NewStochastic(entityIndicator.Configs.Stochastic, market, resolution)
-	case indicatorsAPI.Type_SMA:
+	case entities.IndicatorTypeSMA:
 		indicator, err = NewSMA(entityIndicator.ID, entityIndicator.Configs.SMA, market, resolution)
-	case indicatorsAPI.Type_EMA:
+	case entities.IndicatorTypeEMA:
 		//indicator, err = NewEMA(entityIndicator.Configs.SMA, market, resolution)
-	case indicatorsAPI.Type_BOLLINGER_BANDS:
+	case entities.IndicatorTypeBollingerBands:
 		indicator, err = NewBollingerBands(entityIndicator.ID, entityIndicator.Configs.BollingerBands, market, resolution)
 	default:
 		return nil, errors.NewWithSlug(ctx, codes.FailedPrecondition, "invalid_indicator_type")

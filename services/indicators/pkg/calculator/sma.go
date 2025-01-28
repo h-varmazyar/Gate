@@ -13,7 +13,7 @@ import (
 type SMA struct {
 	id            uint
 	Period        int
-	Source        indicatorsAPI.Source
+	Source        entities.IndicatorSource
 	Market        *chipmunkAPI.Market
 	Resolution    *chipmunkAPI.Resolution
 	lastValue     indicatorsAPI.SMAValue
@@ -107,19 +107,19 @@ func (conf *SMA) UpdateLast(_ context.Context, candle *chipmunkAPI.Candle) *indi
 func (conf *SMA) getSmaNumber(candle *chipmunkAPI.Candle) float64 {
 	calculatorPeriod := float64(conf.Period)
 	switch conf.Source {
-	case indicatorsAPI.Source_CLOSE:
+	case entities.IndicatorSourceClose:
 		return candle.Close / calculatorPeriod
-	case indicatorsAPI.Source_OPEN:
+	case entities.IndicatorSourceOpen:
 		return candle.Open / calculatorPeriod
-	case indicatorsAPI.Source_HIGH:
+	case entities.IndicatorSourceHigh:
 		return candle.High / calculatorPeriod
-	case indicatorsAPI.Source_LOW:
+	case entities.IndicatorSourceLow:
 		return candle.Low / calculatorPeriod
-	case indicatorsAPI.Source_HL2:
+	case entities.IndicatorSourceHL2:
 		return (candle.High + candle.Low) / (2 * calculatorPeriod)
-	case indicatorsAPI.Source_HLC3:
+	case entities.IndicatorSourceHLC3:
 		return (candle.High + candle.Low + candle.Close) / (3 * calculatorPeriod)
-	case indicatorsAPI.Source_OHLC4:
+	case entities.IndicatorSourceOHLC4:
 		return (candle.Open + candle.Close + candle.High + candle.Low) / (4 * calculatorPeriod)
 	}
 

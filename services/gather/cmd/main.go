@@ -3,18 +3,27 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-co-op/gocron/v2"
+	"github.com/h-varmazyar/Gate/pkg/httpext"
+	"github.com/h-varmazyar/Gate/pkg/service"
+	v1 "github.com/h-varmazyar/Gate/services/gather/api/rest/v1"
+	candlesHandler "github.com/h-varmazyar/Gate/services/gather/api/rest/v1/candles"
 	"github.com/h-varmazyar/Gate/services/gather/configs"
+	"github.com/h-varmazyar/Gate/services/gather/internal/adapters/coinex"
 	"github.com/h-varmazyar/Gate/services/gather/internal/adapters/core"
+	candlesProducer "github.com/h-varmazyar/Gate/services/gather/internal/brokers/producer/candles"
 	"github.com/h-varmazyar/Gate/services/gather/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/gather/internal/repositories"
+	"github.com/h-varmazyar/Gate/services/gather/internal/services/candles"
+	"github.com/h-varmazyar/Gate/services/gather/internal/workers/candleTicker"
 	"github.com/h-varmazyar/Gate/services/gather/internal/workers/lastCandle"
 	"github.com/h-varmazyar/Gate/services/gather/internal/workers/marketUpdate"
 	"github.com/h-varmazyar/Gate/services/indicators/pkg/db"
+	"github.com/nats-io/nats.go"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
-	"os"
-	"os/signal"
-	"syscall"
+	"net"
+	"net/http"
+	"time"
 )
 
 const (
@@ -46,26 +55,57 @@ func main() {
 
 	buffer.InitializeCandleBuffer(cfg.CandleBuffer)
 
+	natsConnection, err := nats.Connect(cfg.Nats.URL)
+	if err != nil {
+		log.Fatalf("Failed to connect to NATS: %v", err)
+	}
+	defer natsConnection.Close()
+
+	candlesProducer := candlesProducer.NewProducer(logger, natsConnection)
+
 	assetsRepo := repositories.NewAssetRepository(logger, dbInstance.DB)
 	candlesRepo := repositories.NewCandleRepository(logger, dbInstance.DB)
 	resolutionsRepo := repositories.NewResolutionRepository(logger, dbInstance.DB)
 	marketsRepo := repositories.NewMarketRepository(logger, dbInstance.DB)
 
 	coreAdapter := core.NewCore(cfg.CoreAdapter)
+	coinexAdapter := coinex.NewCoinex(cfg.CoinexAdapter)
+
+	candlesService := candles.NewService(logger, candlesRepo)
 
 	if err = marketUpdate.NewWorker(logger, cfg.MarketUpdateWorker, assetsRepo, candlesRepo, marketsRepo, resolutionsRepo, coreAdapter).Run(scheduler); err != nil {
 		panic(err)
 	}
-	if err = lastCandle.NewWorker(logger, cfg.LastCandleWorker, coreAdapter, candlesRepo, marketsRepo, resolutionsRepo).Run(); err != nil {
+	if err = lastCandle.NewWorker(logger, cfg.LastCandleWorker, coreAdapter, coinexAdapter, candlesRepo, marketsRepo, resolutionsRepo, candlesProducer).Run(); err != nil {
 		panic(err)
 	}
+	if err = candleTicker.NewWorker(logger, cfg.TickerWorker, coinexAdapter, candlesProducer, marketsRepo).Start(); err != nil {
+		panic(err)
+	}
+
 	scheduler.Start()
+	defer scheduler.Shutdown()
 
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	done := make(chan bool, 1)
+	candlesHandler := candlesHandler.New(logger, candlesService)
 
-	<-done
+	service.Serve(uint16(cfg.HTTP.APIPort), func(lst net.Listener) error {
+		router := gin.New()
 
-	scheduler.Shutdown()
+		router.GET("/ping", func(c *gin.Context) {
+			pong := struct {
+				Time string
+			}{
+				Time: time.Now().String(),
+			}
+			httpext.SendGinModel(c, http.StatusOK, pong)
+		})
+
+		apiRouter := router.Group("/api")
+
+		v1.NewRouter(logger, candlesHandler).RegisterRoutes(apiRouter)
+
+		return http.Serve(lst, router)
+	})
+
+	service.Start(serviceName, version)
 }

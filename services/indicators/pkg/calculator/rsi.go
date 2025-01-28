@@ -10,7 +10,7 @@ import (
 type RSI struct {
 	id            uint
 	Period        int
-	Source        indicatorsAPI.Source
+	Source        entities.IndicatorSource
 	Market        *chipmunkAPI.Market
 	Resolution    *chipmunkAPI.Resolution
 	lastValue     *indicatorsAPI.RSIValue

@@ -7,8 +7,10 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/gormext"
 	"github.com/h-varmazyar/Gate/pkg/service"
 	"github.com/h-varmazyar/Gate/services/indicators/configs"
-	"github.com/h-varmazyar/Gate/services/indicators/internal"
+	candlesConsumer "github.com/h-varmazyar/Gate/services/indicators/internal/brokers/consumer/candles"
+	"github.com/h-varmazyar/Gate/services/indicators/internal/repository"
 	"github.com/h-varmazyar/Gate/services/indicators/pkg/db"
+	"github.com/nats-io/nats.go"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -33,6 +35,21 @@ func main() {
 	if err != nil {
 		logger.Panicf("failed to initiate databases with error %v", err)
 	}
+
+	natsConnection, err := nats.Connect(conf.NatsURL)
+	if err != nil {
+		log.Fatalf("Error connecting to NATS: %v", err)
+	}
+
+	indicatorsRepo := repository.NewIndicatorRepository(dbInstance.DB)
+
+	defer natsConnection.Close()
+	candlesConsumer, err := candlesConsumer.NewConsumer(logger, natsConnection, indicatorsRepo)
+	if err != nil {
+		log.Fatalf("Error creating candles consumer: %v", err)
+	}
+	candlesConsumer.StartListening()
+
 	initializeAndRegisterApps(ctx, logger, dbInstance, conf)
 }
 
@@ -81,16 +98,16 @@ func loadDB(ctx context.Context, configs gormext.Configs) (*db.DB, error) {
 }
 
 func initializeAndRegisterApps(ctx context.Context, logger *log.Logger, dbInstance *db.DB, configs *Configs) {
-	walletDependencies := &internal.AppDependencies{}
-
-	app, err := internal.NewApp(ctx, logger, configs.AppConfigs, walletDependencies, dbInstance)
-	if err != nil {
-		logger.WithError(err).Panicf("failed to initiate wallets app")
-	}
+	//walletDependencies := &internal.AppDependencies{}
+	//
+	//app, err := internal.NewApp(ctx, logger, configs.AppConfigs, walletDependencies, dbInstance)
+	//if err != nil {
+	//	logger.WithError(err).Panicf("failed to initiate wallets app")
+	//}
 
 	service.Serve(configs.GRPCPort, func(lst net.Listener) error {
 		server := grpc.NewServer()
-		app.Service.RegisterServer(server)
+		//app.Service.RegisterServer(server)
 		return server.Serve(lst)
 	})
 

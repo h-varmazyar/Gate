@@ -21,6 +21,18 @@ func NewCandleRepository(logger *log.Logger, db *gorm.DB) CandleRepository {
 	}
 }
 
+func (r CandleRepository) All(ctx context.Context, marketID, resolutionID uint, offset int) ([]models.Candle, error) {
+	candles := make([]models.Candle, 0)
+	return candles, r.db.
+		WithContext(ctx).
+		Model(&models.Candle{}).
+		Where("market_id = ?", marketID).
+		Where("resolution_id = ?", resolutionID).
+		Limit(candleListLimit).
+		Offset(offset).
+		Find(&candles).Error
+}
+
 func (r CandleRepository) AllMarketCandles(ctx context.Context, marketID uint, offset int) ([]models.Candle, error) {
 	candles := make([]models.Candle, 0)
 	return candles, r.db.
@@ -49,4 +61,8 @@ func (r CandleRepository) ReturnLast(ctx context.Context, marketID, resolutionID
 
 func (r CandleRepository) BulkInsert(ctx context.Context, candles []models.Candle) error {
 	return r.db.WithContext(ctx).Model(&models.Candle{}).CreateInBatches(&candles, 1000).Error
+}
+
+func (r CandleRepository) Update(ctx context.Context, candle models.Candle) error {
+	return r.db.WithContext(ctx).Updates(candle).Error
 }

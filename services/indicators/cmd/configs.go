@@ -11,4 +11,5 @@ type Configs struct {
 	GRPCPort    uint16           `mapstructure:"grpc_port"`
 	AppConfigs  internal.Configs `mapstructure:"app_configs"`
 	DB          gormext.Configs  `mapstructure:"db"`
+	NatsURL     string           `mapstructure:"nats_url"`
 }

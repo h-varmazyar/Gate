@@ -20,6 +20,7 @@ build
 
 #other
 tmp
+temp/*
 old-codes
 
 *.yaml

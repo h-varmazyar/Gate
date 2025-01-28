@@ -109,6 +109,8 @@ func (req *Request) Do() (*networkAPI.Response, error) {
 	}
 
 	log.Infof("%v: over %v -> (%v)%v", counter, req.proxyURL, req.method, request.URL.String())
+
+	log.Infof("headers: %v", request.Header)
 	counter++
 	response, err := req.httpClient.Do(request)
 	if err != nil {
@@ -116,8 +118,11 @@ func (req *Request) Do() (*networkAPI.Response, error) {
 		return nil, err
 	}
 	defer response.Body.Close()
+
+	log.Infof("afterrrrrrrrrrrr")
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
+		log.WithError(err).Errorf("failed to read response body")
 		return nil, err
 	}
 	return &networkAPI.Response{

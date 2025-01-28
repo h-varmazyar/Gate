@@ -1,16 +1,36 @@
 package entities
 
 import (
-	"github.com/google/uuid"
-	indicatorsAPI "github.com/h-varmazyar/Gate/services/indicators/api/proto"
 	"gorm.io/gorm"
+)
+
+type IndicatorSource string
+
+const (
+	IndicatorSourceOHLC4 = "OHLC4"
+	IndicatorSourceClose = "CLOSE"
+	IndicatorSourceOpen  = "OPEN"
+	IndicatorSourceHigh  = "HIGH"
+	IndicatorSourceHLC3  = "HLC3"
+	IndicatorSourceLow   = "LOW"
+	IndicatorSourceHL2   = "HL2"
+)
+
+type IndicatorType string
+
+const (
+	IndicatorTypeRSI            = "RSI"
+	IndicatorTypeStochastic     = "STOCHASTIC"
+	IndicatorTypeSMA            = "SMA"
+	IndicatorTypeEMA            = "EMA"
+	IndicatorTypeBollingerBands = "BOLLINGER_BANDS"
 )
 
 type Indicator struct {
 	gorm.Model
-	Type         indicatorsAPI.Type `gorm:"type:varchar(64);not null"`
-	MarketId     uuid.UUID
-	ResolutionId uuid.UUID
+	Type         IndicatorType `gorm:"type:varchar(16);not null"`
+	MarketId     uint
+	ResolutionId uint
 	Configs      *IndicatorConfigs `gorm:"embedded;embeddedPrefix:configs_"`
 }
 
@@ -23,7 +43,7 @@ type IndicatorConfigs struct {
 
 type RsiConfigs struct {
 	Period int
-	Source indicatorsAPI.Source
+	Source IndicatorSource
 }
 
 type StochasticConfigs struct {
@@ -34,11 +54,11 @@ type StochasticConfigs struct {
 
 type SMAConfigs struct {
 	Period int
-	Source indicatorsAPI.Source
+	Source IndicatorSource
 }
 
 type BollingerBandsConfigs struct {
 	Period    int
 	Deviation int
-	Source    indicatorsAPI.Source
+	Source    IndicatorSource
 }

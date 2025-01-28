@@ -26,8 +26,11 @@ type Config struct {
 	Database           gormext.Configs
 	MarketUpdateWorker WorkerMarketUpdate
 	LastCandleWorker   WorkerLastCandle
+	TickerWorker       WorkerTicker
 	CandleBuffer       CandleBuffer
 	CoreAdapter        CoreAdapter
+	CoinexAdapter      CoinexAdapter
+	Nats               Nats
 }
 
 type HTTP struct {

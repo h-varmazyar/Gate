@@ -44,30 +44,7 @@ func Read() (*Config, error) {
 			Name:        loadString("DB_NAME"),
 			IsSSLEnable: loadBool("DB_IS_SSL_ENABLE"),
 		},
-		MarketUpdateWorker: WorkerMarketUpdate{
-			RunningTime: loadString("WORKER_MARKET_UPDATE_RUNNING_TIME"),
-			S3Bucket:    loadString("S3_BUCKET"),
-			S3AccessKey: loadString("S3_ACCESS_KEY"),
-			S3SecretKey: loadString("S3_SECRET_KEY"),
-			S3Endpoint:  loadString("S3_ENDPOINT"),
-			S3Region:    loadString("S3_REGION"),
-		},
-		LastCandleWorker: WorkerLastCandle{
-			RunningInterval: loadDuration("LAST_CANDLE_WORKER_RUNNING_INTERVAL"),
-		},
-		TickerWorker: WorkerTicker{
-			RunningInterval: loadDuration("TICKER_WORKER_RUNNING_INTERVAL"),
-		},
-		CandleBuffer: CandleBuffer{
-			CandleBufferLength: loadInt("CANDLE_BUFFER_LENGTH"),
-		},
-		CoreAdapter: CoreAdapter{
-			GrpcAddress: loadString("CORE_GRPC_ADDRESS"),
-		},
-		CoinexAdapter: CoinexAdapter{
-			BaseURL: loadString("COINEX_ADAPTER_BASE_URL"),
-		},
-		Nats: Nats{URL: loadString("NATS_URL")},
+		ChipmunkAdapter: ChipmunkAdapter{CandleListAddress: loadString("CHIPMUNK_LIST_ADDRESS")},
 	}
 	cfg.LogLevel, err = log.ParseLevel(loadString("LOG_LEVEL"))
 	if err != nil {
