@@ -13,6 +13,8 @@ import (
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	"github.com/h-varmazyar/Gate/services/gather/configs"
 	"github.com/h-varmazyar/Gate/services/gather/internal/models"
+	"github.com/h-varmazyar/Gate/services/gather/internal/workers/candleTicker"
+	"github.com/h-varmazyar/Gate/services/gather/internal/workers/lastCandle"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"gorm.io/gorm"
@@ -50,14 +52,16 @@ type resolutionsRepo interface {
 }
 
 type Worker struct {
-	logger          *log.Logger
-	cfg             configs.WorkerMarketUpdate
-	assetsRepo      assetsRepo
-	candlesRepo     candlesRepo
-	marketsRepo     marketsRepo
-	resolutionsRepo resolutionsRepo
-	coreAdapter     coreAdapter
-	job             gocron.Job
+	logger             *log.Logger
+	cfg                configs.WorkerMarketUpdate
+	assetsRepo         assetsRepo
+	candlesRepo        candlesRepo
+	marketsRepo        marketsRepo
+	resolutionsRepo    resolutionsRepo
+	coreAdapter        coreAdapter
+	job                gocron.Job
+	candleTickerWorker *candleTicker.Worker
+	lastCandleWorker   *lastCandle.Worker
 }
 
 func NewWorker(
@@ -68,15 +72,19 @@ func NewWorker(
 	marketsRepo marketsRepo,
 	resolutionsRepo resolutionsRepo,
 	coreAdapter coreAdapter,
+	candleTickerWorker *candleTicker.Worker,
+	lastCandleWorker *lastCandle.Worker,
 ) *Worker {
 	return &Worker{
-		logger:          logger,
-		cfg:             cfg,
-		assetsRepo:      assetsRepo,
-		candlesRepo:     candlesRepo,
-		marketsRepo:     marketsRepo,
-		resolutionsRepo: resolutionsRepo,
-		coreAdapter:     coreAdapter,
+		logger:             logger,
+		cfg:                cfg,
+		assetsRepo:         assetsRepo,
+		candlesRepo:        candlesRepo,
+		marketsRepo:        marketsRepo,
+		resolutionsRepo:    resolutionsRepo,
+		coreAdapter:        coreAdapter,
+		candleTickerWorker: candleTickerWorker,
+		lastCandleWorker:   lastCandleWorker,
 	}
 }
 
@@ -191,8 +199,13 @@ func (w *Worker) createAsset(ctx context.Context, name, symbol string) (*models.
 	return nil, err
 }
 
-func (w *Worker) attachMarket(_ context.Context, market models.Market) error {
-	w.logger.Warnf("failed to attach market: %v", market.ID)
+func (w *Worker) attachMarket(ctx context.Context, market models.Market) error {
+	if err := w.lastCandleWorker.AttachMarket(ctx, market); err != nil {
+		return err
+	}
+	if err := w.candleTickerWorker.AttachMarket(ctx, market); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -218,7 +231,7 @@ func (w *Worker) deleteRemovableMarkets(ctx context.Context, localMarkets, remot
 	w.logger.Infof("deleting removable markets: %v", len(deletedMarkets))
 
 	for _, market := range deletedMarkets {
-		if err := w.detachRemovableMarket(ctx, market.ID); err != nil {
+		if err := w.detachRemovableMarket(ctx, market); err != nil {
 			continue
 		}
 
@@ -271,8 +284,13 @@ func (w *Worker) prepareCandlesMap(ctx context.Context, marketID uint) (map[uint
 	return candlesMap, nil
 }
 
-func (w *Worker) detachRemovableMarket(ctx context.Context, marketID uint) error {
-	w.logger.Warnf("(detachRemovableMarket) must be implemented")
+func (w *Worker) detachRemovableMarket(ctx context.Context, market models.Market) error {
+	if err := w.lastCandleWorker.DetachMarket(ctx, market); err != nil {
+		return err
+	}
+	if err := w.candleTickerWorker.DetachMarket(ctx, market); err != nil {
+		return err
+	}
 	return nil
 }
 

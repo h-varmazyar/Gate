@@ -6,6 +6,7 @@ import (
 	"github.com/h-varmazyar/Gate/services/gather/internal/models"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
+	"sync"
 	"time"
 )
 
@@ -23,14 +24,15 @@ type Ticker struct {
 }
 
 type Worker struct {
-	started    bool
-	ctx        context.Context
 	cancelFunc context.CancelFunc
 
+	started        bool
 	logger         *log.Logger
 	cfg            configs.WorkerTicker
 	coinexAdapter  coinexAdapter
 	candleProducer *candlesProducer.Producer
+	lock           sync.Mutex
+	ctx            context.Context
 	marketIDMap    map[string]uint
 	marketsRepo    marketsRepo
 }
@@ -47,6 +49,7 @@ func NewWorker(
 		cfg:            configs,
 		coinexAdapter:  coinexAdapter,
 		candleProducer: candlesProducer,
+		lock:           sync.Mutex{},
 		ctx:            context.Background(),
 		marketIDMap:    make(map[string]uint),
 		marketsRepo:    marketsRepo,
@@ -72,6 +75,20 @@ func (w *Worker) Start() error {
 	return nil
 }
 
+func (w *Worker) AttachMarket(ctx context.Context, market models.Market) error {
+	w.lock.Lock()
+	w.marketIDMap[market.Name] = market.ID
+	w.lock.Unlock()
+	return nil
+}
+
+func (w *Worker) DetachMarket(_ context.Context, market models.Market) error {
+	w.lock.Lock()
+	delete(w.marketIDMap, market.Name)
+	w.lock.Unlock()
+	return nil
+}
+
 func (w *Worker) run() {
 	ticker := time.NewTicker(w.cfg.RunningInterval)
 	for {
@@ -87,14 +104,18 @@ func (w *Worker) run() {
 			}
 			//w.logger.Infof("ticker running %v", tickers)
 			for _, t := range tickers {
-				payload := candlesProducer.TickerPayload{
-					MarketID:  w.marketIDMap[t.MarketName],
-					LastPrice: t.LastPrice,
+				marketID, ok := w.marketIDMap[t.MarketName]
+				if ok {
+					payload := candlesProducer.TickerPayload{
+						MarketID:  marketID,
+						LastPrice: t.LastPrice,
+					}
+					if err = w.candleProducer.PublishTicker(payload); err != nil {
+						w.logger.WithError(err).Error("failed to produce ticker")
+						continue
+					}
 				}
-				if err = w.candleProducer.PublishTicker(payload); err != nil {
-					w.logger.WithError(err).Error("failed to produce ticker")
-					continue
-				}
+
 			}
 		}
 	}

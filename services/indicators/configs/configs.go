@@ -23,6 +23,7 @@ type Config struct {
 	Tz              string
 	GRPC            GRPC
 	HTTP            HTTP
+	NatsURL         string
 	Database        gormext.Configs
 	ChipmunkAdapter ChipmunkAdapter
 }

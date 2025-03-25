@@ -3,7 +3,6 @@ package candles
 import (
 	"encoding/json"
 	"fmt"
-	chipmunkAPI "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	"github.com/h-varmazyar/Gate/services/indicators/pkg/calculator"
 	"github.com/h-varmazyar/Gate/services/indicators/pkg/entities"
 	"github.com/h-varmazyar/Gate/services/indicators/pkg/storage"
@@ -11,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"sync"
+	"time"
 )
 
 type indicatorsRepo interface {
@@ -82,10 +82,10 @@ func (c *Consumer) calculateIndicators(payload CandlePayload) {
 	}
 	c.lock.Unlock()
 
-	candles := make([]*chipmunkAPI.Candle, len(payload.Candles))
+	candles := make([]calculator.Candle, len(payload.Candles))
 	for _, candle := range payload.Candles {
-		candles = append(candles, &chipmunkAPI.Candle{
-			Time:   candle.Timestamp,
+		candles = append(candles, calculator.Candle{
+			Time:   time.Unix(candle.Timestamp, 0),
 			Open:   candle.Open,
 			High:   candle.High,
 			Low:    candle.Low,

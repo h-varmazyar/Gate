@@ -7,13 +7,12 @@ import (
 	"github.com/h-varmazyar/Gate/services/indicators/pkg/entities"
 	"golang.org/x/net/context"
 	"math"
+	"sync"
 )
 
 type Stochastic struct {
-	id uint
+	base
 	*entities.StochasticConfigs
-	Market      *chipmunkAPI.Market
-	Resolution  *chipmunkAPI.Resolution
 	fasts       []float64
 	lastCandles []*chipmunkAPI.Candle
 	lastValues  []*indicatorsAPI.IndicatorValue
@@ -21,10 +20,13 @@ type Stochastic struct {
 
 func NewStochastic(id uint, configs *entities.StochasticConfigs, market *chipmunkAPI.Market, resolution *chipmunkAPI.Resolution) (*Stochastic, error) {
 	return &Stochastic{
-		id:                id,
+		base: base{
+			lock:       sync.Mutex{},
+			id:         id,
+			Market:     market,
+			Resolution: resolution,
+		},
 		StochasticConfigs: configs,
-		Market:            market,
-		Resolution:        resolution,
 		fasts:             make([]float64, configs.SmoothK),
 		lastCandles:       make([]*chipmunkAPI.Candle, configs.Period),
 		lastValues:        make([]*indicatorsAPI.IndicatorValue, configs.SmoothD),
@@ -85,6 +87,8 @@ func (conf *Stochastic) Calculate(_ context.Context, candles []*chipmunkAPI.Cand
 }
 
 func (conf *Stochastic) UpdateLast(_ context.Context, candle *chipmunkAPI.Candle) *indicatorsAPI.IndicatorValue {
+	conf.lock.Lock()
+	defer conf.lock.Unlock()
 	if candle.Time > conf.lastCandles[len(conf.lastCandles)-1].Time {
 		conf.fasts = conf.fasts[1:]
 		conf.fasts = append(conf.fasts, 0)

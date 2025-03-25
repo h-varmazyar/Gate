@@ -35,6 +35,7 @@ func Read() (*Config, error) {
 			APIHost: loadString("HTTP_HOST"),
 			APIPort: loadInt("HTTP_PORT"),
 		},
+		NatsURL: loadString("NATS_URL"),
 		Database: gormext.Configs{
 			DbType:      gormext.Type(loadString("DB_TYPE")),
 			Port:        uint16(loadUint("DB_PORT")),
@@ -44,7 +45,7 @@ func Read() (*Config, error) {
 			Name:        loadString("DB_NAME"),
 			IsSSLEnable: loadBool("DB_IS_SSL_ENABLE"),
 		},
-		ChipmunkAdapter: ChipmunkAdapter{CandleListAddress: loadString("CHIPMUNK_LIST_ADDRESS")},
+		ChipmunkAdapter: ChipmunkAdapter{BaseURL: loadString("CHIPMUNK_BASE_URL")},
 	}
 	cfg.LogLevel, err = log.ParseLevel(loadString("LOG_LEVEL"))
 	if err != nil {

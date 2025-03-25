@@ -16,7 +16,7 @@ type Response[D any] struct {
 	IsSuccess bool   `json:"is_success"`
 }
 
-func NewGather(cfg configs.ChipmunkAdapter) Chipmunk {
+func NewChipmunk(cfg configs.ChipmunkAdapter) Chipmunk {
 	return Chipmunk{
 		cfg: cfg,
 		client: &fasthttp.Client{
