@@ -6,8 +6,8 @@ networks:
 
 services:
   nats:
+    container_name: gate-nats-server
     image: docker.iranserver.com/nats:latest
-    container_name: nats-server
     ports:
       - "4222:4222" # Port for client connections
       - "8222:8222" # Port for monitoring (optional)
@@ -18,7 +18,7 @@ services:
     restart: always
 
   postgres:
-    container_name: postgres
+    container_name: gate-postgres
     image: docker.iranserver.com/postgres:17
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -31,7 +31,7 @@ services:
     restart: always
 
   redis:
-    container_name: redis
+    container_name: gate-redis
     image: docker.iranserver.com/bitnami/redis:latest
     command: redis-server --requirepass ${REDIS_PASSWORD}
     environment:
@@ -45,7 +45,7 @@ services:
     restart: always
 
   rabbitmq:
-    container_name: rabbitmq
+    container_name: gate-rabbitmq
     image: docker.iranserver.com/rabbitmq:3.8-management
     environment:
       - RABBITMQ_ERLANG_COOKIE=SWQOKODSQALRPCLNMEQG
@@ -62,7 +62,7 @@ services:
     restart: always
 
   chipmunk:
-    container_name: chipmunk
+    container_name: gate-chipmunk
     image: docker.iranserver.com/gatec/chipmunk:${VERSION}
     volumes:
       - /srv/configs/chipmunk/app.yaml:/app/configs/config.yaml
@@ -74,7 +74,7 @@ services:
     restart: always
 
   core:
-    container_name: core
+    container_name: gate-core
     image: docker.iranserver.com/gatec/core:${VERSION}
     volumes:
       - /srv/configs/core/app.yaml:/app/configs/config.yaml
@@ -86,7 +86,7 @@ services:
     restart: always
 
   eagle:
-    container_name: eagle
+    container_name: gate-eagle
     image: docker.iranserver.com/gatec/eagle:${VERSION}
     volumes:
       - /srv/configs/eagle/app.yaml:/app/configs/config.yaml
@@ -98,7 +98,7 @@ services:
     restart: always
 
   gather:
-    container_name: gather
+    container_name: gate-gather
     image: docker.iranserver.com/gatec/gather:${VERSION}
     volumes:
       - /srv/configs/gather/app.yaml:/app/configs/config.yaml
@@ -110,7 +110,7 @@ services:
     restart: always
 
   indicators:
-    container_name: indicators
+    container_name: gate-indicators
     image: docker.iranserver.com/gatec/indicators:${VERSION}
     volumes:
       - /srv/configs/indicators/app.yaml:/app/configs/config.yaml
@@ -122,7 +122,7 @@ services:
     restart: always
 
   raven:
-    container_name: raven
+    container_name: gate-raven
     image: docker.iranserver.com/gatec/raven:${VERSION}
     volumes:
       - /srv/configs/raven/app.yaml:/app/configs/config.yaml
@@ -136,7 +136,7 @@ services:
     restart: always
 
   network:
-    container_name: network
+    container_name: gate-network
     image: docker.iranserver.com/gatec/network:${VERSION}
     volumes:
       - /srv/configs/network/app.yaml:/app/configs/config.yaml
@@ -148,7 +148,7 @@ services:
     restart: always
 
   telegram_bot:
-    container_name: telegram_bot
+    container_name: gate-telegram_bot
     image: docker.iranserver.com/gatec/telegram_bot:${VERSION}
     volumes:
       - /srv/configs/telegramBot/app.yaml:/app/configs/config.yaml
