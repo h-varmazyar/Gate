@@ -73,13 +73,16 @@ func main() {
 
 	candlesService := candles.NewService(logger, candlesRepo)
 
-	if err = marketUpdate.NewWorker(logger, cfg.MarketUpdateWorker, assetsRepo, candlesRepo, marketsRepo, resolutionsRepo, coreAdapter).Run(scheduler); err != nil {
+	lastCandleWorker := lastCandle.NewWorker(logger, cfg.LastCandleWorker, coreAdapter, coinexAdapter, candlesRepo, marketsRepo, resolutionsRepo, candlesProducer)
+	if err = lastCandleWorker.Run(); err != nil {
 		panic(err)
 	}
-	if err = lastCandle.NewWorker(logger, cfg.LastCandleWorker, coreAdapter, coinexAdapter, candlesRepo, marketsRepo, resolutionsRepo, candlesProducer).Run(); err != nil {
+	candleTickerWorker := candleTicker.NewWorker(logger, cfg.TickerWorker, coinexAdapter, candlesProducer, marketsRepo)
+	if err = candleTickerWorker.Start(); err != nil {
 		panic(err)
 	}
-	if err = candleTicker.NewWorker(logger, cfg.TickerWorker, coinexAdapter, candlesProducer, marketsRepo).Start(); err != nil {
+
+	if err = marketUpdate.NewWorker(logger, cfg.MarketUpdateWorker, assetsRepo, candlesRepo, marketsRepo, resolutionsRepo, coreAdapter, candleTickerWorker, lastCandleWorker).Run(scheduler); err != nil {
 		panic(err)
 	}
 
