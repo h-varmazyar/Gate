@@ -1,94 +1,84 @@
-name: Deploy Services
+name: Deploy Old Project on Tag
+
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.services.outputs.services }}
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      DOCKER_IMAGE_TAG: ${{ github.ref_name }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set up Docker
-        run: |
-          sudo apt-get update
-          sudo apt-get -y install apt-transport-https ca-certificates curl software-properties-common
-          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-          sudo apt-get update
-          sudo apt-get -y install docker-ce docker-ce-cli containerd.io
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
 
-      - name: Determine updated services
+      - name: Extract updated services from commit message
         id: services
         run: |
-          services=$(git log -1 --pretty=format:%s | grep -o -P "(?<=\().*?(?=\))")
-          echo "::set-output name=services::$services"
+          message=$(git log -1 --pretty=format:%s)
+          services=$(echo "$message" | grep -o -P "(?<=\().*?(?=\))")
+          echo "services=$services" >> $GITHUB_OUTPUT
 
-      - name: Determine version number
-        id: version
-        run: |
-          version=$(git log -1 --pretty=format:%h)
-          echo "::set-output name=version::$version"
-
-      - name: Build Services
-        id: build
-        env:
-          DOCKER_COMPOSE_PATH: deploy/docker-compose.yml
+      - name: Build and push Docker images
         run: |
           IFS=',' read -ra services_array <<< "${{ steps.services.outputs.services }}"
-          version=${{ steps.version.outputs.version }}
           for service in "${services_array[@]}"; do
-            echo "Building $service"
-            docker build -f services/$service/deploy/Dockerfile -t ${{ secrets.DOCKERHUB_USERNAME }}/$service:$version .
-            docker push ${{ secrets.DOCKERHUB_USERNAME }}/$service:$version
+            echo "Building and pushing $service..."
+            docker build -f services/$service/deploy/Dockerfile -t ${{ env.DOCKERHUB_USERNAME }}/$service:${{ env.DOCKER_IMAGE_TAG }} .
+            docker push ${{ env.DOCKERHUB_USERNAME }}/$service:${{ env.DOCKER_IMAGE_TAG }}
           done
 
   deploy:
     runs-on: ubuntu-latest
-
     needs: build
+    env:
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_USERNAME: ${{ secrets.SERVER_USERNAME }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      DOCKER_IMAGE_TAG: ${{ github.ref_name }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Determine version number
-        id: version
+      - name: Set up SSH
         run: |
-          version=$(git log -1 --pretty=format:%h)
-          echo "::set-output name=version::$version"
+          mkdir -p ~/.ssh
+          echo "${{ env.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ env.SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Determine updated services
-        id: services
+      - name: Copy Docker Compose to server
         run: |
-          services=$(git log -1 --pretty=format:%s | grep -o -P "(?<=\().*?(?=\))")
-          echo "::set-output name=services::$services"
+          scp -o StrictHostKeyChecking=no deploy/docker-compose.yml ${{ env.SERVER_USERNAME }}@${{ env.SERVER_HOST }}:/home/${{ env.SERVER_USERNAME }}/gate/deploy
 
-      - name: SSH into VPS and Deploy
+      - name: Deploy updated services via Docker Compose
         run: |
-          IFS=',' read -ra services_array <<< "${{ steps.services.outputs.services }}"
-          version=${{ steps.version.outputs.version }}
-    
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
-          chmod 600 ssh_key
-          
-          ssh -i ssh_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "mkdir -p ./gate/deploy"
-          scp -i ssh_key deploy/docker-compose.yml ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }}:./gate/deploy
-
-          ssh_command="cd ./gate/deploy"
+          IFS=',' read -ra services_array <<< "${{ needs.build.outputs.services }}"
+          services_list=""
           for service in "${services_array[@]}"; do
-          ssh_command+=" && VERSION=${version} docker-compose -f docker-compose.yml up -d ${service}"
+            services_list+=" $service"
           done
-    
-          ssh -o StrictHostKeyChecking=no -i ssh_key ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_ADDRESS }} "${ssh_command}"
-          
-          rm ssh_key
+
+          ssh -o StrictHostKeyChecking=no ${{ env.SERVER_USERNAME }}@${{ env.SERVER_HOST }} << EOF
+            cd /home/${{ env.SERVER_USERNAME }}/gate/deploy
+            export VERSION=${{ env.DOCKER_IMAGE_TAG }}
+            docker-compose -f docker-compose.yml pull $services_list
+            docker-compose -f docker-compose.yml up -d $services_list
+          EOF
