@@ -53,6 +53,11 @@ jobs:
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       DOCKER_IMAGE_TAG: ${{ github.ref_name }}
 
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+      RABBITMQ_USERNAME: ${{ secrets.RABBITMQ_USERNAME }}
+      RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
