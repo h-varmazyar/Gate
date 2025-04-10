@@ -97,6 +97,30 @@ services:
       - redis
     restart: always
 
+  gather:
+    container_name: gather
+    image: gatec/gather:${VERSION}
+    volumes:
+      - /srv/configs/gather/app.yaml:/app/configs/config.yaml
+    networks:
+      - gate
+    depends_on:
+      - postgres
+      - redis
+    restart: always
+
+  indicators:
+    container_name: indicators
+    image: gatec/indicators:${VERSION}
+    volumes:
+      - /srv/configs/indicators/app.yaml:/app/configs/config.yaml
+    networks:
+      - gate
+    depends_on:
+      - postgres
+      - redis
+    restart: always
+
   raven:
     container_name: raven
     image: gatec/raven:${VERSION}
