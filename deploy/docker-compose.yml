@@ -63,7 +63,7 @@ services:
 
   chipmunk:
     container_name: chipmunk
-    image: gatec/chipmunk:${VERSION}
+    image: docker.iranserver.com/gatec/chipmunk:${VERSION}
     volumes:
       - /srv/configs/chipmunk/app.yaml:/app/configs/config.yaml
     networks:
@@ -75,7 +75,7 @@ services:
 
   core:
     container_name: core
-    image: gatec/core:${VERSION}
+    image: docker.iranserver.com/gatec/core:${VERSION}
     volumes:
       - /srv/configs/core/app.yaml:/app/configs/config.yaml
     networks:
@@ -87,7 +87,7 @@ services:
 
   eagle:
     container_name: eagle
-    image: gatec/eagle:${VERSION}
+    image: docker.iranserver.com/gatec/eagle:${VERSION}
     volumes:
       - /srv/configs/eagle/app.yaml:/app/configs/config.yaml
     networks:
@@ -99,7 +99,7 @@ services:
 
   gather:
     container_name: gather
-    image: gatec/gather:${VERSION}
+    image: docker.iranserver.com/gatec/gather:${VERSION}
     volumes:
       - /srv/configs/gather/app.yaml:/app/configs/config.yaml
     networks:
@@ -111,7 +111,7 @@ services:
 
   indicators:
     container_name: indicators
-    image: gatec/indicators:${VERSION}
+    image: docker.iranserver.com/gatec/indicators:${VERSION}
     volumes:
       - /srv/configs/indicators/app.yaml:/app/configs/config.yaml
     networks:
@@ -123,7 +123,7 @@ services:
 
   raven:
     container_name: raven
-    image: gatec/raven:${VERSION}
+    image: docker.iranserver.com/gatec/raven:${VERSION}
     volumes:
       - /srv/configs/raven/app.yaml:/app/configs/config.yaml
     ports:
@@ -137,7 +137,7 @@ services:
 
   network:
     container_name: network
-    image: gatec/network:${VERSION}
+    image: docker.iranserver.com/gatec/network:${VERSION}
     volumes:
       - /srv/configs/network/app.yaml:/app/configs/config.yaml
     networks:
@@ -149,7 +149,7 @@ services:
 
   telegram_bot:
     container_name: telegram_bot
-    image: gatec/telegram_bot:${VERSION}
+    image: docker.iranserver.com/gatec/telegram_bot:${VERSION}
     volumes:
       - /srv/configs/telegramBot/app.yaml:/app/configs/config.yaml
     networks:
