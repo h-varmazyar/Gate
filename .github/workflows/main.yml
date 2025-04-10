@@ -66,7 +66,7 @@ jobs:
 
       - name: Copy Docker Compose to server
         run: |
-          scp -o StrictHostKeyChecking=no deploy/docker-compose.yml ${{ env.SERVER_USERNAME }}@${{ env.SERVER_HOST }}:/home/${{ env.SERVER_USERNAME }}/gate/deploy
+          scp -o StrictHostKeyChecking=no deploy/docker-compose.yml ${{ env.SERVER_USERNAME }}@${{ env.SERVER_HOST }}:/home/${{ env.SERVER_USERNAME }}/gate
 
       - name: Deploy updated services via Docker Compose
         run: |
@@ -77,7 +77,7 @@ jobs:
           done
 
           ssh -o StrictHostKeyChecking=no ${{ env.SERVER_USERNAME }}@${{ env.SERVER_HOST }} << EOF
-            cd /home/${{ env.SERVER_USERNAME }}/gate/deploy
+            cd /home/${{ env.SERVER_USERNAME }}/gate
             export VERSION=${{ env.DOCKER_IMAGE_TAG }}
             docker-compose -f docker-compose.yml pull $services_list
             docker-compose -f docker-compose.yml up -d $services_list
