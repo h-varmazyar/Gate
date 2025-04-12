@@ -20,14 +20,14 @@ services:
   postgres:
     container_name: gate-postgres
     image: docker.iranserver.com/postgres:17
-    environment:
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    env_file:
+      - ./configs/postgres.env
     volumes:
       - postgres_gate_data:/var/lib/postgresql/data
     networks:
       - gate
     ports:
-      - "5432:5432"
+      - "8340:5432"
     restart: always
 
   redis:
@@ -41,24 +41,21 @@ services:
     networks:
       - gate
     ports:
-      - "6379:6379"
+      - "8360:6379"
     restart: always
 
   rabbitmq:
     container_name: gate-rabbitmq
     image: docker.iranserver.com/rabbitmq:3.8-management
-    environment:
-      - RABBITMQ_ERLANG_COOKIE=SWQOKODSQALRPCLNMEQG
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USERNAME}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
-      - RABBITMQ_DEFAULT_VHOST=/
+    env_file:
+      - ./configs/rabbit.env
     volumes:
       - rabbitmq_gate_data:/var/lib/rabbitmq
     networks:
       - gate
     ports:
-      - "15672:15672"
-      - "5672:5672"
+      - "8350:15672"
+      - "8351:5672"
     restart: always
 
   chipmunk:
