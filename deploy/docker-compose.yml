@@ -97,27 +97,27 @@ services:
   gather:
     container_name: gate-gather
     image: docker.iranserver.com/gatec/gather:${VERSION}
-    env_file:
-      - ./configs/gather.env
+    volumes:
+      - ./configs/gather.env:/app/configs/.env
     networks:
       - gate
     depends_on:
       - postgres
       - redis
+      - nats
     restart: always
 
   indicators:
     container_name: gate-indicators
     image: docker.iranserver.com/gatec/indicators:${VERSION}
-    env_file:
-      - ./configs/indicators.env
-#    volumes:
-#      - ./configs/indicators.env:/app/configs/config.yaml
+    volumes:
+      - ./configs/indicators.env:/app/configs/.env
     networks:
       - gate
     depends_on:
       - postgres
       - redis
+      - nats
     restart: always
 
   network:
@@ -157,7 +157,6 @@ services:
       - postgres
       - redis
     restart: always
-
 
 volumes:
   postgres_gate_data:
