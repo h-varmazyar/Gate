@@ -97,8 +97,8 @@ services:
   gather:
     container_name: gate-gather
     image: docker.iranserver.com/gatec/gather:${VERSION}
-    volumes:
-      - ./configs/gather.env:/app/configs/config.yaml
+    env_file:
+      - ./configs/gather.env
     networks:
       - gate
     depends_on:
@@ -109,8 +109,10 @@ services:
   indicators:
     container_name: gate-indicators
     image: docker.iranserver.com/gatec/indicators:${VERSION}
-    volumes:
-      - ./configs/indicators.env:/app/configs/config.yaml
+    env_file:
+      - ./configs/indicators.env
+#    volumes:
+#      - ./configs/indicators.env:/app/configs/config.yaml
     networks:
       - gate
     depends_on:
