@@ -65,7 +65,7 @@ services:
     container_name: gate-chipmunk
     image: docker.iranserver.com/gatec/chipmunk:${VERSION}
     volumes:
-      - /srv/configs/chipmunk/app.yaml:/app/configs/config.yaml
+      - ./configs/chipmunk.yaml:/app/configs/config.yaml
     networks:
       - gate
     depends_on:
@@ -77,7 +77,7 @@ services:
     container_name: gate-core
     image: docker.iranserver.com/gatec/core:${VERSION}
     volumes:
-      - /srv/configs/core/app.yaml:/app/configs/config.yaml
+      - ./configs/core.yaml:/app/configs/config.yaml
     networks:
       - gate
     depends_on:
@@ -89,7 +89,7 @@ services:
     container_name: gate-eagle
     image: docker.iranserver.com/gatec/eagle:${VERSION}
     volumes:
-      - /srv/configs/eagle/app.yaml:/app/configs/config.yaml
+      - ./configs/eagle.yaml:/app/configs/config.yaml
     networks:
       - gate
     depends_on:
@@ -101,7 +101,7 @@ services:
     container_name: gate-gather
     image: docker.iranserver.com/gatec/gather:${VERSION}
     volumes:
-      - /srv/configs/gather/app.yaml:/app/configs/config.yaml
+      - ./configs/gather.env:/app/configs/config.yaml
     networks:
       - gate
     depends_on:
@@ -113,7 +113,7 @@ services:
     container_name: gate-indicators
     image: docker.iranserver.com/gatec/indicators:${VERSION}
     volumes:
-      - /srv/configs/indicators/app.yaml:/app/configs/config.yaml
+      - ./configs/indicators.env:/app/configs/config.yaml
     networks:
       - gate
     depends_on:
@@ -125,7 +125,7 @@ services:
     container_name: gate-raven
     image: docker.iranserver.com/gatec/raven:${VERSION}
     volumes:
-      - /srv/configs/raven/app.yaml:/app/configs/config.yaml
+      - ./configs/raven.yaml:/app/configs/config.yaml
     ports:
       - 3030:8080
     networks:
@@ -139,7 +139,7 @@ services:
     container_name: gate-network
     image: docker.iranserver.com/gatec/network:${VERSION}
     volumes:
-      - /srv/configs/network/app.yaml:/app/configs/config.yaml
+      - ./configs/network.yaml:/app/configs/config.yaml
     networks:
       - gate
     depends_on:
@@ -151,7 +151,7 @@ services:
     container_name: gate-telegram_bot
     image: docker.iranserver.com/gatec/telegram_bot:${VERSION}
     volumes:
-      - /srv/configs/telegramBot/app.yaml:/app/configs/config.yaml
+      - ./configs/telegramBot.yaml:/app/configs/config.yaml
     networks:
       - gate
     depends_on:
