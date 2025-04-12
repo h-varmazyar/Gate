@@ -158,6 +158,7 @@ services:
       - redis
     restart: always
 
+
 volumes:
   postgres_gate_data:
   redis_gate_data:
