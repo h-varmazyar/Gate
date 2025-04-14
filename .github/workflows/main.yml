@@ -51,9 +51,21 @@ jobs:
         run: |
           IFS=',' read -ra services_array <<< "${{ steps.services.outputs.services }}"
           for service in "${services_array[@]}"; do
-            echo "Building and pushing $service..."
-            docker build -f services/$service/deploy/Dockerfile -t ${{ env.DOCKERHUB_USERNAME }}/$service:${{ env.DOCKER_IMAGE_TAG }} .
-            docker push ${{ env.DOCKERHUB_USERNAME }}/$service:${{ env.DOCKER_IMAGE_TAG }}
+            echo "Processing $service..."
+            
+            if [[ -f "services/$service/deploy/Dockerfile" ]]; then
+              echo "Detected service image for $service"
+              docker build -f services/$service/deploy/Dockerfile -t ${{ env.DOCKERHUB_USERNAME }}/$service:${{ env.DOCKER_IMAGE_TAG }} .
+              docker push ${{ env.DOCKERHUB_USERNAME }}/$service:${{ env.DOCKER_IMAGE_TAG }}
+            
+            elif [[ -f "infra/$service/Dockerfile" ]]; then
+              echo "Detected infra image for $service"
+              docker build -f infra/$service/Dockerfile -t ${{ env.DOCKERHUB_USERNAME }}/$service:${{ env.DOCKER_IMAGE_TAG }} .
+              docker push ${{ env.DOCKERHUB_USERNAME }}/$service:${{ env.DOCKER_IMAGE_TAG }}
+            
+            else
+              echo "$service is a public image or has no Dockerfile. Skipping build."
+          fi
           done
 
   deploy:
