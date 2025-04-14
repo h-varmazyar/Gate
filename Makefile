@@ -50,3 +50,9 @@ deploy:
 doc:
 	./scripts/doc.sh $(filter-out $@,$(MAKECMDGOALS))
 
+.PHONY: init-network
+init-network:
+	./scripts/init_network.sh $(filter-out $@,$(MAKECMDGOALS))
+
+
+

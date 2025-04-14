@@ -1,15 +1,17 @@
-name: Deploy Old Project on Tag
+name: Deploy Project on Tag
 
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*.*.*'
+      - 'infra-*.*.*'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
       services: ${{ steps.services.outputs.services }}
+      tag_type: ${{ steps.tagtype.outputs.tag_type }}
     env:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -34,6 +36,15 @@ jobs:
           message=$(git log -1 --pretty=format:%s)
           services=$(echo "$message" | grep -o -P "(?<=\().*?(?=\))")
           echo "services=$services" >> $GITHUB_OUTPUT
+
+      - name: Detect tag type (infra or app)
+        id: tagtype
+        run: |
+          tag="${{ github.ref_name }}"
+          if [[ "$tag" == infra-* ]]; then
+            echo "tag_type=infra" >> $GITHUB_OUTPUT
+          else
+            echo "tag_type=app" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker images
         run: |
@@ -71,7 +82,11 @@ jobs:
 
       - name: Copy Docker Compose to server
         run: |
-          scp -o StrictHostKeyChecking=no deploy/docker-compose.yml ${{ env.SERVER_USERNAME }}@${{ env.SERVER_HOST }}:/home/${{ env.SERVER_USERNAME }}/gate
+          if [[ "${{ needs.build.outputs.tag_type }}" == "infra" ]]; then
+            scp -o StrictHostKeyChecking=no deploy/docker-compose.infra.yml ${{ env.SERVER_USERNAME }}@${{ env.SERVER_HOST }}:/home/${{ env.SERVER_USERNAME }}/gate
+          else
+            scp -o StrictHostKeyChecking=no deploy/docker-compose.yml ${{ env.SERVER_USERNAME }}@${{ env.SERVER_HOST }}:/home/${{ env.SERVER_USERNAME }}/gate
+          fi
 
       - name: Deploy updated services via Docker Compose
         run: |
@@ -81,9 +96,14 @@ jobs:
             services_list+=" $service"
           done
 
+          COMPOSE_FILE="docker-compose.yml"
+          if [[ "${{ needs.build.outputs.tag_type }}" == "infra" ]]; then
+            COMPOSE_FILE="docker-compose.infra.yml"
+          fi
+
           ssh -o StrictHostKeyChecking=no ${{ env.SERVER_USERNAME }}@${{ env.SERVER_HOST }} << EOF
             cd /home/${{ env.SERVER_USERNAME }}/gate
             export VERSION=${{ env.DOCKER_IMAGE_TAG }}
-            docker-compose -f docker-compose.yml pull $services_list
-            docker-compose -f docker-compose.yml up -d $services_list
+            docker-compose -f \$COMPOSE_FILE pull $services_list
+            docker-compose -f \$COMPOSE_FILE up -d $services_list
           EOF

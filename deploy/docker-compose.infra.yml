@@ -1,0 +1,100 @@
+version: '3.9'
+
+services:
+  nats:
+    container_name: gate-nats-server
+    image: docker.iranserver.com/nats:latest
+    ports:
+      - "4222:4222" # Port for client connections
+      - "8222:8222" # Port for monitoring (optional)
+    environment:
+      - NATS_MAX_PAYLOAD=10MB # Optional: Increase max payload size
+    networks:
+      - gate
+    restart: always
+
+  postgres:
+    container_name: gate-postgres
+    image: docker.iranserver.com/postgres:17
+    env_file:
+      - ./configs/postgres.env
+    volumes:
+      - postgres_gate_data:/var/lib/postgresql/data
+    networks:
+      - gate
+    ports:
+      - "8340:5432"
+    restart: always
+
+  redis:
+    container_name: gate-redis
+    image: docker.iranserver.com/bitnami/redis:latest
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    environment:
+      - ALLOW_EMPTY_PASSWORD=no
+    volumes:
+      - redis_gate_data:/var/lib/redis
+    networks:
+      - gate
+    ports:
+      - "8360:6379"
+    restart: always
+
+  rabbitmq:
+    container_name: gate-rabbitmq
+    image: docker.iranserver.com/rabbitmq:3.8-management
+    env_file:
+      - ./configs/rabbit.env
+    volumes:
+      - rabbitmq_gate_data:/var/lib/rabbitmq
+    networks:
+      - gate
+    ports:
+      - "8350:15672"
+      - "8351:5672"
+    restart: always
+
+  proxy-router:
+    container_name: gate-proxy
+    image: docker.iranserver.com/gatec/proxy-router:${VERSION}
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      appnet:
+        ipv4_address: 172.21.0.100
+
+  hysteria-client:
+    container_name: gate-hysteria
+    image: docker.iranserver.com/gatec/hysteria-client:${VERSION}
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      appnet:
+        ipv4_address: 172.21.0.102
+    depends_on:
+      - proxy-router
+
+
+volumes:
+  postgres_gate_data:
+  redis_gate_data:
+  rabbitmq_gate_data:
+
+networks:
+  gate:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+  appnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+          gateway: 172.21.0.1
+

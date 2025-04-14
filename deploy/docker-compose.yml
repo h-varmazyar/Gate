@@ -1,9 +1,5 @@
 version: '3.9'
 
-networks:
-  gate:
-    external: true
-
 services:
   nats:
     container_name: gate-nats-server
@@ -157,8 +153,3 @@ services:
       - postgres
       - redis
     restart: always
-
-volumes:
-  postgres_gate_data:
-  redis_gate_data:
-  rabbitmq_gate_data:
