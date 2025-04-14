@@ -67,9 +67,9 @@ services:
 
   hysteria:
     container_name: gate-hysteria
-    image: docker.iranserver.com/gatec/hysteria-client:${VERSION}
+    image: docker.iranserver.com/gatec/hysteria:${VERSION}
     volumes:
-      - ./config.yaml:/etc/hysteria/config.yaml:ro
+      - ./configs/hysteria.yaml:/etc/hysteria/config.yaml:ro
     cap_add:
       - NET_ADMIN
     sysctls:
