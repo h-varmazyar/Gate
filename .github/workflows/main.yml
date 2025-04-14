@@ -45,6 +45,7 @@ jobs:
             echo "tag_type=infra" >> $GITHUB_OUTPUT
           else
             echo "tag_type=app" >> $GITHUB_OUTPUT
+          fi
 
       - name: Build and push Docker images
         run: |
