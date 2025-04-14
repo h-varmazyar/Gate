@@ -10,8 +10,8 @@ RUN apk update && apk add --no-cache \
     bind-tools
 
 # Copy startup scripts
-COPY ./startup.sh /startup.sh
-COPY ./dnsmasq.conf /etc/dnsmasq.conf
+COPY ./infra/proxy-router/startup.sh /startup.sh
+COPY ./infra/proxy-router/dnsmasq.conf /etc/dnsmasq.conf
 
 # Make startup.sh executable
 RUN chmod +x /startup.sh
