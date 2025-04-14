@@ -7,4 +7,4 @@ RUN apk add --no-cache curl iproute2 iptables bash \
 RUN curl -L -o /usr/local/bin/hysteria https://github.com/apernet/hysteria/releases/latest/download/hysteria-linux-amd64 \
     && chmod +x /usr/local/bin/hysteria
 
-CMD ["hysteria", "client", "-c", "/etc/hysteria/config.yaml", "--insecure"]
+CMD ["hysteria", "client", "-c", "/etc/hysteria/config.yaml"]
