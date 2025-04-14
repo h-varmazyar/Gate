@@ -57,13 +57,11 @@ services:
   proxy-router:
     container_name: gate-proxy
     image: docker.iranserver.com/gatec/proxy-router:${VERSION}
+    network_mode: "service:hysteria"
     cap_add:
       - NET_ADMIN
     sysctls:
       - net.ipv4.ip_forward=1
-    networks:
-      appnet:
-        ipv4_address: 172.21.0.100
 
 
   hysteria:
