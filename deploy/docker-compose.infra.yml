@@ -78,8 +78,6 @@ services:
     networks:
       appnet:
         ipv4_address: 172.21.0.102
-    depends_on:
-      - proxy-router
 
 
 volumes:
