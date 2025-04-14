@@ -84,6 +84,7 @@ volumes:
   redis_gate_data:
   rabbitmq_gate_data:
 
+
 networks:
   gate:
     driver: bridge
