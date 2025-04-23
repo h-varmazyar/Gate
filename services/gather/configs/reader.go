@@ -44,6 +44,7 @@ func Read() (*Config, error) {
 			Name:        loadString("DB_NAME"),
 			IsSSLEnable: loadBool("DB_IS_SSL_ENABLE"),
 		},
+
 		MarketUpdateWorker: WorkerMarketUpdate{
 			RunningTime: loadString("WORKER_MARKET_UPDATE_RUNNING_TIME"),
 			S3Bucket:    loadString("S3_BUCKET"),
@@ -58,6 +59,10 @@ func Read() (*Config, error) {
 		TickerWorker: WorkerTicker{
 			RunningInterval: loadDuration("TICKER_WORKER_RUNNING_INTERVAL"),
 		},
+		WarmupWorker: WorkerWarmup{
+			NeedWarmup: loadBool("WARMUP_WORKER_NEED_WARMUP"),
+		},
+
 		CandleBuffer: CandleBuffer{
 			CandleBufferLength: loadInt("CANDLE_BUFFER_LENGTH"),
 		},
@@ -65,7 +70,8 @@ func Read() (*Config, error) {
 			GrpcAddress: loadString("CORE_GRPC_ADDRESS"),
 		},
 		CoinexAdapter: CoinexAdapter{
-			BaseURL: loadString("COINEX_ADAPTER_BASE_URL"),
+			BaseURL:           loadString("COINEX_ADAPTER_BASE_URL"),
+			SocksProxyAddress: loadString("SOCKS_PROXY_ADDRESS"),
 		},
 		Nats: Nats{URL: loadString("NATS_URL")},
 	}

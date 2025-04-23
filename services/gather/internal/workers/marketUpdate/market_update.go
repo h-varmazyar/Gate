@@ -12,6 +12,7 @@ import (
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	coreApi "github.com/h-varmazyar/Gate/services/core/api/proto"
 	"github.com/h-varmazyar/Gate/services/gather/configs"
+	"github.com/h-varmazyar/Gate/services/gather/internal/domain"
 	"github.com/h-varmazyar/Gate/services/gather/internal/models"
 	"github.com/h-varmazyar/Gate/services/gather/internal/workers/candleTicker"
 	"github.com/h-varmazyar/Gate/services/gather/internal/workers/lastCandle"
@@ -26,6 +27,10 @@ import (
 type coreAdapter interface {
 	MarketList(ctx context.Context) ([]*chipmunkApi.Market, error)
 	MarketInfo(ctx context.Context, marketKey string) (*coreApi.MarketInfo, error)
+}
+
+type coinexAdapter interface {
+	MarketList(ctx context.Context) (domain.CoinexMarkets, error)
 }
 
 type marketsRepo interface {
@@ -59,6 +64,7 @@ type Worker struct {
 	marketsRepo        marketsRepo
 	resolutionsRepo    resolutionsRepo
 	coreAdapter        coreAdapter
+	coinexAdapter      coinexAdapter
 	job                gocron.Job
 	candleTickerWorker *candleTicker.Worker
 	lastCandleWorker   *lastCandle.Worker
@@ -72,6 +78,7 @@ func NewWorker(
 	marketsRepo marketsRepo,
 	resolutionsRepo resolutionsRepo,
 	coreAdapter coreAdapter,
+	coinexAdapter coinexAdapter,
 	candleTickerWorker *candleTicker.Worker,
 	lastCandleWorker *lastCandle.Worker,
 ) *Worker {
@@ -83,6 +90,7 @@ func NewWorker(
 		marketsRepo:        marketsRepo,
 		resolutionsRepo:    resolutionsRepo,
 		coreAdapter:        coreAdapter,
+		coinexAdapter:      coinexAdapter,
 		candleTickerWorker: candleTickerWorker,
 		lastCandleWorker:   lastCandleWorker,
 	}
@@ -102,6 +110,10 @@ func (w *Worker) Run(s gocron.Scheduler) error {
 	return nil
 }
 
+func (w *Worker) ImmediateUpdate() {
+	w.update()
+}
+
 func (w *Worker) update() {
 	w.logger.Info("updating markets")
 	ctx := context.Background()
@@ -114,14 +126,35 @@ func (w *Worker) update() {
 	w.logger.Infof("local market len: %v", len(localMarkets))
 
 	remoteMarkets := make([]models.Market, 0)
-	markets, err := w.coreAdapter.MarketList(ctx)
+	markets, err := w.coinexAdapter.MarketList(ctx)
 	if err != nil {
 		w.logger.WithError(err).Errorf("failed to list remote markets")
 		return
 	}
 
-	for _, market := range markets {
-		remoteMarkets = append(remoteMarkets, convertMarket(market))
+	for _, market := range markets.List {
+		if market.IsApiTradingAvailable {
+			localMarket := models.Market{
+				IsPremarketTradingAvailable: market.IsPremarketTradingAvailable,
+				IsAmmAvailable:              market.IsAmmAvailable,
+				IsMarginAvailable:           market.IsMarginAvailable,
+
+				BaseCurrencyPrecision:  market.BaseCurrencyPrecision,
+				QuoteCurrencyPrecision: market.QuoteCurrencyPrecision,
+				TakerFeeRate:           market.TakerFeeRate,
+				MakerFeeRate:           market.MakerFeeRate,
+				QuoteCurrency: &models.Asset{
+					Symbol: market.QuoteCurrency,
+				},
+				MinAmount: market.MinAmount,
+				BaseCurrency: &models.Asset{
+					Symbol: market.BaseCurrency,
+				},
+				Name:   market.Market,
+				Status: models.MarketStatusEnable,
+			}
+			remoteMarkets = append(remoteMarkets, localMarket)
+		}
 	}
 
 	w.logger.Infof("remote market len: %v", len(remoteMarkets))
@@ -152,26 +185,26 @@ func (w *Worker) saveNewMarkets(ctx context.Context, localMarkets, remoteMarkets
 	for _, market := range newMarkets {
 		time.Sleep(time.Second)
 		var err error
-		market.Source, err = w.createAsset(ctx, market.Source.Name, market.Source.Symbol)
+		market.BaseCurrency, err = w.createAsset(ctx, market.BaseCurrency.Name, market.BaseCurrency.Symbol)
 		if err != nil {
-			w.logger.WithError(err).Errorf("failed to save source %v", market.Source.Symbol)
+			w.logger.WithError(err).Errorf("failed to save source %v", market.BaseCurrency.Symbol)
 			continue
 		}
 
-		market.Destination, err = w.createAsset(ctx, market.Destination.Name, market.Destination.Symbol)
+		market.QuoteCurrency, err = w.createAsset(ctx, market.QuoteCurrency.Name, market.QuoteCurrency.Symbol)
 		if err != nil {
-			w.logger.WithError(err).Errorf("failed to save destination %v", market.Destination.Symbol)
+			w.logger.WithError(err).Errorf("failed to save destination %v", market.QuoteCurrency.Symbol)
 			continue
 		}
 
 		market.Status = models.MarketStatusEnable
 
-		marketInfo, err := w.coreAdapter.MarketInfo(ctx, market.Source.Name)
-		if err != nil {
-			w.logger.WithError(err).Errorf("failed to get market info for %v", market.Name)
-			continue
-		}
-		market.IssueDate = time.Unix(marketInfo.IssueDate, 0)
+		//marketInfo, err := w.coreAdapter.MarketInfo(ctx, market.Source.Name)
+		//if err != nil {
+		//	w.logger.WithError(err).Errorf("failed to get market info for %v", market.Name)
+		//	continue
+		//}
+		//market.IssueDate = time.Unix(marketInfo.IssueDate, 0)
 
 		newMarket, err := w.marketsRepo.Create(ctx, market)
 		if err != nil {
@@ -297,23 +330,23 @@ func (w *Worker) detachRemovableMarket(ctx context.Context, market models.Market
 func (w *Worker) removeAssets(ctx context.Context, market models.Market) error {
 	//check source asset
 	{
-		count, err := w.marketsRepo.MarketCount(ctx, market.SourceID)
+		count, err := w.marketsRepo.MarketCount(ctx, market.BaseCurrencyID)
 		if err != nil {
 			return err
 		}
 		if count == 0 {
-			return w.assetsRepo.Delete(ctx, market.SourceID)
+			return w.assetsRepo.Delete(ctx, market.BaseCurrencyID)
 		}
 	}
 
 	//check destination asset
 	{
-		count, err := w.marketsRepo.MarketCount(ctx, market.DestinationID)
+		count, err := w.marketsRepo.MarketCount(ctx, market.QuoteCurrencyID)
 		if err != nil {
 			return err
 		}
 		if count == 0 {
-			return w.assetsRepo.Delete(ctx, market.DestinationID)
+			return w.assetsRepo.Delete(ctx, market.QuoteCurrencyID)
 		}
 	}
 	return nil
@@ -412,26 +445,4 @@ func (w *Worker) saveCandlesToCSV(fileName string, candles []models.Candle) erro
 	}
 
 	return nil
-}
-
-func convertMarket(from *chipmunkApi.Market) models.Market {
-	return models.Market{
-		PricingDecimal: from.PricingDecimal,
-		TradingDecimal: from.TradingDecimal,
-		TakerFeeRate:   from.TakerFeeRate,
-		MakerFeeRate:   from.MakerFeeRate,
-		Destination: &models.Asset{
-			Name:   from.Destination.Name,
-			Symbol: from.Destination.Symbol,
-		},
-		IssueDate: time.Unix(from.IssueDate, 0),
-		MinAmount: from.MinAmount,
-		Source: &models.Asset{
-			Name:   from.Source.Name,
-			Symbol: from.Source.Symbol,
-		},
-		IsAMM:  from.IsAMM,
-		Name:   from.Name,
-		Status: models.MarketStatus(from.Status.String()),
-	}
 }

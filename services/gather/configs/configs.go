@@ -15,22 +15,25 @@ const (
 )
 
 type Config struct {
-	GinMode            string
-	AppEnv             AppEnv
-	AppDebug           bool
-	Locale             string
-	LogLevel           log.Level
-	Tz                 string
-	GRPC               GRPC
-	HTTP               HTTP
-	Database           gormext.Configs
+	GinMode  string
+	AppEnv   AppEnv
+	AppDebug bool
+	Locale   string
+	LogLevel log.Level
+	Tz       string
+	GRPC     GRPC
+	HTTP     HTTP
+	Database gormext.Configs
+
 	MarketUpdateWorker WorkerMarketUpdate
 	LastCandleWorker   WorkerLastCandle
 	TickerWorker       WorkerTicker
-	CandleBuffer       CandleBuffer
-	CoreAdapter        CoreAdapter
-	CoinexAdapter      CoinexAdapter
-	Nats               Nats
+	WarmupWorker       WorkerWarmup
+
+	CandleBuffer  CandleBuffer
+	CoreAdapter   CoreAdapter
+	CoinexAdapter CoinexAdapter
+	Nats          Nats
 }
 
 type HTTP struct {

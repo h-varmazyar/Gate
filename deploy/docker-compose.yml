@@ -42,12 +42,12 @@ services:
     image: docker.iranserver.com/gatec/gather:${VERSION}
     volumes:
       - ./configs/gather.env:/app/.env
-    networks:
-      - gate
+    network_mode: "service:proxy-router"
     depends_on:
       - postgres
       - redis
       - nats
+      - proxy-router
     restart: always
 
   indicators:

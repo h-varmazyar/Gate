@@ -4,7 +4,7 @@
 # Secret files
 *.secret
 
-.env
+*.env
 *.ini
 
 # System files

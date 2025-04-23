@@ -16,21 +16,21 @@ const MarketTableName = "markets"
 
 type Market struct {
 	gorm.Model
-	PricingDecimal float64
-	TradingDecimal float64
-	TakerFeeRate   float64
-	MakerFeeRate   float64
-	DestinationID  uint
-	Destination    *Asset `gorm:"foreignKey:DestinationID"`
-	IssueDate      time.Time
-	MinAmount      float64
-	SourceID       uint
-	Source         *Asset `gorm:"foreignKey:SourceID"`
-	IsAMM          bool
-	Name           string
-	Status         MarketStatus
-	//SourceName      string `gorm:"-"`
-	//DestinationName string `gorm:"-"`
+	Name                        string
+	Status                      MarketStatus
+	BaseCurrencyPrecision       uint8
+	QuoteCurrencyPrecision      uint8
+	QuoteCurrencyID             uint
+	QuoteCurrency               *Asset `gorm:"foreignKey:QuoteCurrencyID"`
+	BaseCurrencyID              uint
+	BaseCurrency                *Asset `gorm:"foreignKey:BaseCurrencyID"`
+	TakerFeeRate                float64
+	MakerFeeRate                float64
+	MinAmount                   float64
+	IsAmmAvailable              bool
+	IsMarginAvailable           bool
+	IsPremarketTradingAvailable bool
+	IssueDate                   time.Time
 }
 
 func (o Market) Table() string {

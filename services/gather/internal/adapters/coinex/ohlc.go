@@ -61,31 +61,47 @@ func (c Coinex) OHLC(ctx context.Context, market models.Market, resolution model
 	return resp, nil
 }
 
+func (c Coinex) newOHLC(_ context.Context, market string, resolutionLabel string, limit int) ([]Candle, error) {
+	url := fmt.Sprintf("%v/spot/kline?market=%v&period=%v&limit=%v", c.cfg.BaseURL, market, resolutionLabel, limit)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("invalid HTTP response code: %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	respEntity := baseResponse[[]Candle]{}
+	err = json.Unmarshal(body, &respEntity)
+	if err != nil {
+		return nil, err
+	}
+
+	return respEntity.Data, nil
+}
+
 func (c Coinex) historicalOHLC(_ context.Context, market string, resolution models.Resolution, from time.Time, reqCount int) ([]Candle, error) {
 	candles := make([]Candle, 0)
 	to := from.Add(resolution.Duration * 1000)
 	for i := 0; i < reqCount; {
-		//req := fasthttp.AcquireRequest()
-		//req.SetRequestURI(fmt.Sprintf("https://www.coinex.com/res/market/kline?market=%v&interval=%v&start_time=%v&end_time=%v",
-		//	market, resolution.Value, from.Unix(), to.Unix()))
-		//req.Header.SetMethod(fasthttp.MethodGet)
-		//resp := fasthttp.AcquireResponse()
-		//err := c.client.Do(req, resp)
-		//fasthttp.ReleaseRequest(req)
-		//if err != nil {
-		//	continue
-		//}
-		//fasthttp.ReleaseResponse(resp)
-
 		url := fmt.Sprintf("https://www.coinex.com/res/market/kline?market=%v&interval=%v&start_time=%v&end_time=%v",
 			market, resolution.Value, from.Unix(), to.Unix())
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		if err != nil {
 			continue
 		}
-		//
-		//statusCode := resp.StatusCode()
-		//respBody := resp.Body()
 
 		resp, err := c.client.Do(req)
 		if err != nil {
@@ -119,47 +135,69 @@ func (c Coinex) historicalOHLC(_ context.Context, market string, resolution mode
 	return candles, nil
 }
 
-func (c Coinex) newOHLC(_ context.Context, market string, resolutionLabel string, limit int) ([]Candle, error) {
-	//req := fasthttp.AcquireRequest()
-	//req.SetRequestURI(fmt.Sprintf("%v/spot/kline?market=%v&period=%v&limit=%v", c.cfg.BaseURL, market, resolutionLabel, limit))
-	//req.Header.SetMethod(fasthttp.MethodGet)
-	//resp := fasthttp.AcquireResponse()
-	//err := c.client.Do(req, resp)
-	//fasthttp.ReleaseRequest(req)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//fasthttp.ReleaseResponse(resp)
-	//
-	//statusCode := resp.StatusCode()
-	//respBody := resp.Body()
-
-	url := fmt.Sprintf("%v/spot/kline?market=%v&period=%v&limit=%v", c.cfg.BaseURL, market, resolutionLabel, limit)
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("invalid HTTP response code: %d", resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	respEntity := baseResponse[[]Candle]{}
-	err = json.Unmarshal(body, &respEntity)
-	if err != nil {
-		return nil, err
-	}
-
-	return respEntity.Data, nil
-}
+//func (c Coinex) historicalOHLC(_ context.Context, market string, resolution models.Resolution, from time.Time, reqCount int) ([]Candle, error) {
+//	candles := make([]Candle, 0)
+//	to := from.Add(resolution.Duration * 1000)
+//	for i := 0; i < reqCount; {
+//		req := fasthttp.AcquireRequest()
+//		url := fmt.Sprintf("https://www.coinex.com/res/market/kline?market=%v&interval=%v&start_time=%v&end_time=%v", market, resolution.Value, from.Unix(), to.Unix())
+//		req.SetRequestURI(url)
+//		req.Header.SetMethod(fasthttp.MethodGet)
+//		resp := fasthttp.AcquireResponse()
+//		err := c.client.Do(req, resp)
+//		fasthttp.ReleaseRequest(req)
+//		if err != nil {
+//			continue
+//		}
+//		fasthttp.ReleaseResponse(resp)
+//
+//		statusCode := resp.StatusCode()
+//		respBody := resp.Body()
+//
+//		if statusCode != fasthttp.StatusOK {
+//			continue
+//		}
+//
+//		respEntity := baseResponse[[]Candle]{}
+//		err = json.Unmarshal(respBody, &respEntity)
+//		if err != nil {
+//			continue
+//		}
+//
+//		from = to
+//		to = from.Add(resolution.Duration * 1000)
+//		i++
+//		time.Sleep(time.Second / 3)
+//		candles = append(candles, respEntity.Data...)
+//	}
+//
+//	return candles, nil
+//}
+//
+//func (c Coinex) newOHLC(_ context.Context, market string, resolutionLabel string, limit int) ([]Candle, error) {
+//	req := fasthttp.AcquireRequest()
+//	req.SetRequestURI(fmt.Sprintf("%v/spot/kline?market=%v&period=%v&limit=%v", c.cfg.BaseURL, market, resolutionLabel, limit))
+//	req.Header.SetMethod(fasthttp.MethodGet)
+//	resp := fasthttp.AcquireResponse()
+//	err := c.client.Do(req, resp)
+//	fasthttp.ReleaseRequest(req)
+//	if err != nil {
+//		return nil, err
+//	}
+//	fasthttp.ReleaseResponse(resp)
+//
+//	statusCode := resp.StatusCode()
+//	respBody := resp.Body()
+//
+//	if statusCode != http.StatusOK {
+//		return nil, fmt.Errorf("invalid HTTP response code: %d", statusCode)
+//	}
+//
+//	respEntity := baseResponse[[]Candle]{}
+//	err = json.Unmarshal(respBody, &respEntity)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return respEntity.Data, nil
+//}

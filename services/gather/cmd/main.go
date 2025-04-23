@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-co-op/gocron/v2"
+	"github.com/h-varmazyar/Gate/pkg/db"
 	"github.com/h-varmazyar/Gate/pkg/httpext"
 	"github.com/h-varmazyar/Gate/pkg/service"
 	v1 "github.com/h-varmazyar/Gate/services/gather/api/rest/v1"
@@ -17,7 +18,6 @@ import (
 	"github.com/h-varmazyar/Gate/services/gather/internal/workers/candleTicker"
 	"github.com/h-varmazyar/Gate/services/gather/internal/workers/lastCandle"
 	"github.com/h-varmazyar/Gate/services/gather/internal/workers/marketUpdate"
-	"github.com/h-varmazyar/Gate/services/indicators/pkg/db"
 	"github.com/nats-io/nats.go"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	serviceName = "Gathering"
+	serviceName = "gather"
 	version     = "v0.0.1"
 )
 
@@ -69,20 +69,28 @@ func main() {
 	marketsRepo := repositories.NewMarketRepository(logger, dbInstance.DB)
 
 	coreAdapter := core.NewCore(cfg.CoreAdapter)
-	coinexAdapter := coinex.NewCoinex(cfg.CoinexAdapter)
+	coinexAdapter, err := coinex.NewCoinex(cfg.CoinexAdapter)
+	if err != nil {
+		panic(err)
+	}
 
 	candlesService := candles.NewService(logger, candlesRepo)
 
 	lastCandleWorker := lastCandle.NewWorker(logger, cfg.LastCandleWorker, coreAdapter, coinexAdapter, candlesRepo, marketsRepo, resolutionsRepo, candlesProducer)
+	candleTickerWorker := candleTicker.NewWorker(logger, cfg.TickerWorker, coinexAdapter, candlesProducer, marketsRepo)
+	marketUpdateWorker := marketUpdate.NewWorker(logger, cfg.MarketUpdateWorker, assetsRepo, candlesRepo, marketsRepo, resolutionsRepo, coreAdapter, coinexAdapter, candleTickerWorker, lastCandleWorker)
+
+	if cfg.WarmupWorker.NeedWarmup {
+		marketUpdateWorker.ImmediateUpdate()
+	}
+
 	if err = lastCandleWorker.Run(); err != nil {
 		panic(err)
 	}
-	candleTickerWorker := candleTicker.NewWorker(logger, cfg.TickerWorker, coinexAdapter, candlesProducer, marketsRepo)
 	if err = candleTickerWorker.Start(); err != nil {
 		panic(err)
 	}
-
-	if err = marketUpdate.NewWorker(logger, cfg.MarketUpdateWorker, assetsRepo, candlesRepo, marketsRepo, resolutionsRepo, coreAdapter, candleTickerWorker, lastCandleWorker).Run(scheduler); err != nil {
+	if err = marketUpdateWorker.Run(scheduler); err != nil {
 		panic(err)
 	}
 

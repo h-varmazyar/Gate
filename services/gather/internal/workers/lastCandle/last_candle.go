@@ -169,11 +169,14 @@ func (w *Worker) run() {
 			ticker.Stop()
 			return
 		case <-ticker.C:
+			if len(w.pairs) == 0 {
+				continue
+			}
 			w.logger.Infof("tickkkkk")
 			wg := &sync.WaitGroup{}
 			wg.Add(len(w.pairs))
 			eachPeriodDuration := time.Duration(int64(w.cfg.RunningInterval) / int64(len(w.pairs)))
-			w.logger.Infof("last candle duration: %v - %v", w.cfg.RunningInterval, time.Duration(eachPeriodDuration))
+			w.logger.Infof("last candle duration: %v - %v", w.cfg.RunningInterval, eachPeriodDuration)
 			totalStart := time.Now()
 			for _, p := range w.pairs {
 				start := time.Now()

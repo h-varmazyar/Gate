@@ -18,3 +18,7 @@ type WorkerLastCandle struct {
 type WorkerTicker struct {
 	RunningInterval time.Duration
 }
+
+type WorkerWarmup struct {
+	NeedWarmup bool
+}

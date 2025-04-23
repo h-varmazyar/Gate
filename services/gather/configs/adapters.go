@@ -5,5 +5,6 @@ type CoreAdapter struct {
 }
 
 type CoinexAdapter struct {
-	BaseURL string `json:"base_url"`
+	BaseURL           string `json:"base_url"`
+	SocksProxyAddress string `json:"socks_proxy_address"`
 }

@@ -1,79 +1,28 @@
 version: '3.9'
 
-networks:
-  gate:
-    driver: bridge
-
 services:
-  nats:
-    image: nats:latest
-    container_name: nats-server
-    ports:
-      - "4222:4222" # Port for client connections
-      - "8222:8222" # Port for monitoring (optional)
-    environment:
-      - NATS_MAX_PAYLOAD=10MB # Optional: Increase max payload size
-    networks:
-      - gate
-    restart: always
-
-  postgres:
-    container_name: postgres
+  gather:
+    container_name: gather
     deploy:
       resources:
         limits:
           cpus: '0.2'
           memory: '250m'
-    image: postgres:15
-    environment:
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    image: gather:${GATHER_VERSION}
+    build:
+      context: ..
+      dockerfile: services/gather/deploy/Dockerfile
+      args:
+        VERSION: ${GATHER_VERSION}
     volumes:
-      - postgres_gate_data:/var/lib/postgresql/data
+      - ./configs/gather.env:/app/.env
     networks:
-      - gate
-    ports:
-      - "5432:5432"
-    restart: always
-
-  redis:
-    container_name: redis
-    deploy:
-      resources:
-        limits:
-          cpus: '0.1'
-          memory: '100m'
-    image: bitnami/redis:latest
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    environment:
-      - ALLOW_EMPTY_PASSWORD=no
-    volumes:
-      - redis_gate_data:/var/lib/redis
-    networks:
-      - gate
-    ports:
-      - "6380:6379"
-    restart: always
-
-  rabbitmq:
-    container_name: rabbitmq
-    deploy:
-      resources:
-        limits:
-          cpus: '0.1'
-          memory: '250m'
-    image: rabbitmq:3.8-management
-    environment:
-      - RABBITMQ_ERLANG_COOKIE=SWQOKODSQALRPCLNMEQG
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USERNAME}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
-      - RABBITMQ_DEFAULT_VHOST=/
-    volumes:
-      - rabbitmq_gate_data:/var/lib/rabbitmq
-    networks:
-      - gate
-    ports:
-      - "15672:15672"
-      - "5672:5672"
+      gate:
+        ipv4_address: 172.28.0.110
+#    depends_on:
+#      - postgres
+#      - redis
+#      - nats-server
     restart: always
 
 #  chipmunk:
@@ -181,11 +130,12 @@ services:
 #    volumes:
 #      - /srv/configs/network/app.yaml:/app/configs/config.yaml
 #    networks:
-#      - gate
+#      appnet:
+#        ipv4_address: 172.28.0.115
 ##    depends_on:
 ##      - postgres
 #    restart: always
-
+#
 #  telegram_bot:
 #    container_name: telegramBot
 #    deploy:
@@ -208,7 +158,7 @@ services:
 ##      - redis
 #    restart: always
 
-volumes:
-  postgres_gate_data:
-  redis_gate_data:
-  rabbitmq_gate_data:
+networks:
+  gate:
+    driver: bridge
+
