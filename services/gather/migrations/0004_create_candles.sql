@@ -15,9 +15,6 @@ create table candles
     resolution_id bigint  constraint fk_candles_resolution   references resolutions
 );
 
-alter table candles
-    owner to postgres;
-
 create index idx_candles_market_resolution_time
     on candles (resolution_id asc, market_id asc, time desc);
 

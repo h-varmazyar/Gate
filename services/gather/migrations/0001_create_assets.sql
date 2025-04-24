@@ -8,7 +8,4 @@ create table assets
     symbol     text unique
 );
 
-alter table assets
-    owner to postgres;
-
 create index idx_assets_deleted_at on assets (deleted_at);

@@ -10,9 +10,6 @@ create table resolutions
     value      text
 );
 
-alter table resolutions
-    owner to postgres;
-
 create index idx_resolutions_deleted_at
     on resolutions (deleted_at);
 
