@@ -100,3 +100,4 @@ services:
       - postgres
       - redis
     restart: always
+
