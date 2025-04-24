@@ -9,8 +9,8 @@ services:
     networks:
       - gate
     depends_on:
-      - postgres
-      - rabbitmq
+      - gate-postgres
+      - gate-rabbitmq
     restart: always
 
   core:
@@ -21,8 +21,8 @@ services:
     networks:
       - gate
     depends_on:
-      - postgres
-      - rabbitmq
+      - gate-postgres
+      - gate-rabbitmq
     restart: always
 
   eagle:
@@ -33,8 +33,8 @@ services:
     networks:
       - gate
     depends_on:
-      - postgres
-      - redis
+      - gate-postgres
+      - gate-redis
     restart: always
 
   gather:
@@ -45,10 +45,10 @@ services:
     networks:
       - gate
     depends_on:
-      - postgres
-      - redis
-      - nats
-      - proxy-router
+      - gate-postgres
+      - gate-redis
+      - gate-nats-server
+      - gate-hysteria
     restart: always
 
   indicators:
@@ -59,9 +59,9 @@ services:
     networks:
       - gate
     depends_on:
-      - postgres
-      - redis
-      - nats
+      - gate-postgres
+      - gate-redis
+      - gate-nats-server
     restart: always
 
   network:
@@ -72,8 +72,8 @@ services:
     networks:
       - gate
     depends_on:
-      - postgres
-      - redis
+      - gate-postgres
+      - gate-redis
     restart: always
 
   raven:
@@ -86,8 +86,8 @@ services:
     networks:
       - gate
     depends_on:
-      - postgres
-      - redis
+      - gate-postgres
+      - gate-redis
     restart: always
 
   telegram_bot:
@@ -98,8 +98,8 @@ services:
     networks:
       - gate
     depends_on:
-      - postgres
-      - redis
+      - gate-postgres
+      - gate-redis
     restart: always
 
 networks:
