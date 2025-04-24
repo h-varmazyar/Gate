@@ -116,9 +116,7 @@ services:
       - gate
     depends_on:
       - postgres
-      - redis
       - nats
-      - hysteria
     restart: always
 
   indicators:
