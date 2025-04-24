@@ -109,13 +109,14 @@ jobs:
             services_list+=" $service"
           done
 
-          COMPOSE_FILE="docker-compose.yml"
           if [[ "${{ needs.build.outputs.tag_type }}" == "infra" ]]; then
             COMPOSE_FILE="docker-compose.infra.yml"
+          else
+            COMPOSE_FILE="docker-compose.yml"
           fi
 
           ssh -o StrictHostKeyChecking=no ${{ env.SERVER_USERNAME }}@${{ env.SERVER_HOST }} << EOF
             cd /home/${{ env.SERVER_USERNAME }}/gate
             export VERSION=${{ env.DOCKER_IMAGE_TAG }}
-            docker compose -f \$COMPOSE_FILE up $services_list
+            docker compose -f $COMPOSE_FILE up -d $services_list
           EOF
