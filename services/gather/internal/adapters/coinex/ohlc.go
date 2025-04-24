@@ -8,17 +8,18 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
 )
 
 type Candle struct {
-	Open     float64 `json:"open"`
-	High     float64 `json:"high"`
-	Low      float64 `json:"low"`
-	Close    float64 `json:"close"`
-	Volume   float64 `json:"volume"`
-	Value    float64 `json:"value"`
-	CreateAt int64   `json:"create_at"`
+	Open     float64 `json:"1"`
+	High     float64 `json:"3"`
+	Low      float64 `json:"4"`
+	Close    float64 `json:"2"`
+	Volume   float64 `json:"5"`
+	Value    float64 `json:"6"`
+	CreateAt int64   `json:"0"`
 }
 
 func (c Coinex) OHLC(ctx context.Context, market models.Market, resolution models.Resolution, from, to time.Time) ([]models.Candle, error) {
@@ -32,6 +33,7 @@ func (c Coinex) OHLC(ctx context.Context, market models.Market, resolution model
 		candles []Candle
 		err     error
 	)
+	fmt.Println("total", candleCount)
 	if candleCount <= 1000 {
 		if candleCount == 0 {
 			candleCount++
@@ -62,7 +64,7 @@ func (c Coinex) OHLC(ctx context.Context, market models.Market, resolution model
 }
 
 func (c Coinex) newOHLC(_ context.Context, market string, resolutionLabel string, limit int) ([]Candle, error) {
-	url := fmt.Sprintf("%v/spot/kline?market=%v&period=%v&limit=%v", c.cfg.BaseURL, market, resolutionLabel, limit)
+	url := fmt.Sprintf("%v/spot/kline?market=%v&period=%v&limit=%v", c.cfg.APIBaseURL, market, resolutionLabel, limit)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
@@ -88,14 +90,16 @@ func (c Coinex) newOHLC(_ context.Context, market string, resolutionLabel string
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("getting ", url, " -> ", len(respEntity.Data))
 
 	return respEntity.Data, nil
 }
 
-func (c Coinex) historicalOHLC(_ context.Context, market string, resolution models.Resolution, from time.Time, reqCount int) ([]Candle, error) {
+func (c Coinex) reverseOHLC(_ context.Context, market string, resolution models.Resolution) ([]Candle, error) {
 	candles := make([]Candle, 0)
-	to := from.Add(resolution.Duration * 1000)
-	for i := 0; i < reqCount; {
+	to := time.Now()
+	from := to.Add(resolution.Duration * -1000)
+	for {
 		url := fmt.Sprintf("https://www.coinex.com/res/market/kline?market=%v&interval=%v&start_time=%v&end_time=%v",
 			market, resolution.Value, from.Unix(), to.Unix())
 		req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -126,10 +130,74 @@ func (c Coinex) historicalOHLC(_ context.Context, market string, resolution mode
 		resp.Body.Close()
 
 		from = to
+		to = from.Add(resolution.Duration * -1000)
+		if len(respEntity.Data) == 0 {
+			break
+		}
+		time.Sleep(time.Second / 3)
+		candles = append(candles, respEntity.Data...)
+	}
+
+	return candles, nil
+}
+
+func (c Coinex) historicalOHLC(_ context.Context, market string, resolution models.Resolution, from time.Time, reqCount int) ([]Candle, error) {
+	candles := make([]Candle, 0)
+	to := from.Add(resolution.Duration * 1000)
+	fmt.Println("need istorical from - to - count:", from, to, reqCount)
+	for i := 0; i < reqCount; {
+		url := fmt.Sprintf("https://www.coinex.com/res/market/kline?market=%v&interval=%v&start_time=%v&end_time=%v",
+			market, resolution.Value, from.Unix(), to.Unix())
+		req, err := http.NewRequest(http.MethodGet, url, nil)
+		if err != nil {
+			fmt.Println("failed to create:", err)
+			continue
+		}
+
+		resp, err := c.client.Do(req)
+		if err != nil {
+			fmt.Println("failed to go:", err)
+			continue
+		}
+		if resp.StatusCode != http.StatusOK {
+			resp.Body.Close()
+			fmt.Println("invalid status code:", resp.StatusCode)
+			continue
+		}
+		fmt.Println("done")
+
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Println("failed to read body:", err)
+			resp.Body.Close()
+			continue
+		}
+		respEntity := baseResponse[[][]any]{}
+		err = json.Unmarshal(body, &respEntity)
+		if err != nil {
+			fmt.Println("failed to unmarshal:", err)
+			resp.Body.Close()
+			continue
+		}
+		resp.Body.Close()
+
+		from = to
 		to = from.Add(resolution.Duration * 1000)
 		i++
 		time.Sleep(time.Second / 3)
-		candles = append(candles, respEntity.Data...)
+		for _, d := range respEntity.Data {
+			candle := Candle{}
+			candle.Open, _ = strconv.ParseFloat(d[1].(string), 64)
+			candle.High, _ = strconv.ParseFloat(d[3].(string), 64)
+			candle.Low, _ = strconv.ParseFloat(d[4].(string), 64)
+			candle.Close, _ = strconv.ParseFloat(d[2].(string), 64)
+			candle.Volume, _ = strconv.ParseFloat(d[5].(string), 64)
+			candle.Value, _ = strconv.ParseFloat(d[6].(string), 64)
+			candle.CreateAt = int64(d[0].(float64))
+			candles = append(candles, candle)
+		}
+		//candles = append(candles, respEntity.Data...)
+		fmt.Println("getting ", url, " -> ", len(respEntity.Data))
 	}
 
 	return candles, nil

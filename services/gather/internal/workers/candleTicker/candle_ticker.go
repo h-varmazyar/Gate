@@ -56,7 +56,7 @@ func NewWorker(
 	}
 }
 
-func (w *Worker) Start() error {
+func (w *Worker) Run() error {
 	if len(w.marketIDMap) == 0 {
 		markets, err := w.marketsRepo.All(context.Background())
 		if err != nil {
@@ -75,7 +75,7 @@ func (w *Worker) Start() error {
 	return nil
 }
 
-func (w *Worker) AttachMarket(ctx context.Context, market models.Market) error {
+func (w *Worker) AttachMarket(_ context.Context, market models.Market) error {
 	w.lock.Lock()
 	w.marketIDMap[market.Name] = market.ID
 	w.lock.Unlock()

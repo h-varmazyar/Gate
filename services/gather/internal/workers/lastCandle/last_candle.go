@@ -173,28 +173,28 @@ func (w *Worker) run() {
 				continue
 			}
 			w.logger.Infof("tickkkkk")
-			wg := &sync.WaitGroup{}
-			wg.Add(len(w.pairs))
+			//wg := &sync.WaitGroup{}
+			//wg.Add(len(w.pairs))
 			eachPeriodDuration := time.Duration(int64(w.cfg.RunningInterval) / int64(len(w.pairs)))
 			w.logger.Infof("last candle duration: %v - %v", w.cfg.RunningInterval, eachPeriodDuration)
 			totalStart := time.Now()
 			for _, p := range w.pairs {
 				start := time.Now()
-				go func(p *pair) {
-					len, err := w.checkForLastCandle(p)
-					if err != nil {
-						w.logger.WithError(err)
-					} else {
-						w.logger.Infof("len %v: %v", p.Market.ID, len)
-					}
-					wg.Done()
-				}(p)
+				//go func(p *pair) {
+				length, err := w.checkForLastCandle(p)
+				if err != nil {
+					w.logger.WithError(err)
+				} else {
+					w.logger.Infof("len %v: %v", p.Market.ID, length)
+				}
+				//wg.Done()
+				//}(p)
 				diff := time.Now().Sub(start)
 				if diff < eachPeriodDuration {
 					time.Sleep(eachPeriodDuration - diff)
 				}
 			}
-			wg.Wait()
+			//wg.Wait()
 			w.logger.Infof("done one period: %v - %v", w.cfg.RunningInterval, time.Now().Sub(totalStart))
 		}
 	}
@@ -209,7 +209,7 @@ func (w *Worker) fillEmptyBuffer(p *pair) {
 	var err error
 	candle, err := w.candlesRepo.ReturnLast(w.ctx, p.Market.ID, p.Resolution.ID)
 	if err != nil {
-		w.logger.WithError(err).Error("failed to get last candle")
+		w.logger.WithError(err).Warnf("failed to get last candle")
 		return
 	}
 	buffer.CandleBuffer.Push(&candle)
@@ -217,6 +217,7 @@ func (w *Worker) fillEmptyBuffer(p *pair) {
 }
 
 func (w *Worker) checkForLastCandle(p *pair) (int, error) {
+	w.logger.Infof("getting candles %v", p.Market.Name)
 	last := buffer.CandleBuffer.Last(p.Market.ID, p.Resolution.ID)
 	if last == nil {
 		last = &models.Candle{
@@ -224,25 +225,21 @@ func (w *Worker) checkForLastCandle(p *pair) (int, error) {
 		}
 	}
 
-	resp, err := w.coreAdapter.OHLC(context.Background(), OHLCParam{
-		MarketKey:  p.Market.Name,
-		Resolution: p.Resolution,
-		Timeout:    w.cfg.RunningInterval,
-		To:         time.Now(),
-		From:       last.Time,
-	})
+	coinexCandles, err := w.coinexAdapter.OHLC(context.Background(), p.Market, p.Resolution, last.Time, time.Now())
 	if err != nil {
 		return 0, err
 	}
 
-	if resp.Elements == nil {
+	w.logger.Infof("cadnels: %v", len(coinexCandles))
+
+	if coinexCandles == nil {
 		return 0, errors.New(w.ctx, codes.NotFound)
 	}
 
-	candles := make([]models.Candle, len(resp.Elements))
-	for i, element := range resp.Elements {
+	candles := make([]models.Candle, len(coinexCandles))
+	for i, element := range coinexCandles {
 		candle := models.Candle{
-			Time:         time.Unix(element.Time, 0),
+			Time:         element.Time,
 			Open:         element.Open,
 			High:         element.High,
 			Low:          element.Low,
@@ -256,6 +253,8 @@ func (w *Worker) checkForLastCandle(p *pair) (int, error) {
 		buffer.CandleBuffer.Push(&candle)
 		candles[i] = candle
 	}
+
+	w.logger.Infof("ready for insert %v", len(candles))
 	if err = w.candlesRepo.BulkInsert(w.ctx, candles); err != nil {
 		w.logger.WithError(err).Error("failed to insert candles")
 		return 0, err
@@ -279,14 +278,6 @@ func (w *Worker) checkForLastCandle(p *pair) (int, error) {
 		w.logger.WithError(err).Error("failed to produce candle")
 		return 0, err
 	}
-
-	//_, err := w.functionsService.AsyncOHLC(context.Background(), &coreApi.AsyncOHLCReq{
-	//	Items:    items,
-	//	Platform: platformPair.Platform,
-	//})
-	//if err != nil {
-	//	w.logger.WithError(err).Errorf("failed to create last candle request for %v", platformPair.Platform)
-	//}
 	return len(candles), nil
 }
 

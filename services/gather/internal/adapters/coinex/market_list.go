@@ -8,25 +8,27 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 )
 
-type marketInfo struct {
-	Market                      string `json:"market"`
-	BaseCurrency                string `json:"base_ccy"`
-	QuoteCurrency               string `json:"quote_ccy"`
-	MakerFeeRate                string `json:"maker_fee_rate"`
-	TakerFeeRate                string `json:"taker_fee_rate"`
-	MinAmount                   string `json:"min_amount"`
-	BaseCurrencyPrecision       uint8  `json:"base_ccy_precision"`
-	QuoteCurrencyPrecision      uint8  `json:"quote_ccy_precision"`
-	IsAmmAvailable              bool   `json:"is_amm_available"`
-	IsApiTradingAvailable       bool   `json:"is_api_trading_available"`
-	IsMarginAvailable           bool   `json:"is_margin_available"`
-	IsPremarketTradingAvailable bool   `json:"is_premarket_trading_available"`
+type market struct {
+	BuyAssetType  string `json:"buy_asset_type"`
+	CreateTime    int64  `json:"create_time"`
+	IsPre         bool   `json:"is_pre"`
+	LeastAmount   string `json:"least_amount"`
+	MakerFeeRate  string `json:"maker_fee_rate"`
+	Market        string `json:"market"`
+	SellAssetType string `json:"sell_asset_type"`
+	TakerFeeRate  string `json:"taker_fee_rate"`
+}
+
+type marketList struct {
+	DefaultTradingArea string            `json:"default_trading_area"`
+	MarketInfo         map[string]market `json:"market_info"`
 }
 
 func (c Coinex) MarketList(ctx context.Context) (domain.CoinexMarkets, error) {
-	url := fmt.Sprintf("%v/spot/market", c.cfg.BaseURL)
+	url := fmt.Sprintf("%v/res/market/", c.cfg.BaseURL)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return domain.CoinexMarkets{}, err
@@ -47,7 +49,7 @@ func (c Coinex) MarketList(ctx context.Context) (domain.CoinexMarkets, error) {
 		return domain.CoinexMarkets{}, err
 	}
 
-	respEntity := baseResponse[[]marketInfo]{}
+	respEntity := baseResponse[marketList]{}
 	err = json.Unmarshal(body, &respEntity)
 	if err != nil {
 		return domain.CoinexMarkets{}, err
@@ -57,31 +59,28 @@ func (c Coinex) MarketList(ctx context.Context) (domain.CoinexMarkets, error) {
 		return domain.CoinexMarkets{}, fmt.Errorf("invalid response code: %d", respEntity.Code)
 	}
 
-	markets := make([]domain.CoinexMarket, len(respEntity.Data))
-	for i, market := range respEntity.Data {
-		markets[i] = domain.CoinexMarket{
+	markets := make([]domain.CoinexMarket, 0)
+	for _, market := range respEntity.Data.MarketInfo {
+		m := domain.CoinexMarket{
 			Market:                      market.Market,
-			BaseCurrency:                market.BaseCurrency,
-			QuoteCurrency:               market.QuoteCurrency,
-			BaseCurrencyPrecision:       market.BaseCurrencyPrecision,
-			QuoteCurrencyPrecision:      market.QuoteCurrencyPrecision,
-			IsAmmAvailable:              market.IsAmmAvailable,
-			IsApiTradingAvailable:       market.IsApiTradingAvailable,
-			IsMarginAvailable:           market.IsMarginAvailable,
-			IsPremarketTradingAvailable: market.IsPremarketTradingAvailable,
+			BaseCurrency:                market.SellAssetType,
+			QuoteCurrency:               market.BuyAssetType,
+			IsPremarketTradingAvailable: market.IsPre,
+			IssueDate:                   time.Unix(market.CreateTime, 0),
 		}
-		markets[i].MakerFeeRate, err = strconv.ParseFloat(market.MakerFeeRate, 64)
+		m.MakerFeeRate, err = strconv.ParseFloat(market.MakerFeeRate, 64)
 		if err != nil {
 			continue
 		}
-		markets[i].TakerFeeRate, err = strconv.ParseFloat(market.TakerFeeRate, 64)
+		m.TakerFeeRate, err = strconv.ParseFloat(market.TakerFeeRate, 64)
 		if err != nil {
 			continue
 		}
-		markets[i].MinAmount, err = strconv.ParseFloat(market.MinAmount, 64)
+		m.MinAmount, err = strconv.ParseFloat(market.LeastAmount, 64)
 		if err != nil {
 			continue
 		}
+		markets = append(markets, m)
 	}
 
 	coinexMarkets := domain.CoinexMarkets{

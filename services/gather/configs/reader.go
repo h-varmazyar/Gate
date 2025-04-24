@@ -70,6 +70,7 @@ func Read() (*Config, error) {
 			GrpcAddress: loadString("CORE_GRPC_ADDRESS"),
 		},
 		CoinexAdapter: CoinexAdapter{
+			APIBaseURL:        loadString("COINEX_ADAPTER_API_BASE_URL"),
 			BaseURL:           loadString("COINEX_ADAPTER_BASE_URL"),
 			SocksProxyAddress: loadString("SOCKS_PROXY_ADDRESS"),
 		},

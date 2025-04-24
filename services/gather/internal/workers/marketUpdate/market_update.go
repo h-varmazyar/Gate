@@ -133,28 +133,27 @@ func (w *Worker) update() {
 	}
 
 	for _, market := range markets.List {
-		if market.IsApiTradingAvailable {
-			localMarket := models.Market{
-				IsPremarketTradingAvailable: market.IsPremarketTradingAvailable,
-				IsAmmAvailable:              market.IsAmmAvailable,
-				IsMarginAvailable:           market.IsMarginAvailable,
+		localMarket := models.Market{
+			IsPremarketTradingAvailable: market.IsPremarketTradingAvailable,
+			IsAmmAvailable:              market.IsAmmAvailable,
+			IsMarginAvailable:           market.IsMarginAvailable,
 
-				BaseCurrencyPrecision:  market.BaseCurrencyPrecision,
-				QuoteCurrencyPrecision: market.QuoteCurrencyPrecision,
-				TakerFeeRate:           market.TakerFeeRate,
-				MakerFeeRate:           market.MakerFeeRate,
-				QuoteCurrency: &models.Asset{
-					Symbol: market.QuoteCurrency,
-				},
-				MinAmount: market.MinAmount,
-				BaseCurrency: &models.Asset{
-					Symbol: market.BaseCurrency,
-				},
-				Name:   market.Market,
-				Status: models.MarketStatusEnable,
-			}
-			remoteMarkets = append(remoteMarkets, localMarket)
+			BaseCurrencyPrecision:  market.BaseCurrencyPrecision,
+			QuoteCurrencyPrecision: market.QuoteCurrencyPrecision,
+			TakerFeeRate:           market.TakerFeeRate,
+			MakerFeeRate:           market.MakerFeeRate,
+			QuoteCurrency: &models.Asset{
+				Symbol: market.QuoteCurrency,
+			},
+			MinAmount: market.MinAmount,
+			BaseCurrency: &models.Asset{
+				Symbol: market.BaseCurrency,
+			},
+			Name:      market.Market,
+			IssueDate: market.IssueDate,
+			Status:    models.MarketStatusEnable,
 		}
+		remoteMarkets = append(remoteMarkets, localMarket)
 	}
 
 	w.logger.Infof("remote market len: %v", len(remoteMarkets))

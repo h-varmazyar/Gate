@@ -16,7 +16,7 @@ type Ticker struct {
 }
 
 func (c Coinex) MarketsTicker(_ context.Context) ([]candleTicker.Ticker, error) {
-	url := fmt.Sprintf("%v/spot/ticker", c.cfg.BaseURL)
+	url := fmt.Sprintf("%v/spot/ticker", c.cfg.APIBaseURL)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err

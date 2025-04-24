@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/h-varmazyar/Gate/pkg/db"
@@ -84,12 +85,14 @@ func main() {
 		marketUpdateWorker.ImmediateUpdate()
 	}
 
+	fmt.Println(int64(time.Minute * 15))
+
 	if err = lastCandleWorker.Run(); err != nil {
 		panic(err)
 	}
-	if err = candleTickerWorker.Start(); err != nil {
-		panic(err)
-	}
+	//if err = candleTickerWorker.Run(); err != nil {
+	//	panic(err)
+	//}
 	if err = marketUpdateWorker.Run(scheduler); err != nil {
 		panic(err)
 	}
