@@ -60,7 +60,7 @@ services:
     volumes:
       - ./configs/hysteria.yaml:/etc/hysteria/config.yaml:ro
     ports:
-      - "8390:1080"  # expose SOCKS5 port
+      - "1080:1080"  # expose SOCKS5 port
     cap_add:
       - NET_ADMIN
     devices:
