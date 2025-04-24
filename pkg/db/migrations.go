@@ -31,7 +31,7 @@ func createMigrateTable(ctx context.Context, db *DB) error {
 }
 
 func migrate(ctx context.Context, db *DB) error {
-	fmt.Println("migrationnnnnnn")
+	fmt.Println("migrating databases")
 
 	dir, err := os.Getwd()
 	if err != nil {
