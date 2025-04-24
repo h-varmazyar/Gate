@@ -42,7 +42,8 @@ services:
     image: docker.iranserver.com/gatec/gather:${VERSION}
     volumes:
       - ./configs/gather.env:/app/.env
-    network_mode: "service:proxy-router"
+    networks:
+      - gate
     depends_on:
       - postgres
       - redis
@@ -101,3 +102,10 @@ services:
       - redis
     restart: always
 
+networks:
+  gate:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+          gateway: 172.28.0.1
