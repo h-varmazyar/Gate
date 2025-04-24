@@ -5,8 +5,8 @@ services:
     container_name: gate-nats-server
     image: docker.iranserver.com/nats:latest
     ports:
-      - "4222:4222" # Port for client connections
-      - "8222:8222" # Port for monitoring (optional)
+      - "8321:4222" # Port for client connections
+      - "8322:8222" # Port for monitoring (optional)
     environment:
       - NATS_MAX_PAYLOAD=10MB # Optional: Increase max payload size
     networks:
@@ -54,23 +54,13 @@ services:
       - "8351:5672"
     restart: always
 
-#  proxy-router:
-#    container_name: gate-proxy
-#    image: docker.iranserver.com/gatec/proxy-router:${VERSION}
-#    network_mode: "service:hysteria"
-#    cap_add:
-#      - NET_ADMIN
-#    sysctls:
-#      - net.ipv4.ip_forward=1
-
-
   hysteria:
     container_name: gate-hysteria
     image: docker.iranserver.com/gatec/hysteria:${VERSION}
     volumes:
       - ./configs/hysteria.yaml:/etc/hysteria/config.yaml:ro
     ports:
-      - "1080:1080"  # expose SOCKS5 port
+      - "8390:1080"  # expose SOCKS5 port
     cap_add:
       - NET_ADMIN
     devices:
@@ -95,10 +85,4 @@ networks:
       config:
         - subnet: 172.28.0.0/16
           gateway: 172.28.0.1
-#  appnet:
-#    driver: bridge
-#    ipam:
-#      config:
-#        - subnet: 172.28.0.0/16
-#          gateway: 172.28.0.1
 
