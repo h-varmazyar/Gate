@@ -117,6 +117,6 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ env.SERVER_USERNAME }}@${{ env.SERVER_HOST }} << EOF
             cd /home/${{ env.SERVER_USERNAME }}/gate
             export VERSION=${{ env.DOCKER_IMAGE_TAG }}
-            docker compose -f \$COMPOSE_FILE pull $services_list
-            docker compose -f \$COMPOSE_FILE up -d $services_list
+#            docker compose -f \$COMPOSE_FILE pull $services_list
+            docker compose -f \$COMPOSE_FILE up --detach $services_list
           EOF
