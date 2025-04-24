@@ -95,11 +95,7 @@ jobs:
 
       - name: Copy Docker Compose to server
         run: |
-          if [[ "${{ needs.build.outputs.tag_type }}" == "infra" ]]; then
-            scp -o StrictHostKeyChecking=no deploy/docker-compose.infra.yml ${{ env.SERVER_USERNAME }}@${{ env.SERVER_HOST }}:/home/${{ env.SERVER_USERNAME }}/gate
-          else
-            scp -o StrictHostKeyChecking=no deploy/docker-compose.yml ${{ env.SERVER_USERNAME }}@${{ env.SERVER_HOST }}:/home/${{ env.SERVER_USERNAME }}/gate
-          fi
+          scp -o StrictHostKeyChecking=no deploy/docker-compose.yml ${{ env.SERVER_USERNAME }}@${{ env.SERVER_HOST }}:/home/${{ env.SERVER_USERNAME }}/gate
 
       - name: Deploy updated services via Docker Compose
         run: |
@@ -109,14 +105,8 @@ jobs:
             services_list+=" $service"
           done
 
-          if [[ "${{ needs.build.outputs.tag_type }}" == "infra" ]]; then
-            COMPOSE_FILE="docker-compose.infra.yml"
-          else
-            COMPOSE_FILE="docker-compose.yml"
-          fi
-
           ssh -o StrictHostKeyChecking=no ${{ env.SERVER_USERNAME }}@${{ env.SERVER_HOST }} << EOF
             cd /home/${{ env.SERVER_USERNAME }}/gate
             export VERSION=${{ env.DOCKER_IMAGE_TAG }}
-            docker compose -f $COMPOSE_FILE up -d $services_list
+            docker compose -f docker-compose.yml up -d $services_list
           EOF
