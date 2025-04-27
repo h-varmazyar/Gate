@@ -226,6 +226,7 @@ func (w *Worker) checkForLastCandle(p *pair) (int, error) {
 		}
 	}
 
+	w.logger.Infof("getting candles for %v", p.Market.Name)
 	coinexCandles, err := w.coinexAdapter.OHLC(context.Background(), p.Market, p.Resolution, last.Time, time.Now())
 	if err != nil {
 		return 0, err
