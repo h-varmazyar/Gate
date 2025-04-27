@@ -257,6 +257,7 @@ func (w *Worker) checkForLastCandle(p *pair) (int, error) {
 		candles[i] = candle
 	}
 
+	w.logger.Infof("inserting %v candles into %v", len(candles), p.Market.Name)
 	if err = w.candlesRepo.BulkInsert(w.ctx, candles); err != nil {
 		w.logger.WithError(err).Error("failed to insert candles")
 		return 0, err
