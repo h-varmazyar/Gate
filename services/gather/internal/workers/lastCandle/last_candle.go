@@ -145,12 +145,13 @@ func (w *Worker) AttachMarket(ctx context.Context, market models.Market) error {
 
 func (w *Worker) DetachMarket(_ context.Context, market models.Market) error {
 	w.lock.Lock()
+	newPairs := make([]*pair, 0)
 	for i, _ := range w.pairs {
-		if w.pairs[i].Market.ID == market.ID {
-			w.pairs = append(w.pairs[:i], w.pairs[i+1:]...)
-			i--
+		if w.pairs[i].Market.ID != market.ID {
+			newPairs = append(newPairs, w.pairs[i])
 		}
 	}
+	w.pairs = newPairs
 	w.lock.Unlock()
 	return nil
 }
@@ -230,10 +231,12 @@ func (w *Worker) checkForLastCandle(p *pair) (int, error) {
 		return 0, err
 	}
 
-	w.logger.Infof("cadnels: %v", len(coinexCandles))
-
 	if coinexCandles == nil {
 		return 0, errors.New(w.ctx, codes.NotFound)
+	}
+
+	if len(coinexCandles) == 0 {
+		return 0, nil
 	}
 
 	candles := make([]models.Candle, len(coinexCandles))
@@ -254,7 +257,6 @@ func (w *Worker) checkForLastCandle(p *pair) (int, error) {
 		candles[i] = candle
 	}
 
-	w.logger.Infof("ready for insert %v", len(candles))
 	if err = w.candlesRepo.BulkInsert(w.ctx, candles); err != nil {
 		w.logger.WithError(err).Error("failed to insert candles")
 		return 0, err
