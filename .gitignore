@@ -3,6 +3,7 @@
 .metals
 # Secret files
 *.secret
+*.vscode
 
 *.env
 *.ini

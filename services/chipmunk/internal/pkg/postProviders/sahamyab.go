@@ -48,11 +48,11 @@ type Item struct {
 
 func NewSahamyab(log *log.Logger, postCollectorURL string, networkService networkAPI.RequestServiceClient, postCallbackChan chan *entity.Post) *Sahamyab {
 	return &Sahamyab{
-		PostsCollectorURL:      postCollectorURL,
-		SinglePostCollectorURL: "https://www.sahamyab.com/guest/twiter/item?v=0.1",
-		NetworkService:         networkService,
-		PostCallbackChan:       postCallbackChan,
-		Log:                    log,
+		PostsCollectorURL: postCollectorURL,
+		// SinglePostCollectorURL: "https://www.sahamyab.com/guest/twiter/item?v=0.1",
+		NetworkService:   networkService,
+		PostCallbackChan: postCallbackChan,
+		Log:              log,
 	}
 }
 
@@ -65,7 +65,7 @@ func (c *Sahamyab) Collect(_ context.Context, _ *chipmunkAPI.Asset, lastLoadedId
 		return
 	}
 
-	ticker := time.NewTicker(time.Second / 20)
+	ticker := time.NewTicker(time.Minute / 2)
 	for {
 		select {
 		case <-ticker.C:

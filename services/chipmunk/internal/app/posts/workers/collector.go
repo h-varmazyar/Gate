@@ -15,7 +15,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type PostCollector interface {
@@ -37,6 +36,7 @@ type Collector struct {
 }
 
 func NewCollector(_ context.Context, log *log.Logger, configs Configs, repository CollectorRepository) *Collector {
+	log.Infof("initializing collector worker")
 	return &Collector{
 		configs:          configs,
 		log:              log,
@@ -51,7 +51,6 @@ func (w *Collector) Start(ctx context.Context) {
 	}
 	w.log.Infof("starting collector worker")
 	networkConn := grpcext.NewConnection(w.configs.NetworkAddress)
-	w.log.Infof("network address: %v", w.configs.NetworkAddress)
 	networkService := networkAPI.NewRequestServiceClient(networkConn)
 	go w.listenPostCallback(ctx)
 	go w.collectSahamyabPosts(ctx, networkService)
@@ -65,18 +64,21 @@ func (w *Collector) listenPostCallback(ctx context.Context) {
 	}
 
 	//providersPosts := make(map[chipmunkAPI.Provider][]*entity.Post)
-	posts := make([]entity.Post, 0)
+	// posts := make([]entity.Post, 0)
 	for {
 		select {
 		case post := <-w.postCallbackChan:
-			posts = append(posts, *post)
-			if len(posts) > 999 {
-				w.log.Infof("saving batch posts at %v", time.Now())
-				if err := w.repository.BatchSave(ctx, posts); err != nil {
-					w.log.WithError(err).Errorf("failed to save post: %v", post)
-				}
-				posts = make([]entity.Post, 0)
+			if err := w.repository.SavePost(ctx, post); err != nil {
+				w.log.WithError(err).Error("failed to save post")
 			}
+			// posts = append(posts, *post)
+			// if len(posts) > 9 {
+			// 	w.log.Infof("saving batch posts at %v", time.Now())
+			// 	if err := w.repository.BatchSave(ctx, posts); err != nil {
+			// 		w.log.WithError(err).Errorf("failed to save post: %v", post)
+			// 	}
+			// 	posts = make([]entity.Post, 0)
+			// }
 			//provider := post.Provider
 			////if post.PostedAt.Before(lastDay) {
 			////	filename := lastDay.Format(time.DateOnly)
@@ -124,7 +126,7 @@ func (w *Collector) collectSahamyabPosts(ctx context.Context, networkService net
 
 	w.sahamyabPostCollector = postProviders.NewSahamyab(w.log, w.configs.SahamyabPostCollectorURL, networkService, w.postCallbackChan)
 
-	w.sahamyabPostCollector.Collect(ctx, nil, "13220384")
+	w.sahamyabPostCollector.Collect(ctx, nil, "457934135")
 
 }
 
