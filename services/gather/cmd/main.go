@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/h-varmazyar/Gate/pkg/db"
@@ -12,13 +11,14 @@ import (
 	"github.com/h-varmazyar/Gate/services/gather/configs"
 	"github.com/h-varmazyar/Gate/services/gather/internal/adapters/coinex"
 	"github.com/h-varmazyar/Gate/services/gather/internal/adapters/core"
-	candlesProducer "github.com/h-varmazyar/Gate/services/gather/internal/brokers/producer/candles"
+	candlesProducer "github.com/h-varmazyar/Gate/services/gather/internal/brokers/producer"
 	"github.com/h-varmazyar/Gate/services/gather/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/gather/internal/repositories"
 	"github.com/h-varmazyar/Gate/services/gather/internal/services/candles"
 	"github.com/h-varmazyar/Gate/services/gather/internal/workers/candleTicker"
 	"github.com/h-varmazyar/Gate/services/gather/internal/workers/lastCandle"
 	"github.com/h-varmazyar/Gate/services/gather/internal/workers/marketUpdate"
+	"github.com/h-varmazyar/Gate/services/gather/internal/workers/tweetReader"
 	"github.com/nats-io/nats.go"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
@@ -62,7 +62,7 @@ func main() {
 	}
 	defer natsConnection.Close()
 
-	candlesProducer := candlesProducer.NewProducer(logger, natsConnection)
+	natsProducer := candlesProducer.NewProducer(logger, natsConnection)
 
 	assetsRepo := repositories.NewAssetRepository(logger, dbInstance.DB)
 	candlesRepo := repositories.NewCandleRepository(logger, dbInstance.DB)
@@ -77,23 +77,28 @@ func main() {
 
 	candlesService := candles.NewService(logger, candlesRepo)
 
-	lastCandleWorker := lastCandle.NewWorker(logger, cfg.LastCandleWorker, coreAdapter, coinexAdapter, candlesRepo, marketsRepo, resolutionsRepo, candlesProducer)
-	candleTickerWorker := candleTicker.NewWorker(logger, cfg.TickerWorker, coinexAdapter, candlesProducer, marketsRepo)
+	lastCandleWorker := lastCandle.NewWorker(logger, cfg.LastCandleWorker, coreAdapter, coinexAdapter, candlesRepo, marketsRepo, resolutionsRepo, natsProducer)
+	candleTickerWorker := candleTicker.NewWorker(logger, cfg.TickerWorker, coinexAdapter, natsProducer, marketsRepo)
 	marketUpdateWorker := marketUpdate.NewWorker(logger, cfg.MarketUpdateWorker, assetsRepo, candlesRepo, marketsRepo, resolutionsRepo, coreAdapter, coinexAdapter, candleTickerWorker, lastCandleWorker)
+	tweetReaderWorker := tweetReader.NewWorker(logger, cfg.TweetReader, natsProducer)
 
 	if cfg.WarmupWorker.NeedWarmup {
 		marketUpdateWorker.ImmediateUpdate()
 	}
-
-	fmt.Println(int64(time.Minute * 15))
-
-	if err = lastCandleWorker.Run(); err != nil {
-		panic(err)
-	}
-	//if err = candleTickerWorker.Run(); err != nil {
+	//
+	//fmt.Println(int64(time.Minute * 15))
+	//
+	//if err = lastCandleWorker.Run(); err != nil {
 	//	panic(err)
 	//}
-	if err = marketUpdateWorker.Run(scheduler); err != nil {
+	////if err = candleTickerWorker.Run(); err != nil {
+	////	panic(err)
+	////}
+	//if err = marketUpdateWorker.Run(scheduler); err != nil {
+	//	panic(err)
+	//}
+
+	if err = tweetReaderWorker.Start(); err != nil {
 		panic(err)
 	}
 

@@ -27,6 +27,7 @@ type Config struct {
 
 	MarketUpdateWorker WorkerMarketUpdate
 	LastCandleWorker   WorkerLastCandle
+	TweetReader        WorkerTweetReader
 	TickerWorker       WorkerTicker
 	WarmupWorker       WorkerWarmup
 

@@ -1,4 +1,9 @@
-package candles
+package producer
+
+import (
+	"github.com/lib/pq"
+	"time"
+)
 
 type Candle struct {
 	Timestamp int64   `json:"timestamp"`
@@ -18,4 +23,15 @@ type CandlePayload struct {
 type TickerPayload struct {
 	MarketID  uint    `json:"market_id"`
 	LastPrice float64 `json:"last_price"`
+}
+
+type PostPayload struct {
+	PostedAt       time.Time
+	Id             string
+	Content        string
+	ParentId       string
+	SenderUsername string
+	Provider       string
+	Tags           pq.StringArray
+	LikeCount      uint32
 }

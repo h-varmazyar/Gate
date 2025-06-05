@@ -2,7 +2,7 @@ package candleTicker
 
 import (
 	"github.com/h-varmazyar/Gate/services/gather/configs"
-	candlesProducer "github.com/h-varmazyar/Gate/services/gather/internal/brokers/producer/candles"
+	"github.com/h-varmazyar/Gate/services/gather/internal/brokers/producer"
 	"github.com/h-varmazyar/Gate/services/gather/internal/models"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
@@ -30,7 +30,7 @@ type Worker struct {
 	logger         *log.Logger
 	cfg            configs.WorkerTicker
 	coinexAdapter  coinexAdapter
-	candleProducer *candlesProducer.Producer
+	candleProducer *producer.Producer
 	lock           sync.Mutex
 	ctx            context.Context
 	marketIDMap    map[string]uint
@@ -41,7 +41,7 @@ func NewWorker(
 	logger *log.Logger,
 	configs configs.WorkerTicker,
 	coinexAdapter coinexAdapter,
-	candlesProducer *candlesProducer.Producer,
+	candlesProducer *producer.Producer,
 	marketsRepo marketsRepo,
 ) *Worker {
 	return &Worker{
@@ -106,7 +106,7 @@ func (w *Worker) run() {
 			for _, t := range tickers {
 				marketID, ok := w.marketIDMap[t.MarketName]
 				if ok {
-					payload := candlesProducer.TickerPayload{
+					payload := producer.TickerPayload{
 						MarketID:  marketID,
 						LastPrice: t.LastPrice,
 					}

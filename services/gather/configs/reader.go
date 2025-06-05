@@ -56,6 +56,7 @@ func Read() (*Config, error) {
 		LastCandleWorker: WorkerLastCandle{
 			RunningInterval: loadDuration("LAST_CANDLE_WORKER_RUNNING_INTERVAL"),
 		},
+		TweetReader: WorkerTweetReader{},
 		TickerWorker: WorkerTicker{
 			RunningInterval: loadDuration("TICKER_WORKER_RUNNING_INTERVAL"),
 		},

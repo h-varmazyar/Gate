@@ -15,6 +15,9 @@ type WorkerLastCandle struct {
 	RunningInterval time.Duration
 }
 
+type WorkerTweetReader struct {
+}
+
 type WorkerTicker struct {
 	RunningInterval time.Duration
 }

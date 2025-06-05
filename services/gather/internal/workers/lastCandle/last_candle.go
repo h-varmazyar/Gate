@@ -5,7 +5,7 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	"github.com/h-varmazyar/Gate/services/gather/configs"
-	candlesProducer "github.com/h-varmazyar/Gate/services/gather/internal/brokers/producer/candles"
+	"github.com/h-varmazyar/Gate/services/gather/internal/brokers/producer"
 	"github.com/h-varmazyar/Gate/services/gather/internal/models"
 	"github.com/h-varmazyar/Gate/services/gather/internal/pkg/buffer"
 	log "github.com/sirupsen/logrus"
@@ -58,7 +58,7 @@ type Worker struct {
 	resolutionsRepo resolutionsRepo
 	pairs           []*pair
 	lock            sync.Mutex
-	candleProducer  *candlesProducer.Producer
+	candleProducer  *producer.Producer
 }
 
 type pair struct {
@@ -74,7 +74,7 @@ func NewWorker(
 	candlesRepo candlesRepo,
 	marketsRepo marketsRepo,
 	resolutionsRepo resolutionsRepo,
-	candlesProducer *candlesProducer.Producer,
+	candlesProducer *producer.Producer,
 ) *Worker {
 	return &Worker{
 		logger:          logger,
@@ -264,10 +264,10 @@ func (w *Worker) checkForLastCandle(p *pair) (int, error) {
 		return 0, err
 	}
 
-	payload := candlesProducer.CandlePayload{
+	payload := producer.CandlePayload{
 		MarketID:     p.Market.ID,
 		ResolutionID: p.Resolution.ID,
-		Candles: []candlesProducer.Candle{
+		Candles: []producer.Candle{
 			{
 				Timestamp: candles[len(candles)-1].Time.Unix(),
 				Open:      candles[len(candles)-1].Open,
