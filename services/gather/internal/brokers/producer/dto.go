@@ -27,11 +27,10 @@ type TickerPayload struct {
 
 type PostPayload struct {
 	PostedAt       time.Time
-	Id             string
+	Id             uint
 	Content        string
-	ParentId       string
 	SenderUsername string
 	Provider       string
 	Tags           pq.StringArray
-	LikeCount      uint32
+	LikeCount      int
 }

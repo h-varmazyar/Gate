@@ -56,7 +56,11 @@ func Read() (*Config, error) {
 		LastCandleWorker: WorkerLastCandle{
 			RunningInterval: loadDuration("LAST_CANDLE_WORKER_RUNNING_INTERVAL"),
 		},
-		TweetReader: WorkerTweetReader{},
+		SahamyabArchive: WorkerSahamyabArchive{
+			SocksProxyAddress: loadString("SOCKS_PROXY_ADDRESS"),
+			GeminiAPIKey:      loadString("GEMINI_API_KEY"),
+		},
+		SahamyabStream: WorkerSahamyabStream{},
 		TickerWorker: WorkerTicker{
 			RunningInterval: loadDuration("TICKER_WORKER_RUNNING_INTERVAL"),
 		},
@@ -74,6 +78,9 @@ func Read() (*Config, error) {
 			APIBaseURL:        loadString("COINEX_ADAPTER_API_BASE_URL"),
 			BaseURL:           loadString("COINEX_ADAPTER_BASE_URL"),
 			SocksProxyAddress: loadString("SOCKS_PROXY_ADDRESS"),
+		},
+		SahamyabAdapter: SahamyabAdapter{
+			GuestBaseURL: loadString("SAHAMYAB_GUEST_BASE_URL"),
 		},
 		Nats: Nats{URL: loadString("NATS_URL")},
 	}

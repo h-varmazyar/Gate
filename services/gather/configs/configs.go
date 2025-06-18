@@ -27,14 +27,16 @@ type Config struct {
 
 	MarketUpdateWorker WorkerMarketUpdate
 	LastCandleWorker   WorkerLastCandle
-	TweetReader        WorkerTweetReader
+	SahamyabArchive    WorkerSahamyabArchive
+	SahamyabStream     WorkerSahamyabStream
 	TickerWorker       WorkerTicker
 	WarmupWorker       WorkerWarmup
 
-	CandleBuffer  CandleBuffer
-	CoreAdapter   CoreAdapter
-	CoinexAdapter CoinexAdapter
-	Nats          Nats
+	CandleBuffer    CandleBuffer
+	CoreAdapter     CoreAdapter
+	CoinexAdapter   CoinexAdapter
+	SahamyabAdapter SahamyabAdapter
+	Nats            Nats
 }
 
 type HTTP struct {

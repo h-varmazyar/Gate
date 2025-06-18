@@ -18,12 +18,16 @@ const (
 type Post struct {
 	gorm.Model
 	PostedAt       time.Time      `gorm:"not null"`
-	Id             string         `gorm:"primarykey"`
 	Content        string         `gorm:"type:varchar(4094)"`
-	ParentId       string         `gorm:"type:varchar(32)"`
+	ParentId       uint           `gorm:"not null"`
 	SenderUsername string         `gorm:"type:varchar(64)"`
 	Provider       PostProvider   `gorm:"type:varchar(32)"`
 	Tags           pq.StringArray `gorm:"type:varchar(32)[]"`
-	Sentiment      float32        `gorm:"type:varchar(32)"`
-	LikeCount      uint32         `gorm:"default:0"`
+	Sentiment      string         `gorm:"type:varchar(32)"`
+	LikeCount      *int           `gorm:"default:null"`
+	RetwitCount    *int           `gorm:"default:null"`
+	CommentCount   *int           `gorm:"default:null"`
+	QuoteCount     *int           `gorm:"default:null"`
+	Type           string         `gorm:"type:varchar(32)"`
+	ParentID       *uint          `gorm:"default:null"`
 }

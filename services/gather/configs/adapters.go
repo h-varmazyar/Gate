@@ -9,3 +9,7 @@ type CoinexAdapter struct {
 	BaseURL           string `json:"base_url"`
 	SocksProxyAddress string `json:"socks_proxy_address"`
 }
+
+type SahamyabAdapter struct {
+	GuestBaseURL string `json:"guest_base_url"`
+}

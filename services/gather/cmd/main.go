@@ -11,6 +11,7 @@ import (
 	"github.com/h-varmazyar/Gate/services/gather/configs"
 	"github.com/h-varmazyar/Gate/services/gather/internal/adapters/coinex"
 	"github.com/h-varmazyar/Gate/services/gather/internal/adapters/core"
+	"github.com/h-varmazyar/Gate/services/gather/internal/adapters/sahamyab"
 	candlesProducer "github.com/h-varmazyar/Gate/services/gather/internal/brokers/producer"
 	"github.com/h-varmazyar/Gate/services/gather/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/gather/internal/repositories"
@@ -18,7 +19,7 @@ import (
 	"github.com/h-varmazyar/Gate/services/gather/internal/workers/candleTicker"
 	"github.com/h-varmazyar/Gate/services/gather/internal/workers/lastCandle"
 	"github.com/h-varmazyar/Gate/services/gather/internal/workers/marketUpdate"
-	"github.com/h-varmazyar/Gate/services/gather/internal/workers/tweetReader"
+	"github.com/h-varmazyar/Gate/services/gather/internal/workers/sahamyabArchive"
 	"github.com/nats-io/nats.go"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
@@ -68,7 +69,9 @@ func main() {
 	candlesRepo := repositories.NewCandleRepository(logger, dbInstance.DB)
 	resolutionsRepo := repositories.NewResolutionRepository(logger, dbInstance.DB)
 	marketsRepo := repositories.NewMarketRepository(logger, dbInstance.DB)
+	postRepo := repositories.NewPostRepository(logger, dbInstance.DB)
 
+	sahamyabAdapter := sahamyab.NewSahamyab(cfg.SahamyabAdapter)
 	coreAdapter := core.NewCore(cfg.CoreAdapter)
 	coinexAdapter, err := coinex.NewCoinex(cfg.CoinexAdapter)
 	if err != nil {
@@ -80,7 +83,11 @@ func main() {
 	lastCandleWorker := lastCandle.NewWorker(logger, cfg.LastCandleWorker, coreAdapter, coinexAdapter, candlesRepo, marketsRepo, resolutionsRepo, natsProducer)
 	candleTickerWorker := candleTicker.NewWorker(logger, cfg.TickerWorker, coinexAdapter, natsProducer, marketsRepo)
 	marketUpdateWorker := marketUpdate.NewWorker(logger, cfg.MarketUpdateWorker, assetsRepo, candlesRepo, marketsRepo, resolutionsRepo, coreAdapter, coinexAdapter, candleTickerWorker, lastCandleWorker)
-	tweetReaderWorker := tweetReader.NewWorker(logger, cfg.TweetReader, natsProducer)
+	sahamyabArchiveWorker, err := sahamyabArchive.NewWorker(logger, cfg.SahamyabArchive, postRepo, sahamyabAdapter)
+	if err != nil {
+		log.WithError(err).Panicf("failed to initiate sahamyab archive worker")
+	}
+	//sahamyabStreamWorker := sahamyabStream.NewWorker(logger, cfg.SahamyabStream, natsProducer, postRepo)
 
 	if cfg.WarmupWorker.NeedWarmup {
 		marketUpdateWorker.ImmediateUpdate()
@@ -98,9 +105,13 @@ func main() {
 	//	panic(err)
 	//}
 
-	if err = tweetReaderWorker.Start(); err != nil {
+	if err = sahamyabArchiveWorker.Start(); err != nil {
 		panic(err)
 	}
+
+	//if err = sahamyabStreamWorker.Start(); err != nil {
+	//	panic(err)
+	//}
 
 	scheduler.Start()
 	defer scheduler.Shutdown()

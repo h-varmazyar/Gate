@@ -1,38 +1,47 @@
-package tweetReader
+package sahamyabStream
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/chromedp"
 	"github.com/h-varmazyar/Gate/services/gather/configs"
 	"github.com/h-varmazyar/Gate/services/gather/internal/brokers/producer"
+	"github.com/h-varmazyar/Gate/services/gather/internal/models"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/net/context"
+	"strconv"
 	"strings"
 	"time"
 )
 
-type TweetReader struct {
+type PostRepository interface {
+	Save(ctx context.Context, post models.Post) error
+}
+
+type SahamyabStream struct {
 	ctx        context.Context
 	cancelFunc context.CancelFunc
 	logger     *log.Logger
-	cfg        configs.WorkerTweetReader
+	cfg        configs.WorkerSahamyabStream
 	producer   *producer.Producer
+	postRepo   PostRepository
 
 	Running bool
 }
 
 func NewWorker(
 	logger *log.Logger,
-	configs configs.WorkerTweetReader,
+	configs configs.WorkerSahamyabStream,
 	producer *producer.Producer,
-) *TweetReader {
+	postRepo PostRepository,
+) *SahamyabStream {
 
-	return &TweetReader{
+	return &SahamyabStream{
 		logger:   logger,
 		cfg:      configs,
 		producer: producer,
+		postRepo: postRepo,
 	}
 }
 
@@ -50,7 +59,7 @@ const (
 // rawData = "d(7,1,'458016392',11,'## \\u0641\\u0646 \\u0627\\u0641\\u0632\\u0627\\u0631\\u000A\\u0641\\u0627\\u06CC\\u0646\\u0646\\u0634\\u0627\\u0644 \\u062A\\u0627\\u06CC\\u0645\\u0632\\u060C \\u0628\\u0647 \\u0646\\u0642\\u0644 \\u0627\\u0632 \\u06CC\\u06A9 \\u0645\\u0642\\u0627\\u0645 \\u0627\\u0631\\u0648\\u067E\\u0627\\u06CC\\u06CC: \\u000A\\u062F\\u0648\\u0644\\u062A \\u062A\\u0631\\u0627\\u0645\\u067E \\u0628\\u0647 \\u0627\\u064A\\u0631\\u0627\\u0646 \\u0627\\u0637\\u0644\\u0627\\u0639 \\u062F\\u0627\\u062F \\u06A9\\u0647 \\u0637\\u0628\\u0642 \\u062A\\u0648\\u0627\\u0641\\u0642 \\u0645\\u0648\\u0642\\u062A\\u060C \\u0628\\u0647 \\u0627\\u06CC\\u0646 \\u06A9\\u0634\\u0648\\u0631 \\u0627\\u062C\\u0627\\u0632\\u0647 \\u063A\\u0646\\u06CC\\u200C\\u0633\\u0627\\u0632\\u06CC \\u062F\\u0631 \\u0633\\u0637\\u062D \\u067E\\u0627\\u06CC\\u06CC\\u0646 \\u0631\\u0627 \\u0645\\u06CC\\u200C\\u062F\\u0647\\u062F.','2025-06-04T13:12:13Z',14,'1404/03/14 16:42',16);s(7,1);"
 )
 
-func (w *TweetReader) Start() error {
+func (w *SahamyabStream) Start() error {
 	//fmt.Println(responseParser(rawData))
 	//return nil
 
@@ -65,7 +74,7 @@ func (w *TweetReader) Start() error {
 	return nil
 }
 
-func (w *TweetReader) Stop() {
+func (w *SahamyabStream) Stop() {
 	if w.Running {
 		w.logger.Infof("stopping tweet reader")
 		w.cancelFunc()
@@ -73,7 +82,7 @@ func (w *TweetReader) Stop() {
 	}
 }
 
-func (w *TweetReader) createContext() {
+func (w *SahamyabStream) createContext() {
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.Flag("headless", false), // نمایش مرورگر
 		chromedp.Flag("disable-gpu", true),
@@ -84,14 +93,14 @@ func (w *TweetReader) createContext() {
 	//w.ctx, w.cancelFunc = chromedp.NewContext(context.Background())
 }
 
-func (w *TweetReader) runChromeDP() error {
+func (w *SahamyabStream) runChromeDP() error {
 	if err := chromedp.Run(w.ctx, network.Enable()); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (w *TweetReader) registerTweetReader() {
+func (w *SahamyabStream) registerTweetReader() {
 	var targetWSID string
 	var targetWSURL = "wss://push.sahamyab.com/lightstreamer"
 
@@ -115,9 +124,8 @@ func (w *TweetReader) registerTweetReader() {
 				return
 			}
 
-			postPayload := w.preparePost(items)
-			if err := w.producer.PublishPost(postPayload); err != nil {
-				w.logger.WithError(err).Error("failed to produce ticker")
+			if err := w.preparePost(items); err != nil {
+				w.logger.Error(err)
 			}
 		}
 	})
@@ -128,11 +136,16 @@ func (w *TweetReader) registerTweetReader() {
 	}
 }
 
-func (w *TweetReader) preparePost(items []string) producer.PostPayload {
-	post := producer.PostPayload{
-		Id:       items[2],
+func (w *SahamyabStream) preparePost(items []string) error {
+	post := models.Post{
 		Provider: "SAHAMYAB",
 	}
+	id, err := strconv.Atoi(items[2])
+	if err != nil {
+		return err
+	}
+
+	post.ID = uint(id)
 
 	switch items[3] {
 	case "9":
@@ -145,7 +158,28 @@ func (w *TweetReader) preparePost(items []string) producer.PostPayload {
 	}
 
 	post.Tags = fetchTags(post.Content)
-	return post
+
+	if err := w.postRepo.Save(w.ctx, post); err != nil {
+		w.logger.WithError(err).Error("failed to save stream post")
+		return err
+	}
+
+	postPayload := producer.PostPayload{
+		PostedAt:       post.PostedAt,
+		Id:             post.ID,
+		Content:        post.Content,
+		SenderUsername: post.SenderUsername,
+		Provider:       string(post.Provider),
+		Tags:           post.Tags,
+	}
+	if post.LikeCount != nil {
+		postPayload.LikeCount = *post.LikeCount
+	}
+	if err := w.producer.PublishPost(postPayload); err != nil {
+		w.logger.WithError(err).Error("failed to produce ticker")
+		return err
+	}
+	return nil
 }
 
 func responseParser(rawData string) []string {

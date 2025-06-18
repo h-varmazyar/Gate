@@ -15,7 +15,12 @@ type WorkerLastCandle struct {
 	RunningInterval time.Duration
 }
 
-type WorkerTweetReader struct {
+type WorkerSahamyabArchive struct {
+	SocksProxyAddress string
+	GeminiAPIKey      string
+}
+
+type WorkerSahamyabStream struct {
 }
 
 type WorkerTicker struct {
