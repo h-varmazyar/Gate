@@ -26,3 +26,12 @@ func (r PostRepository) Create(ctx context.Context, post models.Post) error {
 func (r PostRepository) BatchSave(ctx context.Context, posts []*models.Post) error {
 	return r.db.WithContext(ctx).CreateInBatches(&posts, 100).Error
 }
+
+func (r PostRepository) GetOldest(ctx context.Context, provider models.PostProvider) (*models.Post, error) {
+	post := new(models.Post)
+	return post, r.db.WithContext(ctx).
+		Model(&models.Post{}).
+		Where("provider = ?", provider).
+		Order("posted_at ASC").
+		First(post).Error
+}

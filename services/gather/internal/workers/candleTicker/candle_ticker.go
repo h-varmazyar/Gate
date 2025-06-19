@@ -2,7 +2,6 @@ package candleTicker
 
 import (
 	"github.com/h-varmazyar/Gate/services/gather/configs"
-	"github.com/h-varmazyar/Gate/services/gather/internal/brokers/producer"
 	"github.com/h-varmazyar/Gate/services/gather/internal/models"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
@@ -26,33 +25,30 @@ type Ticker struct {
 type Worker struct {
 	cancelFunc context.CancelFunc
 
-	started        bool
-	logger         *log.Logger
-	cfg            configs.WorkerTicker
-	coinexAdapter  coinexAdapter
-	candleProducer *producer.Producer
-	lock           sync.Mutex
-	ctx            context.Context
-	marketIDMap    map[string]uint
-	marketsRepo    marketsRepo
+	started       bool
+	logger        *log.Logger
+	cfg           configs.WorkerTicker
+	coinexAdapter coinexAdapter
+	lock          sync.Mutex
+	ctx           context.Context
+	marketIDMap   map[string]uint
+	marketsRepo   marketsRepo
 }
 
 func NewWorker(
 	logger *log.Logger,
 	configs configs.WorkerTicker,
 	coinexAdapter coinexAdapter,
-	candlesProducer *producer.Producer,
 	marketsRepo marketsRepo,
 ) *Worker {
 	return &Worker{
-		logger:         logger,
-		cfg:            configs,
-		coinexAdapter:  coinexAdapter,
-		candleProducer: candlesProducer,
-		lock:           sync.Mutex{},
-		ctx:            context.Background(),
-		marketIDMap:    make(map[string]uint),
-		marketsRepo:    marketsRepo,
+		logger:        logger,
+		cfg:           configs,
+		coinexAdapter: coinexAdapter,
+		lock:          sync.Mutex{},
+		ctx:           context.Background(),
+		marketIDMap:   make(map[string]uint),
+		marketsRepo:   marketsRepo,
 	}
 }
 
@@ -97,26 +93,22 @@ func (w *Worker) run() {
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			tickers, err := w.coinexAdapter.MarketsTicker(w.ctx)
+			_, err := w.coinexAdapter.MarketsTicker(w.ctx)
 			if err != nil {
 				w.logger.WithError(err).Error("Ticker error")
 				continue
 			}
-			//w.logger.Infof("ticker running %v", tickers)
-			for _, t := range tickers {
-				marketID, ok := w.marketIDMap[t.MarketName]
-				if ok {
-					payload := producer.TickerPayload{
-						MarketID:  marketID,
-						LastPrice: t.LastPrice,
-					}
-					if err = w.candleProducer.PublishTicker(payload); err != nil {
-						w.logger.WithError(err).Error("failed to produce ticker")
-						continue
-					}
-				}
 
-			}
+			//todo: push to buffer
+			//for _, t := range tickers {
+			//marketID, ok := w.marketIDMap[t.MarketName]
+			//if ok {
+			//payload := producer.TickerPayload{
+			//	MarketID:  marketID,
+			//	LastPrice: t.LastPrice,
+			//}
+			//}
+			//}
 		}
 	}
 }

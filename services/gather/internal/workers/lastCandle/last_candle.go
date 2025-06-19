@@ -5,7 +5,6 @@ import (
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	chipmunkApi "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	"github.com/h-varmazyar/Gate/services/gather/configs"
-	"github.com/h-varmazyar/Gate/services/gather/internal/brokers/producer"
 	"github.com/h-varmazyar/Gate/services/gather/internal/models"
 	"github.com/h-varmazyar/Gate/services/gather/internal/pkg/buffer"
 	log "github.com/sirupsen/logrus"
@@ -58,7 +57,6 @@ type Worker struct {
 	resolutionsRepo resolutionsRepo
 	pairs           []*pair
 	lock            sync.Mutex
-	candleProducer  *producer.Producer
 }
 
 type pair struct {
@@ -74,7 +72,6 @@ func NewWorker(
 	candlesRepo candlesRepo,
 	marketsRepo marketsRepo,
 	resolutionsRepo resolutionsRepo,
-	candlesProducer *producer.Producer,
 ) *Worker {
 	return &Worker{
 		logger:          logger,
@@ -86,7 +83,6 @@ func NewWorker(
 		resolutionsRepo: resolutionsRepo,
 		pairs:           []*pair{},
 		lock:            sync.Mutex{},
-		candleProducer:  candlesProducer,
 	}
 }
 
@@ -173,7 +169,6 @@ func (w *Worker) run() {
 			if len(w.pairs) == 0 {
 				continue
 			}
-			w.logger.Infof("tickkkkk")
 			//wg := &sync.WaitGroup{}
 			//wg.Add(len(w.pairs))
 			eachPeriodDuration := time.Duration(int64(w.cfg.RunningInterval) / int64(len(w.pairs)))
@@ -181,13 +176,11 @@ func (w *Worker) run() {
 			totalStart := time.Now()
 			for _, p := range w.pairs {
 				start := time.Now()
-				//go func(p *pair) {
-				length, err := w.checkForLastCandle(p)
-				if err != nil {
-					w.logger.WithError(err)
-				} else {
-					w.logger.Infof("len %v: %v", p.Market.ID, length)
+				if err := w.processPair(p); err != nil {
+					w.logger.WithError(err).Errorf("last candle processing failed")
 				}
+				//go func(p *pair) {
+
 				//wg.Done()
 				//}(p)
 				diff := time.Now().Sub(start)
@@ -217,8 +210,23 @@ func (w *Worker) fillEmptyBuffer(p *pair) {
 	return
 }
 
-func (w *Worker) checkForLastCandle(p *pair) (int, error) {
-	w.logger.Infof("getting candles %v", p.Market.Name)
+func (w *Worker) processPair(pair *pair) error {
+	candles, err := w.getCandles(pair)
+	if err != nil {
+		return err
+	}
+
+	if len(candles) > 0 {
+		w.logger.Infof("inserting %v candles into %v", len(candles), pair.Market.Name)
+		if err = w.candlesRepo.BulkInsert(w.ctx, candles); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (w *Worker) getCandles(p *pair) ([]models.Candle, error) {
+	w.logger.Infof("getting last candles %v", p.Market.Name)
 	last := buffer.CandleBuffer.Last(p.Market.ID, p.Resolution.ID)
 	if last == nil {
 		last = &models.Candle{
@@ -226,18 +234,17 @@ func (w *Worker) checkForLastCandle(p *pair) (int, error) {
 		}
 	}
 
-	w.logger.Infof("getting candles for %v", p.Market.Name)
 	coinexCandles, err := w.coinexAdapter.OHLC(context.Background(), p.Market, p.Resolution, last.Time, time.Now())
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	if coinexCandles == nil {
-		return 0, errors.New(w.ctx, codes.NotFound)
+		return nil, errors.New(w.ctx, codes.NotFound)
 	}
 
 	if len(coinexCandles) == 0 {
-		return 0, nil
+		return nil, nil
 	}
 
 	candles := make([]models.Candle, len(coinexCandles))
@@ -255,34 +262,12 @@ func (w *Worker) checkForLastCandle(p *pair) (int, error) {
 		}
 
 		buffer.CandleBuffer.Push(&candle)
-		candles[i] = candle
+		if candle.Time.Add(p.Resolution.Duration).Before(time.Now()) {
+			candles[i] = candle
+		}
 	}
 
-	w.logger.Infof("inserting %v candles into %v", len(candles), p.Market.Name)
-	if err = w.candlesRepo.BulkInsert(w.ctx, candles); err != nil {
-		w.logger.WithError(err).Error("failed to insert candles")
-		return 0, err
-	}
-
-	payload := producer.CandlePayload{
-		MarketID:     p.Market.ID,
-		ResolutionID: p.Resolution.ID,
-		Candles: []producer.Candle{
-			{
-				Timestamp: candles[len(candles)-1].Time.Unix(),
-				Open:      candles[len(candles)-1].Open,
-				High:      candles[len(candles)-1].High,
-				Low:       candles[len(candles)-1].Low,
-				Close:     candles[len(candles)-1].Close,
-				Volume:    candles[len(candles)-1].Volume,
-			},
-		},
-	}
-	if err = w.candleProducer.PublishCandleUpdates(payload); err != nil {
-		w.logger.WithError(err).Error("failed to produce candle")
-		return 0, err
-	}
-	return len(candles), nil
+	return candles, nil
 }
 
 //func (w *Worker) checkForLastCandle(p *pair) (int, error) {

@@ -12,7 +12,6 @@ import (
 	"github.com/h-varmazyar/Gate/services/gather/internal/adapters/coinex"
 	"github.com/h-varmazyar/Gate/services/gather/internal/adapters/core"
 	"github.com/h-varmazyar/Gate/services/gather/internal/adapters/sahamyab"
-	candlesProducer "github.com/h-varmazyar/Gate/services/gather/internal/brokers/producer"
 	"github.com/h-varmazyar/Gate/services/gather/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/gather/internal/repositories"
 	"github.com/h-varmazyar/Gate/services/gather/internal/services/candles"
@@ -63,7 +62,7 @@ func main() {
 	}
 	defer natsConnection.Close()
 
-	natsProducer := candlesProducer.NewProducer(logger, natsConnection)
+	//natsProducer := candlesProducer.NewProducer(logger, natsConnection)
 
 	assetsRepo := repositories.NewAssetRepository(logger, dbInstance.DB)
 	candlesRepo := repositories.NewCandleRepository(logger, dbInstance.DB)
@@ -80,8 +79,8 @@ func main() {
 
 	candlesService := candles.NewService(logger, candlesRepo)
 
-	lastCandleWorker := lastCandle.NewWorker(logger, cfg.LastCandleWorker, coreAdapter, coinexAdapter, candlesRepo, marketsRepo, resolutionsRepo, natsProducer)
-	candleTickerWorker := candleTicker.NewWorker(logger, cfg.TickerWorker, coinexAdapter, natsProducer, marketsRepo)
+	lastCandleWorker := lastCandle.NewWorker(logger, cfg.LastCandleWorker, coreAdapter, coinexAdapter, candlesRepo, marketsRepo, resolutionsRepo)
+	candleTickerWorker := candleTicker.NewWorker(logger, cfg.TickerWorker, coinexAdapter, marketsRepo)
 	marketUpdateWorker := marketUpdate.NewWorker(logger, cfg.MarketUpdateWorker, assetsRepo, candlesRepo, marketsRepo, resolutionsRepo, coreAdapter, coinexAdapter, candleTickerWorker, lastCandleWorker)
 	sahamyabArchiveWorker, err := sahamyabArchive.NewWorker(logger, cfg.SahamyabArchive, postRepo, sahamyabAdapter)
 	if err != nil {

@@ -1,6 +1,8 @@
 package buffer
 
 import (
+	"errors"
+	"fmt"
 	"github.com/h-varmazyar/Gate/services/gather/configs"
 	"github.com/h-varmazyar/Gate/services/gather/internal/models"
 	"sync"
@@ -63,6 +65,38 @@ func (buffer *candleBuffer) Last(marketID, resolutionID uint) *models.Candle {
 	if candles != nil {
 		return candles[0]
 	}
+	return nil
+}
+
+func (buffer *candleBuffer) UpdateLast(marketID uint, lastPrice float64) error {
+	buffer.lock.Lock()
+	defer buffer.lock.Unlock()
+
+	candleResolutions, ok := buffer.data[marketID]
+	if !ok {
+		return errors.New(fmt.Sprintf("candle resolutions not found for market %v", marketID))
+	}
+
+	for _, candles := range candleResolutions {
+		length := len(candles)
+		if length > 0 {
+			last := candles[length-1]
+
+			if last.Time.Add(last.Resolution.Duration).After(time.Now()) {
+				if lastPrice < last.Low {
+					last.Low = lastPrice
+				}
+
+				if lastPrice > last.High {
+					last.High = lastPrice
+				}
+
+				last.Close = lastPrice
+				//todo: publish candle
+			}
+		}
+	}
+
 	return nil
 }
 

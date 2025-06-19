@@ -2,6 +2,7 @@ package sahamyabArchive
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/h-varmazyar/Gate/services/gather/configs"
 	"github.com/h-varmazyar/Gate/services/gather/internal/domain"
@@ -10,6 +11,7 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/net/proxy"
 	"google.golang.org/genai"
+	"gorm.io/gorm"
 	"net"
 	"net/http"
 	"strings"
@@ -19,6 +21,7 @@ import (
 type PostRepository interface {
 	BatchSave(ctx context.Context, posts []*models.Post) error
 	Create(ctx context.Context, post models.Post) error
+	GetOldest(ctx context.Context, provider models.PostProvider) (*models.Post, error)
 }
 
 type SahamyabAdapter interface {
@@ -109,6 +112,17 @@ func (w *SahamyabArchive) run() {
 
 	page := 0
 	ScoredPostDate := ""
+
+	oldestPost, err := w.postRepo.GetOldest(w.ctx, models.PostProviderSahamyab)
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			w.logger.WithError(err).Error("failed to get last posted at")
+			return
+		}
+	} else {
+		ScoredPostDate = fmt.Sprintf("%v", oldestPost.PostedAt.UnixMilli())
+	}
+
 	for {
 		select {
 		case <-w.ctx.Done():
@@ -148,16 +162,6 @@ func (w *SahamyabArchive) run() {
 				}
 				ScoredPostDate = item.ScoredPostDate
 			}
-
-			//posts, err = w.detectPolarity(posts)
-			//if err != nil {
-			//	w.logger.WithError(err).Error("failed to detect polarity")
-			//}
-			//
-			//if err = w.postRepo.BatchSave(w.ctx, posts); err != nil {
-			//	w.logger.WithError(err).Error("failed to save posts")
-			//	continue
-			//}
 
 			page++
 

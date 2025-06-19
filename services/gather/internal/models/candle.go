@@ -7,8 +7,6 @@ import (
 
 const CandleTableName = "candles"
 
-//CREATE INDEX idx_candles_market_resolution_time ON public.candles (market_id, resolution_id, time DESC);
-
 type Candle struct {
 	gorm.Model
 	Time         time.Time
@@ -18,8 +16,10 @@ type Candle struct {
 	Close        float64
 	Volume       float64
 	Amount       float64
-	MarketID     uint `gorm:"index"`
-	ResolutionID uint `gorm:"index"`
+	MarketID     uint        `gorm:"index"`
+	Market       *Market     `gorm:"foreignKey:MarketID"`
+	ResolutionID uint        `gorm:"index"`
+	Resolution   *Resolution `gorm:"foreignKey:ResolutionID"`
 }
 
 func (o Candle) Table() string {
