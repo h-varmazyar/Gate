@@ -35,3 +35,12 @@ func (r PostRepository) GetOldest(ctx context.Context, provider models.PostProvi
 		Order("posted_at ASC").
 		First(post).Error
 }
+
+func (r PostRepository) List(ctx context.Context) ([]models.Post, error) {
+	posts := make([]models.Post, 0)
+	return posts, r.db.WithContext(ctx).Where("sentiment IS NULL").Limit(10).Find(&posts).Error
+}
+
+func (r PostRepository) UpdateSentiment(ctx context.Context, postID uint, sentiment float64) error {
+	return r.db.WithContext(ctx).Model(&models.Post{}).Where("id = ?", postID).UpdateColumn("sentiment", sentiment).Error
+}

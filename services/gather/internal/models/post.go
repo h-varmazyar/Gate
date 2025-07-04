@@ -23,7 +23,7 @@ type Post struct {
 	SenderUsername string         `gorm:"type:varchar(64)"`
 	Provider       PostProvider   `gorm:"type:varchar(32)"`
 	Tags           pq.StringArray `gorm:"type:varchar(32)[]"`
-	Sentiment      string         `gorm:"type:varchar(32)"`
+	Sentiment      float64        `gorm:"default:null"`
 	LikeCount      *int           `gorm:"default:null"`
 	RetwitCount    *int           `gorm:"default:null"`
 	CommentCount   *int           `gorm:"default:null"`

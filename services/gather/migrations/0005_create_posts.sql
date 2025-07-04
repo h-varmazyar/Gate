@@ -10,7 +10,7 @@ create table public.posts
     sender_username varchar(64),
     provider        varchar(32),
     tags            varchar(32)[],
-    sentiment       varchar(32),
+    sentiment       double precision default null,
     like_count      bigint,
     retwit_count    bigint,
     comment_count   bigint,

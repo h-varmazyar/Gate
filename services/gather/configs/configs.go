@@ -29,8 +29,8 @@ type Config struct {
 	LastCandleWorker   WorkerLastCandle
 	SahamyabArchive    WorkerSahamyabArchive
 	SahamyabStream     WorkerSahamyabStream
+	PostSentimentCheck WorkerPostSentimentCheck
 	TickerWorker       WorkerTicker
-	WarmupWorker       WorkerWarmup
 
 	CandleBuffer    CandleBuffer
 	CoreAdapter     CoreAdapter

@@ -84,7 +84,6 @@ func (s *Sahamyab) GetUserPageList(_ context.Context, input domain.GetScoredSaha
 	postList := domain.SahamyabPostList{
 		Items: posts,
 	}
-	fmt.Println(input.ScoredPostDate, postList.Items[len(postList.Items)-1].ScoredPostDate)
 
 	return postList, nil
 }

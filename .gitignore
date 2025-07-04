@@ -26,3 +26,5 @@ old-codes
 
 *.yaml
 *.yml
+
+.venv/

@@ -1,7 +1,6 @@
 package sahamyabArchive
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/h-varmazyar/Gate/services/gather/configs"
@@ -9,11 +8,7 @@ import (
 	"github.com/h-varmazyar/Gate/services/gather/internal/models"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
-	"golang.org/x/net/proxy"
-	"google.golang.org/genai"
 	"gorm.io/gorm"
-	"net"
-	"net/http"
 	"strings"
 	"time"
 )
@@ -28,15 +23,6 @@ type SahamyabAdapter interface {
 	GetUserPageList(ctx context.Context, input domain.GetScoredSahamyabPost) (domain.SahamyabPostList, error)
 }
 
-var (
-	sentimentDetectionPrompt = `
-please select the polarity of below tweets based on float value between -1 to 1. 
-the count of tweets are %v. tweets prepared based on json model with its id(tid) and text.
-return the polarity of each tweet in the json format with the key of tid for tweet id and value with polarity.
-%v
-`
-)
-
 type SahamyabArchive struct {
 	ctx             context.Context
 	cancelFunc      context.CancelFunc
@@ -44,7 +30,6 @@ type SahamyabArchive struct {
 	cfg             configs.WorkerSahamyabArchive
 	postRepo        PostRepository
 	sahamyabAdapter SahamyabAdapter
-	geminiClient    *genai.Client
 
 	Running bool
 }
@@ -54,7 +39,7 @@ func NewWorker(
 	cfg configs.WorkerSahamyabArchive,
 	postRepo PostRepository,
 	sahamyabAdapter SahamyabAdapter,
-) (*SahamyabArchive, error) {
+) *SahamyabArchive {
 
 	w := &SahamyabArchive{
 		logger:          logger,
@@ -65,37 +50,14 @@ func NewWorker(
 
 	w.ctx, w.cancelFunc = context.WithCancel(context.Background())
 
-	dialer, err := proxy.SOCKS5("tcp", cfg.SocksProxyAddress, nil, proxy.Direct)
-	if err != nil {
-		return nil, err
-	}
-
-	httpTransport := &http.Transport{
-		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-			return dialer.Dial(network, addr)
-		},
-	}
-
-	client := &http.Client{
-		Transport: httpTransport,
-		Timeout:   10 * time.Second,
-	}
-
-	w.geminiClient, err = genai.NewClient(w.ctx, &genai.ClientConfig{
-		APIKey:     cfg.GeminiAPIKey,
-		Backend:    genai.BackendGeminiAPI,
-		HTTPClient: client,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return w, nil
+	return w
 }
 
 func (w *SahamyabArchive) Start() error {
-	w.logger.Infof("starting archive tweet reader")
-	go w.run()
+	if w.cfg.Running {
+		w.logger.Infof("starting archive tweet reader")
+		go w.run()
+	}
 	return nil
 }
 
@@ -108,7 +70,7 @@ func (w *SahamyabArchive) Stop() {
 }
 
 func (w *SahamyabArchive) run() {
-	ticker := time.NewTicker(time.Minute / 4)
+	ticker := time.NewTicker(time.Minute / 2)
 
 	page := 0
 	ScoredPostDate := ""
@@ -167,65 +129,6 @@ func (w *SahamyabArchive) run() {
 
 		}
 	}
-}
-
-type tweet struct {
-	TweetID  uint    `json:"tid"`
-	Text     string  `json:"text"`
-	Polarity float64 `json:"polarity"`
-}
-
-type tweets struct {
-	Tweets []tweet `json:"tweets"`
-}
-
-func (w *SahamyabArchive) detectPolarity(posts []*models.Post) ([]*models.Post, error) {
-	w.logger.Infof("detecting polarity of tweets")
-	chat, err := w.geminiClient.Chats.Create(w.ctx, "2.5 Flash", new(genai.GenerateContentConfig), nil)
-	if err != nil {
-		return posts, err
-	}
-
-	tweets := tweets{
-		Tweets: make([]tweet, 0),
-	}
-	for _, post := range posts {
-		tweets.Tweets = append(tweets.Tweets, tweet{
-			TweetID: post.ID,
-			Text:    post.Content,
-		})
-	}
-
-	tweetsJSON, err := json.Marshal(tweets)
-	if err != nil {
-		return posts, err
-	}
-
-	contents := []*genai.Content{
-		{
-			Parts: []*genai.Part{
-				{
-					Text: fmt.Sprintf(sentimentDetectionPrompt, len(posts), tweetsJSON),
-				},
-			},
-		},
-	}
-	contentResp, err := chat.GenerateContent(w.ctx, "2.5 Flash", contents, new(genai.GenerateContentConfig))
-	if err != nil {
-		return posts, err
-	}
-
-	textResp := contentResp.Text()
-
-	err = json.Unmarshal([]byte(textResp), &tweets)
-	if err != nil {
-		return posts, err
-	}
-
-	fmt.Println(textResp)
-	fmt.Println(tweets)
-
-	return posts, nil
 }
 
 func hasValidContent(content string) bool {

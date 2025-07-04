@@ -96,7 +96,13 @@ func NewWorker(
 	}
 }
 
-func (w *Worker) Run(s gocron.Scheduler) error {
+func (w *Worker) Start(s gocron.Scheduler) error {
+	if !w.cfg.Running {
+		return nil
+	}
+	if w.cfg.NeedWarmup {
+		w.immediateUpdate()
+	}
 	j, err := s.NewJob(
 		gocron.CronJob(w.cfg.RunningTime, false),
 		gocron.NewTask(w.update),
@@ -110,7 +116,7 @@ func (w *Worker) Run(s gocron.Scheduler) error {
 	return nil
 }
 
-func (w *Worker) ImmediateUpdate() {
+func (w *Worker) immediateUpdate() {
 	w.update()
 }
 

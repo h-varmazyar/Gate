@@ -12,13 +12,16 @@ import (
 	"github.com/h-varmazyar/Gate/services/gather/internal/adapters/coinex"
 	"github.com/h-varmazyar/Gate/services/gather/internal/adapters/core"
 	"github.com/h-varmazyar/Gate/services/gather/internal/adapters/sahamyab"
+	candlesProducer "github.com/h-varmazyar/Gate/services/gather/internal/brokers/producer"
 	"github.com/h-varmazyar/Gate/services/gather/internal/pkg/buffer"
 	"github.com/h-varmazyar/Gate/services/gather/internal/repositories"
 	"github.com/h-varmazyar/Gate/services/gather/internal/services/candles"
 	"github.com/h-varmazyar/Gate/services/gather/internal/workers/candleTicker"
 	"github.com/h-varmazyar/Gate/services/gather/internal/workers/lastCandle"
 	"github.com/h-varmazyar/Gate/services/gather/internal/workers/marketUpdate"
+	"github.com/h-varmazyar/Gate/services/gather/internal/workers/postSentimentCheck"
 	"github.com/h-varmazyar/Gate/services/gather/internal/workers/sahamyabArchive"
+	"github.com/h-varmazyar/Gate/services/gather/internal/workers/sahamyabStream"
 	"github.com/nats-io/nats.go"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
@@ -49,20 +52,15 @@ func main() {
 		logger.Panicf("failed to initiate databases with error %v", err)
 	}
 
-	scheduler, err := gocron.NewScheduler()
-	if err != nil {
-		panic(err)
-	}
-
-	buffer.InitializeCandleBuffer(cfg.CandleBuffer)
-
 	natsConnection, err := nats.Connect(cfg.Nats.URL)
 	if err != nil {
 		log.Fatalf("Failed to connect to NATS: %v", err)
 	}
 	defer natsConnection.Close()
 
-	//natsProducer := candlesProducer.NewProducer(logger, natsConnection)
+	natsProducer := candlesProducer.NewProducer(logger, natsConnection)
+
+	buffer.InitializeCandleBuffer(cfg.CandleBuffer, natsProducer)
 
 	assetsRepo := repositories.NewAssetRepository(logger, dbInstance.DB)
 	candlesRepo := repositories.NewCandleRepository(logger, dbInstance.DB)
@@ -79,41 +77,44 @@ func main() {
 
 	candlesService := candles.NewService(logger, candlesRepo)
 
-	lastCandleWorker := lastCandle.NewWorker(logger, cfg.LastCandleWorker, coreAdapter, coinexAdapter, candlesRepo, marketsRepo, resolutionsRepo)
-	candleTickerWorker := candleTicker.NewWorker(logger, cfg.TickerWorker, coinexAdapter, marketsRepo)
-	marketUpdateWorker := marketUpdate.NewWorker(logger, cfg.MarketUpdateWorker, assetsRepo, candlesRepo, marketsRepo, resolutionsRepo, coreAdapter, coinexAdapter, candleTickerWorker, lastCandleWorker)
-	sahamyabArchiveWorker, err := sahamyabArchive.NewWorker(logger, cfg.SahamyabArchive, postRepo, sahamyabAdapter)
-	if err != nil {
-		log.WithError(err).Panicf("failed to initiate sahamyab archive worker")
+	{
+		scheduler, err := gocron.NewScheduler()
+		if err != nil {
+			panic(err)
+		}
+
+		lastCandleWorker := lastCandle.NewWorker(logger, cfg.LastCandleWorker, coreAdapter, coinexAdapter, candlesRepo, marketsRepo, resolutionsRepo)
+		candleTickerWorker := candleTicker.NewWorker(logger, cfg.TickerWorker, coinexAdapter, marketsRepo)
+		marketUpdateWorker := marketUpdate.NewWorker(logger, cfg.MarketUpdateWorker, assetsRepo, candlesRepo, marketsRepo, resolutionsRepo, coreAdapter, coinexAdapter, candleTickerWorker, lastCandleWorker)
+		sahamyabArchiveWorker := sahamyabArchive.NewWorker(logger, cfg.SahamyabArchive, postRepo, sahamyabAdapter)
+		postSentimentCheckWorker, err := postSentimentCheck.NewWorker(logger, cfg.PostSentimentCheck, postRepo)
+		if err != nil {
+			log.WithError(err).Panicf("failed to initiate sahamyab archive worker")
+		}
+		sahamyabStreamWorker := sahamyabStream.NewWorker(logger, cfg.SahamyabStream, natsProducer, postRepo)
+
+		if err = lastCandleWorker.Start(); err != nil {
+			panic(err)
+		}
+		if err = candleTickerWorker.Start(); err != nil {
+			panic(err)
+		}
+		if err = marketUpdateWorker.Start(scheduler); err != nil {
+			panic(err)
+		}
+		if err = sahamyabArchiveWorker.Start(); err != nil {
+			panic(err)
+		}
+		if err = postSentimentCheckWorker.Start(); err != nil {
+			panic(err)
+		}
+		if err = sahamyabStreamWorker.Start(); err != nil {
+			panic(err)
+		}
+
+		scheduler.Start()
+		defer scheduler.Shutdown()
 	}
-	//sahamyabStreamWorker := sahamyabStream.NewWorker(logger, cfg.SahamyabStream, natsProducer, postRepo)
-
-	if cfg.WarmupWorker.NeedWarmup {
-		marketUpdateWorker.ImmediateUpdate()
-	}
-	//
-	//fmt.Println(int64(time.Minute * 15))
-	//
-	//if err = lastCandleWorker.Run(); err != nil {
-	//	panic(err)
-	//}
-	////if err = candleTickerWorker.Run(); err != nil {
-	////	panic(err)
-	////}
-	//if err = marketUpdateWorker.Run(scheduler); err != nil {
-	//	panic(err)
-	//}
-
-	if err = sahamyabArchiveWorker.Start(); err != nil {
-		panic(err)
-	}
-
-	//if err = sahamyabStreamWorker.Start(); err != nil {
-	//	panic(err)
-	//}
-
-	scheduler.Start()
-	defer scheduler.Shutdown()
 
 	candlesHandler := candlesHandler.New(logger, candlesService)
 

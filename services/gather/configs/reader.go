@@ -46,6 +46,8 @@ func Read() (*Config, error) {
 		},
 
 		MarketUpdateWorker: WorkerMarketUpdate{
+			Running:     loadBool("WORKER_MARKET_UPDATE_RUNNING"),
+			NeedWarmup:  loadBool("WORKER_MARKET_NEED_WARMUP"),
 			RunningTime: loadString("WORKER_MARKET_UPDATE_RUNNING_TIME"),
 			S3Bucket:    loadString("S3_BUCKET"),
 			S3AccessKey: loadString("S3_ACCESS_KEY"),
@@ -54,18 +56,23 @@ func Read() (*Config, error) {
 			S3Region:    loadString("S3_REGION"),
 		},
 		LastCandleWorker: WorkerLastCandle{
+			Running:         loadBool("LAST_CANDLE_WORKER_RUNNING"),
 			RunningInterval: loadDuration("LAST_CANDLE_WORKER_RUNNING_INTERVAL"),
 		},
 		SahamyabArchive: WorkerSahamyabArchive{
+			Running: loadBool("SAHAMYAB_ARCHIVE_RUNNING"),
+		},
+		PostSentimentCheck: WorkerPostSentimentCheck{
+			Running:           loadBool("WORKER_POST_SENTIMENT_CHECK_RUNNING"),
 			SocksProxyAddress: loadString("SOCKS_PROXY_ADDRESS"),
 			GeminiAPIKey:      loadString("GEMINI_API_KEY"),
 		},
-		SahamyabStream: WorkerSahamyabStream{},
-		TickerWorker: WorkerTicker{
-			RunningInterval: loadDuration("TICKER_WORKER_RUNNING_INTERVAL"),
+		SahamyabStream: WorkerSahamyabStream{
+			Running: loadBool("SAHAMYAB_STREAM_RUNNING"),
 		},
-		WarmupWorker: WorkerWarmup{
-			NeedWarmup: loadBool("WARMUP_WORKER_NEED_WARMUP"),
+		TickerWorker: WorkerTicker{
+			Running:         loadBool("TICK_WORKER_RUNNING"),
+			RunningInterval: loadDuration("TICKER_WORKER_RUNNING_INTERVAL"),
 		},
 
 		CandleBuffer: CandleBuffer{

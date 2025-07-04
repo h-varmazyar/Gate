@@ -86,7 +86,10 @@ func NewWorker(
 	}
 }
 
-func (w *Worker) Run() error {
+func (w *Worker) Start() error {
+	if !w.cfg.Running {
+		return nil
+	}
 	if !w.Started {
 		markets, err := w.marketsRepo.All(context.Background())
 		if err != nil {

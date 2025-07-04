@@ -4,25 +4,29 @@ import (
 	"errors"
 	"fmt"
 	"github.com/h-varmazyar/Gate/services/gather/configs"
+	candlesProducer "github.com/h-varmazyar/Gate/services/gather/internal/brokers/producer"
 	"github.com/h-varmazyar/Gate/services/gather/internal/models"
+	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
 )
 
 type candleBuffer struct {
-	lock         *sync.RWMutex
-	data         map[uint]map[uint][]*models.Candle // first key is market id and second key is resolution id
-	BufferLength int
+	lock           *sync.RWMutex
+	data           map[uint]map[uint][]*models.Candle // first key is market id and second key is resolution id
+	BufferLength   int
+	candleProducer *candlesProducer.Producer
 }
 
 var CandleBuffer *candleBuffer
 
-func InitializeCandleBuffer(cfg configs.CandleBuffer) {
+func InitializeCandleBuffer(cfg configs.CandleBuffer, candlesProducer *candlesProducer.Producer) {
 	if CandleBuffer == nil {
 		CandleBuffer = &candleBuffer{
-			lock:         new(sync.RWMutex),
-			data:         make(map[uint]map[uint][]*models.Candle),
-			BufferLength: cfg.CandleBufferLength,
+			lock:           new(sync.RWMutex),
+			data:           make(map[uint]map[uint][]*models.Candle),
+			BufferLength:   cfg.CandleBufferLength,
+			candleProducer: candlesProducer,
 		}
 
 	}
@@ -92,8 +96,12 @@ func (buffer *candleBuffer) UpdateLast(marketID uint, lastPrice float64) error {
 				}
 
 				last.Close = lastPrice
-				//todo: publish candle
+
+				buffer.data[marketID][last.ResolutionID][length-1] = last
+
+				buffer.publishCandle(last)
 			}
+
 		}
 	}
 
@@ -143,5 +151,26 @@ func (buffer *candleBuffer) ReturnCandles(marketID, resolutionID uint, n int) []
 			j++
 		}
 		return cloned
+	}
+}
+
+func (buffer *candleBuffer) publishCandle(last *models.Candle) {
+	candlePayload := candlesProducer.CandlePayload{
+		MarketID:     last.MarketID,
+		ResolutionID: last.ResolutionID,
+		Candles: []candlesProducer.Candle{
+			{
+				Timestamp: last.Time.Unix(),
+				Open:      last.Open,
+				High:      last.High,
+				Low:       last.Low,
+				Close:     last.Close,
+				Volume:    last.Volume,
+			},
+		},
+	}
+
+	if err := buffer.candleProducer.PublishCandleUpdates(candlePayload); err != nil {
+		log.WithError(err).Error("Failed to publish candle updates")
 	}
 }

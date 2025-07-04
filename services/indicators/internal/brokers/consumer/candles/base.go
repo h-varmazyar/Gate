@@ -74,24 +74,24 @@ func (c *Consumer) StartListening() {
 func (c *Consumer) calculateIndicators(payload CandlePayload) {
 	key := getKey(payload.MarketID, payload.ResolutionID)
 
-	c.lock.Lock()
-	indicators, ok := c.indicatorsMap[key]
-	if !ok {
-		c.logger.Errorf("no indicator map found with key %v", key)
-		return
-	}
-	c.lock.Unlock()
-
 	candles := make([]calculator.Candle, len(payload.Candles))
-	for _, candle := range payload.Candles {
-		candles = append(candles, calculator.Candle{
+	for i, candle := range payload.Candles {
+		candles[i] = calculator.Candle{
 			Time:   time.Unix(candle.Timestamp, 0),
 			Open:   candle.Open,
 			High:   candle.High,
 			Low:    candle.Low,
 			Close:  candle.Close,
 			Volume: candle.Volume,
-		})
+		}
+	}
+
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	indicators, ok := c.indicatorsMap[key]
+	if !ok {
+		c.logger.Errorf("no indicator map found with key %v", key)
+		return
 	}
 
 	for _, indicator := range indicators {
