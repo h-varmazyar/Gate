@@ -1,17 +1,15 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from app.model.sentiment_model import SentimentModel
+from fastapi import FastAPI
+from app.api.schemas import TextInput
+from app.model.parsbert_model import predict_sentiment
 
-router = APIRouter()
-model = SentimentModel()
+app = FastAPI()
 
-class TextIn(BaseModel):
-    text: str
+@app.get("/")
+def root():
+    return {"message": "Sentiment API is running!"}
 
-@router.post("/predict")
-def predict_sentiment(data: TextIn):
-    try:
-        prediction = model.predict(data.text)
-        return {"sentiment": prediction}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+@app.post("/predict")
+def predict(input: TextInput):
+    print(input.text)
+    sentiment = predict_sentiment(input.text)
+    return {"sentiment": sentiment}
