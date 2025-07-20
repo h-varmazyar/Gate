@@ -3,13 +3,11 @@ package configs
 import (
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"github.com/h-varmazyar/Gate/pkg/gormext"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
-func Read() (*Config, error) {
+func load() (*Configs, error) {
 	viper.SetConfigType("env")
 	viper.AddConfigPath("../configs")
 	viper.AddConfigPath(".")
@@ -24,19 +22,13 @@ func Read() (*Config, error) {
 		}
 	}
 
-	cfg := &Config{
-		GinMode:  loadString(gin.EnvGinMode),
-		AppEnv:   AppEnv(loadString("APP_ENV")),
-		AppDebug: loadBool("APP_DEBUG"),
-		Locale:   loadString("LOCALE"),
-		Tz:       loadString("TZ"),
-		GRPC:     GRPC{Port: loadInt("GRPC_PORT")},
+	cfg := &Configs{
 		HTTP: HTTP{
 			APIHost: loadString("HTTP_HOST"),
 			APIPort: loadInt("HTTP_PORT"),
 		},
 		NatsURL: loadString("NATS_URL"),
-		Database: gormext.Configs{
+		DB: gormext.Configs{
 			DbType:      gormext.Type(loadString("DB_TYPE")),
 			Port:        uint16(loadUint("DB_PORT")),
 			Host:        loadString("DB_HOST"),
@@ -45,11 +37,6 @@ func Read() (*Config, error) {
 			Name:        loadString("DB_NAME"),
 			IsSSLEnable: loadBool("DB_IS_SSL_ENABLE"),
 		},
-		ChipmunkAdapter: ChipmunkAdapter{BaseURL: loadString("CHIPMUNK_BASE_URL")},
-	}
-	cfg.LogLevel, err = log.ParseLevel(loadString("LOG_LEVEL"))
-	if err != nil {
-		return nil, err
 	}
 	return cfg, nil
 }

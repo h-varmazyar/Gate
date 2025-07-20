@@ -2,8 +2,8 @@ package gather
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/h-varmazyar/Gate/pkg/errors"
 	"github.com/h-varmazyar/Gate/services/indicators/internal/domain"
 	"github.com/valyala/fasthttp"
 	"golang.org/x/net/context"

@@ -105,10 +105,14 @@ func (w *SahamyabStream) registerTweetReader() {
 				return
 			}
 
-			items := responseParser(targetWSID)
+			fmt.Println(e.Response.PayloadData)
+			items := responseParser(e.Response.PayloadData)
+			fmt.Println(items)
 			if len(items) < 9 {
 				return
 			}
+
+			fmt.Println("new item")
 
 			if err := w.preparePost(items); err != nil {
 				w.logger.Error(err)
@@ -170,7 +174,14 @@ func (w *SahamyabStream) preparePost(items []string) error {
 
 func responseParser(rawData string) []string {
 	data := make([]string, 0)
-	rawData = strings.Split(rawData, ");")[0]
+	items := strings.Split(rawData, ");")
+	for _, item := range items {
+		item = strings.TrimSpace(item)
+		if strings.HasPrefix(item, "d(") {
+			rawData = item
+			break
+		}
+	}
 	newData := ""
 	inString := false
 	for i := 2; i < len(rawData); i++ {
