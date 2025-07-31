@@ -96,13 +96,7 @@ func NewWorker(
 	}
 }
 
-func (w *Worker) Start(s gocron.Scheduler) error {
-	if !w.cfg.Running {
-		return nil
-	}
-	if w.cfg.NeedWarmup {
-		w.immediateUpdate()
-	}
+func (w *Worker) Run(s gocron.Scheduler) error {
 	j, err := s.NewJob(
 		gocron.CronJob(w.cfg.RunningTime, false),
 		gocron.NewTask(w.update),
@@ -116,7 +110,7 @@ func (w *Worker) Start(s gocron.Scheduler) error {
 	return nil
 }
 
-func (w *Worker) immediateUpdate() {
+func (w *Worker) ImmediateUpdate() {
 	w.update()
 }
 
@@ -164,7 +158,7 @@ func (w *Worker) update() {
 
 	w.logger.Infof("remote market len: %v", len(remoteMarkets))
 
-	w.deleteRemovableMarkets(ctx, localMarkets, remoteMarkets)
+	// w.deleteRemovableMarkets(ctx, localMarkets, remoteMarkets)
 	w.saveNewMarkets(ctx, localMarkets, remoteMarkets)
 }
 
@@ -270,23 +264,28 @@ func (w *Worker) deleteRemovableMarkets(ctx context.Context, localMarkets, remot
 
 	for _, market := range deletedMarkets {
 		if err := w.detachRemovableMarket(ctx, market); err != nil {
+			w.logger.WithError(err).Error("failed to detach market")
 			continue
 		}
 
 		if err := w.archiveMarketData(ctx, market); err != nil {
+			w.logger.WithError(err).Error("failed to archive market")
 			continue
 		}
 
 		if err := w.marketsRepo.Delete(ctx, market.ID); err != nil {
+			w.logger.WithError(err).Error("failed to delete market")
 			continue
 		}
 
 		if err := w.removeAssets(ctx, market); err != nil {
+			w.logger.WithError(err).Error("failed to remove asset")
 			continue
 		}
 
 		err := w.candlesRepo.DeleteMarketCandles(ctx, market.ID)
 		if err != nil {
+			w.logger.WithError(err).Error("failed to detach market candles")
 			continue
 		}
 	}

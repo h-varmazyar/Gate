@@ -266,7 +266,7 @@ func (w *PostSentimentCheck) detectPolarity(posts []models.Post) (*tweetResp, er
 		return nil, err
 	}
 
-	fmt.Println(string(respBody))
+	// fmt.Println(string(respBody))
 
 	gr := new(geminiResp)
 

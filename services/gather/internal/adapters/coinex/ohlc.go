@@ -29,28 +29,22 @@ func (c Coinex) OHLC(ctx context.Context, market models.Market, resolution model
 	if candleCount%1000 != 0 {
 		reqCount++
 	}
-	var (
-		candles []models.Candle
-		err     error
-	)
-	fmt.Println("total", candleCount)
-	if candleCount <= 1000 {
-		if candleCount == 0 {
-			candleCount++
-		}
-		candles, err = c.newOHLC(ctx, market, resolution, candleCount)
-	} else {
-		candles, err = c.historicalOHLC(ctx, market.Name, resolution, from, reqCount)
-	}
-	if err != nil {
-		return nil, err
+
+	if candleCount < 0 {
+		candleCount = 1
 	}
 
-	return candles, nil
+	fmt.Println("total", candleCount)
+	if candleCount <= 1000 {
+		return c.newOHLC(ctx, market, resolution, candleCount)
+	} else {
+		return c.historicalOHLC(ctx, market.Name, resolution, from, reqCount)
+	}
 }
 
 func (c Coinex) newOHLC(_ context.Context, market models.Market, resolution models.Resolution, limit int) ([]models.Candle, error) {
-	url := fmt.Sprintf("%v/spot/kline?market=%v&period=%v&limit=%v", c.cfg.APIBaseURL, market, resolution.Label, limit)
+	url := fmt.Sprintf("%v/spot/kline?market=%v&period=%v&limit=%v", c.cfg.APIBaseURL, market.Name, resolution.Label, limit)
+	fmt.Println("make requst for:", url)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
@@ -89,6 +83,8 @@ func (c Coinex) newOHLC(_ context.Context, market models.Market, resolution mode
 		c.Time = time.Unix(candle.CreatedAt, 0)
 		candles = append(candles, c)
 	}
+
+	fmt.Println("new candle len: ", len(candles))
 
 	return candles, nil
 }
@@ -184,7 +180,7 @@ func (c Coinex) historicalOHLC(_ context.Context, market string, resolution mode
 			candle.Close, _ = strconv.ParseFloat(d[2].(string), 64)
 			candle.Volume, _ = strconv.ParseFloat(d[5].(string), 64)
 			candle.Amount, _ = strconv.ParseFloat(d[6].(string), 64)
-			candle.Time = time.Unix(int64(d[0].(float64)), 0)
+			candle.Time = time.Unix(int64(d[0].(float64))/1000, 0)
 			candles = append(candles, candle)
 		}
 	}

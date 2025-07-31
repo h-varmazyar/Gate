@@ -45,7 +45,7 @@ func (r CandleRepository) AllMarketCandles(ctx context.Context, marketID uint, o
 }
 
 func (r CandleRepository) DeleteMarketCandles(ctx context.Context, marketID uint) error {
-	return r.db.WithContext(ctx).Where("market_id = ?", marketID).Delete(&models.Candle{}).Error
+	return r.db.WithContext(ctx).Where("market_id = ?", marketID).Unscoped().Delete(&models.Candle{}).Error
 }
 
 func (r CandleRepository) ReturnLast(ctx context.Context, marketID, resolutionID uint) (models.Candle, error) {
