@@ -1,142 +1,159 @@
 package workers
 
-//import (
-//	"context"
-//	"fmt"
-//	"github.com/h-varmazyar/Gate/pkg/grpcext"
-//	chipmunkAPI "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
-//	"github.com/h-varmazyar/Gate/services/indicators/pkg/calculator"
-//	"github.com/h-varmazyar/Gate/services/indicators/pkg/storage"
-//	log "github.com/sirupsen/logrus"
-//	"strings"
-//	"sync"
-//	"time"
-//)
-//
-//var (
-//	indicatorMapKeyPattern = "%v*%v"
-//)
-//
-//type IndicatorCalculator struct {
-//	candleService chipmunkAPI.CandleServiceClient
-//	indicatorsMap map[string][]calculator.Indicator //key is the combination of market and resolution id
-//	lock          *sync.Mutex
-//	configs       Configs
-//	log           *log.Logger
-//}
-//
-//func NewIndicatorCalculatorWorker(_ context.Context, log *log.Logger, configs Configs) *IndicatorCalculator {
-//	chipmunkConn := grpcext.NewConnection(configs.ChipmunkAddress)
-//	return &IndicatorCalculator{
-//		candleService: chipmunkAPI.NewCandleServiceClient(chipmunkConn),
-//		indicatorsMap: make(map[string][]calculator.Indicator),
-//		lock:          new(sync.Mutex),
-//		configs:       configs,
-//		log:           log,
-//	}
-//}
-//
-//func (w IndicatorCalculator) Start(ctx context.Context, indicators []calculator.Indicator) {
-//	for _, indicator := range indicators {
-//		w.addIndicator(ctx, indicator)
-//	}
-//
-//	for key, _ := range w.indicatorsMap {
-//		go w.calculateMarketIndicators(key)
-//	}
-//}
-//
-//func (w IndicatorCalculator) AddIndicator(ctx context.Context, indicator calculator.Indicator) {
-//	w.lock.Lock()
-//	if key, isNewKey := w.addIndicator(ctx, indicator); isNewKey {
-//		go w.calculateMarketIndicators(key)
-//	}
-//	w.lock.Unlock()
-//}
-//
-//func (w IndicatorCalculator) addIndicator(_ context.Context, indicator calculator.Indicator) (string, bool) {
-//	isNewKey := false
-//	key := fmt.Sprintf(indicatorMapKeyPattern, indicator.GetMarket().ID, indicator.GetResolution().ID)
-//	if _, ok := w.indicatorsMap[key]; !ok {
-//		isNewKey = true
-//		w.indicatorsMap[key] = make([]calculator.Indicator, 0)
-//	}
-//	w.indicatorsMap[key] = append(w.indicatorsMap[key], indicator)
-//	return key, isNewKey
-//}
-//
-//func (w IndicatorCalculator) calculateMarketIndicators(key string) {
-//	ids := strings.Split(key, "*")
-//	candleFetchReq := &chipmunkAPI.CandleListReq{
-//		ResolutionID: ids[0],
-//		MarketID:     ids[1],
-//		Count:        1,
-//	}
-//
-//	w.calculatePrimaryIndicatorsValue(key, ids)
-//
-//	ticker := time.NewTicker(w.configs.CalculatorInterval)
-//	for {
-//		select {
-//		case <-ticker.C:
-//			start := time.Now()
-//			ctx, fn := context.WithTimeout(context.Background(), w.configs.CalculatorInterval)
-//
-//			candles, err := w.candleService.List(ctx, candleFetchReq)
-//			if err != nil {
-//				continue
-//			}
-//
-//			w.lock.Lock()
-//			indicators, ok := w.indicatorsMap[key]
-//			if !ok {
-//				continue
-//			}
-//			w.lock.Unlock()
-//
-//			for _, indicator := range indicators {
-//				value := indicator.UpdateLast(ctx, candles.Elements[0])
-//				if err = storage.AddValue(ctx, indicator.GetId(), value); err != nil {
-//					w.log.WithError(err).Warnf("failed to save indicator value. id: %v", indicator.GetId())
-//				}
-//			}
-//
-//			if diff := time.Now().Sub(start); diff < w.configs.CalculatorInterval {
-//				time.Sleep(w.configs.CalculatorInterval - diff)
-//			}
-//			fn()
-//		}
-//	}
-//}
-//
-//func (w IndicatorCalculator) calculatePrimaryIndicatorsValue(key string, ids []string) {
-//	primaryCandles, err := w.candleService.List(context.Background(), &chipmunkAPI.CandleListReq{
-//		ResolutionID: ids[0],
-//		MarketID:     ids[1],
-//	})
-//	if err != nil {
-//		w.log.WithError(err).Errorf("failed to get primary candles for %v", ids)
-//		return
-//	}
-//
-//	w.lock.Lock()
-//	indicators, ok := w.indicatorsMap[key]
-//	if !ok {
-//		w.log.Errorf("no indicator map found with key %v", key)
-//		return
-//	}
-//	w.lock.Unlock()
-//
-//	for _, indicator := range indicators {
-//		values, err := indicator.Calculate(context.Background(), primaryCandles.Elements)
-//		if err != nil {
-//			return
-//		}
-//		for _, value := range values.Values {
-//			if err = storage.AddValue(context.Background(), indicator.GetId(), value); err != nil {
-//				w.log.WithError(err).Warnf("failed to save indicator value. id: %v", indicator.GetId())
-//			}
-//		}
-//
-//	}
-//}
+import (
+	"context"
+	"fmt"
+	"sync"
+	"time"
+
+	"github.com/h-varmazyar/Gate/services/indicators/configs"
+	"github.com/h-varmazyar/Gate/services/indicators/internal/domain"
+	"github.com/h-varmazyar/Gate/services/indicators/internal/entities"
+	"github.com/h-varmazyar/Gate/services/indicators/pkg/calculator"
+	"github.com/h-varmazyar/Gate/services/indicators/pkg/storage"
+	log "github.com/sirupsen/logrus"
+)
+
+type candlesAdapter interface {
+	List(ctx context.Context, marketID, resolutionID uint) ([]domain.Candle, error)
+}
+
+type indicatorRepository interface {
+	List(ctx context.Context, marketID, resolutionID uint) ([]entities.Indicator, error)
+}
+
+type IndicatorCalculator struct {
+	log            *log.Logger
+	configs        configs.CalculatorConfigs
+	candlesChan    chan domain.CandlesConsumerPayload
+	indicatorsMap  sync.Map
+	done           chan bool
+	candlesAdapter candlesAdapter
+	indicatorRepo  indicatorRepository
+}
+
+func NewIndicatorCalculatorWorker(_ context.Context, log *log.Logger, configs configs.CalculatorConfigs) *IndicatorCalculator {
+	return &IndicatorCalculator{
+		indicatorsMap: sync.Map{},
+		configs:       configs,
+		log:           log,
+	}
+}
+
+func (w *IndicatorCalculator) Start(ctx context.Context) {
+	for i := 0; i < w.configs.WorkerPoolSize; i++ {
+		go w.listenIncomes()
+	}
+}
+
+func (w *IndicatorCalculator) listenIncomes() {
+	for {
+		select {
+		case candlesPayload := <-w.candlesChan:
+			ctx, cancelFunc := context.WithTimeout(context.Background(), time.Second*5)
+			defer cancelFunc()
+			w.consumeCandles(ctx, candlesPayload)
+		case <-w.done:
+			w.log.Info("Income listener exited")
+			return
+		}
+	}
+}
+
+func (w *IndicatorCalculator) consumeCandles(ctx context.Context, payload domain.CandlesConsumerPayload) {
+	key := generateKey(payload.MarketID, payload.ResolutionID)
+	indicators, ok := w.indicatorsMap.Load(key)
+	if !ok {
+		var err error
+		indicators, err = w.addIndicators(ctx, payload.MarketID, payload.ResolutionID)
+		if err != nil {
+			w.log.WithError(err).Errorf("failed to add indicators for %v - %v", payload.MarketID, payload.ResolutionID)
+			return
+		}
+
+		if err = w.calculatePrimaryIndicatorsValue(ctx, indicators.([]calculator.Indicator), payload.MarketID, payload.ResolutionID); err != nil {
+			return
+		}
+
+		w.indicatorsMap.Store(key, indicators)
+	}
+
+	w.calculateMarketIndicators(ctx, indicators.([]calculator.Indicator), payload.Candles)
+}
+
+func (w *IndicatorCalculator) addIndicators(ctx context.Context, marketID, resolutionID uint) ([]calculator.Indicator, error) {
+	indicators, err := w.indicatorRepo.List(ctx, marketID, resolutionID)
+	if err != nil {
+		return nil, err
+	}
+	calcIndocators := make([]calculator.Indicator, len(indicators))
+	for i, ind := range indicators {
+		indicator, err := calculator.NewIndicator(context.Background(), &ind, nil, nil)
+		if err != nil {
+			return nil, err
+		}
+		calcIndocators[i] = indicator
+	}
+
+	return calcIndocators, nil
+}
+
+func (w *IndicatorCalculator) calculateMarketIndicators(ctx context.Context, indicators []calculator.Indicator, candles []domain.Candle) {
+	for _, indicator := range indicators {
+		for _, c := range candles {
+			candle := calculator.Candle{
+				Time:  c.Time,
+				Open:  c.Open,
+				High:  c.High,
+				Low:   c.Low,
+				Close: c.Close,
+			}
+			value := indicator.UpdateLast(ctx, candle)
+			if err := storage.AddValue(ctx, indicator.GetId(), value); err != nil {
+				w.log.WithError(err).Warnf("failed to save indicator value. id: %v", indicator.GetId())
+			}
+		}
+	}
+}
+
+func (w *IndicatorCalculator) calculatePrimaryIndicatorsValue(ctx context.Context, indicators []calculator.Indicator, marketID, resolutionID uint) error {
+	primaryCandles, err := w.candlesAdapter.List(ctx, marketID, resolutionID)
+	if err != nil {
+		w.log.WithError(err).Errorf("failed to get primary candles for %v - %v", marketID, resolutionID)
+		return err
+	}
+
+	indicatorCandles := make([]calculator.Candle, len(primaryCandles))
+
+	for i, candle := range primaryCandles {
+		indicatorCandles[i] = calculator.Candle{
+			Time:   candle.Time,
+			Open:   candle.Open,
+			High:   candle.High,
+			Low:    candle.Low,
+			Close:  candle.Close,
+			Volume: candle.Volume,
+		}
+	}
+
+	for _, indicator := range indicators {
+		values, err := indicator.Calculate(ctx, indicatorCandles)
+		if err != nil {
+			return err
+		}
+		for _, value := range values.Values {
+			if err = storage.AddValue(ctx, indicator.GetId(), value); err != nil {
+				w.log.WithError(err).Warnf("failed to save indicator value. id: %v", indicator.GetId())
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func generateKey(marketID, resolutionID uint) string {
+	indicatorMapKeyPattern := "%v*%v"
+	return fmt.Sprintf(indicatorMapKeyPattern, marketID, resolutionID)
+}

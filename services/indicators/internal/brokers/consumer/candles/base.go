@@ -3,14 +3,15 @@ package candles
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
+	"time"
+
+	"github.com/h-varmazyar/Gate/services/indicators/internal/entities"
 	"github.com/h-varmazyar/Gate/services/indicators/pkg/calculator"
-	"github.com/h-varmazyar/Gate/services/indicators/pkg/entities"
 	"github.com/h-varmazyar/Gate/services/indicators/pkg/storage"
 	"github.com/nats-io/nats.go"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
-	"sync"
-	"time"
 )
 
 type indicatorsRepo interface {
@@ -37,11 +38,7 @@ func NewConsumer(logger *log.Logger, nc *nats.Conn, indicatorsRepo indicatorsRep
 			return nil, err
 		}
 		key := getKey(indicator.MarketId, indicator.ResolutionId)
-		if _, ok := indicatorMap[key]; ok {
-			indicatorMap[key] = append(indicatorMap[key], ind)
-		} else {
-			indicatorMap[key] = []calculator.Indicator{ind}
-		}
+		indicatorMap[key] = append(indicatorMap[key], ind)
 	}
 
 	return &Consumer{

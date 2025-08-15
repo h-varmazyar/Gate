@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/h-varmazyar/Gate/pkg/db"
 	"github.com/h-varmazyar/Gate/pkg/gormext"
 	"github.com/h-varmazyar/Gate/pkg/logger"
 	v1 "github.com/h-varmazyar/Gate/services/gather/api/rest/v1"
@@ -10,9 +10,7 @@ import (
 	"github.com/h-varmazyar/Gate/services/indicators/internal/router"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	gormLogger "gorm.io/gorm/logger"
 	"os"
 	"time"
 )
@@ -135,16 +133,12 @@ var repositoryDependencies = func(dep *dependencies) (err error) {
 }
 
 func initializePostgres(configs gormext.Configs) (*gorm.DB, error) {
-	DSN := fmt.Sprintf("postgresql://%v:%v@%v:%v/%v?sslmode=%v", configs.Username, configs.Password, configs.Host, configs.Port, configs.Name, "disable")
-	db, err := gorm.Open(postgres.Open(DSN), &gorm.Config{
-		SkipDefaultTransaction: true,
-		Logger:                 gormLogger.Default.LogMode(gormLogger.Info),
-	})
+	dbInstance, err := db.NewDatabase(context.Background(), configs)
 	if err != nil {
-		log.WithError(err).Error("failed to initialize DB")
 		return nil, err
 	}
-	pdb, err := db.DB()
+
+	pdb, err := dbInstance.DB.DB()
 	if err != nil {
 		log.WithError(err).Error("failed to get sql DB")
 		return nil, err
@@ -153,7 +147,7 @@ func initializePostgres(configs gormext.Configs) (*gorm.DB, error) {
 	pdb.SetMaxIdleConns(10)
 	pdb.SetMaxOpenConns(200)
 
-	if err = db.Transaction(func(tx *gorm.DB) error {
+	if err = dbInstance.Transaction(func(tx *gorm.DB) error {
 		if err = gormext.EnableExtensions(tx,
 			gormext.UUIDExtension,
 		); err != nil {
@@ -165,7 +159,7 @@ func initializePostgres(configs gormext.Configs) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	return db, nil
+	return dbInstance.DB, nil
 }
 
 func initializeGin(log *log.Logger) *gin.Engine {

@@ -2,11 +2,10 @@ package candles
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/h-varmazyar/Gate/pkg/mapper"
 	"github.com/h-varmazyar/Gate/services/indicators/internal/domain"
+	"github.com/h-varmazyar/Gate/services/indicators/internal/entities"
 	"github.com/h-varmazyar/Gate/services/indicators/pkg/calculator"
-	"github.com/h-varmazyar/Gate/services/indicators/pkg/entities"
 	"github.com/h-varmazyar/Gate/services/indicators/pkg/storage"
 	"github.com/nats-io/nats.go"
 	log "github.com/sirupsen/logrus"
@@ -123,8 +122,4 @@ func (c *Consumer) calculateIndicators(payload CandlePayload) {
 			}
 		}
 	}
-}
-
-func getKey(marketID, resolutionID uint) string {
-	return fmt.Sprintf("%v.%v", marketID, resolutionID)
 }

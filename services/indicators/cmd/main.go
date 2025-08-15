@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/h-varmazyar/Gate/services/indicators/migrations"
 	log "github.com/sirupsen/logrus"
 	"os/signal"
 	"syscall"
@@ -15,10 +14,6 @@ func main() {
 	}
 
 	signal.Notify(dep.StopSignal, syscall.SIGINT, syscall.SIGTERM)
-
-	if err = migrations.Migrate(dep.DB); err != nil {
-		log.Panic(err)
-	}
 
 	address := fmt.Sprintf("%v:%v", dep.Cfg.HTTP.APIHost, dep.Cfg.HTTP.APIPort)
 	if err := dep.Routers.Router.StartServing(dep.Gin, address); err != nil {

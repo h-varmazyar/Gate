@@ -11,3 +11,9 @@ type Candle struct {
 	Close  float64   `json:"close"`
 	Volume float64   `json:"volume"`
 }
+
+type CandlesConsumerPayload struct {
+	MarketID     uint
+	ResolutionID uint
+	Candles      []Candle
+}

@@ -3,7 +3,7 @@ package calculator
 import (
 	"github.com/h-varmazyar/Gate/pkg/errors"
 	chipmunkAPI "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
-	"github.com/h-varmazyar/Gate/services/indicators/pkg/entities"
+	"github.com/h-varmazyar/Gate/services/indicators/internal/entities"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )

@@ -4,7 +4,7 @@ import (
 	"context"
 	chipmunkAPI "github.com/h-varmazyar/Gate/services/chipmunk/api/proto"
 	indicatorsAPI "github.com/h-varmazyar/Gate/services/indicators/api/proto"
-	"github.com/h-varmazyar/Gate/services/indicators/pkg/entities"
+	"github.com/h-varmazyar/Gate/services/indicators/internal/entities"
 	"math"
 	"sync"
 )
